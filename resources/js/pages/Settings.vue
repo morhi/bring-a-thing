@@ -32,14 +32,12 @@ function submit() {
             Account settings
         </h1>
 
-        <div
-            class="dark:bg-surface-900 max-w-md rounded-lg bg-white p-6 shadow-sm"
-        >
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-lg font-medium">
                 {{ hasPassword ? 'Change password' : 'Set a password' }}
             </h2>
 
-            <form class="flex flex-col gap-4" @submit.prevent="submit">
+            <form class="flex max-w-md flex-col gap-4" @submit.prevent="submit">
                 <div v-if="hasPassword" class="flex flex-col gap-2">
                     <label for="current_password" class="text-sm font-medium"
                         >Current password</label

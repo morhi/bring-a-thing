@@ -57,10 +57,8 @@ function confirmDestroy() {
             Group settings
         </h1>
 
-        <div
-            class="dark:bg-surface-900 max-w-md rounded-lg bg-white p-6 shadow-sm"
-        >
-            <form class="flex flex-col gap-4" @submit.prevent="submit">
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <form class="flex max-w-md flex-col gap-4" @submit.prevent="submit">
                 <div class="flex flex-col gap-2">
                     <label for="name" class="text-sm font-medium">Name</label>
                     <InputText
@@ -90,11 +88,9 @@ function confirmDestroy() {
             </form>
         </div>
 
-        <div
-            class="dark:bg-surface-900 max-w-md rounded-lg bg-white p-6 shadow-sm"
-        >
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-2 text-lg font-medium text-red-600">Danger zone</h2>
-            <p class="text-surface-500 mb-4 text-sm">
+            <p class="text-surface-500 mb-4 max-w-md text-sm">
                 Deleting a group removes it and its membership for everyone.
                 This cannot be undone.
             </p>
