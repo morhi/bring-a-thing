@@ -74,7 +74,9 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 **Tests:** Pest feature tests for magic-link request/consume, expired/invalid token, optional password set + password login, shadow-user creation idempotency (inviting same email twice reuses the user). Browser check: request a magic link, follow it, land on dashboard.
 **Commit(s):** e.g. `feat: add passwordless magic-link authentication`, `feat: add optional password login`, `feat: add shadow account creation`, `feat: add dashboard shell`
 
-**Deviations:** Also added a `name`/`email`-initial avatar fallback and a user menu (account settings, logout) in `AppLayout`, since the layout plan called for it and shadow accounts have no name. Registration collects only email, matching the spec's "email-only registration" wording, with no separate name field. `tests/Feature/ExampleTest.php` was repurposed into guest-redirect/dashboard-access tests since it referenced the now-removed `home` route; `Welcome.vue` was removed as unused.
+**Deviations:** Also added a `name`/`email`-initial avatar fallback and a user menu (account settings, logout) in `AppLayout`, since the layout plan called for it and shadow accounts have no name. `tests/Feature/ExampleTest.php` was repurposed into guest-redirect/dashboard-access tests since it referenced the now-removed `home` route; `Welcome.vue` was removed as unused.
+
+Registration originally collected only email, per the spec's "email-only registration" wording, but that left shadow/self-registered accounts showing up by email indefinitely with no way to add a name (reported during Phase 2). Registration and magic-link requests now require a name whenever the resulting account would otherwise have none; Account Settings also gained a Profile section to set/change it later. See `.ai/rules` and the Phase 2 section below for the invite-side counterpart.
 
 ---
 
