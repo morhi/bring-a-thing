@@ -86,9 +86,11 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 - [x] Invite member by email: reuses Phase 1 shadow-account helper, sends magic link, adds `GroupMember` with role `member`.
 - [x] Group show page (Vue): member list, invite form, owner-only management controls.
 - [x] Dashboard now lists real groups.
+- [x] Invitation-pending status per member (added on request, beyond original phase scope): `group_user.accepted_at`, cleared by a `Login` event listener on the invitee's first login; shown as an "Invitation pending" tag.
+- [x] Owner can remove a non-owner member (added on request); the owner cannot be removed and can only delete the whole group.
 
-**Tests:** Pest feature tests for group CRUD authorization (owner vs. member vs. non-member), invite flow creates/reuses a `User` and `GroupMember`. Browser check: create a group, invite an email, confirm it appears as a member.
-**Commit(s):** `feat: add groups with owner/member roles and email invites`, `feat: add group show/settings pages and dashboard integration`
+**Tests:** Pest feature tests for group CRUD authorization (owner vs. member vs. non-member), invite flow creates/reuses a `User` and `GroupMember`, invite-acceptance-on-login, member removal authorization. Browser check: create a group, invite an email, confirm it appears as a member with a pending tag; remove a member.
+**Commit(s):** `feat: add groups with owner/member roles and email invites`, `feat: add group show/settings pages and dashboard integration`, `feat: add invitation-pending status and member removal for groups`
 
 **Deviations:** `role` is stored as a backed PHP enum (`App\Enums\GroupRole`) rather than a plain string. Group creation uses `Group::make()` + explicit `owner_id` assignment instead of mass-assignment, since `owner_id` is intentionally excluded from `Group`'s `#[Fillable]` list (it must never be settable from request input). The owner is also added as a `GroupMember` row with role `Owner`, so `members()` includes the owner and the `view` policy check is a single membership query. No "leave group" or member-removal UI yet; out of scope for this phase per the spec's owner/member CRUD focus.
 
