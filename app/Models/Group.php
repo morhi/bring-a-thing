@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -42,6 +43,14 @@ class Group extends Model
             ->using(GroupMember::class)
             ->withPivot('role', 'accepted_at')
             ->withTimestamps();
+    }
+
+    /**
+     * The rosters attached to the group.
+     */
+    public function rosters(): HasMany
+    {
+        return $this->hasMany(Roster::class);
     }
 
     /**

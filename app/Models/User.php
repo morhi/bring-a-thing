@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -51,6 +52,14 @@ class User extends Authenticatable
             ->using(GroupMember::class)
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * The standalone rosters the user owns (not attached to a group).
+     */
+    public function standaloneRosters(): HasMany
+    {
+        return $this->hasMany(Roster::class, 'owner_id')->whereNull('group_id');
     }
 
     /**

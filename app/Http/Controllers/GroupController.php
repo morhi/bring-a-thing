@@ -42,7 +42,7 @@ class GroupController extends Controller
     {
         $this->authorize('view', $group);
 
-        $group->load('members');
+        $group->load('members', 'rosters');
 
         return Inertia::render('Groups/Show', [
             'group' => $group,

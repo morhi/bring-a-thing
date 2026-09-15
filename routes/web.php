@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\RosterController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +36,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
     Route::post('/groups/{group}/invite', [GroupController::class, 'invite'])->name('groups.invite');
     Route::delete('/groups/{group}/members/{member}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');
+
+    Route::post('/rosters', [RosterController::class, 'store'])->name('rosters.store');
+    Route::get('/rosters/{roster}', [RosterController::class, 'show'])->name('rosters.show');
+    Route::get('/rosters/{roster}/edit', [RosterController::class, 'edit'])->name('rosters.edit');
+    Route::patch('/rosters/{roster}', [RosterController::class, 'update'])->name('rosters.update');
+    Route::delete('/rosters/{roster}', [RosterController::class, 'destroy'])->name('rosters.destroy');
+    Route::post('/rosters/{roster}/duplicate', [RosterController::class, 'duplicate'])->name('rosters.duplicate');
 });
