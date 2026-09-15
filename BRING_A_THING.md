@@ -1,0 +1,143 @@
+# Bring A Thing
+
+"Bring A Thing" helps groups organize who brings what to an event. It combines flexible item lists with a Doodle-like scheduling and attendance tool, built on Laravel 13, Inertia 3, Vue 3, PrimeVue 4, and local WebSockets (Laravel Reverb) for real-time collaboration.
+
+## Stack
+
+- **Backend**: Laravel 13
+- **Frontend**: Inertia 3 + Vue 3 (`<script setup lang="ts">`)
+- **UI components & styling**: PrimeVue 4
+- **Real-time**: Laravel Reverb (self-hosted WebSockets) + Laravel Echo on the client
+
+---
+
+## 1. Authentication
+
+- **Passwordless-first**: a user registers with just an email address and receives a magic link for login. No password is required to get started.
+- **Optional password**: a user may set a password later, in account settings, as an alternative login method. Magic links remain available afterward regardless of whether a password is set.
+- **Shadow accounts**: inviting an email address to a group or list immediately creates a user record for that email (not a pending placeholder). The invitee appears as a member right away and receives their own magic link to manage participation (claim items, vote on polls, comment) without going through an explicit registration step.
+- **Dashboard**: a user's dashboard surfaces every group and list they own, are a member of, or have claimed an item on.
+
+---
+
+## 2. Groups & Lists
+
+- A **group** has a name and a set of members (registered or shadow users, invited by email). A group can have any number of attached lists and/or polls.
+- A **list** has a title, a description, an optional link to a group (a list can be fully standalone), and a set of items.
+- A list may optionally carry a date, or leave it unset. Dates can instead be set per item (see §3), so date handling is fully flexible and never required.
+- **Roles**: simple owner + member model.
+  - **Owner**: the creator of a group or list. Full control — edit, delete, manage members and invites.
+  - **Member**: everyone else. Can view, comment, claim items, and vote on polls.
+- **Duplication**: a list can be manually duplicated as a starting point for a new list (e.g., cloning last week's meal plan). No automated recurrence engine in v1.
+
+---
+
+## 3. List Items
+
+Items are designed to be flexible enough to cover varied event types: meals, a weekly meal plan, a birthday party, a house party, food and non-food logistics, and more.
+
+- **Core fields**: name, optional quantity + unit (e.g. "2 kg potatoes"), optional notes.
+- **Custom fields**: list owners can define extra free-form fields per list (e.g. "allergens", "color") to fit the specific event.
+- **Split claiming**: a single item (e.g. "10 chairs") can be partially claimed by multiple members, each specifying the quantity they bring, rather than requiring one member to claim the whole thing.
+- **Per-item dates**: an item may carry its own date, independent of (and overriding) the list's date. This supports patterns like a single list containing "Meal Monday", "Meal Tuesday", "Meal Wednesday" as separate items each tied to a different day, or a list with mostly date-agnostic items plus one item pinned to a specific day.
+- **Attendance-aware claiming**: when an item (or its parent list) is linked to a date that corresponds to a day tracked by an attendance poll (§4) for the same group, only members marked available ("yes") for that day may claim the item. Members marked unavailable for that day are shown as "away" for that item/date instead of being offered the ability to claim.
+- **Comments**: each item can carry its own short comment thread, in addition to the list-level thread (§5).
+- **Lifecycle**: no explicit status/lifecycle field in v1. "Past" vs. "upcoming" is derived purely from whether the linked date (if any) has passed.
+
+---
+
+## 4. Polls (Doodle-like scheduling)
+
+Two distinct poll types, both calendar-based and attached to a group:
+
+### Date finder poll
+The classic Doodle use case. An organizer proposes candidate days and/or time slots. Each member votes yes/no/maybe per option. Used to converge on one or more chosen meeting dates or times.
+
+### Attendance poll
+Tracks who is around when, across a date range (e.g. a week-long group stay). An organizer defines a date range (internally a set of individual days, or hour-based slots depending on poll mode). Each member independently marks their own per-day (or per-slot) availability (yes/no/maybe). Unlike a date finder poll, this does not converge on one answer — it stays open and reflects ongoing changes in attendance over time.
+
+### Shared behavior
+- **Granularity** (day-based vs. hour-based) is a setting on the poll, not a hardcoded distinction between the two types.
+- Votes update live via WebSockets, so all viewers see responses as they come in.
+- Lists and items can reference a specific day from an attendance poll to gate item-claim eligibility by that day's attendance (§3).
+
+---
+
+## 5. Comments
+
+- **List-level**: a general discussion thread visible to all group/list members.
+- **Item-level**: a shorter, scoped thread on a specific item (e.g. "can bring a gluten-free version instead?").
+- New comments broadcast live to active viewers.
+
+---
+
+## 6. Real-time (Laravel Reverb)
+
+Real-time channels cover:
+
+- Live item claim/unclaim updates, including partial/split claims.
+- Live comments, at both list and item level.
+- Live poll voting, for both poll types.
+- Presence indicators — avatars of members currently viewing a given list or poll.
+
+---
+
+## 7. Notifications
+
+- **In-app notification center**: a bell/list in the UI, updated live via WebSockets, covering new invites, new comments, poll activity, and item claims relevant to the user.
+- **Email**: the magic-link login email is the only transactional email in v1. Invites, comments, and reminders surface in-app rather than via separate emails.
+
+---
+
+## 8. Architecture
+
+### Backend
+- Laravel 13, feature-organized (Actions/Services layer where logic exceeds simple CRUD).
+- Laravel Reverb for broadcasting.
+- Queued jobs for magic-link email dispatch.
+
+### Core models
+| Model | Purpose |
+|---|---|
+| `User` | Registered or shadow account; nullable password. |
+| `Group` | Container for members, lists, and polls. |
+| `GroupMember` | Pivot: user ↔ group, with role (`owner`/`member`). |
+| `Lst` | A list (named to avoid the `List` reserved word); title, description, nullable group, nullable date. |
+| `ListItem` | Item on a list; name, quantity, unit, notes, nullable date (overrides list date). |
+| `ItemClaim` | A member's (partial) claim on an item; quantity claimed. |
+| `CustomField` | Per-list custom field definition. |
+| `ItemCustomFieldValue` | Per-item value for a `CustomField`. |
+| `Comment` | Polymorphic; attaches to a list or an item. |
+| `Poll` | `type` (`date_finder`/`attendance`), `granularity` (`day`/`hour`), attached to a group. |
+| `PollOption` | A candidate day/slot on a poll. |
+| `PollResponse` | A member's yes/no/maybe on a `PollOption`. |
+| `Notification` | Laravel's built-in notifications table (database + broadcast channels). |
+
+### Frontend
+- Inertia 3 + Vue 3, `<script setup lang="ts">` throughout.
+- PrimeVue 4 is the UI foundation for the entire app: all screens are built from PrimeVue components (forms, dialogs, tables/data views, calendar, buttons, menus, toasts, etc.) and its theming system, rather than hand-rolled markup or a utility-CSS layer.
+- Laravel Echo + Reverb client for subscribing to private/presence channels.
+
+### Broadcasting channels
+- `list.{id}` — private channel per list, for claims and comments.
+- `poll.{id}` — private channel per poll, for votes.
+- Presence channels per list/poll — active-viewer avatars.
+
+### Auth
+- Signed-URL-based magic-link tokens issuing a session, implemented without Fortify's default password-first flow.
+- Optional password login layered on top of the same `User` model once a password is set.
+
+---
+
+## Out of scope (v1)
+
+- Automated recurring lists (manual duplication only).
+- Transactional emails beyond the magic-link login email.
+- Explicit list/item status fields (derived from date instead).
+- Role granularity beyond owner/member (no separate "admin" tier).
+
+---
+
+## Implementation instruction
+
+Before implementing any feature against Laravel 13, Inertia 3, Vue 3, PrimeVue 4, or Laravel Reverb, read the official documentation for the exact version in use (via Laravel Boost, if available, or the web) rather than relying on prior knowledge. APIs across these packages change between major versions, and outdated assumptions must not drive implementation decisions.
