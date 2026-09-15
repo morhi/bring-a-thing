@@ -14,6 +14,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login/password', [AuthenticatedSessionController::class, 'store'])->name('login.password');
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('register.store');
+    Route::get('/login/needs-name', [MagicLinkController::class, 'needsName'])->name('magic-link.needs-name');
 });
 
 Route::get('/login/{user}', [MagicLinkController::class, 'show'])

@@ -20,3 +20,20 @@ it('returns the existing user when the email is already registered', function ()
     expect($user->is($existing))->toBeTrue()
         ->and(User::query()->where('email', 'known@example.com')->count())->toBe(1);
 });
+
+it('backfills a name on an existing user that has none', function () {
+    $shadow = User::factory()->shadow()->create(['email' => 'shadow@example.com']);
+
+    $user = (new FindOrCreateUserByEmail)->handle('shadow@example.com', 'Shadow Person');
+
+    expect($user->is($shadow))->toBeTrue()
+        ->and($user->fresh()->name)->toBe('Shadow Person');
+});
+
+it('never overwrites a name the user already has', function () {
+    $existing = User::factory()->create(['email' => 'known@example.com', 'name' => 'Original Name']);
+
+    (new FindOrCreateUserByEmail)->handle('known@example.com', 'Someone Else');
+
+    expect($existing->fresh()->name)->toBe('Original Name');
+});

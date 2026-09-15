@@ -8,7 +8,7 @@ import { create as loginRoute } from '@/actions/App/Http/Controllers/Auth/Authen
 
 defineOptions({ layout: GuestLayout });
 
-const form = useForm({ email: '' });
+const form = useForm({ name: '', email: '' });
 
 function submit() {
     form.post(registerUser().url);
@@ -25,13 +25,26 @@ function submit() {
 
         <form class="flex flex-col gap-4" @submit.prevent="submit">
             <div class="flex flex-col gap-2">
+                <label for="name" class="text-sm font-medium">Name</label>
+                <InputText
+                    id="name"
+                    v-model="form.name"
+                    autocomplete="name"
+                    autofocus
+                    :invalid="!!form.errors.name"
+                />
+                <small v-if="form.errors.name" class="text-red-500">
+                    {{ form.errors.name }}
+                </small>
+            </div>
+
+            <div class="flex flex-col gap-2">
                 <label for="email" class="text-sm font-medium">Email</label>
                 <InputText
                     id="email"
                     v-model="form.email"
                     type="email"
                     autocomplete="email"
-                    autofocus
                     :invalid="!!form.errors.email"
                 />
                 <small v-if="form.errors.email" class="text-red-500">

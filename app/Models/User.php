@@ -52,4 +52,17 @@ class User extends Authenticatable
             ->withPivot('role')
             ->withTimestamps();
     }
+
+    /**
+     * Whether registering or logging in with this email should require a name.
+     *
+     * True for a brand new account and for an existing account that still
+     * has no name (e.g. a shadow account invited before this was required).
+     */
+    public static function emailNeedsName(?string $email): bool
+    {
+        $user = static::query()->where('email', $email)->first();
+
+        return ! $user || ! $user->name;
+    }
 }

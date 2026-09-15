@@ -25,7 +25,7 @@ class RegisteredUserController extends Controller
      */
     public function store(RegisterRequest $request, FindOrCreateUserByEmail $findOrCreateUser, SendMagicLink $sendMagicLink): RedirectResponse
     {
-        $user = $findOrCreateUser->handle($request->string('email')->value());
+        $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
 
         $sendMagicLink->handle($user);
 

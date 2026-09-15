@@ -1,20 +1,47 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import GuestLayout from '@/layouts/GuestLayout.vue';
-import { store as sendMagicLink } from '@/actions/App/Http/Controllers/Auth/MagicLinkController';
+import {
+    needsName,
+    store as sendMagicLink,
+} from '@/actions/App/Http/Controllers/Auth/MagicLinkController';
 import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import { create as registerRoute } from '@/actions/App/Http/Controllers/Auth/RegisteredUserController';
 
 defineOptions({ layout: GuestLayout });
 
-const magicLinkForm = useForm({ email: '' });
+const magicLinkForm = useForm({ name: '', email: '' });
 const passwordForm = useForm({ email: '', password: '' });
 
 const usePasswordLogin = ref(false);
+const emailNeedsName = ref(false);
+
+const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+let lookupTimeout: ReturnType<typeof setTimeout>;
+
+watch(
+    () => magicLinkForm.email,
+    (email) => {
+        clearTimeout(lookupTimeout);
+
+        if (!isValidEmail(email)) {
+            emailNeedsName.value = false;
+            return;
+        }
+
+        lookupTimeout = setTimeout(async () => {
+            const response = await fetch(needsName({ query: { email } }).url);
+            const data = await response.json();
+            emailNeedsName.value = data.needsName;
+        }, 400);
+    },
+);
 
 function requestMagicLink() {
     magicLinkForm.post(sendMagicLink().url);
@@ -52,6 +79,22 @@ function loginWithPasswordSubmit() {
                 />
                 <small v-if="magicLinkForm.errors.email" class="text-red-500">
                     {{ magicLinkForm.errors.email }}
+                </small>
+            </div>
+
+            <div
+                v-if="emailNeedsName || magicLinkForm.errors.name"
+                class="flex flex-col gap-2"
+            >
+                <label for="name" class="text-sm font-medium">Name</label>
+                <InputText
+                    id="name"
+                    v-model="magicLinkForm.name"
+                    autocomplete="name"
+                    :invalid="!!magicLinkForm.errors.name"
+                />
+                <small v-if="magicLinkForm.errors.name" class="text-red-500">
+                    {{ magicLinkForm.errors.name }}
                 </small>
             </div>
 
