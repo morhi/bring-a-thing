@@ -81,14 +81,16 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 ## Phase 2 — Groups & Members (§2, partial)
 **Goal:** groups exist with owner/member roles and email-based invites (shadow accounts wired in).
 
-- [ ] `Group`, `GroupMember` (pivot with `role`) models + migrations.
-- [ ] Create/edit/delete group (owner only), authorization via Policy.
-- [ ] Invite member by email: reuses Phase 1 shadow-account helper, sends magic link, adds `GroupMember` with role `member`.
-- [ ] Group show page (Vue): member list, invite form, owner-only management controls.
-- [ ] Dashboard now lists real groups.
+- [x] `Group`, `GroupMember` (pivot with `role`) models + migrations.
+- [x] Create/edit/delete group (owner only), authorization via Policy.
+- [x] Invite member by email: reuses Phase 1 shadow-account helper, sends magic link, adds `GroupMember` with role `member`.
+- [x] Group show page (Vue): member list, invite form, owner-only management controls.
+- [x] Dashboard now lists real groups.
 
 **Tests:** Pest feature tests for group CRUD authorization (owner vs. member vs. non-member), invite flow creates/reuses a `User` and `GroupMember`. Browser check: create a group, invite an email, confirm it appears as a member.
-**Commit(s):** `feat: add groups with owner/member roles and email invites`
+**Commit(s):** `feat: add groups with owner/member roles and email invites`, `feat: add group show/settings pages and dashboard integration`
+
+**Deviations:** `role` is stored as a backed PHP enum (`App\Enums\GroupRole`) rather than a plain string. Group creation uses `Group::make()` + explicit `owner_id` assignment instead of mass-assignment, since `owner_id` is intentionally excluded from `Group`'s `#[Fillable]` list (it must never be settable from request input). The owner is also added as a `GroupMember` row with role `Owner`, so `members()` includes the owner and the `view` policy check is a single membership query. No "leave group" or member-removal UI yet; out of scope for this phase per the spec's owner/member CRUD focus.
 
 ---
 
@@ -192,7 +194,7 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 |---|---|---|---|---|
 | 0 | [x] | | 2026-09-15 | Backend/build/tests verified; browser-confirmed PrimeVue styling renders correctly |
 | 1 | [x] | | 2026-09-16 | See commits below |
-| 2 | [ ] | | | |
+| 2 | [x] | 49ff9aa, 1b99076 | 2026-09-16 | See commits above |
 | 3 | [ ] | | | |
 | 4 | [ ] | | | |
 | 5 | [ ] | | | |
