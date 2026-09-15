@@ -201,3 +201,8 @@ Vue components must have a single root element.
 - Run all Artisan and PHP commands through ddev: `ddev artisan ...`, `ddev php ...` (not `php artisan ...` / `php ...` directly).
 - Run npm commands directly via nvm, without ddev: `npm ...` (not `ddev npm ...`).
 - This project requires Node 24. The shell default may resolve to an older Node version; run `nvm use 24` before npm commands if `npm run check`/`npm run dev` fail with engine or module errors.
+
+## Browser Verification
+
+- Use the `claude-in-chrome` tools for manual browser checks (visiting pages, screenshots, confirming UI/styling renders correctly) when they are available in the current session.
+- `claude-in-chrome` is a browser-extension integration, not a registered MCP server, so it does not appear in `claude mcp list`. To check availability, just try a `claude-in-chrome` tool call (e.g. navigate/screenshot); if it errors out or the tools aren't offered, ask the user to run the check in a session where the extension is connected.

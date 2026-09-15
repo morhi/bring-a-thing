@@ -50,10 +50,10 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 ## Phase 0 — Foundation
 **Goal:** project boots, base layout and tooling work, no feature logic yet.
 
-- [ ] Confirm Laravel 13 / Inertia 3 / Vue 3 / PrimeVue install is healthy (`ddev artisan about`, `npm run dev`).
-- [ ] Set up Laravel Reverb (`ddev artisan install:broadcasting` or equivalent per current docs) and Echo client config, verified with a throwaway test event.
-- [ ] Base Inertia layout (`resources/js/layouts`) using PrimeVue theming, navigation shell, toast/notification placeholder.
-- [ ] Base Pest test setup confirmed working (`ddev artisan test --compact`).
+- [x] Confirm Laravel 13 / Inertia 3 / Vue 3 / PrimeVue install is healthy (`ddev artisan about`, `npm run dev`).
+- [x] Set up Laravel Reverb (`ddev artisan install:broadcasting` or equivalent per current docs) and Echo client config, verified with a throwaway test event.
+- [x] Base Inertia layout (`resources/js/layouts`) using PrimeVue theming, navigation shell, toast/notification placeholder.
+- [x] Base Pest test setup confirmed working (`ddev artisan test --compact`).
 
 **Tests:** one smoke feature test hitting `/`, one manual browser check that the layout renders with PrimeVue styling.
 **Commit:** `chore: configure Reverb broadcasting and base Inertia/PrimeVue layout`
@@ -188,7 +188,7 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 | Phase | Status | Commit(s) | Date | Notes |
 |---|---|---|---|---|
-| 0 | [ ] | | | |
+| 0 | [x] | | 2026-09-15 | Backend/build/tests verified; browser-confirmed PrimeVue styling renders correctly |
 | 1 | [ ] | | | |
 | 2 | [ ] | | | |
 | 3 | [ ] | | | |
