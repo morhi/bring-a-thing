@@ -6,6 +6,7 @@ import Button from 'primevue/button';
 import Menu from 'primevue/menu';
 import Toast from 'primevue/toast';
 import Bell from '@primeicons/vue/bell';
+import FlashToasts from '@/components/FlashToasts.vue';
 import type { Auth } from '@/types';
 import { edit as settingsEdit } from '@/actions/App/Http/Controllers/SettingsController';
 import { destroy as logout } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
@@ -33,6 +34,7 @@ function avatarLabel(name: string | null, email: string): string {
 <template>
     <div class="bg-surface-50 dark:bg-surface-950 min-h-screen">
         <Toast />
+        <FlashToasts />
         <header
             class="border-surface-200 dark:border-surface-800 dark:bg-surface-900 flex items-center justify-between border-b bg-white px-6 py-3"
         >

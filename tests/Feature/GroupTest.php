@@ -11,6 +11,7 @@ it('creates a group with the requesting user as owner and member', function () {
 
     $group = Group::query()->where('name', 'Family Trip')->firstOrFail();
     $response->assertRedirect(route('groups.show', $group));
+    $response->assertSessionHas('success', 'Group created.');
     expect($group->owner_id)->toBe($user->id);
     expect($group->members()->whereKey($user->id)->first()?->pivot->role)->toBe(GroupRole::Owner);
 });
@@ -52,6 +53,7 @@ it('allows the owner to update the group', function () {
     $response = $this->actingAs($owner)->patch(route('groups.update', $group), ['name' => 'Renamed']);
 
     $response->assertRedirect(route('groups.edit', $group));
+    $response->assertSessionHas('success', 'Group updated.');
     expect($group->fresh()->name)->toBe('Renamed');
 });
 
@@ -75,6 +77,7 @@ it('allows the owner to delete the group', function () {
     $response = $this->actingAs($owner)->delete(route('groups.destroy', $group));
 
     $response->assertRedirect(route('dashboard'));
+    $response->assertSessionHas('success', 'Group deleted.');
     $this->assertModelMissing($group);
 });
 

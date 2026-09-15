@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
 import GuestLayout from '@/layouts/GuestLayout.vue';
 import { store as registerUser } from '@/actions/App/Http/Controllers/Auth/RegisteredUserController';
 import { create as loginRoute } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 
 defineOptions({ layout: GuestLayout });
-
-const page = usePage();
 
 const form = useForm({ email: '' });
 
@@ -25,10 +22,6 @@ function submit() {
         <h1 class="text-surface-900 dark:text-surface-0 text-xl font-semibold">
             Create an account
         </h1>
-
-        <Message v-if="page.props.flash.status" severity="success">
-            {{ page.props.flash.status }}
-        </Message>
 
         <form class="flex flex-col gap-4" @submit.prevent="submit">
             <div class="flex flex-col gap-2">

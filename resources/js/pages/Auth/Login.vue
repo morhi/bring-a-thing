@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
-import Message from 'primevue/message';
 import GuestLayout from '@/layouts/GuestLayout.vue';
 import { store as sendMagicLink } from '@/actions/App/Http/Controllers/Auth/MagicLinkController';
 import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import { create as registerRoute } from '@/actions/App/Http/Controllers/Auth/RegisteredUserController';
 
 defineOptions({ layout: GuestLayout });
-
-const page = usePage();
 
 const magicLinkForm = useForm({ email: '' });
 const passwordForm = useForm({ email: '', password: '' });
@@ -37,10 +34,6 @@ function loginWithPasswordSubmit() {
         <h1 class="text-surface-900 dark:text-surface-0 text-xl font-semibold">
             Log in
         </h1>
-
-        <Message v-if="page.props.flash.status" severity="success">
-            {{ page.props.flash.status }}
-        </Message>
 
         <form
             v-if="!usePasswordLogin"

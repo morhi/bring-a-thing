@@ -32,7 +32,7 @@ class GroupController extends Controller
 
         $group->addMember($request->user(), GroupRole::Owner, now());
 
-        return to_route('groups.show', $group);
+        return to_route('groups.show', $group)->with('success', 'Group created.');
     }
 
     /**
@@ -71,7 +71,7 @@ class GroupController extends Controller
             'name' => $request->string('name')->value(),
         ]);
 
-        return to_route('groups.edit', $group);
+        return to_route('groups.edit', $group)->with('success', 'Group updated.');
     }
 
     /**
@@ -83,7 +83,7 @@ class GroupController extends Controller
 
         $group->delete();
 
-        return to_route('dashboard');
+        return to_route('dashboard')->with('success', 'Group deleted.');
     }
 
     /**
@@ -93,7 +93,7 @@ class GroupController extends Controller
     {
         $inviteMember->handle($group, $request->string('email')->value());
 
-        return back()->with('status', 'An invite has been sent.');
+        return back()->with('success', 'An invite has been sent.');
     }
 
     /**
@@ -105,6 +105,6 @@ class GroupController extends Controller
 
         $group->members()->detach($member);
 
-        return back()->with('status', 'Member removed.');
+        return back()->with('success', 'Member removed.');
     }
 }

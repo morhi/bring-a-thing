@@ -28,6 +28,6 @@ class SettingsController extends Controller
             'password' => $request->string('password')->value(),
         ]);
 
-        return back()->with('status', 'Password updated.');
+        return back()->with('success', 'Password updated.');
     }
 }

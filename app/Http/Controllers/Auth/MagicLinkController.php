@@ -21,7 +21,7 @@ class MagicLinkController extends Controller
 
         $sendMagicLink->handle($user);
 
-        return back()->with('status', 'A login link has been sent to your email address.');
+        return back()->with('success', 'A login link has been sent to your email address.');
     }
 
     /**

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Password from 'primevue/password';
-import Message from 'primevue/message';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { updatePassword } from '@/actions/App/Http/Controllers/SettingsController';
 
@@ -11,8 +10,6 @@ defineOptions({ layout: AppLayout });
 defineProps<{
     hasPassword: boolean;
 }>();
-
-const page = usePage();
 
 const form = useForm({
     current_password: '',
@@ -34,10 +31,6 @@ function submit() {
         <h1 class="text-surface-900 dark:text-surface-0 text-xl font-semibold">
             Account settings
         </h1>
-
-        <Message v-if="page.props.flash.status" severity="success">
-            {{ page.props.flash.status }}
-        </Message>
 
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-lg font-medium">

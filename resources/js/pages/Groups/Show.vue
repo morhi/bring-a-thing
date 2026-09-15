@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Group, GroupMember } from '@/types';
@@ -19,8 +18,6 @@ const props = defineProps<{
     group: Group;
     canManage: boolean;
 }>();
-
-const page = usePage();
 
 const inviteForm = useForm({ email: '' });
 
@@ -56,10 +53,6 @@ function avatarLabel(name: string | null, email: string): string {
                 <Button label="Settings" severity="secondary" text />
             </Link>
         </div>
-
-        <Message v-if="page.props.flash.status" severity="success">
-            {{ page.props.flash.status }}
-        </Message>
 
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-lg font-medium">Members</h2>
