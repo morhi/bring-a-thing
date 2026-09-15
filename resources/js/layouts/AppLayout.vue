@@ -1,12 +1,33 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
+import Menu from 'primevue/menu';
 import Toast from 'primevue/toast';
 import Bell from '@primeicons/vue/bell';
 import type { Auth } from '@/types';
+import { edit as settingsEdit } from '@/actions/App/Http/Controllers/SettingsController';
+import { destroy as logout } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 
 const page = usePage<{ name: string; auth: Auth }>();
+
+const userMenu = ref();
+const userMenuItems = [
+    {
+        label: 'Account settings',
+        command: () => router.visit(settingsEdit().url),
+    },
+    { label: 'Log out', command: () => router.post(logout().url) },
+];
+
+function toggleUserMenu(event: MouseEvent) {
+    userMenu.value?.toggle(event);
+}
+
+function avatarLabel(name: string | null, email: string): string {
+    return (name ?? email).charAt(0).toUpperCase();
+}
 </script>
 
 <template>
@@ -30,11 +51,20 @@ const page = usePage<{ name: string; auth: Auth }>();
                 >
                     <Bell />
                 </Button>
-                <Avatar
-                    v-if="page.props.auth.user"
-                    :label="page.props.auth.user.name.charAt(0).toUpperCase()"
-                    shape="circle"
-                />
+                <template v-if="page.props.auth.user">
+                    <Avatar
+                        :label="
+                            avatarLabel(
+                                page.props.auth.user.name,
+                                page.props.auth.user.email,
+                            )
+                        "
+                        shape="circle"
+                        class="cursor-pointer"
+                        @click="toggleUserMenu"
+                    />
+                    <Menu ref="userMenu" :model="userMenuItems" popup />
+                </template>
             </div>
         </header>
         <main class="p-6">

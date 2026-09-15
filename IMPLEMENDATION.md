@@ -63,16 +63,18 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 ## Phase 1 — Authentication (§1)
 **Goal:** passwordless magic-link auth, optional password, shadow accounts, dashboard shell.
 
-- [ ] `User` model: nullable `password`, migration reviewed for shadow-account fields.
-- [ ] Magic-link issuance: signed URL token, queued mail job for the login link.
-- [ ] Magic-link consumption: signed-URL controller/action that starts a session.
-- [ ] Registration by email only (no password required).
-- [ ] Optional password: account settings page to set/change a password; login form accepts password as an alternative to magic link.
-- [ ] Shadow account creation path: helper/service to find-or-create a `User` by email (used later by invites), triggers a magic link, does not require a name/password.
-- [ ] Dashboard page (Inertia/Vue): lists groups/lists the user owns, is a member of, or has claimed an item on (placeholder empty states until Phase 2/3 exist).
+- [x] `User` model: nullable `password`, migration reviewed for shadow-account fields.
+- [x] Magic-link issuance: signed URL token, queued mail job for the login link.
+- [x] Magic-link consumption: signed-URL controller/action that starts a session.
+- [x] Registration by email only (no password required).
+- [x] Optional password: account settings page to set/change a password; login form accepts password as an alternative to magic link.
+- [x] Shadow account creation path: helper/service to find-or-create a `User` by email (used later by invites), triggers a magic link, does not require a name/password.
+- [x] Dashboard page (Inertia/Vue): lists groups/lists the user owns, is a member of, or has claimed an item on (placeholder empty states until Phase 2/3 exist).
 
 **Tests:** Pest feature tests for magic-link request/consume, expired/invalid token, optional password set + password login, shadow-user creation idempotency (inviting same email twice reuses the user). Browser check: request a magic link, follow it, land on dashboard.
 **Commit(s):** e.g. `feat: add passwordless magic-link authentication`, `feat: add optional password login`, `feat: add shadow account creation`, `feat: add dashboard shell`
+
+**Deviations:** Also added a `name`/`email`-initial avatar fallback and a user menu (account settings, logout) in `AppLayout`, since the layout plan called for it and shadow accounts have no name. Registration collects only email, matching the spec's "email-only registration" wording, with no separate name field. `tests/Feature/ExampleTest.php` was repurposed into guest-redirect/dashboard-access tests since it referenced the now-removed `home` route; `Welcome.vue` was removed as unused.
 
 ---
 
@@ -189,7 +191,7 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 | Phase | Status | Commit(s) | Date | Notes |
 |---|---|---|---|---|
 | 0 | [x] | | 2026-09-15 | Backend/build/tests verified; browser-confirmed PrimeVue styling renders correctly |
-| 1 | [ ] | | | |
+| 1 | [x] | | 2026-09-16 | See commits below |
 | 2 | [ ] | | | |
 | 3 | [ ] | | | |
 | 4 | [ ] | | | |
