@@ -17,7 +17,9 @@ it('creates a shadow user, adds them as a member, and sends a magic link when in
     $response->assertRedirect();
     $invitee = User::query()->where('email', 'invitee@example.com')->firstOrFail();
     expect($invitee->name)->toBeNull();
-    expect($group->members()->whereKey($invitee->id)->first()?->pivot->role)->toBe(GroupRole::Member);
+    $pivot = $group->members()->whereKey($invitee->id)->first()?->pivot;
+    expect($pivot->role)->toBe(GroupRole::Member);
+    expect($pivot->accepted_at)->toBeNull();
     Mail::assertQueued(MagicLinkMail::class, fn ($mail) => $mail->hasTo($invitee->email));
 });
 

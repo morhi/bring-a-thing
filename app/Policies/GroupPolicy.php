@@ -46,4 +46,14 @@ class GroupPolicy
     {
         return $group->owner_id === $user->getKey();
     }
+
+    /**
+     * Determine whether the user can remove the given member from the group.
+     *
+     * The owner cannot be removed; a group always has exactly one owner in v1.
+     */
+    public function removeMember(User $user, Group $group, User $member): bool
+    {
+        return $group->owner_id === $user->getKey() && $member->getKey() !== $group->owner_id;
+    }
 }

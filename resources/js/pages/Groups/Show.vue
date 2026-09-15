@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { Group } from '@/types';
+import type { Group, GroupMember } from '@/types';
 import {
     edit as editGroup,
     invite as inviteMember,
+    removeMember,
 } from '@/actions/App/Http/Controllers/GroupController';
 
 defineOptions({ layout: AppLayout });
@@ -27,6 +28,12 @@ function submitInvite() {
     inviteForm.post(inviteMember(props.group).url, {
         preserveScroll: true,
         onSuccess: () => inviteForm.reset(),
+    });
+}
+
+function remove(member: GroupMember) {
+    router.delete(removeMember({ group: props.group, member }).url, {
+        preserveScroll: true,
     });
 }
 
@@ -73,6 +80,20 @@ function avatarLabel(name: string | null, email: string): string {
                         v-if="member.pivot.role === 'owner'"
                         severity="info"
                         value="Owner"
+                    />
+                    <Tag
+                        v-else-if="!member.pivot.accepted_at"
+                        severity="warn"
+                        value="Invitation pending"
+                    />
+                    <Button
+                        v-if="canManage && member.pivot.role !== 'owner'"
+                        label="Remove"
+                        severity="danger"
+                        text
+                        size="small"
+                        class="ml-auto"
+                        @click="remove(member)"
                     />
                 </li>
             </ul>

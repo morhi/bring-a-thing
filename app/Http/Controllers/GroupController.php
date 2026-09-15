@@ -8,6 +8,7 @@ use App\Http\Requests\Groups\InviteGroupMemberRequest;
 use App\Http\Requests\Groups\StoreGroupRequest;
 use App\Http\Requests\Groups\UpdateGroupRequest;
 use App\Models\Group;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class GroupController extends Controller
         $group->owner_id = $request->user()->getKey();
         $group->save();
 
-        $group->addMember($request->user(), GroupRole::Owner);
+        $group->addMember($request->user(), GroupRole::Owner, now());
 
         return to_route('groups.show', $group);
     }
@@ -93,5 +94,17 @@ class GroupController extends Controller
         $inviteMember->handle($group, $request->string('email')->value());
 
         return back()->with('status', 'An invite has been sent.');
+    }
+
+    /**
+     * Remove a member from the group. The owner cannot be removed this way.
+     */
+    public function removeMember(Group $group, User $member): RedirectResponse
+    {
+        $this->authorize('removeMember', [$group, $member]);
+
+        $group->members()->detach($member);
+
+        return back()->with('status', 'Member removed.');
     }
 }

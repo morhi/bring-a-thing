@@ -5,6 +5,7 @@ export type GroupRole = 'owner' | 'member';
 export type GroupMember = User & {
     pivot: {
         role: GroupRole;
+        accepted_at: string | null;
     };
 };
 

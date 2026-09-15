@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\GroupRole;
+use Carbon\CarbonInterface;
 use Database\Factories\GroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,15 +40,18 @@ class Group extends Model
     {
         return $this->belongsToMany(User::class)
             ->using(GroupMember::class)
-            ->withPivot('role')
+            ->withPivot('role', 'accepted_at')
             ->withTimestamps();
     }
 
     /**
      * Add a user to the group with the given role.
+     *
+     * Leaving $acceptedAt null marks the membership as an invitation pending
+     * the invitee's next login, per App\Listeners\MarkGroupInvitesAccepted.
      */
-    public function addMember(User $user, GroupRole $role): void
+    public function addMember(User $user, GroupRole $role, ?CarbonInterface $acceptedAt = null): void
     {
-        $this->members()->attach($user, ['role' => $role]);
+        $this->members()->attach($user, ['role' => $role, 'accepted_at' => $acceptedAt]);
     }
 }
