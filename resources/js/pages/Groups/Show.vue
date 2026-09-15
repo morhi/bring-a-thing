@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
+import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Group, GroupMember } from '@/types';
@@ -12,6 +15,10 @@ import {
     invite as inviteMember,
     removeMember,
 } from '@/actions/App/Http/Controllers/GroupController';
+import {
+    show as showRoster,
+    store as storeRoster,
+} from '@/actions/App/Http/Controllers/RosterController';
 
 defineOptions({ layout: AppLayout });
 
@@ -28,6 +35,23 @@ function submitInvite() {
     inviteForm.post(inviteMember(props.group).url, {
         preserveScroll: true,
         onSuccess: () => inviteForm.reset(),
+    });
+}
+
+const showCreateRoster = ref(false);
+
+const createRosterForm = useForm({
+    title: '',
+    description: '',
+    group_id: props.group.id,
+});
+
+function submitCreateRoster() {
+    createRosterForm.post(storeRoster().url, {
+        onSuccess: () => {
+            createRosterForm.reset('title', 'description');
+            showCreateRoster.value = false;
+        },
     });
 }
 
@@ -149,5 +173,81 @@ function avatarLabel(name: string | null, email: string): string {
                 />
             </form>
         </div>
+
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-medium">Rosters</h2>
+                <Button
+                    label="New roster"
+                    size="small"
+                    @click="showCreateRoster = true"
+                />
+            </div>
+            <div
+                v-if="!group.rosters || group.rosters.length === 0"
+                class="border-surface-200 dark:border-surface-700 text-surface-500 rounded-lg border border-dashed p-8 text-center text-sm"
+            >
+                No rosters attached to this group yet.
+            </div>
+            <ul v-else class="flex flex-col gap-3">
+                <li v-for="roster in group.rosters" :key="roster.id">
+                    <Link
+                        :href="showRoster(roster).url"
+                        class="border-surface-200 dark:border-surface-700 text-surface-900 dark:text-surface-0 block rounded-lg border p-4 hover:shadow"
+                    >
+                        {{ roster.title }}
+                    </Link>
+                </li>
+            </ul>
+        </div>
     </div>
+
+    <Dialog
+        v-model:visible="showCreateRoster"
+        modal
+        header="New roster"
+        class="w-full max-w-sm"
+    >
+        <form class="flex flex-col gap-4" @submit.prevent="submitCreateRoster">
+            <div class="flex flex-col gap-2">
+                <label for="roster-title" class="text-sm font-medium">
+                    Title
+                </label>
+                <InputText
+                    id="roster-title"
+                    v-model="createRosterForm.title"
+                    autofocus
+                    :invalid="!!createRosterForm.errors.title"
+                />
+                <small
+                    v-if="createRosterForm.errors.title"
+                    class="text-red-500"
+                >
+                    {{ createRosterForm.errors.title }}
+                </small>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label for="roster-description" class="text-sm font-medium">
+                    Description (optional)
+                </label>
+                <Textarea
+                    id="roster-description"
+                    v-model="createRosterForm.description"
+                    rows="3"
+                    :invalid="!!createRosterForm.errors.description"
+                />
+                <small
+                    v-if="createRosterForm.errors.description"
+                    class="text-red-500"
+                >
+                    {{ createRosterForm.errors.description }}
+                </small>
+            </div>
+            <Button
+                type="submit"
+                label="Create"
+                :loading="createRosterForm.processing"
+            />
+        </form>
+    </Dialog>
 </template>
