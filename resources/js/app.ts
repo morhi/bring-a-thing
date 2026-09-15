@@ -2,6 +2,7 @@ import Aura from '@primeuix/themes/aura';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';
 import PrimeVue from 'primevue/config';
+import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 import { configureEcho } from '@laravel/echo-vue';
 
@@ -27,6 +28,7 @@ void createInertiaApp({
                 license: import.meta.env.VITE_PRIMEVUE_LICENSE,
             })
             .use(ToastService)
+            .use(ConfirmationService)
             .mount(el);
     },
     progress: {

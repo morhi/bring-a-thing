@@ -4,6 +4,7 @@ import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
+import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Group, GroupMember } from '@/types';
 import {
@@ -19,6 +20,8 @@ const props = defineProps<{
     canManage: boolean;
 }>();
 
+const confirm = useConfirm();
+
 const inviteForm = useForm({ email: '' });
 
 function submitInvite() {
@@ -28,9 +31,18 @@ function submitInvite() {
     });
 }
 
-function remove(member: GroupMember) {
-    router.delete(removeMember({ group: props.group, member }).url, {
-        preserveScroll: true,
+function confirmRemove(member: GroupMember) {
+    confirm.require({
+        header: 'Remove member?',
+        message: `Remove ${member.name ?? member.email} from ${props.group.name}?`,
+        acceptLabel: 'Remove',
+        acceptProps: { severity: 'danger' },
+        rejectLabel: 'Cancel',
+        rejectProps: { severity: 'secondary', text: true },
+        accept: () =>
+            router.delete(removeMember({ group: props.group, member }).url, {
+                preserveScroll: true,
+            }),
     });
 }
 
@@ -42,7 +54,7 @@ function avatarLabel(name: string | null, email: string): string {
 <template>
     <Head :title="group.name" />
 
-    <div class="mx-auto flex max-w-2xl flex-col gap-6">
+    <div class="flex flex-col gap-6">
         <div class="flex items-center justify-between">
             <h1
                 class="text-surface-900 dark:text-surface-0 text-xl font-semibold"
@@ -86,7 +98,7 @@ function avatarLabel(name: string | null, email: string): string {
                         text
                         size="small"
                         class="ml-auto"
-                        @click="remove(member)"
+                        @click="confirmRemove(member)"
                     />
                 </li>
             </ul>

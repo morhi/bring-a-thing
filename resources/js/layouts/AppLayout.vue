@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
+import ConfirmDialog from 'primevue/confirmdialog';
 import Menu from 'primevue/menu';
 import Toast from 'primevue/toast';
 import Bell from '@primeicons/vue/bell';
@@ -34,6 +35,7 @@ function avatarLabel(name: string | null, email: string): string {
 <template>
     <div class="bg-surface-50 dark:bg-surface-950 min-h-screen">
         <Toast />
+        <ConfirmDialog />
         <FlashToasts />
         <header
             class="border-surface-200 dark:border-surface-800 dark:bg-surface-900 flex items-center justify-between border-b bg-white px-6 py-3"
@@ -70,7 +72,9 @@ function avatarLabel(name: string | null, email: string): string {
             </div>
         </header>
         <main class="p-6">
-            <slot />
+            <div class="mx-auto w-full max-w-7xl">
+                <slot />
+            </div>
         </main>
     </div>
 </template>

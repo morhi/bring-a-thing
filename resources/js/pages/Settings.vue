@@ -27,12 +27,14 @@ function submit() {
 <template>
     <Head title="Settings" />
 
-    <div class="mx-auto flex max-w-md flex-col gap-6">
+    <div class="flex flex-col gap-6">
         <h1 class="text-surface-900 dark:text-surface-0 text-xl font-semibold">
             Account settings
         </h1>
 
-        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+        <div
+            class="dark:bg-surface-900 max-w-md rounded-lg bg-white p-6 shadow-sm"
+        >
             <h2 class="mb-4 text-lg font-medium">
                 {{ hasPassword ? 'Change password' : 'Set a password' }}
             </h2>
