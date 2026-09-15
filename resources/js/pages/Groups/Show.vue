@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const confirm = useConfirm();
 
-const inviteForm = useForm({ email: '' });
+const inviteForm = useForm({ name: '', email: '' });
 
 function submitInvite() {
     inviteForm.post(inviteMember(props.group).url, {
@@ -109,7 +109,20 @@ function avatarLabel(name: string | null, email: string): string {
             class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm"
         >
             <h2 class="mb-4 text-lg font-medium">Invite a member</h2>
-            <form class="flex items-start gap-3" @submit.prevent="submitInvite">
+            <form
+                class="flex max-w-md items-start gap-3"
+                @submit.prevent="submitInvite"
+            >
+                <div class="flex flex-1 flex-col gap-2">
+                    <InputText
+                        v-model="inviteForm.name"
+                        placeholder="Name"
+                        :invalid="!!inviteForm.errors.name"
+                    />
+                    <small v-if="inviteForm.errors.name" class="text-red-500">
+                        {{ inviteForm.errors.name }}
+                    </small>
+                </div>
                 <div class="flex flex-1 flex-col gap-2">
                     <InputText
                         v-model="inviteForm.email"

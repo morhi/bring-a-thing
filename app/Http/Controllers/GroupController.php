@@ -91,7 +91,7 @@ class GroupController extends Controller
      */
     public function invite(InviteGroupMemberRequest $request, Group $group, InviteMemberToGroup $inviteMember): RedirectResponse
     {
-        $inviteMember->handle($group, $request->string('email')->value());
+        $inviteMember->handle($group, $request->string('email')->value(), $request->string('name')->value());
 
         return back()->with('success', 'An invite has been sent.');
     }
