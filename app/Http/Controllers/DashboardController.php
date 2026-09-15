@@ -11,10 +11,12 @@ class DashboardController extends Controller
     /**
      * Show the dashboard: groups, lists, and claimed items the user owns, is a member of, or has claimed on.
      *
-     * Groups/lists/claims arrive in Phase 2/3; the page renders empty states until then.
+     * Lists/claims arrive in Phase 3; the page renders an empty state for those until then.
      */
     public function __invoke(Request $request): Response
     {
-        return Inertia::render('Dashboard');
+        return Inertia::render('Dashboard', [
+            'groups' => $request->user()->groups()->get(),
+        ]);
     }
 }
