@@ -78,9 +78,17 @@ function avatarLabel(name: string | null, email: string): string {
                         :label="avatarLabel(member.name, member.email)"
                         shape="circle"
                     />
-                    <span class="text-surface-900 dark:text-surface-0">
-                        {{ member.name ?? member.email }}
-                    </span>
+                    <div class="flex flex-col">
+                        <span class="text-surface-900 dark:text-surface-0">
+                            {{ member.name ?? member.email }}
+                        </span>
+                        <span
+                            v-if="member.name"
+                            class="text-surface-500 text-xs"
+                        >
+                            {{ member.email }}
+                        </span>
+                    </div>
                     <Tag
                         v-if="member.pivot.role === 'owner'"
                         severity="info"
