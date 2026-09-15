@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Groups;
 
+use App\Models\Group;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -23,7 +25,22 @@ class InviteGroupMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email', $this->notAlreadyInGroup()],
         ];
+    }
+
+    /**
+     * Reject an email that already belongs to a member (accepted or pending) of the group.
+     */
+    private function notAlreadyInGroup(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            /** @var Group $group */
+            $group = $this->route('group');
+
+            if ($group->members()->where('email', $value)->exists()) {
+                $fail('This person is already a member of this group, or already has an open invitation.');
+            }
+        };
     }
 }
