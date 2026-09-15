@@ -23,6 +23,7 @@ Route::get('/login/{user}', [MagicLinkController::class, 'show'])
 Route::middleware('auth')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 

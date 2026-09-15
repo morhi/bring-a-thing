@@ -9,6 +9,27 @@ it('redirects guests away from the settings page', function () {
     $response->assertRedirect(route('login'));
 });
 
+it('allows a user to set their own name', function () {
+    $user = User::factory()->shadow()->create();
+
+    $response = $this->actingAs($user)->patch(route('settings.profile'), [
+        'name' => 'Jane Doe',
+    ]);
+
+    $response->assertRedirect();
+    expect($user->fresh()->name)->toBe('Jane Doe');
+});
+
+it('requires a name when updating the profile', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->patch(route('settings.profile'), [
+        'name' => '',
+    ]);
+
+    $response->assertInvalid('name');
+});
+
 it('allows a user without a password to set one', function () {
     $user = User::factory()->shadow()->create();
 
