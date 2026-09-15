@@ -17,21 +17,22 @@ This is a lightweight page and navigation inventory, not a visual mockup. It exi
 | `/login/{token}` | Consume signed magic-link token, start session | 1 |
 | `/register` | Email-only registration | 1 |
 | `/settings` | Account settings: set/change password | 1 |
-| `/` (dashboard) | Groups, lists, and claimed items the user owns/is a member of/has claimed on | 1, 3 |
-| `/groups/{group}` | Group show: members, invite form, attached lists, attached polls | 2 |
+| `/` (dashboard) | Groups, rosters, and claimed items the user owns/is a member of/has claimed on | 1, 3 |
+| `/groups/{group}` | Group show: members, invite form, attached rosters, attached polls | 2 |
 | `/groups/{group}/edit` | Owner-only group settings | 2 |
-| `/lists/{list}` | List show: metadata, items (with claim controls), list-level comment thread | 3, 4, 6 |
-| `/lists/{list}/edit` | Owner-only list settings, custom field management | 3, 4 |
+| `/rosters/{roster}` | Roster show: metadata, items (with claim controls), roster-level comment thread | 3, 4, 6 |
+| `/rosters/{roster}/edit` | Owner-only roster settings, custom field management | 3, 4 |
 | `/polls/{poll}` | Poll show: calendar/grid of options, vote controls, (for date finder) converged result | 5 |
 
 **Not separate routes (modals / inline UI instead)**
-- Create group, create list, create poll: modal or inline form from the dashboard/group/list context, not a dedicated `/…/create` page, to keep navigation flat.
-- Item detail (custom fields, item-level comments, claim breakdown): expands inline or in a drawer on the list page, not a separate route, so claiming stays a single-page action.
+- Create group, create roster, create poll: modal or inline form from the dashboard/group/roster context, not a dedicated `/…/create` page, to keep navigation flat.
+- Item detail (custom fields, item-level comments, claim breakdown): expands inline or in a drawer on the roster page, not a separate route, so claiming stays a single-page action.
 - Notifications: dropdown from the topbar bell, not a dedicated page, per §7 (in-app only, no separate inbox specified).
 
 **Decided:**
 - Attendance/date-finder poll grid: a custom calendar-style grid (week/calendar layout, closer to Doodle), not a PrimeVue DataTable. Built in Phase 5.
-- Dashboard: separate "Groups" and "Standalone lists" sections (not a mixed feed). Built in Phase 1/3.
+- Dashboard: separate "Groups" and "Standalone rosters" sections (not a mixed feed). Built in Phase 1/3.
+- List entity naming: the model class is `Roster` (not `List`, a reserved PHP word); routes, UI copy, and docs all say "roster" to match. Decided in Phase 3.
 
 ## Working method (applies to every phase)
 
@@ -98,17 +99,19 @@ Registration originally collected only email, per the spec's "email-only registr
 
 ---
 
-## Phase 3 — Lists (§2 continued)
-**Goal:** standalone or group-attached lists exist, without items yet.
+## Phase 3 — Rosters (§2 continued)
+**Goal:** standalone or group-attached rosters (lists) exist, without items yet.
 
-- [ ] `Lst` model + migration (title, description, nullable `group_id`, nullable date).
-- [ ] Create/edit/delete list (owner only), Policy covering standalone vs. group-scoped access.
-- [ ] List show page (Vue) with title/description/date, empty item area.
-- [ ] Manual list duplication action (clones list metadata; item duplication added once items exist in Phase 4).
-- [ ] Dashboard now lists real lists.
+- [x] `Roster` model + migration (title, description, nullable `group_id`, nullable date).
+- [x] Create/edit/delete roster (owner only for edit/delete; any group member may attach a new roster to a group they belong to), Policy covering standalone vs. group-scoped access.
+- [x] Roster show page (Vue) with title/description/date, empty item area.
+- [x] Manual roster duplication action, owner only (clones title/description, clears the date; item duplication added once items exist in Phase 4).
+- [x] Dashboard now lists real standalone rosters; Group show page lists real attached rosters with a create-roster modal.
 
-**Tests:** Pest feature tests for list CRUD + authorization, standalone list visible only to its owner, group list visible to group members, duplication creates an independent copy. Browser check: create a standalone list and a group list, duplicate one.
-**Commit(s):** `feat: add lists (standalone and group-attached)`
+**Tests:** Pest feature tests for roster CRUD + authorization, standalone roster visible only to its owner, group roster visible to group members, duplication creates an independent copy with a cleared date, rosters cascade-delete with their group. Browser check: create a standalone roster and a group roster, edit the date via DatePicker, duplicate one, delete a group and confirm its roster is gone.
+**Commit(s):** `feat: add rosters (standalone and group-attached)`, `feat: add roster show/edit pages and dashboard/group integration`
+
+**Deviations:** The model is named `Roster`, not `Lst`/`List` — `List` is a reserved PHP word, so following a request to rename the original `Lst` workaround, the model, controller, policy, factory, and relations all use `Roster`, and this was then extended to routes (`/rosters/{roster}`), route names (`rosters.*`), the Vue page folder (`Rosters/`), and UI copy ("New roster", "Roster created.") for full consistency. Duplicating a roster clears its date rather than keeping it (decided during this phase, since a cloned roster like "last week's meal plan" is meant as a template for a new, not-yet-decided date) and is restricted to the roster's owner. Deleting a group cascades to delete its attached rosters (`group_id` foreign key `cascadeOnDelete`).
 
 ---
 
@@ -199,7 +202,7 @@ Registration originally collected only email, per the spec's "email-only registr
 | 0 | [x] | | 2026-09-15 | Backend/build/tests verified; browser-confirmed PrimeVue styling renders correctly |
 | 1 | [x] | | 2026-09-16 | See commits below |
 | 2 | [x] | 49ff9aa, 1b99076 | 2026-09-16 | See commits above |
-| 3 | [ ] | | | |
+| 3 | [x] | 77f65a5, 768a596 | 2026-09-16 | Backend/tests/`npm run check` verified; browser-confirmed create/edit/duplicate/cascade-delete flows |
 | 4 | [ ] | | | |
 | 5 | [ ] | | | |
 | 6 | [ ] | | | |

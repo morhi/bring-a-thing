@@ -102,7 +102,7 @@ Real-time channels cover:
 | `User` | Registered or shadow account; nullable password. |
 | `Group` | Container for members, lists, and polls. |
 | `GroupMember` | Pivot: user ↔ group, with role (`owner`/`member`). |
-| `Lst` | A list (named to avoid the `List` reserved word); title, description, nullable group, nullable date. |
+| `Roster` | A list (named `Roster` to avoid the `List` reserved word); title, description, nullable group, nullable date. |
 | `ListItem` | Item on a list; name, quantity, unit, notes, nullable date (overrides list date). |
 | `ItemClaim` | A member's (partial) claim on an item; quantity claimed. |
 | `CustomField` | Per-list custom field definition. |
