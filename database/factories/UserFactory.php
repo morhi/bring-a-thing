@@ -42,4 +42,19 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the user is a shadow account created by an invite.
+     *
+     * Shadow accounts have no name and no password until the invitee sets one.
+     */
+    public function shadow(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => null,
+            'password' => null,
+            'email_verified_at' => null,
+            'remember_token' => null,
+        ]);
+    }
 }
