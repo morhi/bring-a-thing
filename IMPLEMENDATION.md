@@ -118,18 +118,25 @@ Registration originally collected only email, per the spec's "email-only registr
 ## Phase 4 — List Items & Claiming (§3)
 **Goal:** the core value proposition — items, custom fields, split claiming.
 
-- [ ] `ListItem` model + migration (name, quantity, unit, notes, nullable date).
-- [ ] `CustomField` + `ItemCustomFieldValue` models; list owner can define/manage custom fields; items expose them on create/edit.
-- [ ] `ItemClaim` model (member, item, quantity claimed); enforce total claimed quantity ≤ item quantity when a quantity is set.
-- [ ] Claim/unclaim/partial-claim UI on the item (Vue + PrimeVue components), including the "who claimed how much" display.
-- [ ] Item-level comment thread (depends on Phase 6's `Comment` model — stub or sequence Phase 6 before this sub-task if needed; see note below).
-- [ ] Extend list duplication to clone items and custom fields (not claims).
-- [ ] Derived past/upcoming display based on item date vs. list date vs. now.
+- [x] `RosterItem` model + migration (name, quantity, unit, notes, nullable date). Named `RosterItem` (not `ListItem`), matching the Phase 3 `Roster` naming decision.
+- [x] `CustomField` + `RosterItemCustomFieldValue` models; roster owner can define/manage custom fields (Roster settings page); items expose them on create/edit.
+- [x] `RosterItemClaim` model (member, item, quantity claimed); enforce total claimed quantity ≤ item quantity when a quantity is set; unquantified items accept one exclusive claimant.
+- [x] Claim/unclaim/partial-claim UI on the item (Vue + PrimeVue components), including the "who claimed how much" display.
+- [ ] Item-level comment thread — still deferred to Phase 6 as planned (depends on the polymorphic `Comment` model).
+- [x] Extend roster duplication to clone items and custom fields (not claims).
+- [x] Derived past/upcoming display based on item date vs. roster date vs. now (`RosterItem::is_past` accessor).
 
 **Note:** item comments depend on the polymorphic `Comment` model from Phase 6. If Phase 6 is not yet done, ship Phase 4 without the comment thread and wire it in during Phase 6 instead of blocking on it.
 
-**Tests:** Pest feature tests for item CRUD, custom field save/display, split-claim math (over-claim rejected, exact and partial claims accepted, unclaim), duplication behavior. Browser check: add an item with a custom field, claim part of it as two different members.
-**Commit(s):** `feat: add list items with custom fields`, `feat: add split item claiming`
+**Tests:** Pest feature tests for item CRUD + authorization, custom field save/display, split-claim math (over-claim rejected, exact and partial claims accepted, unclaim, update-own-claim), duplication behavior (items/fields cloned, claims not), past/upcoming derivation, and broadcasting authorization on the roster private/presence channels. Browser-verified: claim/update-claim/unclaim, item edit, custom field add + display in the item form, and the `members_can_add_items` toggle, all against a real ddev + Reverb setup with no console errors.
+**Commit(s):** _not yet committed_
+
+**Deviations:**
+- Per user request, a roster gained a `members_can_add_items` boolean (Roster settings page) so a group-attached roster can opt into letting any group member add items, not just the owner; owners can always add/edit/delete items, and only owners can edit/delete regardless of who added an item.
+- Per user request, real-time collaboration was pulled forward from Phase 7 for the parts built in this phase: a private `roster.{id}` channel broadcasts item create/update/claim changes (`RosterItemSaved`) and deletions (`RosterItemDeleted`), and a `presence.roster.{id}` presence channel drives active-viewer avatars on the roster page. Poll-vote broadcasting and comment broadcasting remain in Phase 7/6 since those features don't exist yet.
+- Custom field values are free-text only (no typed fields), per explicit decision — matches the spec's "extra free-form fields" wording.
+- Reverb needed local-environment wiring to be reachable from the browser under ddev: `.ddev/config.yaml` gained a `web_extra_daemons` entry running `reverb:start` and a `web_extra_exposed_ports` entry exposing it over TLS via ddev-router; `.env`'s client-facing `REVERB_HOST`/`REVERB_PORT`/`REVERB_SCHEME` now point at `bring-a-thing.ddev.site:8443` over https instead of `localhost:8080`/http (the server-side bind stays `0.0.0.0:8080`, unaffected). This is local-environment config only, not application code.
+- Found and fixed two bugs during manual verification: (1) `RosterController::edit` wasn't eager-loading the `group` relation, so the `members_can_add_items` checkbox never rendered for group rosters; (2) the roster show page's "grouped by date" view (used whenever any item has an effective date) was a stub with no claim/edit/remove controls at all — only the flat, no-dates view had them. Fixed by extracting the full item card into `resources/js/components/RosterItemCard.vue`, used by both views, so claim/edit/remove now work regardless of whether the roster/items carry dates.
 
 ---
 
@@ -161,10 +168,13 @@ Registration originally collected only email, per the spec's "email-only registr
 ## Phase 7 — Real-time (§6)
 **Goal:** everything built so far becomes live via Reverb.
 
-- [ ] Private channel `list.{id}`: broadcast claim/unclaim (including partial claims) and comment events.
+- [x] Private channel `roster.{id}`: broadcast claim/unclaim (including partial claims) — done in Phase 4, pulled forward on request.
+- [ ] Private channel `roster.{id}`: broadcast comment events (once Phase 6 adds comments).
 - [ ] Private channel `poll.{id}`: broadcast vote events for both poll types.
-- [ ] Presence channels per list/poll: active-viewer avatars.
-- [ ] Frontend: Echo subscriptions in the relevant Vue pages, live-updating state without a full reload.
+- [x] Presence channel per roster: active-viewer avatars — done in Phase 4, pulled forward on request.
+- [ ] Presence channel per poll: active-viewer avatars.
+- [x] Frontend: Echo subscriptions on the roster show page, live-updating state without a full reload — done in Phase 4.
+- [ ] Frontend: Echo subscriptions on the poll show page.
 
 **Tests:** Pest/Laravel broadcasting tests asserting the correct events fire on claim/comment/vote with correct channel + payload. Browser check: two browser sessions (or one + incognito), confirm a claim/comment/vote in one appears live in the other, and presence avatars update.
 **Commit(s):** `feat: broadcast live claims and comments`, `feat: broadcast live poll votes and presence`
@@ -203,7 +213,7 @@ Registration originally collected only email, per the spec's "email-only registr
 | 1 | [x] | | 2026-09-16 | See commits below |
 | 2 | [x] | 49ff9aa, 1b99076 | 2026-09-16 | See commits above |
 | 3 | [x] | 77f65a5, 768a596 | 2026-09-16 | Backend/tests/`npm run check` verified; browser-confirmed create/edit/duplicate/cascade-delete flows |
-| 4 | [ ] | | | |
+| 4 | [x] | | 2026-09-16 | Backend/tests (`php artisan test --compact`, 91 passing) and `npm run check` verified; browser-confirmed claim/edit/remove/custom-fields/members-can-add-items flows over a working ddev+Reverb websocket setup — see Deviations for two bugs found and fixed during that check |
 | 5 | [ ] | | | |
 | 6 | [ ] | | | |
 | 7 | [ ] | | | |
