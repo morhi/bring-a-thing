@@ -67,6 +67,7 @@ Tracks who is around when, across a date range (e.g. a week-long group stay). An
 - **Granularity** (day-based vs. hour-based) is a setting on the poll, not a hardcoded distinction between the two types.
 - Votes update live via WebSockets, so all viewers see responses as they come in.
 - Lists and items can reference a specific day from an attendance poll to gate item-claim eligibility by that day's attendance (§3).
+- **Closing a poll** (added on request, beyond the original scope of this section): the organizer or a group admin can close a poll to stop accepting new votes, and reopen it again at any time. A date finder poll must name one of its own options as the chosen result when closed, since it otherwise has no explicit "decision" beyond the live vote-count-derived "Best" indicator; an attendance poll has no single winner and simply freezes. This is the only status/lifecycle-style field anywhere in v1 — everything else in the app (rosters, items, other polls) is still deliberately status-free (§3).
 
 ---
 
@@ -116,7 +117,7 @@ Real-time channels cover:
 | `CustomField` | Per-list custom field definition. |
 | `ItemCustomFieldValue` | Per-item value for a `CustomField`. |
 | `Comment` | Polymorphic; attaches to a list or an item. |
-| `Poll` | `type` (`date_finder`/`attendance`), `granularity` (`day`/`hour`), attached to a group. |
+| `Poll` | `type` (`date_finder`/`attendance`), `granularity` (`day`/`hour`), attached to a group; `closed_at` and (date finder only) `chosen_option_id` track closing (added on request). |
 | `PollOption` | A candidate day/slot on a poll. |
 | `PollResponse` | A member's yes/no/maybe on a `PollOption`. |
 | `Notification` | Laravel's built-in notifications table (database + broadcast channels). |
