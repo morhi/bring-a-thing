@@ -26,12 +26,16 @@
 - A **group** has a name and a set of members (registered or shadow users, invited by email). A group can have any number of attached lists and/or polls.
 - A **list** has a title, a description, an optional link to a group (a list can be fully standalone), and a set of items.
 - A list may optionally carry a date, or leave it unset. Dates can instead be set per item (see §3), so date handling is fully flexible and never required.
-- **Roles**: simple owner + member model.
-  - **Owner**: the creator of a group or list. Full control — edit, delete, manage members and invites.
+- **Roles**: owner + admin + member model, at the group level.
+  - **Owner**: the creator of a group or standalone list. Full control — edit, delete, manage members and invites, promote/demote admins.
+  - **Admin**: a group member the owner has promoted. Can invite and remove members (but not remove the owner), update the settings of any list attached to the group, and add things to a group list regardless of that list's "members can add things" setting. Cannot delete the group, or change any member's admin status.
   - **Member**: everyone else. Can view, comment, claim items, and vote on polls.
+  - An owner or admin may claim or unclaim an item on behalf of any other member who can view the list, in addition to managing their own claim.
 - **Duplication**: a list can be manually duplicated as a starting point for a new list (e.g., cloning last week's meal plan). No automated recurrence engine in v1.
 - **Link sharing**: a list owner can turn on a shareable link for any list (standalone or group-attached). Anyone with the link can view the list and claim things without logging in first; claiming (or adding a thing, see below) opens a quick login/sign-up dialog in place on the same page, then completes automatically once authenticated, so using the app never requires accepting a group invite first. The owner can regenerate the link (invalidating the old one) or disable sharing entirely. A visitor who already has full access (owner or group member) is sent to the normal list page instead of the shared read-only view.
 - **Adding things via a shared link**: the same "members can add things" setting that lets group members add things to a list also grants that ability to anyone using the list's shared link, regardless of group membership. A guest is asked to log in first (no account creation form is carried through the login step); an already-authenticated visitor gets the add-a-thing form immediately.
+- **Friends**: inviting an email to a group automatically saves it as a friend of the inviter (an address-book entry pointing at that user's account, real or shadow), so it can be reused without retyping. A dedicated "Friends" settings page lists a user's saved friends, lets them add one directly by email (creating a shadow account if needed, same as a group invite), and remove entries. The group invite form offers autocomplete suggestions drawn from the inviter's friends.
+- **URL identifiers**: groups, lists, list items, and custom fields are addressed in URLs by an opaque random slug rather than their incrementing database id, to prevent enumerating other users' resources by guessing sequential numbers.
 
 ---
 
@@ -104,8 +108,9 @@ Real-time channels cover:
 |---|---|
 | `User` | Registered or shadow account; nullable password. |
 | `Group` | Container for members, lists, and polls. |
-| `GroupMember` | Pivot: user ↔ group, with role (`owner`/`member`). |
+| `GroupMember` | Pivot: user ↔ group, with role (`owner`/`admin`/`member`). |
 | `Roster` | A list (named `Roster` to avoid the `List` reserved word); title, description, nullable group, nullable date, nullable share token for link sharing. |
+| `Friend` | A user's saved reference to another user's account, for reuse across invites. |
 | `ListItem` | Item on a list; name, quantity, unit, notes, nullable date (overrides list date). |
 | `ItemClaim` | A member's (partial) claim on an item; quantity claimed. |
 | `CustomField` | Per-list custom field definition. |
@@ -137,7 +142,6 @@ Real-time channels cover:
 - Automated recurring lists (manual duplication only).
 - Transactional emails beyond the magic-link login email.
 - Explicit list/item status fields (derived from date instead).
-- Role granularity beyond owner/member (no separate "admin" tier).
 
 ---
 

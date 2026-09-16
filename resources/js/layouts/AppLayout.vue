@@ -9,6 +9,7 @@ import Toast from 'primevue/toast';
 import Bell from '@primeicons/vue/bell';
 import FlashToasts from '@/components/FlashToasts.vue';
 import type { Auth } from '@/types';
+import { index as friendsIndex } from '@/actions/App/Http/Controllers/FriendController';
 import { edit as settingsEdit } from '@/actions/App/Http/Controllers/SettingsController';
 import { destroy as logout } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 
@@ -19,6 +20,10 @@ const userMenuItems = [
     {
         label: 'Account settings',
         command: () => router.visit(settingsEdit().url),
+    },
+    {
+        label: 'Friends',
+        command: () => router.visit(friendsIndex().url),
     },
     { label: 'Log out', command: () => router.post(logout().url) },
 ];

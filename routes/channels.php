@@ -8,12 +8,19 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-Broadcast::channel('roster.{roster}', function (User $user, Roster $roster) {
-    return $user->can('view', $roster);
+// Channel names carry the roster's internal id, not its public slug: they
+// are never exposed as a URL, so bind on the raw id rather than the
+// slug-based route key implicit binding would otherwise use.
+Broadcast::channel('roster.{rosterId}', function (User $user, int $rosterId) {
+    $roster = Roster::find($rosterId);
+
+    return $roster !== null && $user->can('view', $roster);
 });
 
-Broadcast::channel('presence.roster.{roster}', function (User $user, Roster $roster) {
-    if (! $user->can('view', $roster)) {
+Broadcast::channel('presence.roster.{rosterId}', function (User $user, int $rosterId) {
+    $roster = Roster::find($rosterId);
+
+    if ($roster === null || ! $user->can('view', $roster)) {
         return null;
     }
 

@@ -5,5 +5,6 @@ namespace App\Enums;
 enum GroupRole: string
 {
     case Owner = 'owner';
+    case Admin = 'admin';
     case Member = 'member';
 }

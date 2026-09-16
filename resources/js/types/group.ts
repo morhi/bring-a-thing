@@ -1,7 +1,7 @@
 import type { User } from '@/types/auth';
 import type { Roster } from '@/types/roster';
 
-export type GroupRole = 'owner' | 'member';
+export type GroupRole = 'owner' | 'admin' | 'member';
 
 export type GroupMember = User & {
     pivot: {
@@ -12,6 +12,7 @@ export type GroupMember = User & {
 
 export type Group = {
     id: number;
+    slug: string;
     name: string;
     owner_id: number;
     created_at: string;

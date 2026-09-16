@@ -63,6 +63,14 @@ class User extends Authenticatable
     }
 
     /**
+     * The friend entries this user has saved, for easier re-referencing of previously invited accounts.
+     */
+    public function friends(): HasMany
+    {
+        return $this->hasMany(Friend::class)->with('friendUser');
+    }
+
+    /**
      * Whether registering or logging in with this email should require a name.
      *
      * True for a brand new account and for an existing account that still

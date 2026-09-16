@@ -6,6 +6,7 @@ export type SharedRosterClaim = {
 
 export type SharedRosterItem = {
     id: number;
+    slug: string;
     name: string;
     quantity: string | null;
     unit: string | null;

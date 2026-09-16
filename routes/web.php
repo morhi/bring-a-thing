@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
@@ -47,12 +48,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
+    Route::get('/settings/friends', [FriendController::class, 'index'])->name('friends.index');
+    Route::post('/settings/friends', [FriendController::class, 'store'])->name('friends.store');
+    Route::delete('/settings/friends/{friend}', [FriendController::class, 'destroy'])->name('friends.destroy');
+
     Route::post('/groups', [GroupController::class, 'store'])->name('groups.store');
     Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
     Route::get('/groups/{group}/edit', [GroupController::class, 'edit'])->name('groups.edit');
     Route::patch('/groups/{group}', [GroupController::class, 'update'])->name('groups.update');
     Route::delete('/groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
     Route::post('/groups/{group}/invite', [GroupController::class, 'invite'])->name('groups.invite');
+    Route::patch('/groups/{group}/members/{member}', [GroupController::class, 'updateMemberRole'])->name('groups.members.update');
     Route::delete('/groups/{group}/members/{member}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');
 
     Route::post('/rosters', [RosterController::class, 'store'])->name('rosters.store');

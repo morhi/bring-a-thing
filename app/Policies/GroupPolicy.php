@@ -44,7 +44,7 @@ class GroupPolicy
      */
     public function invite(User $user, Group $group): bool
     {
-        return $group->owner_id === $user->getKey();
+        return $group->isAtLeastAdmin($user);
     }
 
     /**
@@ -53,6 +53,17 @@ class GroupPolicy
      * The owner cannot be removed; a group always has exactly one owner in v1.
      */
     public function removeMember(User $user, Group $group, User $member): bool
+    {
+        return $group->isAtLeastAdmin($user) && $member->getKey() !== $group->owner_id;
+    }
+
+    /**
+     * Determine whether the user can change the given member's admin status.
+     *
+     * Owner-only: admins cannot promote or demote other admins, and the
+     * owner's own role can never be changed this way.
+     */
+    public function updateMemberRole(User $user, Group $group, User $member): bool
     {
         return $group->owner_id === $user->getKey() && $member->getKey() !== $group->owner_id;
     }

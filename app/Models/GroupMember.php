@@ -41,4 +41,12 @@ class GroupMember extends Pivot
     {
         return $this->accepted_at === null;
     }
+
+    /**
+     * Whether this membership carries owner or admin authority over the group.
+     */
+    public function isAtLeastAdmin(): bool
+    {
+        return in_array($this->role, [GroupRole::Owner, GroupRole::Admin], true);
+    }
 }

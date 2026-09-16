@@ -6,13 +6,13 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ClaimRosterItemRequest extends FormRequest
+class UnclaimRosterItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
-     * A member may always claim for themselves; claiming on behalf of
-     * another member additionally requires manageClaims authority.
+     * A member may always remove their own claim; removing another
+     * member's claim additionally requires manageClaims authority.
      */
     public function authorize(): bool
     {
@@ -36,7 +36,6 @@ class ClaimRosterItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quantity' => ['nullable', 'numeric', 'min:0.01'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }

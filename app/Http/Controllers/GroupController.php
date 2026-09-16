@@ -6,6 +6,7 @@ use App\Actions\Groups\InviteMemberToGroup;
 use App\Enums\GroupRole;
 use App\Http\Requests\Groups\InviteGroupMemberRequest;
 use App\Http\Requests\Groups\StoreGroupRequest;
+use App\Http\Requests\Groups\UpdateGroupMemberRoleRequest;
 use App\Http\Requests\Groups\UpdateGroupRequest;
 use App\Models\Group;
 use App\Models\User;
@@ -47,6 +48,9 @@ class GroupController extends Controller
         return Inertia::render('Groups/Show', [
             'group' => $group,
             'canManage' => $request->user()->can('update', $group),
+            'canManageMembers' => $request->user()->can('invite', $group),
+            'isOwner' => $group->owner_id === $request->user()->getKey(),
+            'friends' => $request->user()->friends,
         ]);
     }
 
@@ -91,7 +95,7 @@ class GroupController extends Controller
      */
     public function invite(InviteGroupMemberRequest $request, Group $group, InviteMemberToGroup $inviteMember): RedirectResponse
     {
-        $inviteMember->handle($group, $request->string('email')->value(), $request->string('name')->value());
+        $inviteMember->handle($group, $request->string('email')->value(), $request->string('name')->value(), $request->user());
 
         return back()->with('success', 'An invite has been sent.');
     }
@@ -106,5 +110,15 @@ class GroupController extends Controller
         $group->members()->detach($member);
 
         return back()->with('success', 'Member removed.');
+    }
+
+    /**
+     * Change a member's role (admin or member). The owner's role cannot be changed.
+     */
+    public function updateMemberRole(UpdateGroupMemberRoleRequest $request, Group $group, User $member): RedirectResponse
+    {
+        $group->members()->updateExistingPivot($member, ['role' => $request->enum('role', GroupRole::class)]);
+
+        return back()->with('success', 'Member role updated.');
     }
 }

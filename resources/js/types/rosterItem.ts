@@ -12,6 +12,7 @@ export type RosterItemClaim = {
 
 export type RosterItem = {
     id: number;
+    slug: string;
     roster_id: number;
     name: string;
     quantity: string | null;

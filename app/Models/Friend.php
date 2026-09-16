@@ -3,41 +3,41 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasSlug;
-use Database\Factories\CustomFieldFactory;
+use Database\Factories\FriendFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $slug
- * @property int $roster_id
- * @property string $name
+ * @property int $user_id
+ * @property int $friend_user_id
+ * @property string|null $name
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable(['name'])]
-class CustomField extends Model
+class Friend extends Model
 {
-    /** @use HasFactory<CustomFieldFactory> */
+    /** @use HasFactory<FriendFactory> */
     use HasFactory, HasSlug;
 
     /**
-     * The roster this custom field is defined on.
+     * The user this friend entry belongs to.
      */
-    public function roster(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Roster::class);
+        return $this->belongsTo(User::class);
     }
 
     /**
-     * The per-item values recorded for this field.
+     * The referenced user account.
      */
-    public function values(): HasMany
+    public function friendUser(): BelongsTo
     {
-        return $this->hasMany(RosterItemCustomFieldValue::class);
+        return $this->belongsTo(User::class, 'friend_user_id');
     }
 }

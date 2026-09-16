@@ -1,5 +1,6 @@
 export type CustomField = {
     id: number;
+    slug: string;
     roster_id: number;
     name: string;
     created_at: string;

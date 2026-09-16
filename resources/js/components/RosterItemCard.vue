@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
+import Times from '@primeicons/vue/times';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import ProgressBar from 'primevue/progressbar';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import { useToast } from 'primevue/usetoast';
 import type { Auth, Roster, RosterItem } from '@/types';
@@ -85,19 +87,55 @@ function showRequestError(errors: Record<string, string>) {
     toast.add({ severity: 'error', summary: message, life: 6000 });
 }
 
-function submitClaim(quantity: number | null) {
+function submitClaim(quantity: number | null, userId?: number) {
     router.post(
         storeClaim({ roster: props.roster, item: props.item }).url,
-        { quantity },
+        { quantity, user_id: userId ?? null },
         { preserveScroll: true, onError: showRequestError },
     );
 }
 
-function unclaim() {
+function unclaim(userId?: number) {
     router.delete(
         destroyClaim({ roster: props.roster, item: props.item }).url,
-        { preserveScroll: true, onError: showRequestError },
+        {
+            data: { user_id: userId ?? null },
+            preserveScroll: true,
+            onError: showRequestError,
+        },
     );
+}
+
+/** Group members who haven't already claimed this item, for the owner/admin "claim for" control. */
+const unclaimedMembers = computed(() => {
+    const claimedUserIds = new Set(
+        (props.item.claims ?? []).map((claim) => claim.user_id),
+    );
+
+    return (props.roster.group?.members ?? [])
+        .filter((member) => !claimedUserIds.has(member.id))
+        .map((member) => ({
+            id: member.id,
+            label: member.name ?? member.email,
+        }));
+});
+
+const claimForUserId = ref<number | null>(null);
+const claimForQuantity = ref<number | null>(null);
+
+function submitClaimFor() {
+    if (claimForUserId.value === null) {
+        return;
+    }
+
+    submitClaim(
+        props.item.quantity === null
+            ? null
+            : (claimForQuantity.value ?? remaining()),
+        claimForUserId.value,
+    );
+    claimForUserId.value = null;
+    claimForQuantity.value = null;
 }
 </script>
 
@@ -158,7 +196,7 @@ function unclaim() {
             class="border-surface-100 dark:border-surface-800 mt-3 border-t pt-3"
         >
             <template v-if="item.quantity === null">
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                     <template v-if="!item.claims?.length">
                         <Button
                             label="I'll bring this"
@@ -173,7 +211,7 @@ function unclaim() {
                             severity="danger"
                             text
                             size="small"
-                            @click="unclaim"
+                            @click="unclaim()"
                         />
                     </template>
                     <template v-else>
@@ -181,7 +219,40 @@ function unclaim() {
                             severity="info"
                             :value="`Claimed by ${item.claims![0].user?.name ?? item.claims![0].user?.email}`"
                         />
+                        <Button
+                            v-if="canManage"
+                            label="Unclaim"
+                            severity="danger"
+                            text
+                            size="small"
+                            @click="unclaim(item.claims![0].user_id)"
+                        />
                     </template>
+                    <div
+                        v-if="
+                            canManage &&
+                            !item.claims?.length &&
+                            unclaimedMembers.length > 0
+                        "
+                        class="flex items-center gap-2"
+                    >
+                        <Select
+                            v-model="claimForUserId"
+                            :options="unclaimedMembers"
+                            option-label="label"
+                            option-value="id"
+                            placeholder="Claim for..."
+                            size="small"
+                            class="w-40"
+                        />
+                        <Button
+                            label="Claim for"
+                            size="small"
+                            severity="secondary"
+                            :disabled="claimForUserId === null"
+                            @click="submitClaimFor"
+                        />
+                    </div>
                 </div>
             </template>
 
@@ -202,14 +273,29 @@ function unclaim() {
                 </p>
                 <div
                     v-if="item.claims?.length"
-                    class="mt-2 flex flex-wrap gap-2"
+                    class="mt-2 flex flex-wrap items-center gap-2"
                 >
-                    <Tag
+                    <div
                         v-for="claim in item.claims"
                         :key="claim.id"
-                        severity="secondary"
-                        :value="`${claim.user?.name ?? claim.user?.email}: ${claim.quantity}${item.unit ? ` ${item.unit}` : ''}`"
-                    />
+                        class="flex items-center gap-1"
+                    >
+                        <Tag
+                            severity="secondary"
+                            :value="`${claim.user?.name ?? claim.user?.email}: ${claim.quantity}${item.unit ? ` ${item.unit}` : ''}`"
+                        />
+                        <Button
+                            v-if="canManage && claim.user_id !== currentUserId"
+                            severity="danger"
+                            text
+                            rounded
+                            size="small"
+                            aria-label="Remove claim"
+                            @click="unclaim(claim.user_id)"
+                        >
+                            <Times class="h-3 w-3" />
+                        </Button>
+                    </div>
                 </div>
                 <div
                     v-if="remaining() > 0 || myClaim()"
@@ -240,7 +326,42 @@ function unclaim() {
                         severity="danger"
                         text
                         size="small"
-                        @click="unclaim"
+                        @click="unclaim()"
+                    />
+                </div>
+                <div
+                    v-if="
+                        canManage &&
+                        unclaimedMembers.length > 0 &&
+                        remaining() > 0
+                    "
+                    class="mt-2 flex items-center gap-2"
+                >
+                    <Select
+                        v-model="claimForUserId"
+                        :options="unclaimedMembers"
+                        option-label="label"
+                        option-value="id"
+                        placeholder="Claim for..."
+                        size="small"
+                        class="w-40"
+                    />
+                    <InputNumber
+                        v-model="claimForQuantity"
+                        :min="0.01"
+                        :max="remaining()"
+                        :max-fraction-digits="2"
+                        :placeholder="String(remaining())"
+                        :suffix="item.unit ? ` ${item.unit}` : ''"
+                        size="small"
+                        class="w-32"
+                    />
+                    <Button
+                        label="Claim for"
+                        size="small"
+                        severity="secondary"
+                        :disabled="claimForUserId === null"
+                        @click="submitClaimFor"
                     />
                 </div>
             </template>

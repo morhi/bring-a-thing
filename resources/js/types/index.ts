@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './friend';
 export * from './group';
 export * from './roster';
 export * from './rosterItem';

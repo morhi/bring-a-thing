@@ -5,22 +5,22 @@ namespace App\Http\Controllers;
 use App\Actions\RosterItems\ClaimRosterItem;
 use App\Events\RosterItemSaved;
 use App\Http\Requests\RosterItems\ClaimRosterItemRequest;
+use App\Http\Requests\RosterItems\UnclaimRosterItemRequest;
 use App\Models\Roster;
 use App\Models\RosterItem;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class RosterItemClaimController extends Controller
 {
-    use AuthorizesRequests;
-
     /**
-     * Create or update the current user's claim on the item.
+     * Create or update a claim on the item, for the current user or, with manageClaims authority, another member.
      */
     public function store(ClaimRosterItemRequest $request, Roster $roster, RosterItem $item, ClaimRosterItem $claimItem): RedirectResponse
     {
-        $claimItem->handle($item, $request->user(), $request->input('quantity') !== null ? (float) $request->input('quantity') : null);
+        $target = $request->filled('user_id') ? User::findOrFail($request->integer('user_id')) : $request->user();
+
+        $claimItem->handle($item, $target, $request->input('quantity') !== null ? (float) $request->input('quantity') : null);
 
         RosterItemSaved::dispatch($item);
 
@@ -28,13 +28,13 @@ class RosterItemClaimController extends Controller
     }
 
     /**
-     * Remove the current user's claim on the item.
+     * Remove a claim on the item, for the current user or, with manageClaims authority, another member.
      */
-    public function destroy(Request $request, Roster $roster, RosterItem $item): RedirectResponse
+    public function destroy(UnclaimRosterItemRequest $request, Roster $roster, RosterItem $item): RedirectResponse
     {
-        $this->authorize('claim', $item);
+        $targetId = $request->filled('user_id') ? $request->integer('user_id') : $request->user()->getKey();
 
-        $item->claims()->where('user_id', $request->user()->getKey())->delete();
+        $item->claims()->where('user_id', $targetId)->delete();
 
         RosterItemSaved::dispatch($item);
 

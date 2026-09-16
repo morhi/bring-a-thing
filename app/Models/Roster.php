@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSlug;
 use Database\Factories\RosterFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $slug
  * @property string $title
  * @property string|null $description
  * @property Carbon|null $date
@@ -27,7 +29,7 @@ use Illuminate\Support\Str;
 class Roster extends Model
 {
     /** @use HasFactory<RosterFactory> */
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     /**
      * Get the attributes that should be cast.
@@ -83,7 +85,15 @@ class Roster extends Model
             return true;
         }
 
-        if (! $this->members_can_add_items || $this->group_id === null) {
+        if ($this->group_id === null) {
+            return false;
+        }
+
+        if ($this->group->isAtLeastAdmin($user)) {
+            return true;
+        }
+
+        if (! $this->members_can_add_items) {
             return false;
         }
 

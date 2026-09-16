@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { Group, GroupMember } from '@/types';
+import type { Friend, Group, GroupMember } from '@/types';
 import {
     edit as editGroup,
     invite as inviteMember,
     removeMember,
+    updateMemberRole,
 } from '@/actions/App/Http/Controllers/GroupController';
 import {
     show as showRoster,
@@ -25,11 +27,62 @@ defineOptions({ layout: AppLayout });
 const props = defineProps<{
     group: Group;
     canManage: boolean;
+    canManageMembers: boolean;
+    isOwner: boolean;
+    friends: Friend[];
 }>();
 
 const confirm = useConfirm();
 
 const inviteForm = useForm({ name: '', email: '' });
+
+function friendLabel(friend: Friend): string {
+    return (
+        friend.name ??
+        friend.friend_user?.name ??
+        friend.friend_user?.email ??
+        ''
+    );
+}
+
+/** Friends who aren't already members (or pending invitees) of this group, for the "add from friends" picker. */
+const pickableFriends = computed(() => {
+    const memberEmails = new Set(
+        (props.group.members ?? []).map((member) => member.email),
+    );
+
+    return props.friends
+        .filter((friend) => !memberEmails.has(friend.friend_user?.email ?? ''))
+        .map((friend) => ({
+            id: friend.id,
+            label: friendLabel(friend),
+            email: friend.friend_user?.email ?? '',
+            name: friend.name ?? friend.friend_user?.name ?? '',
+        }));
+});
+
+const pickedFriendId = ref<number | null>(null);
+
+const friendInviteForm = useForm({ name: '', email: '' });
+
+function submitFriendInvite() {
+    const friend = pickableFriends.value.find(
+        (candidate) => candidate.id === pickedFriendId.value,
+    );
+
+    if (!friend) {
+        return;
+    }
+
+    friendInviteForm.name = friend.name;
+    friendInviteForm.email = friend.email;
+    friendInviteForm.post(inviteMember(props.group).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            pickedFriendId.value = null;
+        },
+    });
+}
 
 function submitInvite() {
     inviteForm.post(inviteMember(props.group).url, {
@@ -72,6 +125,16 @@ function confirmRemove(member: GroupMember) {
 
 function avatarLabel(name: string | null, email: string): string {
     return (name ?? email).charAt(0).toUpperCase();
+}
+
+function toggleAdmin(member: GroupMember) {
+    const role = member.pivot.role === 'admin' ? 'member' : 'admin';
+
+    router.patch(
+        updateMemberRole({ group: props.group, member }).url,
+        { role },
+        { preserveScroll: true },
+    );
 }
 </script>
 
@@ -119,17 +182,35 @@ function avatarLabel(name: string | null, email: string): string {
                         value="Owner"
                     />
                     <Tag
-                        v-else-if="!member.pivot.accepted_at"
+                        v-else-if="member.pivot.role === 'admin'"
+                        severity="success"
+                        value="Admin"
+                    />
+                    <Tag
+                        v-if="!member.pivot.accepted_at"
                         severity="warn"
                         value="Invitation pending"
                     />
                     <Button
-                        v-if="canManage && member.pivot.role !== 'owner'"
+                        v-if="isOwner && member.pivot.role !== 'owner'"
+                        :label="
+                            member.pivot.role === 'admin'
+                                ? 'Remove admin'
+                                : 'Make admin'
+                        "
+                        severity="secondary"
+                        text
+                        size="small"
+                        class="ml-auto"
+                        @click="toggleAdmin(member)"
+                    />
+                    <Button
+                        v-if="canManageMembers && member.pivot.role !== 'owner'"
                         label="Remove"
                         severity="danger"
                         text
                         size="small"
-                        class="ml-auto"
+                        :class="{ 'ml-auto': !isOwner }"
                         @click="confirmRemove(member)"
                     />
                 </li>
@@ -137,10 +218,47 @@ function avatarLabel(name: string | null, email: string): string {
         </div>
 
         <div
-            v-if="canManage"
+            v-if="canManageMembers"
             class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm"
         >
             <h2 class="mb-4 text-lg font-medium">Invite a member</h2>
+
+            <div v-if="pickableFriends.length > 0" class="mb-4">
+                <label class="mb-2 block text-sm font-medium">
+                    Add from friends
+                </label>
+                <div class="flex max-w-md items-start gap-3">
+                    <Select
+                        v-model="pickedFriendId"
+                        :options="pickableFriends"
+                        option-label="label"
+                        option-value="id"
+                        placeholder="Choose a friend..."
+                        class="flex-1"
+                    >
+                        <template #option="{ option }">
+                            {{ option.label }}
+                            <span
+                                v-if="option.email"
+                                class="text-surface-500 text-xs"
+                            >
+                                ({{ option.email }})
+                            </span>
+                        </template>
+                    </Select>
+                    <Button
+                        label="Add"
+                        severity="secondary"
+                        :disabled="pickedFriendId === null"
+                        :loading="friendInviteForm.processing"
+                        @click="submitFriendInvite"
+                    />
+                </div>
+            </div>
+
+            <label class="mb-2 block text-sm font-medium">
+                Invite by email
+            </label>
             <form
                 class="flex max-w-md items-start gap-3"
                 @submit.prevent="submitInvite"

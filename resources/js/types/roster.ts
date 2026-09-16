@@ -5,6 +5,7 @@ import type { RosterItem } from '@/types/rosterItem';
 
 export type Roster = {
     id: number;
+    slug: string;
     title: string;
     description: string | null;
     date: string | null;

@@ -41,7 +41,11 @@ class RosterPolicy
      */
     public function update(User $user, Roster $roster): bool
     {
-        return $roster->owner_id === $user->getKey();
+        if ($roster->owner_id === $user->getKey()) {
+            return true;
+        }
+
+        return $roster->group_id !== null && $roster->group->isAtLeastAdmin($user);
     }
 
     /**

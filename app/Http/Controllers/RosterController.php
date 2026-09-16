@@ -35,7 +35,7 @@ class RosterController extends Controller
     {
         $this->authorize('view', $roster);
 
-        $roster->load('group', 'owner', 'customFields');
+        $roster->load('group.members', 'owner', 'customFields');
         $roster->load(['items' => function ($query) {
             $query->with(['claims.user', 'customFieldValues.customField'])->orderBy('date');
         }]);

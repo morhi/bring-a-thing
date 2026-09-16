@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\GroupRole;
+use App\Models\Concerns\HasSlug;
 use Carbon\CarbonInterface;
 use Database\Factories\GroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string $slug
  * @property string $name
  * @property int $owner_id
  * @property Carbon|null $created_at
@@ -24,7 +26,7 @@ use Illuminate\Support\Carbon;
 class Group extends Model
 {
     /** @use HasFactory<GroupFactory> */
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     /**
      * The user who created and owns the group.
@@ -51,6 +53,21 @@ class Group extends Model
     public function rosters(): HasMany
     {
         return $this->hasMany(Roster::class);
+    }
+
+    /**
+     * Whether the given user is the group's owner or an admin member.
+     */
+    public function isAtLeastAdmin(User $user): bool
+    {
+        if ($this->owner_id === $user->getKey()) {
+            return true;
+        }
+
+        /** @var GroupMember|null $membership */
+        $membership = $this->members()->whereKey($user->getKey())->first()?->pivot;
+
+        return $membership !== null && $membership->isAtLeastAdmin();
     }
 
     /**

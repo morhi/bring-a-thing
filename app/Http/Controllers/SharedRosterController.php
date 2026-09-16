@@ -48,6 +48,7 @@ class SharedRosterController extends Controller
                 ]),
                 'items' => $roster->items->map(fn ($item) => [
                     'id' => $item->id,
+                    'slug' => $item->slug,
                     'name' => $item->name,
                     'quantity' => $item->quantity,
                     'unit' => $item->unit,

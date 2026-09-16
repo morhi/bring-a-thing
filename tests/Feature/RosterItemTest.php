@@ -41,6 +41,38 @@ it('forbids a group member without add-item permission from adding an item', fun
     $response->assertForbidden();
 });
 
+it('allows a group admin to add an item even when the roster forbids it for regular members', function () {
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $group->addMember($admin, GroupRole::Admin, now());
+    $roster = Roster::factory()->create([
+        'owner_id' => $owner->id,
+        'group_id' => $group->id,
+        'members_can_add_items' => false,
+    ]);
+
+    $response = $this->actingAs($admin)->post(route('rosters.items.store', $roster), ['name' => 'Chairs']);
+
+    $response->assertRedirect();
+    expect(RosterItem::query()->where('name', 'Chairs')->exists())->toBeTrue();
+});
+
+it('allows a group admin to update the roster settings', function () {
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $group->addMember($admin, GroupRole::Admin, now());
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'group_id' => $group->id]);
+
+    $response = $this->actingAs($admin)->patch(route('rosters.update', $roster), ['title' => 'Updated title']);
+
+    $response->assertRedirect();
+    expect($roster->fresh()->title)->toBe('Updated title');
+});
+
 it('allows a group member to add an item when the roster permits it', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();

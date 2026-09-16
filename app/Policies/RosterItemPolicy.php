@@ -39,4 +39,22 @@ class RosterItemPolicy
     {
         return $user->can('view', $item->roster);
     }
+
+    /**
+     * Determine whether the user may claim or unclaim the item on behalf of other members.
+     *
+     * Granted to the roster owner and, for group-attached rosters, group admins.
+     */
+    public function manageClaims(User $user, RosterItem $item): bool
+    {
+        return $user->can('update', $item->roster);
+    }
+
+    /**
+     * Determine whether the user may claim or unclaim the item specifically for the given target member.
+     */
+    public function claimFor(User $user, RosterItem $item, User $target): bool
+    {
+        return $this->manageClaims($user, $item) && $target->can('view', $item->roster);
+    }
 }

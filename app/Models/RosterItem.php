@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSlug;
 use Database\Factories\RosterItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,6 +14,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string $slug
  * @property int $roster_id
  * @property string $name
  * @property float|null $quantity
@@ -26,7 +28,7 @@ use Illuminate\Support\Carbon;
 class RosterItem extends Model
 {
     /** @use HasFactory<RosterItemFactory> */
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     /**
      * The accessors to append to the model's array/JSON form.

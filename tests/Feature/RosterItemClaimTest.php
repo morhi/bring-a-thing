@@ -136,3 +136,53 @@ it('forbids claiming an item on a roster the user cannot view', function () {
 
     $response->assertForbidden();
 });
+
+it('allows the roster owner to claim an item on behalf of another member', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $roster = rosterWithMembers($owner, [$member]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
+
+    $response = $this->actingAs($owner)->post(route('rosters.items.claim.store', [$roster, $item]), [
+        'user_id' => $member->id,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $member->id]);
+});
+
+it('allows a group admin to unclaim another member\'s claim', function () {
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $member = User::factory()->create();
+    $roster = rosterWithMembers($owner, [$admin, $member]);
+    $roster->group->members()->updateExistingPivot($admin, ['role' => GroupRole::Admin]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 10]);
+    $item->claims()->create(['user_id' => $member->id, 'quantity' => 5]);
+
+    $response = $this->actingAs($admin)->delete(route('rosters.items.claim.destroy', [$roster, $item]), [
+        'user_id' => $member->id,
+    ]);
+
+    $response->assertRedirect();
+    expect($item->claims()->where('user_id', $member->id)->exists())->toBeFalse();
+});
+
+it('forbids a regular member from claiming or unclaiming on behalf of another member', function () {
+    $owner = User::factory()->create();
+    $first = User::factory()->create();
+    $second = User::factory()->create();
+    $roster = rosterWithMembers($owner, [$first, $second]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
+    $item->claims()->create(['user_id' => $second->id, 'quantity' => null]);
+
+    $this->actingAs($first)
+        ->post(route('rosters.items.claim.store', [$roster, $item]), ['user_id' => $second->id])
+        ->assertForbidden();
+
+    $this->actingAs($first)
+        ->delete(route('rosters.items.claim.destroy', [$roster, $item]), ['user_id' => $second->id])
+        ->assertForbidden();
+
+    expect($item->claims()->where('user_id', $second->id)->exists())->toBeTrue();
+});
