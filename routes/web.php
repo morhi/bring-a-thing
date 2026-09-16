@@ -3,9 +3,12 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RosterController;
+use App\Http\Controllers\RosterItemClaimController;
+use App\Http\Controllers\RosterItemController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,4 +46,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/rosters/{roster}', [RosterController::class, 'update'])->name('rosters.update');
     Route::delete('/rosters/{roster}', [RosterController::class, 'destroy'])->name('rosters.destroy');
     Route::post('/rosters/{roster}/duplicate', [RosterController::class, 'duplicate'])->name('rosters.duplicate');
+
+    Route::post('/rosters/{roster}/items', [RosterItemController::class, 'store'])->name('rosters.items.store');
+    Route::patch('/rosters/{roster}/items/{item}', [RosterItemController::class, 'update'])->name('rosters.items.update');
+    Route::delete('/rosters/{roster}/items/{item}', [RosterItemController::class, 'destroy'])->name('rosters.items.destroy');
+    Route::post('/rosters/{roster}/items/{item}/claim', [RosterItemClaimController::class, 'store'])->name('rosters.items.claim.store');
+    Route::delete('/rosters/{roster}/items/{item}/claim', [RosterItemClaimController::class, 'destroy'])->name('rosters.items.claim.destroy');
+
+    Route::post('/rosters/{roster}/custom-fields', [CustomFieldController::class, 'store'])->name('rosters.custom-fields.store');
+    Route::patch('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('rosters.custom-fields.update');
+    Route::delete('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->name('rosters.custom-fields.destroy');
 });

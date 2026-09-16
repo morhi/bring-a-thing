@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Http\Requests\Rosters;
+namespace App\Http\Requests\RosterItems;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateRosterRequest extends FormRequest
+class ClaimRosterItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('roster'));
+        return $this->user()->can('claim', $this->route('item'));
     }
 
     /**
@@ -23,10 +23,7 @@ class UpdateRosterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'date' => ['nullable', 'date'],
-            'members_can_add_items' => ['boolean'],
+            'quantity' => ['nullable', 'numeric', 'min:0.01'],
         ];
     }
 }

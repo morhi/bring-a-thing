@@ -35,11 +35,15 @@ class RosterController extends Controller
     {
         $this->authorize('view', $roster);
 
-        $roster->load('group', 'owner');
+        $roster->load('group', 'owner', 'customFields');
+        $roster->load(['items' => function ($query) {
+            $query->with(['claims.user', 'customFieldValues.customField'])->orderBy('date');
+        }]);
 
         return Inertia::render('Rosters/Show', [
             'roster' => $roster,
             'canManage' => $request->user()->can('update', $roster),
+            'canAddItems' => $roster->canBeAddedToBy($request->user()),
         ]);
     }
 
@@ -49,6 +53,8 @@ class RosterController extends Controller
     public function edit(Roster $roster): Response
     {
         $this->authorize('update', $roster);
+
+        $roster->load('customFields', 'group');
 
         return Inertia::render('Rosters/Edit', [
             'roster' => $roster,
@@ -60,7 +66,7 @@ class RosterController extends Controller
      */
     public function update(UpdateRosterRequest $request, Roster $roster): RedirectResponse
     {
-        $roster->update($request->safe()->only(['title', 'description', 'date']));
+        $roster->update($request->safe()->only(['title', 'description', 'date', 'members_can_add_items']));
 
         return to_route('rosters.edit', $roster)->with('success', 'Roster updated.');
     }

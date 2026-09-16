@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -16,10 +17,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $date
  * @property int $owner_id
  * @property int|null $group_id
+ * @property bool $members_can_add_items
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['title', 'description', 'date'])]
+#[Fillable(['title', 'description', 'date', 'members_can_add_items'])]
 class Roster extends Model
 {
     /** @use HasFactory<RosterFactory> */
@@ -34,6 +36,7 @@ class Roster extends Model
     {
         return [
             'date' => 'date',
+            'members_can_add_items' => 'boolean',
         ];
     }
 
@@ -54,10 +57,44 @@ class Roster extends Model
     }
 
     /**
-     * Clone this list's metadata into a new, independent list.
+     * The items on this roster.
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(RosterItem::class)->chaperone();
+    }
+
+    /**
+     * The custom fields defined on this roster.
+     */
+    public function customFields(): HasMany
+    {
+        return $this->hasMany(CustomField::class);
+    }
+
+    /**
+     * Whether the given user may add items to this roster.
+     */
+    public function canBeAddedToBy(User $user): bool
+    {
+        if ($this->owner_id === $user->getKey()) {
+            return true;
+        }
+
+        if (! $this->members_can_add_items || $this->group_id === null) {
+            return false;
+        }
+
+        return $this->group->members()->whereKey($user->getKey())->exists();
+    }
+
+    /**
+     * Clone this list's metadata, items, and custom fields into a new, independent list.
      *
      * The duplicate starts undated, since a cloned list (e.g. last week's
      * meal plan) is meant as a template for a new, not-yet-decided date.
+     * Items are cloned undated too, for the same reason; claims are never
+     * copied since they belong to the original occurrence.
      */
     public function duplicate(): self
     {
@@ -65,10 +102,35 @@ class Roster extends Model
             'title' => "{$this->title} (copy)",
             'description' => $this->description,
             'date' => null,
+            'members_can_add_items' => $this->members_can_add_items,
         ]);
         $copy->owner_id = $this->owner_id;
         $copy->group_id = $this->group_id;
         $copy->save();
+
+        $fieldIdMap = [];
+
+        foreach ($this->customFields as $field) {
+            $newField = $copy->customFields()->create(['name' => $field->name]);
+            $fieldIdMap[$field->id] = $newField->id;
+        }
+
+        foreach ($this->items()->with('customFieldValues')->get() as $item) {
+            $newItem = $copy->items()->create([
+                'name' => $item->name,
+                'quantity' => $item->quantity,
+                'unit' => $item->unit,
+                'notes' => $item->notes,
+                'date' => null,
+            ]);
+
+            foreach ($item->customFieldValues as $value) {
+                $newItem->customFieldValues()->create([
+                    'custom_field_id' => $fieldIdMap[$value->custom_field_id],
+                    'value' => $value->value,
+                ]);
+            }
+        }
 
         return $copy;
     }

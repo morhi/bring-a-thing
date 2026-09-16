@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\GroupRole;
+use App\Models\CustomField;
 use App\Models\Group;
 use App\Models\Roster;
+use App\Models\RosterItem;
 use App\Models\User;
 
 it('creates a standalone roster owned by the requesting user', function () {
@@ -162,6 +164,45 @@ it('allows the owner to duplicate the roster with a cleared date', function () {
     $response->assertSessionHas('success', 'Roster duplicated.');
     expect($copy->owner_id)->toBe($owner->id);
     expect($copy->date)->toBeNull();
+});
+
+it('clones items and custom fields when duplicating a roster, but not claims', function () {
+    $owner = User::factory()->create();
+    $claimant = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'title' => 'Meal Plan']);
+    $field = CustomField::factory()->create(['roster_id' => $roster->id, 'name' => 'Allergens']);
+    $item = RosterItem::factory()->create([
+        'roster_id' => $roster->id,
+        'name' => 'Cake',
+        'date' => now()->addDay()->toDateString(),
+    ]);
+    $item->customFieldValues()->create(['custom_field_id' => $field->id, 'value' => 'Nuts']);
+    $item->claims()->create(['user_id' => $claimant->id, 'quantity' => null]);
+
+    $this->actingAs($owner)->post(route('rosters.duplicate', $roster))->assertRedirect();
+
+    $copy = Roster::query()->where('title', 'Meal Plan (copy)')->firstOrFail();
+    expect($copy->customFields()->count())->toBe(1);
+    $copiedItem = $copy->items()->where('name', 'Cake')->firstOrFail();
+    expect($copiedItem->date)->toBeNull();
+    expect($copiedItem->claims()->count())->toBe(0);
+    $copiedField = $copy->customFields()->firstOrFail();
+    expect($copiedItem->customFieldValues()->where('custom_field_id', $copiedField->id)->first()->value)->toBe('Nuts');
+});
+
+it('exposes the group and custom fields on the roster settings page', function () {
+    $owner = User::factory()->create();
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'group_id' => $group->id]);
+    CustomField::factory()->create(['roster_id' => $roster->id, 'name' => 'Allergens']);
+
+    $response = $this->actingAs($owner)->get(route('rosters.edit', $roster));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('roster.group.id', $group->id)
+        ->has('roster.custom_fields', 1)
+    );
 });
 
 it('forbids a non-owner from duplicating the roster', function () {

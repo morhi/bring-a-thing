@@ -1,18 +1,25 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
+import Checkbox from 'primevue/checkbox';
 import DatePicker from 'primevue/datepicker';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import ArrowLeft from '@primeicons/vue/arrow-left';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { Roster } from '@/types';
+import type { CustomField, Roster } from '@/types';
 import {
     destroy as destroyRoster,
     show as showRoster,
     update as updateRoster,
 } from '@/actions/App/Http/Controllers/RosterController';
+import {
+    destroy as destroyCustomField,
+    store as storeCustomField,
+    update as updateCustomField,
+} from '@/actions/App/Http/Controllers/CustomFieldController';
 
 defineOptions({ layout: AppLayout });
 
@@ -26,6 +33,7 @@ const form = useForm({
     title: props.roster.title,
     description: props.roster.description ?? '',
     date: props.roster.date,
+    members_can_add_items: props.roster.members_can_add_items,
 });
 
 function submit() {
@@ -41,6 +49,53 @@ function confirmDestroy() {
         rejectLabel: 'Cancel',
         rejectProps: { severity: 'secondary', text: true },
         accept: () => form.delete(destroyRoster(props.roster).url),
+    });
+}
+
+// --- Custom fields management ---
+const newFieldForm = useForm({ name: '' });
+
+function submitNewField() {
+    newFieldForm.post(storeCustomField(props.roster).url, {
+        preserveScroll: true,
+        onSuccess: () => newFieldForm.reset(),
+    });
+}
+
+const editingFieldId = ref<number | null>(null);
+const renameForm = useForm({ name: '' });
+
+function startRename(field: CustomField) {
+    editingFieldId.value = field.id;
+    renameForm.name = field.name;
+}
+
+function submitRename(field: CustomField) {
+    renameForm.patch(
+        updateCustomField({ roster: props.roster, customField: field }).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => (editingFieldId.value = null),
+        },
+    );
+}
+
+function confirmDeleteField(field: CustomField) {
+    confirm.require({
+        header: 'Remove custom field?',
+        message: `Remove "${field.name}"? Its values on existing items are removed too.`,
+        acceptLabel: 'Remove',
+        acceptProps: { severity: 'danger' },
+        rejectLabel: 'Cancel',
+        rejectProps: { severity: 'secondary', text: true },
+        accept: () =>
+            router.delete(
+                destroyCustomField({ roster: props.roster, customField: field })
+                    .url,
+                {
+                    preserveScroll: true,
+                },
+            ),
     });
 }
 </script>
@@ -108,6 +163,17 @@ function confirmDestroy() {
                     </small>
                 </div>
 
+                <div v-if="roster.group" class="flex items-center gap-2">
+                    <Checkbox
+                        v-model="form.members_can_add_items"
+                        input-id="members-can-add-items"
+                        binary
+                    />
+                    <label for="members-can-add-items" class="text-sm">
+                        Allow group members to add items to this roster
+                    </label>
+                </div>
+
                 <div class="flex gap-3">
                     <Button
                         type="submit"
@@ -122,6 +188,86 @@ function confirmDestroy() {
                         @click="router.visit(showRoster(roster).url)"
                     />
                 </div>
+            </form>
+        </div>
+
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="mb-4 text-lg font-medium">Custom fields</h2>
+            <ul
+                v-if="roster.custom_fields?.length"
+                class="mb-4 flex flex-col gap-2"
+            >
+                <li
+                    v-for="field in roster.custom_fields"
+                    :key="field.id"
+                    class="flex max-w-md items-center gap-2"
+                >
+                    <template v-if="editingFieldId === field.id">
+                        <InputText
+                            v-model="renameForm.name"
+                            size="small"
+                            class="flex-1"
+                            :invalid="!!renameForm.errors.name"
+                        />
+                        <Button
+                            label="Save"
+                            size="small"
+                            :loading="renameForm.processing"
+                            @click="submitRename(field)"
+                        />
+                        <Button
+                            label="Cancel"
+                            severity="secondary"
+                            text
+                            size="small"
+                            @click="editingFieldId = null"
+                        />
+                    </template>
+                    <template v-else>
+                        <span
+                            class="text-surface-900 dark:text-surface-0 flex-1 text-sm"
+                        >
+                            {{ field.name }}
+                        </span>
+                        <Button
+                            label="Rename"
+                            severity="secondary"
+                            text
+                            size="small"
+                            @click="startRename(field)"
+                        />
+                        <Button
+                            label="Remove"
+                            severity="danger"
+                            text
+                            size="small"
+                            @click="confirmDeleteField(field)"
+                        />
+                    </template>
+                </li>
+            </ul>
+            <p v-else class="text-surface-500 mb-4 text-sm">
+                No custom fields defined yet.
+            </p>
+            <form
+                class="flex max-w-md items-start gap-3"
+                @submit.prevent="submitNewField"
+            >
+                <div class="flex flex-1 flex-col gap-2">
+                    <InputText
+                        v-model="newFieldForm.name"
+                        placeholder="e.g. Allergens"
+                        :invalid="!!newFieldForm.errors.name"
+                    />
+                    <small v-if="newFieldForm.errors.name" class="text-red-500">
+                        {{ newFieldForm.errors.name }}
+                    </small>
+                </div>
+                <Button
+                    type="submit"
+                    label="Add field"
+                    :loading="newFieldForm.processing"
+                />
             </form>
         </div>
 
