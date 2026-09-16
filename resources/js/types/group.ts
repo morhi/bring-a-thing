@@ -1,5 +1,6 @@
 import type { User } from '@/types/auth';
 import type { Roster } from '@/types/roster';
+import type { Poll } from '@/types/poll';
 
 export type GroupRole = 'owner' | 'admin' | 'member';
 
@@ -19,5 +20,6 @@ export type Group = {
     updated_at: string;
     members?: GroupMember[];
     rosters?: Roster[];
+    polls?: Poll[];
     [key: string]: unknown;
 };

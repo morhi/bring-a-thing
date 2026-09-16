@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import Times from '@primeicons/vue/times';
 import Avatar from 'primevue/avatar';
 import Button from 'primevue/button';
+import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
@@ -10,7 +12,14 @@ import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { Friend, Group, GroupMember } from '@/types';
+import { formatDateOnly, formatTimeOnly } from '@/lib/pollDate';
+import type {
+    Friend,
+    Group,
+    GroupMember,
+    PollGranularity,
+    PollType,
+} from '@/types';
 import {
     edit as editGroup,
     invite as inviteMember,
@@ -21,6 +30,10 @@ import {
     show as showRoster,
     store as storeRoster,
 } from '@/actions/App/Http/Controllers/RosterController';
+import {
+    show as showPoll,
+    store as storePoll,
+} from '@/actions/App/Http/Controllers/PollController';
 
 defineOptions({ layout: AppLayout });
 
@@ -106,6 +119,91 @@ function submitCreateRoster() {
             showCreateRoster.value = false;
         },
     });
+}
+
+type PollOptionRow = {
+    date: Date | null;
+    starts_at: Date | null;
+    ends_at: Date | null;
+    label: string;
+};
+
+function emptyOptionRow(): PollOptionRow {
+    return { date: null, starts_at: null, ends_at: null, label: '' };
+}
+
+const showCreatePoll = ref(false);
+
+const createPollForm = useForm({
+    title: '',
+    type: 'date_finder' as PollType,
+    granularity: 'day' as PollGranularity,
+    options: [emptyOptionRow()],
+    starts_on: null as Date | null,
+    ends_on: null as Date | null,
+});
+
+const pollTypeOptions = [
+    { label: 'Date finder', value: 'date_finder' },
+    { label: 'Attendance', value: 'attendance' },
+];
+
+const pollGranularityOptions = [
+    { label: 'Day', value: 'day' },
+    { label: 'Hour', value: 'hour' },
+];
+
+const usesExplicitPollOptions = computed(
+    () =>
+        createPollForm.type === 'date_finder' ||
+        createPollForm.granularity === 'hour',
+);
+
+function addPollOptionRow() {
+    createPollForm.options.push(emptyOptionRow());
+}
+
+function removePollOptionRow(index: number) {
+    createPollForm.options.splice(index, 1);
+}
+
+function submitCreatePoll() {
+    createPollForm
+        .transform((data) => ({
+            title: data.title,
+            type: data.type,
+            granularity: data.granularity,
+            ...(usesExplicitPollOptions.value
+                ? {
+                      options: data.options.map((option) => ({
+                          date: option.date
+                              ? formatDateOnly(option.date)
+                              : null,
+                          starts_at: option.starts_at
+                              ? formatTimeOnly(option.starts_at)
+                              : null,
+                          ends_at: option.ends_at
+                              ? formatTimeOnly(option.ends_at)
+                              : null,
+                          label: option.label || null,
+                      })),
+                  }
+                : {
+                      starts_on: data.starts_on
+                          ? formatDateOnly(data.starts_on)
+                          : null,
+                      ends_on: data.ends_on
+                          ? formatDateOnly(data.ends_on)
+                          : null,
+                  }),
+        }))
+        .post(storePoll(props.group).url, {
+            onSuccess: () => {
+                createPollForm.reset();
+                createPollForm.options = [emptyOptionRow()];
+                showCreatePoll.value = false;
+            },
+        });
 }
 
 function confirmRemove(member: GroupMember) {
@@ -318,6 +416,42 @@ function toggleAdmin(member: GroupMember) {
                 </li>
             </ul>
         </div>
+
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-medium">Polls</h2>
+                <Button
+                    label="New poll"
+                    size="small"
+                    @click="showCreatePoll = true"
+                />
+            </div>
+            <div
+                v-if="!group.polls || group.polls.length === 0"
+                class="border-surface-200 dark:border-surface-700 text-surface-500 rounded-lg border border-dashed p-8 text-center text-sm"
+            >
+                No polls attached to this group yet.
+            </div>
+            <ul v-else class="flex flex-col gap-3">
+                <li v-for="poll in group.polls" :key="poll.id">
+                    <Link
+                        :href="showPoll(poll).url"
+                        class="border-surface-200 dark:border-surface-700 text-surface-900 dark:text-surface-0 block rounded-lg border p-4 hover:shadow"
+                    >
+                        {{ poll.title }}
+                        <Tag
+                            :value="
+                                poll.type === 'date_finder'
+                                    ? 'Date finder'
+                                    : 'Attendance'
+                            "
+                            severity="secondary"
+                            class="ml-2"
+                        />
+                    </Link>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <Dialog
@@ -365,6 +499,174 @@ function toggleAdmin(member: GroupMember) {
                 type="submit"
                 label="Create"
                 :loading="createRosterForm.processing"
+            />
+        </form>
+    </Dialog>
+
+    <Dialog
+        v-model:visible="showCreatePoll"
+        modal
+        header="New poll"
+        class="w-full max-w-lg"
+    >
+        <form class="flex flex-col gap-4" @submit.prevent="submitCreatePoll">
+            <div class="flex flex-col gap-2">
+                <label for="poll-title" class="text-sm font-medium">
+                    Title
+                </label>
+                <InputText
+                    id="poll-title"
+                    v-model="createPollForm.title"
+                    autofocus
+                    :invalid="!!createPollForm.errors.title"
+                />
+                <small v-if="createPollForm.errors.title" class="text-red-500">
+                    {{ createPollForm.errors.title }}
+                </small>
+            </div>
+
+            <div class="flex gap-4">
+                <div class="flex flex-1 flex-col gap-2">
+                    <label for="poll-type" class="text-sm font-medium">
+                        Type
+                    </label>
+                    <Select
+                        id="poll-type"
+                        v-model="createPollForm.type"
+                        :options="pollTypeOptions"
+                        option-label="label"
+                        option-value="value"
+                    />
+                </div>
+                <div class="flex flex-1 flex-col gap-2">
+                    <label for="poll-granularity" class="text-sm font-medium">
+                        Granularity
+                    </label>
+                    <Select
+                        id="poll-granularity"
+                        v-model="createPollForm.granularity"
+                        :options="pollGranularityOptions"
+                        option-label="label"
+                        option-value="value"
+                    />
+                </div>
+            </div>
+
+            <template v-if="usesExplicitPollOptions">
+                <div class="flex flex-col gap-3">
+                    <label class="text-sm font-medium">
+                        {{
+                            createPollForm.granularity === 'hour'
+                                ? 'Candidate day/time slots'
+                                : 'Candidate days'
+                        }}
+                    </label>
+                    <div
+                        v-for="(option, index) in createPollForm.options"
+                        :key="index"
+                        class="border-surface-200 dark:border-surface-700 flex flex-col gap-2 rounded-lg border p-3"
+                    >
+                        <div class="flex items-start gap-2">
+                            <DatePicker
+                                v-model="option.date"
+                                placeholder="Date"
+                                date-format="yy-mm-dd"
+                                show-icon
+                                class="flex-1"
+                            />
+                            <Button
+                                severity="danger"
+                                text
+                                :disabled="createPollForm.options.length <= 1"
+                                @click="removePollOptionRow(index)"
+                            >
+                                <Times class="h-3 w-3" />
+                            </Button>
+                        </div>
+                        <div
+                            v-if="createPollForm.granularity === 'hour'"
+                            class="flex items-start gap-2"
+                        >
+                            <DatePicker
+                                v-model="option.starts_at"
+                                time-only
+                                placeholder="Start time"
+                                class="flex-1"
+                            />
+                            <DatePicker
+                                v-model="option.ends_at"
+                                time-only
+                                placeholder="End time"
+                                class="flex-1"
+                            />
+                            <InputText
+                                v-model="option.label"
+                                placeholder="Label (e.g. Lunch)"
+                                class="flex-1"
+                            />
+                        </div>
+                    </div>
+                    <Button
+                        label="Add option"
+                        severity="secondary"
+                        text
+                        size="small"
+                        @click="addPollOptionRow"
+                    />
+                    <small
+                        v-if="createPollForm.errors.options"
+                        class="text-red-500"
+                    >
+                        {{ createPollForm.errors.options }}
+                    </small>
+                </div>
+            </template>
+
+            <template v-else>
+                <div class="flex gap-4">
+                    <div class="flex flex-1 flex-col gap-2">
+                        <label for="poll-starts-on" class="text-sm font-medium">
+                            From
+                        </label>
+                        <DatePicker
+                            id="poll-starts-on"
+                            v-model="createPollForm.starts_on"
+                            date-format="yy-mm-dd"
+                            show-icon
+                            :invalid="!!createPollForm.errors.starts_on"
+                        />
+                        <small
+                            v-if="createPollForm.errors.starts_on"
+                            class="text-red-500"
+                        >
+                            {{ createPollForm.errors.starts_on }}
+                        </small>
+                    </div>
+                    <div class="flex flex-1 flex-col gap-2">
+                        <label for="poll-ends-on" class="text-sm font-medium">
+                            To
+                        </label>
+                        <DatePicker
+                            id="poll-ends-on"
+                            v-model="createPollForm.ends_on"
+                            date-format="yy-mm-dd"
+                            show-icon
+                            :invalid="!!createPollForm.errors.ends_on"
+                        />
+                        <small
+                            v-if="createPollForm.errors.ends_on"
+                            class="text-red-500"
+                        >
+                            {{ createPollForm.errors.ends_on }}
+                        </small>
+                    </div>
+                </div>
+            </template>
+
+            <Button
+                type="submit"
+                label="Create"
+                :loading="createPollForm.processing"
             />
         </form>
     </Dialog>

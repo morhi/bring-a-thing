@@ -6,6 +6,9 @@ use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\PollController;
+use App\Http\Controllers\PollOptionController;
+use App\Http\Controllers\PollResponseController;
 use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
 use App\Http\Controllers\RosterItemController;
@@ -81,4 +84,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/rosters/{roster}/custom-fields', [CustomFieldController::class, 'store'])->name('rosters.custom-fields.store');
     Route::patch('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('rosters.custom-fields.update');
     Route::delete('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->name('rosters.custom-fields.destroy');
+
+    Route::post('/groups/{group}/polls', [PollController::class, 'store'])->name('polls.store');
+    Route::get('/polls/{poll}', [PollController::class, 'show'])->name('polls.show');
+    Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
+    Route::patch('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
+    Route::delete('/polls/{poll}', [PollController::class, 'destroy'])->name('polls.destroy');
+    Route::post('/polls/{poll}/close', [PollController::class, 'close'])->name('polls.close');
+    Route::delete('/polls/{poll}/close', [PollController::class, 'reopen'])->name('polls.reopen');
+
+    Route::post('/polls/{poll}/options', [PollOptionController::class, 'store'])->name('polls.options.store');
+    Route::delete('/polls/{poll}/options/{option}', [PollOptionController::class, 'destroy'])->name('polls.options.destroy');
+
+    Route::post('/polls/{poll}/options/{option}/responses', [PollResponseController::class, 'store'])->name('polls.responses.store');
 });

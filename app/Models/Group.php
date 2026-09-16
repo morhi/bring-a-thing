@@ -56,6 +56,14 @@ class Group extends Model
     }
 
     /**
+     * The polls attached to the group.
+     */
+    public function polls(): HasMany
+    {
+        return $this->hasMany(Poll::class);
+    }
+
+    /**
      * Whether the given user is the group's owner or an admin member.
      */
     public function isAtLeastAdmin(User $user): bool
