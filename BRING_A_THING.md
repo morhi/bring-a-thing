@@ -16,6 +16,7 @@
 - **Passwordless-first**: a user registers with just an email address and receives a magic link for login. No password is required to get started.
 - **Optional password**: a user may set a password later, in account settings, as an alternative login method. Magic links remain available afterward regardless of whether a password is set.
 - **Shadow accounts**: inviting an email address to a group or list immediately creates a user record for that email (not a pending placeholder). The invitee appears as a member right away and receives their own magic link to manage participation (claim items, vote on polls, comment) without going through an explicit registration step.
+- **Unified entry point**: there is no separate login/register page. A public marketing page (`/`) carries a single progressive form (email → name if needed → password if the account has one → optional first-list name for brand-new users) that handles both login and registration through the same request.
 - **Dashboard**: a user's dashboard surfaces every group and list they own, are a member of, or have claimed an item on.
 
 ---
@@ -29,7 +30,8 @@
   - **Owner**: the creator of a group or list. Full control — edit, delete, manage members and invites.
   - **Member**: everyone else. Can view, comment, claim items, and vote on polls.
 - **Duplication**: a list can be manually duplicated as a starting point for a new list (e.g., cloning last week's meal plan). No automated recurrence engine in v1.
-- **Link sharing**: a list owner can turn on a shareable link for any list (standalone or group-attached). Anyone with the link can view the list and claim items without logging in first; claiming prompts a quick login/register step, then completes automatically, so using the app never requires accepting a group invite first. The owner can regenerate the link (invalidating the old one) or disable sharing entirely. A visitor who already has full access (owner or group member) is sent to the normal list page instead of the shared read-only view.
+- **Link sharing**: a list owner can turn on a shareable link for any list (standalone or group-attached). Anyone with the link can view the list and claim things without logging in first; claiming (or adding a thing, see below) opens a quick login/sign-up dialog in place on the same page, then completes automatically once authenticated, so using the app never requires accepting a group invite first. The owner can regenerate the link (invalidating the old one) or disable sharing entirely. A visitor who already has full access (owner or group member) is sent to the normal list page instead of the shared read-only view.
+- **Adding things via a shared link**: the same "members can add things" setting that lets group members add things to a list also grants that ability to anyone using the list's shared link, regardless of group membership. A guest is asked to log in first (no account creation form is carried through the login step); an already-authenticated visitor gets the add-a-thing form immediately.
 
 ---
 

@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
+import InputNumber from 'primevue/inputnumber';
+import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
+import Textarea from 'primevue/textarea';
+import { useToast } from 'primevue/usetoast';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
 import SharedRosterItemCard from '@/components/SharedRosterItemCard.vue';
 import OnboardingForm, {
     type PendingClaim,
 } from '@/components/OnboardingForm.vue';
 import type { Auth, SharedRoster, SharedRosterItem } from '@/types';
+import { store as storeSharedItem } from '@/actions/App/Http/Controllers/SharedRosterItemController';
 
 defineOptions({ layout: WebsiteLayout });
 
@@ -18,12 +24,15 @@ const props = defineProps<{
 }>();
 
 const page = usePage<{ auth: Auth }>();
+const isAuthenticated = computed(() => !!page.props.auth.user);
+const toast = useToast();
 
 // --- Login dialog: opened in place instead of navigating away, so claiming
-// an item from a shared link never leaves this page. ---
+// or adding a thing from a shared link never leaves this page. ---
 const loginDialogVisible = ref(false);
+const loginDialogHeader = ref('');
+const loginDialogMessage = ref('');
 const pendingClaim = ref<PendingClaim | null>(null);
-const pendingClaimItemName = ref('');
 
 function requestLogin(item: SharedRosterItem, quantity: number | null) {
     pendingClaim.value = {
@@ -31,7 +40,8 @@ function requestLogin(item: SharedRosterItem, quantity: number | null) {
         itemId: item.id,
         quantity,
     };
-    pendingClaimItemName.value = item.name;
+    loginDialogHeader.value = 'Log in to claim this thing';
+    loginDialogMessage.value = `Claiming "${item.name}" needs a quick login or sign-up first.`;
     loginDialogVisible.value = true;
 }
 
@@ -43,6 +53,52 @@ watch(
         }
     },
 );
+
+// --- Add a thing: only offered when the owner turned this on for the
+// shared link (roster.can_add_items). Guests log in first, then add. ---
+const addDialogVisible = ref(false);
+
+const addForm = useForm({
+    name: '',
+    quantity: null as number | null,
+    unit: '',
+    notes: '',
+});
+
+function openAddThing() {
+    if (!isAuthenticated.value) {
+        pendingClaim.value = {
+            rosterToken: props.token,
+            itemId: null,
+            quantity: null,
+        };
+        loginDialogHeader.value = 'Log in to add a thing';
+        loginDialogMessage.value =
+            'Adding things to this list needs a quick login or sign-up first.';
+        loginDialogVisible.value = true;
+        return;
+    }
+
+    addForm.reset();
+    addForm.clearErrors();
+    addDialogVisible.value = true;
+}
+
+function submitAddThing() {
+    addForm.post(storeSharedItem(props.token).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            addDialogVisible.value = false;
+        },
+        onError: (errors) => {
+            toast.add({
+                severity: 'error',
+                summary: Object.values(errors)[0] ?? 'Something went wrong.',
+                life: 6000,
+            });
+        },
+    });
+}
 
 function formatDate(date: string): string {
     return new Date(date).toLocaleDateString(undefined, {
@@ -89,7 +145,15 @@ const pastItems = computed(() =>
         </div>
 
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="mb-4 text-lg font-medium">Things</h2>
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-lg font-medium">Things</h2>
+                <Button
+                    v-if="roster.can_add_items"
+                    label="Add thing"
+                    size="small"
+                    @click="openAddThing"
+                />
+            </div>
 
             <div
                 v-if="roster.items.length === 0"
@@ -156,13 +220,92 @@ const pastItems = computed(() =>
     <Dialog
         v-model:visible="loginDialogVisible"
         modal
-        header="Log in to claim this thing"
+        :header="loginDialogHeader"
         class="w-full max-w-md"
     >
         <p class="text-surface-500 mb-4 text-sm">
-            Claiming "{{ pendingClaimItemName }}" needs a quick login or sign-up
-            first.
+            {{ loginDialogMessage }}
         </p>
         <OnboardingForm :pending-claim="pendingClaim" />
+    </Dialog>
+
+    <Dialog
+        v-model:visible="addDialogVisible"
+        modal
+        header="Add a thing"
+        class="w-full max-w-md"
+    >
+        <form class="flex flex-col gap-4" @submit.prevent="submitAddThing">
+            <div class="flex flex-col gap-2">
+                <label for="shared-item-name" class="text-sm font-medium">
+                    Name
+                </label>
+                <InputText
+                    id="shared-item-name"
+                    v-model="addForm.name"
+                    autofocus
+                    :invalid="!!addForm.errors.name"
+                />
+                <small v-if="addForm.errors.name" class="text-red-500">
+                    {{ addForm.errors.name }}
+                </small>
+            </div>
+
+            <div class="flex gap-3">
+                <div class="flex flex-1 flex-col gap-2">
+                    <label
+                        for="shared-item-quantity"
+                        class="text-sm font-medium"
+                    >
+                        Quantity (optional)
+                    </label>
+                    <InputNumber
+                        id="shared-item-quantity"
+                        v-model="addForm.quantity"
+                        :min="0.01"
+                        :max-fraction-digits="2"
+                        :invalid="!!addForm.errors.quantity"
+                    />
+                </div>
+                <div class="flex flex-1 flex-col gap-2">
+                    <label for="shared-item-unit" class="text-sm font-medium">
+                        Unit
+                    </label>
+                    <InputText
+                        id="shared-item-unit"
+                        v-model="addForm.unit"
+                        placeholder="kg, pieces, ..."
+                        :invalid="!!addForm.errors.unit"
+                    />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="shared-item-notes" class="text-sm font-medium">
+                    Notes (optional)
+                </label>
+                <Textarea
+                    id="shared-item-notes"
+                    v-model="addForm.notes"
+                    rows="2"
+                    :invalid="!!addForm.errors.notes"
+                />
+            </div>
+
+            <div class="flex gap-3">
+                <Button
+                    type="submit"
+                    label="Add thing"
+                    :loading="addForm.processing"
+                />
+                <Button
+                    type="button"
+                    label="Cancel"
+                    severity="secondary"
+                    text
+                    @click="addDialogVisible = false"
+                />
+            </div>
+        </form>
     </Dialog>
 </template>

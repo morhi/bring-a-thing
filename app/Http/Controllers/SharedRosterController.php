@@ -41,6 +41,7 @@ class SharedRosterController extends Controller
                 'title' => $roster->title,
                 'description' => $roster->description,
                 'date' => $roster->date?->toDateString(),
+                'can_add_items' => $roster->canBeAddedToByShareLinkVisitor(),
                 'custom_fields' => $roster->customFields->map(fn ($field) => [
                     'id' => $field->id,
                     'name' => $field->name,

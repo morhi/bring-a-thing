@@ -23,6 +23,9 @@ This is a lightweight page and navigation inventory, not a visual mockup. It exi
 | `/rosters/{roster}` | Roster show: metadata, items (with claim controls), roster-level comment thread | 3, 4, 6 |
 | `/rosters/{roster}/edit` | Owner-only roster settings, custom field management | 3, 4 |
 | `/polls/{poll}` | Poll show: calendar/grid of options, vote controls, (for date finder) converged result | 5 |
+| `/shared/{token}` | Public, unauthenticated read-only roster view via a share link; view/claim/add things | 3 (`b818041`) |
+
+*(Superseded, `cc310ae`: `/login` and `/register` as separate pages no longer exist. `/` is now a public marketing page carrying a unified login/registration form, `GuestLayout` was removed in favor of `WebsiteLayout` for that page, and the authenticated dashboard moved to `/dashboard`.)*
 
 **Not separate routes (modals / inline UI instead)**
 - Create group, create roster, create poll: modal or inline form from the dashboard/group/roster context, not a dedicated `/…/create` page, to keep navigation flat.
@@ -79,6 +82,8 @@ Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 Registration originally collected only email, per the spec's "email-only registration" wording, but that left shadow/self-registered accounts showing up by email indefinitely with no way to add a name (reported during Phase 2). Registration and magic-link requests now require a name whenever the resulting account would otherwise have none; Account Settings also gained a Profile section to set/change it later. See `.ai/rules` and the Phase 2 section below for the invite-side counterpart.
 
+Later (per user request, `cc310ae`): the separate `Login`/`Register` pages were replaced with a single public marketing page (`Welcome.vue`, reintroducing the file removed above) at `/`, carrying one progressive `OnboardingForm` that handles both login and registration through `POST /login`. The authenticated dashboard moved from `/` to `/dashboard` to make room for it. `route('login')` still exists only because Laravel's `auth` middleware redirects guests there by convention; it just redirects to `welcome`.
+
 ---
 
 ## Phase 2 — Groups & Members (§2, partial)
@@ -107,11 +112,15 @@ Registration originally collected only email, per the spec's "email-only registr
 - [x] Roster show page (Vue) with title/description/date, empty item area.
 - [x] Manual roster duplication action, owner only (clones title/description, clears the date; item duplication added once items exist in Phase 4).
 - [x] Dashboard now lists real standalone rosters; Group show page lists real attached rosters with a create-roster modal.
+- [x] Shareable list links (added on request, well beyond original phase scope): a roster owner can turn on a public `share_token` link (`Roster::enableSharing()`/`regenerateShareToken()`/`disableSharing()`), viewable by anyone via `GET /shared/{token}` without authentication. Claiming a thing as a guest, or adding one (see below), opens a login/sign-up dialog in place on the shared page (`OnboardingForm` embedded in a PrimeVue `Dialog`, no navigation away); the intent is stashed in the session (`pending_shared_claim`) and completed automatically once the visitor authenticates, redirecting back to the shared page.
+- [x] `members_can_add_items` (from Phase 4) broadened: it now also grants share-link visitors the ability to add things via `POST /shared/{token}/items`, independent of group membership — so a group-attached roster's shared link can accept outside contributions without adding those people to the group.
 
-**Tests:** Pest feature tests for roster CRUD + authorization, standalone roster visible only to its owner, group roster visible to group members, duplication creates an independent copy with a cleared date, rosters cascade-delete with their group. Browser check: create a standalone roster and a group roster, edit the date via DatePicker, duplicate one, delete a group and confirm its roster is gone.
-**Commit(s):** `feat: add rosters (standalone and group-attached)`, `feat: add roster show/edit pages and dashboard/group integration`
+**Tests:** Pest feature tests for roster CRUD + authorization, standalone roster visible only to its owner, group roster visible to group members, duplication creates an independent copy with a cleared date, rosters cascade-delete with their group. Browser check: create a standalone roster and a group roster, edit the date via DatePicker, duplicate one, delete a group and confirm its roster is gone. Sharing: Pest tests for enable/regenerate/disable authorization, the shared show page (guest access, member auto-redirect to the normal page, claimer email never exposed), guest claim/add-thing intents completing after magic-link or password login. Browser-verified: full guest claim flow (click claim → login dialog → magic link → auto-claim), an already-authenticated non-member adding a thing via the shared link, and the owner-only sharing controls on the roster settings page.
+**Commit(s):** `feat: add rosters (standalone and group-attached)`, `feat: add roster show/edit pages and dashboard/group integration`, `feat: add shareable list links with in-place login and rebrand items as things` (`b818041`), plus a follow-up broadening add-things via share link to group rosters
 
 **Deviations:** The model is named `Roster`, not `Lst`/`List` — `List` is a reserved PHP word, so following a request to rename the original `Lst` workaround, the model, controller, policy, factory, and relations all use `Roster`, and this was then extended to routes (`/rosters/{roster}`), route names (`rosters.*`), the Vue page folder (`Rosters/`), and UI copy ("New roster", "Roster created.") for full consistency. Duplicating a roster clears its date rather than keeping it (decided during this phase, since a cloned roster like "last week's meal plan" is meant as a template for a new, not-yet-decided date) and is restricted to the roster's owner. Deleting a group cascades to delete its attached rosters (`group_id` foreign key `cascadeOnDelete`).
+
+User-facing copy was later rebranded from "item(s)" to "thing(s)" across the app (Welcome page, roster pages, shared-list page), while the `RosterItem` model, routes, and code identifiers kept their original names — see `b818041`.
 
 ---
 
@@ -129,7 +138,7 @@ Registration originally collected only email, per the spec's "email-only registr
 **Note:** item comments depend on the polymorphic `Comment` model from Phase 6. If Phase 6 is not yet done, ship Phase 4 without the comment thread and wire it in during Phase 6 instead of blocking on it.
 
 **Tests:** Pest feature tests for item CRUD + authorization, custom field save/display, split-claim math (over-claim rejected, exact and partial claims accepted, unclaim, update-own-claim), duplication behavior (items/fields cloned, claims not), past/upcoming derivation, and broadcasting authorization on the roster private/presence channels. Browser-verified: claim/update-claim/unclaim, item edit, custom field add + display in the item form, and the `members_can_add_items` toggle, all against a real ddev + Reverb setup with no console errors.
-**Commit(s):** _not yet committed_
+**Commit(s):** `feat: add roster items, custom fields, split claiming, and live updates` (`c6025fd`)
 
 **Deviations:**
 - Per user request, a roster gained a `members_can_add_items` boolean (Roster settings page) so a group-attached roster can opt into letting any group member add items, not just the owner; owners can always add/edit/delete items, and only owners can edit/delete regardless of who added an item.
@@ -210,10 +219,10 @@ Registration originally collected only email, per the spec's "email-only registr
 | Phase | Status | Commit(s) | Date | Notes |
 |---|---|---|---|---|
 | 0 | [x] | | 2026-09-15 | Backend/build/tests verified; browser-confirmed PrimeVue styling renders correctly |
-| 1 | [x] | | 2026-09-16 | See commits below |
+| 1 | [x] | cc310ae | 2026-09-16 | See commits below. `cc310ae` (later) replaced the separate login/register pages with the public `Welcome.vue` + `OnboardingForm` unified entry point |
 | 2 | [x] | 49ff9aa, 1b99076 | 2026-09-16 | See commits above |
-| 3 | [x] | 77f65a5, 768a596 | 2026-09-16 | Backend/tests/`npm run check` verified; browser-confirmed create/edit/duplicate/cascade-delete flows |
-| 4 | [x] | | 2026-09-16 | Backend/tests (`php artisan test --compact`, 91 passing) and `npm run check` verified; browser-confirmed claim/edit/remove/custom-fields/members-can-add-items flows over a working ddev+Reverb websocket setup — see Deviations for two bugs found and fixed during that check |
+| 3 | [x] | 77f65a5, 768a596, b818041 | 2026-09-16 | Backend/tests/`npm run check` verified; browser-confirmed create/edit/duplicate/cascade-delete flows. `b818041` (+ follow-up) added shareable list links and share-link add-things — see Deviations |
+| 4 | [x] | c6025fd | 2026-09-16 | Backend/tests (`php artisan test --compact`, 91 passing) and `npm run check` verified; browser-confirmed claim/edit/remove/custom-fields/members-can-add-items flows over a working ddev+Reverb websocket setup — see Deviations for two bugs found and fixed during that check |
 | 5 | [ ] | | | |
 | 6 | [ ] | | | |
 | 7 | [ ] | | | |

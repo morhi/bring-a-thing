@@ -206,3 +206,11 @@ Vue components must have a single root element.
 
 - Use the `claude-in-chrome` tools for manual browser checks (visiting pages, screenshots, confirming UI/styling renders correctly) when they are available in the current session.
 - `claude-in-chrome` is a browser-extension integration, not a registered MCP server, so it does not appear in `claude mcp list`. To check availability, just try a `claude-in-chrome` tool call (e.g. navigate/screenshot); if it errors out or the tools aren't offered, ask the user to run the check in a session where the extension is connected.
+
+## Keeping Feature Docs in Sync
+
+- `BRING_A_THING.md` (the spec) and `IMPLEMENDATION.md` (the phased implementation plan/log) must stay in sync with what the app actually does. Update them as part of the same piece of work that adds/changes a feature, not as an afterthought — a feature isn't done until its docs reflect it.
+- Before starting non-trivial work, skim `git log --oneline -20` against both files to check nothing recent (yours or someone else's) is undocumented; catch up the docs first if something is missing.
+- When a feature changes behavior described in `BRING_A_THING.md`, edit that section directly rather than appending a contradiction elsewhere in the file.
+- When a feature goes beyond what a phase in `IMPLEMENDATION.md` originally scoped (common for user-requested additions), add it as new checklist items and a note under **Deviations** in the relevant phase, add the commit hash(es) to that phase's `Commit(s)` line and to the Progress log table row, matching the existing style (see Phase 2–4 for examples of "added on request, beyond original phase scope").
+- `TODOS.md` already carries a reminder to this effect; this rule makes it a standing instruction rather than an easy-to-miss note.

@@ -12,6 +12,7 @@ use App\Http\Controllers\RosterSharingController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SharedRosterClaimController;
 use App\Http\Controllers\SharedRosterController;
+use App\Http\Controllers\SharedRosterItemController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +38,7 @@ Route::get('/login/{user}', [MagicLinkController::class, 'show'])
 // in or not. No auth/guest middleware here on purpose.
 Route::get('/shared/{token}', [SharedRosterController::class, 'show'])->name('shared-rosters.show');
 Route::post('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::class, 'store'])->name('shared-rosters.items.claim.store');
+Route::post('/shared/{token}/items', [SharedRosterItemController::class, 'store'])->name('shared-rosters.items.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

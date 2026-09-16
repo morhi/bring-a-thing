@@ -26,7 +26,7 @@ class RosterItemController extends Controller
 
         RosterItemSaved::dispatch($item);
 
-        return back()->with('success', 'Item added.');
+        return back()->with('success', 'Thing added.');
     }
 
     /**
@@ -40,7 +40,7 @@ class RosterItemController extends Controller
 
         RosterItemSaved::dispatch($item);
 
-        return back()->with('success', 'Item updated.');
+        return back()->with('success', 'Thing updated.');
     }
 
     /**
@@ -54,7 +54,7 @@ class RosterItemController extends Controller
 
         RosterItemDeleted::dispatch($roster->id, $item->id);
 
-        return back()->with('success', 'Item removed.');
+        return back()->with('success', 'Thing removed.');
     }
 
     /**

@@ -91,6 +91,20 @@ class Roster extends Model
     }
 
     /**
+     * Whether anyone using this roster's shared link may add things to it.
+     *
+     * Applies regardless of whether the roster is standalone or attached to
+     * a group: the shared link is its own access grant, independent of
+     * canBeAddedToBy()'s group-membership check on the authenticated route.
+     * Only reachable via the shared-link routes, which already require a
+     * valid share token, so sharing being enabled is implied here.
+     */
+    public function canBeAddedToByShareLinkVisitor(): bool
+    {
+        return $this->members_can_add_items;
+    }
+
+    /**
      * Turn on link sharing, generating a token first if none exists yet.
      */
     public function enableSharing(): string

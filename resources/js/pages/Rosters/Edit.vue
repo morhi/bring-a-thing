@@ -252,14 +252,18 @@ function confirmDeleteField(field: CustomField) {
                     </small>
                 </div>
 
-                <div v-if="roster.group" class="flex items-center gap-2">
+                <div class="flex items-center gap-2">
                     <Checkbox
                         v-model="form.members_can_add_items"
                         input-id="members-can-add-items"
                         binary
                     />
                     <label for="members-can-add-items" class="text-sm">
-                        Allow group members to add things to this roster
+                        {{
+                            roster.group
+                                ? 'Allow group members, and anyone with the shared link, to add things to this roster'
+                                : 'Allow anyone with the shared link to add things to this roster'
+                        }}
                     </label>
                 </div>
 

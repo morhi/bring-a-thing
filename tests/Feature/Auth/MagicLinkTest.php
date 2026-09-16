@@ -206,6 +206,26 @@ it('stashes a pending claim submitted from the shared-list login dialog and comp
     $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $user->id]);
 });
 
+it('returns a guest to the shared list after login with no claim to complete', function () {
+    Mail::fake();
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
+    $roster->enableSharing();
+
+    $this->from(route('shared-rosters.show', $roster->share_token))->post(route('magic-link.store'), [
+        'name' => 'New Person',
+        'email' => 'add-thing-guest@example.com',
+        'pending_claim_roster_token' => $roster->share_token,
+    ])->assertRedirect(route('shared-rosters.show', $roster->share_token));
+
+    $user = User::query()->where('email', 'add-thing-guest@example.com')->firstOrFail();
+
+    $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
+    $response = $this->get($url);
+
+    $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
+});
+
 it('completes a pending shared-list claim started before login', function () {
     $owner = User::factory()->create();
     $user = User::factory()->create();

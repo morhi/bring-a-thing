@@ -16,11 +16,14 @@ class CompletePendingSharedClaim
     public function __construct(private readonly ClaimRosterItem $claimItem) {}
 
     /**
-     * Finish a claim a guest started on a shared list before logging in.
+     * Return a guest to the shared list they were on before logging in,
+     * completing a claim they started there if one is pending.
      *
-     * The session key is set by SharedRosterClaimController::store when an
-     * unauthenticated visitor tries to claim an item; this runs right after
-     * login so the one extra step (log in or sign up) is all it takes.
+     * The session key is set by StorePendingSharedClaim, either from
+     * SharedRosterClaimController::store (claiming a specific item) or from
+     * a plain "log in to gain access" dialog with no item attached; this
+     * runs right after login so the one extra step (log in or sign up) is
+     * all it takes.
      */
     public function handle(Request $request, User $user): ?RedirectResponse
     {
@@ -31,10 +34,20 @@ class CompletePendingSharedClaim
         }
 
         $roster = Roster::query()->where('share_token', $intent['roster_token'] ?? null)->first();
-        $item = $roster ? RosterItem::query()->where('roster_id', $roster->getKey())->find($intent['item_id'] ?? null) : null;
 
-        if (! $roster || ! $item) {
+        if (! $roster) {
             return null;
+        }
+
+        $itemId = $intent['item_id'] ?? null;
+        $item = $itemId !== null ? RosterItem::query()->where('roster_id', $roster->getKey())->find($itemId) : null;
+
+        if ($itemId !== null && ! $item) {
+            return null;
+        }
+
+        if (! $item) {
+            return redirect()->route('shared-rosters.show', $roster->share_token);
         }
 
         try {

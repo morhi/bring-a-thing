@@ -12,7 +12,7 @@ import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/
 
 export type PendingClaim = {
     rosterToken: string;
-    itemId: number;
+    itemId: number | null;
     quantity: number | null;
 };
 
@@ -272,8 +272,11 @@ function useMagicLinkInstead() {
             </p>
             <p class="text-surface-600 dark:text-surface-300 mt-2 text-sm">
                 We've sent a login link to {{ form.email }}.
-                <template v-if="pendingClaim">
+                <template v-if="pendingClaim?.itemId !== null && pendingClaim">
                     Your claim will be saved as soon as you follow it.
+                </template>
+                <template v-else-if="pendingClaim">
+                    You'll be back on the list as soon as you follow it.
                 </template>
                 <template v-else-if="form.roster_name">
                     "{{ form.roster_name }}" will be waiting for you.

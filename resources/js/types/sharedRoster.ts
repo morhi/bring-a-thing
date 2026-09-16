@@ -24,6 +24,7 @@ export type SharedRoster = {
     title: string;
     description: string | null;
     date: string | null;
+    can_add_items: boolean;
     custom_fields: { id: number; name: string }[];
     items: SharedRosterItem[];
 };
