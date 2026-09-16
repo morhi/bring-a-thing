@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\MagicLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
@@ -10,14 +9,20 @@ use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
 use App\Http\Controllers\RosterItemController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', WelcomeController::class)->name('welcome');
+
+// No standalone login page: the welcome page's hero form is the single
+// entry point. This name only exists because Laravel's auth middleware
+// bounces guests to route('login') by convention; GET-only so it doesn't
+// shadow the POST /login endpoints below.
+Route::get('/login', fn () => redirect()->route('welcome'))->name('login');
+
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [MagicLinkController::class, 'store'])->name('magic-link.store');
     Route::post('/login/password', [AuthenticatedSessionController::class, 'store'])->name('login.password');
-    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store'])->name('register.store');
     Route::get('/login/needs-name', [MagicLinkController::class, 'needsName'])->name('magic-link.needs-name');
 });
 
@@ -26,7 +31,7 @@ Route::get('/login/{user}', [MagicLinkController::class, 'show'])
     ->name('login.consume');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');

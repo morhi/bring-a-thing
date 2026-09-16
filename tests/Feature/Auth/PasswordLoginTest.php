@@ -43,6 +43,6 @@ it('logs the user out', function () {
 
     $response = $this->actingAs($user)->post(route('logout'));
 
-    $response->assertRedirect(route('login'));
+    $response->assertRedirect(route('welcome'));
     $this->assertGuest();
 });

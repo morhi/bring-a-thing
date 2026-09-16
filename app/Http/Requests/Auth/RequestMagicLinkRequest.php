@@ -34,6 +34,7 @@ class RequestMagicLinkRequest extends FormRequest
                 Rule::requiredIf(fn () => User::emailNeedsName($this->input('email'))),
                 'nullable', 'string', 'max:255',
             ],
+            'roster_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

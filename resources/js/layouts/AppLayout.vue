@@ -41,7 +41,7 @@ function avatarLabel(name: string | null, email: string): string {
             class="border-surface-200 dark:border-surface-800 dark:bg-surface-900 flex items-center justify-between border-b bg-white px-6 py-3"
         >
             <Link
-                href="/"
+                href="/dashboard"
                 class="text-surface-900 dark:text-surface-0 text-lg font-semibold"
             >
                 {{ page.props.name }}

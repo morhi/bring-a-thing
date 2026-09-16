@@ -74,4 +74,15 @@ class User extends Authenticatable
 
         return ! $user || ! $user->name;
     }
+
+    /**
+     * Whether logging in with this email should prompt for a password
+     * instead of sending a magic link, because the account has one set.
+     */
+    public static function emailHasPassword(?string $email): bool
+    {
+        $user = static::query()->where('email', $email)->first();
+
+        return (bool) $user?->password;
+    }
 }
