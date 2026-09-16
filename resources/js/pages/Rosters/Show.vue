@@ -56,7 +56,7 @@ function avatarLabel(
 function confirmDuplicate() {
     confirm.require({
         header: 'Duplicate roster?',
-        message: `Create a new roster from "${props.roster.title}"? Items and custom fields are copied, claims are not.`,
+        message: `Create a new roster from "${props.roster.title}"? Things and custom fields are copied, claims are not.`,
         acceptLabel: 'Duplicate',
         rejectLabel: 'Cancel',
         rejectProps: { severity: 'secondary', text: true },
@@ -180,6 +180,16 @@ function openEditItem(item: RosterItem) {
     showItemDialog.value = true;
 }
 
+// Bridges itemForm.date's string type with PrimeVue's Date-only DatePicker
+// typing; update-model-type="string" makes the runtime value a string
+// regardless of what the component's types declare.
+const itemDateModel = computed<Date>({
+    get: () => itemForm.date as unknown as Date,
+    set: (value) => {
+        itemForm.date = value as unknown as string | null;
+    },
+});
+
 function submitItem() {
     const onSuccess = () => {
         showItemDialog.value = false;
@@ -198,7 +208,7 @@ function submitItem() {
 
 function confirmDeleteItem(item: RosterItem) {
     confirm.require({
-        header: 'Remove item?',
+        header: 'Remove thing?',
         message: `Remove "${item.name}" from this roster?`,
         acceptLabel: 'Remove',
         acceptProps: { severity: 'danger' },
@@ -265,10 +275,10 @@ function confirmDeleteItem(item: RosterItem) {
 
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-lg font-medium">Items</h2>
+                <h2 class="text-lg font-medium">Things</h2>
                 <Button
                     v-if="canAddItems"
-                    label="Add item"
+                    label="Add thing"
                     size="small"
                     @click="openAddItem"
                 />
@@ -278,7 +288,7 @@ function confirmDeleteItem(item: RosterItem) {
                 v-if="items.length === 0"
                 class="border-surface-200 dark:border-surface-700 text-surface-500 rounded-lg border border-dashed p-8 text-center text-sm"
             >
-                No items yet.
+                No things yet.
             </div>
 
             <template v-else-if="!hasDatedItems">
@@ -345,7 +355,7 @@ function confirmDeleteItem(item: RosterItem) {
     <Dialog
         v-model:visible="showItemDialog"
         modal
-        :header="editingItem ? 'Edit item' : 'Add item'"
+        :header="editingItem ? 'Edit thing' : 'Add thing'"
         class="w-full max-w-md"
     >
         <form class="flex flex-col gap-4" @submit.prevent="submitItem">
@@ -409,7 +419,7 @@ function confirmDeleteItem(item: RosterItem) {
                 </label>
                 <DatePicker
                     id="item-date"
-                    v-model="itemForm.date"
+                    v-model="itemDateModel"
                     date-format="yy-mm-dd"
                     update-model-type="string"
                     show-icon
@@ -438,7 +448,7 @@ function confirmDeleteItem(item: RosterItem) {
             <div class="flex gap-3">
                 <Button
                     type="submit"
-                    :label="editingItem ? 'Save' : 'Add item'"
+                    :label="editingItem ? 'Save' : 'Add thing'"
                     :loading="itemForm.processing"
                 />
                 <Button

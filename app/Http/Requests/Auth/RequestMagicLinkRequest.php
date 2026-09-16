@@ -35,6 +35,9 @@ class RequestMagicLinkRequest extends FormRequest
                 'nullable', 'string', 'max:255',
             ],
             'roster_name' => ['nullable', 'string', 'max:255'],
+            'pending_claim_roster_token' => ['nullable', 'string'],
+            'pending_claim_item_id' => ['nullable', 'integer'],
+            'pending_claim_quantity' => ['nullable', 'numeric', 'min:0.01'],
         ];
     }
 }

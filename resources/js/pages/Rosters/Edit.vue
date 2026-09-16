@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
@@ -7,6 +7,7 @@ import DatePicker from 'primevue/datepicker';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from 'primevue/usetoast';
 import ArrowLeft from '@primeicons/vue/arrow-left';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { CustomField, Roster } from '@/types';
@@ -20,6 +21,12 @@ import {
     store as storeCustomField,
     update as updateCustomField,
 } from '@/actions/App/Http/Controllers/CustomFieldController';
+import {
+    destroy as disableSharing,
+    regenerate as regenerateShareLink,
+    store as enableSharing,
+} from '@/actions/App/Http/Controllers/RosterSharingController';
+import { show as showSharedRoster } from '@/actions/App/Http/Controllers/SharedRosterController';
 
 defineOptions({ layout: AppLayout });
 
@@ -28,6 +35,78 @@ const props = defineProps<{
 }>();
 
 const confirm = useConfirm();
+const toast = useToast();
+
+// --- Sharing: a public link anyone can use to view and claim items ---
+const shareUrl = computed(() =>
+    props.roster.share_token
+        ? `${window.location.origin}${showSharedRoster(props.roster.share_token).url}`
+        : null,
+);
+
+function showSharingError(errors: Record<string, string>) {
+    const message = Object.values(errors)[0] ?? 'Something went wrong.';
+    toast.add({ severity: 'error', summary: message, life: 6000 });
+}
+
+function enableRosterSharing() {
+    router.post(
+        enableSharing(props.roster).url,
+        {},
+        { preserveScroll: true, onError: showSharingError },
+    );
+}
+
+function confirmDisableSharing() {
+    confirm.require({
+        header: 'Disable sharing?',
+        message: 'The current link will stop working immediately.',
+        acceptLabel: 'Disable sharing',
+        acceptProps: { severity: 'danger' },
+        rejectLabel: 'Cancel',
+        rejectProps: { severity: 'secondary', text: true },
+        accept: () =>
+            router.delete(disableSharing(props.roster).url, {
+                preserveScroll: true,
+                onError: showSharingError,
+            }),
+    });
+}
+
+function confirmRegenerateShareLink() {
+    confirm.require({
+        header: 'Regenerate link?',
+        message:
+            'The current link will stop working immediately, and a new one takes its place.',
+        acceptLabel: 'Regenerate link',
+        acceptProps: { severity: 'danger' },
+        rejectLabel: 'Cancel',
+        rejectProps: { severity: 'secondary', text: true },
+        accept: () =>
+            router.post(
+                regenerateShareLink(props.roster).url,
+                {},
+                { preserveScroll: true, onError: showSharingError },
+            ),
+    });
+}
+
+async function copyShareUrl() {
+    if (!shareUrl.value) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(shareUrl.value);
+        toast.add({ severity: 'success', summary: 'Link copied.', life: 3000 });
+    } catch {
+        toast.add({
+            severity: 'error',
+            summary: 'Could not copy the link.',
+            life: 6000,
+        });
+    }
+}
 
 const form = useForm({
     title: props.roster.title,
@@ -39,6 +118,16 @@ const form = useForm({
 function submit() {
     form.patch(updateRoster(props.roster).url);
 }
+
+// Bridges form.date's string type with PrimeVue's Date-only DatePicker
+// typing; update-model-type="string" makes the runtime value a string
+// regardless of what the component's types declare.
+const dateModel = computed<Date>({
+    get: () => form.date as unknown as Date,
+    set: (value) => {
+        form.date = value as unknown as string | null;
+    },
+});
 
 function confirmDestroy() {
     confirm.require({
@@ -151,7 +240,7 @@ function confirmDeleteField(field: CustomField) {
                     </label>
                     <DatePicker
                         id="date"
-                        v-model="form.date"
+                        v-model="dateModel"
                         date-format="yy-mm-dd"
                         update-model-type="string"
                         show-icon
@@ -170,7 +259,7 @@ function confirmDeleteField(field: CustomField) {
                         binary
                     />
                     <label for="members-can-add-items" class="text-sm">
-                        Allow group members to add items to this roster
+                        Allow group members to add things to this roster
                     </label>
                 </div>
 
@@ -269,6 +358,52 @@ function confirmDeleteField(field: CustomField) {
                     :loading="newFieldForm.processing"
                 />
             </form>
+        </div>
+
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="mb-2 text-lg font-medium">Sharing</h2>
+            <p class="text-surface-500 mb-4 max-w-md text-sm">
+                Anyone with the link can view this list and claim things,
+                without needing an account first. They only need to log in or
+                sign up at the point they claim something.
+            </p>
+
+            <div v-if="shareUrl" class="flex max-w-md flex-col gap-3">
+                <div class="flex items-center gap-2">
+                    <InputText
+                        :model-value="shareUrl"
+                        readonly
+                        class="flex-1"
+                    />
+                    <Button
+                        label="Copy"
+                        severity="secondary"
+                        text
+                        @click="copyShareUrl"
+                    />
+                </div>
+                <div class="flex gap-3">
+                    <Button
+                        label="Regenerate link"
+                        severity="secondary"
+                        text
+                        size="small"
+                        @click="confirmRegenerateShareLink"
+                    />
+                    <Button
+                        label="Disable sharing"
+                        severity="danger"
+                        text
+                        size="small"
+                        @click="confirmDisableSharing"
+                    />
+                </div>
+            </div>
+            <Button
+                v-else
+                label="Enable sharing"
+                @click="enableRosterSharing"
+            />
         </div>
 
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">

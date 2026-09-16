@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
+use App\Actions\Sharing\CompletePendingSharedClaim;
+use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RequestMagicLinkRequest;
 use App\Models\Roster;
@@ -22,10 +24,16 @@ class MagicLinkController extends Controller
      * email is created as a fresh account (registration and login are the
      * same request here). An optional roster name, from the landing page's
      * guided onboarding, creates a first standalone roster up front so it's
-     * already waiting once the link is followed.
+     * already waiting once the link is followed. Pending-claim fields, set
+     * when this form is opened from a shared list's login dialog, are
+     * stashed so the claim completes automatically once the link is used.
      */
-    public function store(RequestMagicLinkRequest $request, FindOrCreateUserByEmail $findOrCreateUser, SendMagicLink $sendMagicLink): RedirectResponse
-    {
+    public function store(
+        RequestMagicLinkRequest $request,
+        FindOrCreateUserByEmail $findOrCreateUser,
+        SendMagicLink $sendMagicLink,
+        StorePendingSharedClaim $storePendingSharedClaim,
+    ): RedirectResponse {
         $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
 
         $roster = null;
@@ -36,6 +44,13 @@ class MagicLinkController extends Controller
             $roster->owner_id = $user->getKey();
             $roster->save();
         }
+
+        $storePendingSharedClaim->handle(
+            $request,
+            $request->string('pending_claim_roster_token')->value() ?: null,
+            $request->integer('pending_claim_item_id') ?: null,
+            $request->input('pending_claim_quantity') !== null ? (float) $request->input('pending_claim_quantity') : null,
+        );
 
         $sendMagicLink->handle($user, $roster);
 
@@ -64,11 +79,16 @@ class MagicLinkController extends Controller
      *
      * A `roster` query parameter, set when the link was issued right after
      * onboarding created a first roster, lands the user there instead of
-     * the dashboard.
+     * the dashboard. A pending claim from a shared list link, started
+     * before login, takes priority over both.
      */
-    public function show(Request $request, User $user): RedirectResponse
+    public function show(Request $request, User $user, CompletePendingSharedClaim $completePendingSharedClaim): RedirectResponse
     {
         Auth::login($user);
+
+        if ($redirect = $completePendingSharedClaim->handle($request, $user)) {
+            return $redirect;
+        }
 
         $roster = Roster::query()->find($request->integer('roster'));
 

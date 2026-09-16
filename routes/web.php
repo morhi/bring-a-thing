@@ -8,7 +8,10 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
 use App\Http\Controllers\RosterItemController;
+use App\Http\Controllers\RosterSharingController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SharedRosterClaimController;
+use App\Http\Controllers\SharedRosterController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +32,11 @@ Route::middleware('guest')->group(function () {
 Route::get('/login/{user}', [MagicLinkController::class, 'show'])
     ->middleware('signed')
     ->name('login.consume');
+
+// Shared list links: viewable and claimable by anyone with the link, logged
+// in or not. No auth/guest middleware here on purpose.
+Route::get('/shared/{token}', [SharedRosterController::class, 'show'])->name('shared-rosters.show');
+Route::post('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::class, 'store'])->name('shared-rosters.items.claim.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -51,6 +59,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/rosters/{roster}', [RosterController::class, 'update'])->name('rosters.update');
     Route::delete('/rosters/{roster}', [RosterController::class, 'destroy'])->name('rosters.destroy');
     Route::post('/rosters/{roster}/duplicate', [RosterController::class, 'duplicate'])->name('rosters.duplicate');
+
+    Route::post('/rosters/{roster}/sharing', [RosterSharingController::class, 'store'])->name('rosters.sharing.store');
+    Route::post('/rosters/{roster}/sharing/regenerate', [RosterSharingController::class, 'regenerate'])->name('rosters.sharing.regenerate');
+    Route::delete('/rosters/{roster}/sharing', [RosterSharingController::class, 'destroy'])->name('rosters.sharing.destroy');
 
     Route::post('/rosters/{roster}/items', [RosterItemController::class, 'store'])->name('rosters.items.store');
     Route::patch('/rosters/{roster}/items/{item}', [RosterItemController::class, 'update'])->name('rosters.items.update');

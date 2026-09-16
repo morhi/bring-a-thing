@@ -29,6 +29,7 @@
   - **Owner**: the creator of a group or list. Full control — edit, delete, manage members and invites.
   - **Member**: everyone else. Can view, comment, claim items, and vote on polls.
 - **Duplication**: a list can be manually duplicated as a starting point for a new list (e.g., cloning last week's meal plan). No automated recurrence engine in v1.
+- **Link sharing**: a list owner can turn on a shareable link for any list (standalone or group-attached). Anyone with the link can view the list and claim items without logging in first; claiming prompts a quick login/register step, then completes automatically, so using the app never requires accepting a group invite first. The owner can regenerate the link (invalidating the old one) or disable sharing entirely. A visitor who already has full access (owner or group member) is sent to the normal list page instead of the shared read-only view.
 
 ---
 
@@ -102,7 +103,7 @@ Real-time channels cover:
 | `User` | Registered or shadow account; nullable password. |
 | `Group` | Container for members, lists, and polls. |
 | `GroupMember` | Pivot: user ↔ group, with role (`owner`/`member`). |
-| `Roster` | A list (named `Roster` to avoid the `List` reserved word); title, description, nullable group, nullable date. |
+| `Roster` | A list (named `Roster` to avoid the `List` reserved word); title, description, nullable group, nullable date, nullable share token for link sharing. |
 | `ListItem` | Item on a list; name, quantity, unit, notes, nullable date (overrides list date). |
 | `ItemClaim` | A member's (partial) claim on an item; quantity claimed. |
 | `CustomField` | Per-list custom field definition. |

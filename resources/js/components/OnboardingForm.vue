@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -10,9 +10,36 @@ import {
 } from '@/actions/App/Http/Controllers/Auth/MagicLinkController';
 import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 
-const form = useForm({ email: '', name: '', roster_name: '', password: '' });
+export type PendingClaim = {
+    rosterToken: string;
+    itemId: number;
+    quantity: number | null;
+};
+
+const props = withDefaults(
+    defineProps<{
+        pendingClaim?: PendingClaim | null;
+    }>(),
+    { pendingClaim: null },
+);
+
+const form = useForm({
+    email: '',
+    name: '',
+    roster_name: '',
+    password: '',
+    pending_claim_roster_token: props.pendingClaim?.rosterToken ?? '',
+    pending_claim_item_id: props.pendingClaim?.itemId ?? null,
+    pending_claim_quantity: props.pendingClaim?.quantity ?? null,
+});
 
 type Step = 'email' | 'name' | 'roster' | 'password' | 'done';
+
+// Claiming from a shared list is meant to take one extra step, so the
+// first-list-naming step is skipped entirely when there's a pending claim.
+const stepSequence = computed<Step[]>(() =>
+    props.pendingClaim ? ['email', 'name'] : ['email', 'name', 'roster'],
+);
 
 const step = ref<Step>('email');
 const checkingEmail = ref(false);
@@ -55,7 +82,12 @@ function continueFromName() {
     }
 
     form.clearErrors('name');
-    step.value = 'roster';
+
+    if (props.pendingClaim) {
+        requestMagicLink();
+    } else {
+        step.value = 'roster';
+    }
 }
 
 function requestMagicLink() {
@@ -94,15 +126,15 @@ function useMagicLinkInstead() {
 <template>
     <div class="mx-auto w-full max-w-sm text-left">
         <div
-            v-if="step === 'email' || step === 'name' || step === 'roster'"
+            v-if="stepSequence.includes(step)"
             class="mb-4 flex justify-center gap-1.5"
         >
             <span
-                v-for="dot in [1, 2, 3]"
+                v-for="dot in stepSequence"
                 :key="dot"
                 class="h-1.5 w-6 rounded-full transition-colors"
                 :class="
-                    dot <= ['email', 'name', 'roster'].indexOf(step) + 1
+                    stepSequence.indexOf(dot) <= stepSequence.indexOf(step)
                         ? 'bg-primary-500'
                         : 'bg-surface-200 dark:bg-surface-700'
                 "
@@ -240,7 +272,10 @@ function useMagicLinkInstead() {
             </p>
             <p class="text-surface-600 dark:text-surface-300 mt-2 text-sm">
                 We've sent a login link to {{ form.email }}.
-                <template v-if="form.roster_name">
+                <template v-if="pendingClaim">
+                    Your claim will be saved as soon as you follow it.
+                </template>
+                <template v-else-if="form.roster_name">
                     "{{ form.roster_name }}" will be waiting for you.
                 </template>
             </p>

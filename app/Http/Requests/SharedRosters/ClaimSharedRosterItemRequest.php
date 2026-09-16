@@ -1,14 +1,17 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Http\Requests\SharedRosters;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginWithPasswordRequest extends FormRequest
+class ClaimSharedRosterItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Open to anyone: the route itself only resolves for a roster with an
+     * active share token, which is the authorization boundary here.
      */
     public function authorize(): bool
     {
@@ -23,11 +26,7 @@ class LoginWithPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'pending_claim_roster_token' => ['nullable', 'string'],
-            'pending_claim_item_id' => ['nullable', 'integer'],
-            'pending_claim_quantity' => ['nullable', 'numeric', 'min:0.01'],
+            'quantity' => ['nullable', 'numeric', 'min:0.01'],
         ];
     }
 }

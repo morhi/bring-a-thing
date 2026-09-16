@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $owner_id
  * @property int|null $group_id
  * @property bool $members_can_add_items
+ * @property string|null $share_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -86,6 +88,39 @@ class Roster extends Model
         }
 
         return $this->group->members()->whereKey($user->getKey())->exists();
+    }
+
+    /**
+     * Turn on link sharing, generating a token first if none exists yet.
+     */
+    public function enableSharing(): string
+    {
+        if ($this->share_token === null) {
+            $this->share_token = Str::random(32);
+            $this->save();
+        }
+
+        return $this->share_token;
+    }
+
+    /**
+     * Replace the share token with a new one, invalidating any previously shared link.
+     */
+    public function regenerateShareToken(): string
+    {
+        $this->share_token = Str::random(32);
+        $this->save();
+
+        return $this->share_token;
+    }
+
+    /**
+     * Turn off link sharing.
+     */
+    public function disableSharing(): void
+    {
+        $this->share_token = null;
+        $this->save();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use App\Mail\MagicLinkMail;
 use App\Models\Roster;
+use App\Models\RosterItem;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -180,4 +181,49 @@ it('falls back to the dashboard when the magic link roster is not owned by the u
     $response = $this->get($url);
 
     $response->assertRedirect(route('dashboard'));
+});
+
+it('stashes a pending claim submitted from the shared-list login dialog and completes it once the link is followed', function () {
+    Mail::fake();
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id]);
+    $roster->enableSharing();
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
+
+    $this->from(route('shared-rosters.show', $roster->share_token))->post(route('magic-link.store'), [
+        'name' => 'New Person',
+        'email' => 'dialog-claimer@example.com',
+        'pending_claim_roster_token' => $roster->share_token,
+        'pending_claim_item_id' => $item->id,
+    ])->assertRedirect(route('shared-rosters.show', $roster->share_token));
+
+    $user = User::query()->where('email', 'dialog-claimer@example.com')->firstOrFail();
+
+    $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
+    $response = $this->get($url);
+
+    $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
+    $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $user->id]);
+});
+
+it('completes a pending shared-list claim started before login', function () {
+    $owner = User::factory()->create();
+    $user = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id]);
+    $roster->enableSharing();
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
+
+    $this->withSession(['pending_shared_claim' => [
+        'roster_token' => $roster->share_token,
+        'item_id' => $item->id,
+        'quantity' => null,
+    ]]);
+
+    $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
+
+    $response = $this->get($url);
+
+    $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
+    $this->assertAuthenticatedAs($user);
+    $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $user->id]);
 });

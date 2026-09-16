@@ -11,6 +11,7 @@ export type Roster = {
     owner_id: number;
     group_id: number | null;
     members_can_add_items: boolean;
+    share_token: string | null;
     group?: Group | null;
     owner?: User;
     items?: RosterItem[];

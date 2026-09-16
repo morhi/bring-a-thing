@@ -36,7 +36,7 @@ const useCases = [
         icon: Home,
         title: 'Weekly meal plans',
         description:
-            'Plan "Meal Monday", "Meal Tuesday", and so on as separate items, each pinned to its own day, in a single reusable list.',
+            'Plan "Meal Monday", "Meal Tuesday", and so on as separate things, each pinned to its own day, in a single reusable list.',
     },
     {
         icon: Map,
@@ -48,7 +48,7 @@ const useCases = [
         icon: CartPlus,
         title: 'House parties & shared purchases',
         description:
-            'Track drinks, snacks, and equipment that a group is chipping in on, including items several people split the cost or quantity of.',
+            'Track drinks, snacks, and equipment that a group is chipping in on, including things several people split the cost or quantity of.',
     },
     {
         icon: Gift,
@@ -74,16 +74,16 @@ const features = [
     },
     {
         icon: ListCheck,
-        title: 'Flexible items & custom fields',
+        title: 'Flexible things & custom fields',
         description:
-            'Add items with quantity, unit, and notes, then define custom fields (allergens, color, whatever fits) per list. Built for meal plans, birthdays, house parties, and similar shared-item lists.',
+            'Add things with quantity, unit, and notes, then define custom fields (allergens, color, whatever fits) per list. Built for meal plans, birthdays, house parties, and similar shared lists of things.',
         available: true,
     },
     {
         icon: Sync,
         title: 'Split claiming',
         description:
-            'A single item, like "10 chairs" or "2 kg potatoes", can be claimed by several members at once, each bringing their own share, instead of forcing one person to cover the whole thing.',
+            'A single thing, like "10 chairs" or "2 kg potatoes", can be claimed by several members at once, each bringing their own share, instead of forcing one person to cover the whole thing.',
         available: true,
     },
     {
@@ -109,9 +109,9 @@ const features = [
     },
     {
         icon: Comments,
-        title: 'Comments on lists & items',
+        title: 'Comments on lists & things',
         description:
-            'Discuss a list, or a single item, in its own short thread, so questions like "can I bring a gluten-free version instead?" stay next to the item they concern.',
+            'Discuss a list, or a single thing, in its own short thread, so questions like "can I bring a gluten-free version instead?" stay next to the thing they concern.',
         available: false,
     },
     {
@@ -127,17 +127,17 @@ const steps = [
     {
         title: 'Create a list',
         description:
-            'Name it, optionally attach it to a group, and add items with a quantity, a unit, and notes. Add custom fields if your event needs them.',
+            'Name it, optionally attach it to a group, and add things with a quantity, a unit, and notes. Add custom fields if your event needs them.',
     },
     {
         title: 'Invite your group',
         description:
-            'Add members by email. They get their own magic link and can view and claim items right away, no account-creation flow required.',
+            'Add members by email. They get their own magic link and can view and claim things right away, no account-creation flow required.',
     },
     {
         title: 'Claim & track live',
         description:
-            'Members claim whole items or a share of one. Every claim shows up for the whole group instantly, so the list stays accurate without anyone asking around.',
+            'Members claim a whole thing or a share of one. Every claim shows up for the whole group instantly, so the list stays accurate without anyone asking around.',
     },
 ];
 
@@ -145,11 +145,11 @@ const faqs = [
     {
         question:
             'Is there a free app for organizing who brings what to a potluck or group event?',
-        answer: "Yes. Create a list, add the items you need, and invite your group by email. Everyone can see and claim items in real time, and there's no cost or ad-supported catch.",
+        answer: "Yes. Create a list, add the things you need, and invite your group by email. Everyone can see and claim things in real time, and there's no cost or ad-supported catch.",
     },
     {
-        question: 'Can more than one person bring part of the same item?',
-        answer: 'Yes, split claiming lets several members each claim a portion of one item, such as "10 chairs", specifying how much they personally are bringing.',
+        question: 'Can more than one person bring part of the same thing?',
+        answer: 'Yes, split claiming lets several members each claim a portion of one thing, such as "10 chairs", specifying how much they personally are bringing.',
     },
     {
         question: 'Do members need to create an account to join a list?',
@@ -176,9 +176,9 @@ const faqs = [
                 class="text-surface-600 dark:text-surface-300 mx-auto mt-6 max-w-2xl text-lg"
             >
                 {{ page.props.name }} is a focused app for organizing shared
-                item lists: potlucks, weekly meal plans, camping trips, house
-                parties, and group gifts. Add items, invite your group, and
-                watch claims update live, with no ads and no tracking.
+                lists of things: potlucks, weekly meal plans, camping trips,
+                house parties, and group gifts. Add things, invite your group,
+                and watch claims update live, with no ads and no tracking.
             </p>
             <template v-if="page.props.auth.user">
                 <div class="mt-8 flex items-center justify-center gap-3">
@@ -216,8 +216,8 @@ const faqs = [
                 <p
                     class="text-surface-600 dark:text-surface-300 mx-auto mt-3 max-w-xl text-center"
                 >
-                    A specialized tool for shared item lists and claims, not a
-                    general-purpose event planner or to-do app.
+                    A specialized tool for shared lists of things and claims,
+                    not a general-purpose event planner or to-do app.
                 </p>
                 <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <div
@@ -416,7 +416,7 @@ const faqs = [
                             Invite someone by email and they get access right
                             away with their own magic link, instead of being
                             stopped by a registration form before they can claim
-                            an item.
+                            a thing.
                         </p>
                     </div>
                 </div>
@@ -431,8 +431,8 @@ const faqs = [
                         <p
                             class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
                         >
-                            {{ page.props.name }} does shared item lists and
-                            claims well, rather than trying to be a full
+                            {{ page.props.name }} does shared lists of things
+                            and claims well, rather than trying to be a full
                             event-planning suite with budgets, seating charts,
                             or invitations built in.
                         </p>
