@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\RosterItems;
 
+use App\Enums\PollType;
+use App\Models\PollOption;
 use App\Models\RosterItem;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +32,7 @@ class StoreRosterItemRequest extends FormRequest
             'unit' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
             'date' => ['nullable', 'date'],
+            'attendance_poll_option_id' => ['nullable', 'integer', 'exists:poll_options,id'],
             'custom_fields' => ['array'],
             'custom_fields.*' => ['nullable', 'string'],
         ];
@@ -47,6 +50,19 @@ class StoreRosterItemRequest extends FormRequest
                 if (! in_array((int) $customFieldId, $validFieldIds, true)) {
                     $validator->errors()->add('custom_fields', 'Invalid custom field.');
                 }
+            }
+
+            $optionId = $this->input('attendance_poll_option_id');
+
+            if ($optionId === null) {
+                return;
+            }
+
+            $option = PollOption::query()->with('poll')->find($optionId);
+            $groupId = $this->route('roster')->group_id;
+
+            if ($option === null || $option->poll->type !== PollType::Attendance || $option->poll->group_id !== $groupId) {
+                $validator->errors()->add('attendance_poll_option_id', 'Invalid attendance day.');
             }
         });
     }

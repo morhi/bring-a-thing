@@ -6,3 +6,4 @@ export * from './rosterItem';
 export * from './customField';
 export * from './sharedRoster';
 export * from './poll';
+export * from './comment';

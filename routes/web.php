@@ -9,8 +9,10 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollOptionController;
 use App\Http\Controllers\PollResponseController;
+use App\Http\Controllers\RosterCommentController;
 use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
+use App\Http\Controllers\RosterItemCommentController;
 use App\Http\Controllers\RosterItemController;
 use App\Http\Controllers\RosterSharingController;
 use App\Http\Controllers\SettingsController;
@@ -80,6 +82,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/rosters/{roster}/items/{item}', [RosterItemController::class, 'destroy'])->name('rosters.items.destroy');
     Route::post('/rosters/{roster}/items/{item}/claim', [RosterItemClaimController::class, 'store'])->name('rosters.items.claim.store');
     Route::delete('/rosters/{roster}/items/{item}/claim', [RosterItemClaimController::class, 'destroy'])->name('rosters.items.claim.destroy');
+
+    Route::post('/rosters/{roster}/comments', [RosterCommentController::class, 'store'])->name('rosters.comments.store');
+    Route::delete('/rosters/{roster}/comments/{comment}', [RosterCommentController::class, 'destroy'])->name('rosters.comments.destroy');
+    Route::post('/rosters/{roster}/items/{item}/comments', [RosterItemCommentController::class, 'store'])->name('rosters.items.comments.store');
+    Route::delete('/rosters/{roster}/items/{item}/comments/{comment}', [RosterItemCommentController::class, 'destroy'])->name('rosters.items.comments.destroy');
 
     Route::post('/rosters/{roster}/custom-fields', [CustomFieldController::class, 'store'])->name('rosters.custom-fields.store');
     Route::patch('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('rosters.custom-fields.update');

@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\RosterItem;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -10,7 +9,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class RosterItemSaved implements ShouldBroadcast
+class CommentDeleted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -18,23 +17,18 @@ class RosterItemSaved implements ShouldBroadcast
      * Create a new event instance.
      */
     public function __construct(
-        public RosterItem $item,
-    ) {
-        $this->item->loadMissing([
-            'roster.attendancePollOption.responses.user',
-            'claims.user',
-            'customFieldValues.customField',
-            'attendancePollOption.responses.user',
-            'comments.user',
-        ]);
-    }
+        public int $rosterId,
+        public int $commentId,
+        public string $commentableType,
+        public int $commentableId,
+    ) {}
 
     /**
      * Get the channel the event should broadcast on.
      */
     public function broadcastOn(): Channel
     {
-        return new PrivateChannel('roster.'.$this->item->roster_id);
+        return new PrivateChannel('roster.'.$this->rosterId);
     }
 
     /**
@@ -42,7 +36,7 @@ class RosterItemSaved implements ShouldBroadcast
      */
     public function broadcastAs(): string
     {
-        return 'item.saved';
+        return 'comment.deleted';
     }
 
     /**
@@ -52,6 +46,10 @@ class RosterItemSaved implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        return ['item' => $this->item->toArray()];
+        return [
+            'id' => $this->commentId,
+            'commentable_type' => $this->commentableType,
+            'commentable_id' => $this->commentableId,
+        ];
     }
 }

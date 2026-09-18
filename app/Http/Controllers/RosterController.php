@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PollType;
 use App\Http\Requests\Rosters\StoreRosterRequest;
 use App\Http\Requests\Rosters\UpdateRosterRequest;
 use App\Models\Roster;
@@ -35,9 +36,24 @@ class RosterController extends Controller
     {
         $this->authorize('view', $roster);
 
-        $roster->load('group.members', 'owner', 'customFields');
+        $roster->load([
+            'owner',
+            'customFields',
+            'attendancePollOption.responses.user',
+            'comments.user',
+            'group' => function ($query) {
+                $query->with('members')->with(['polls' => function ($query) {
+                    $query->where('type', PollType::Attendance)->with('options');
+                }]);
+            },
+        ]);
         $roster->load(['items' => function ($query) {
-            $query->with(['claims.user', 'customFieldValues.customField'])->orderBy('date');
+            $query->with([
+                'claims.user',
+                'customFieldValues.customField',
+                'attendancePollOption.responses.user',
+                'comments.user',
+            ])->orderBy('date');
         }]);
 
         return Inertia::render('Rosters/Show', [
@@ -54,7 +70,15 @@ class RosterController extends Controller
     {
         $this->authorize('update', $roster);
 
-        $roster->load('customFields', 'group');
+        $roster->load([
+            'customFields',
+            'attendancePollOption',
+            'group' => function ($query) {
+                $query->with(['polls' => function ($query) {
+                    $query->where('type', PollType::Attendance)->with('options');
+                }]);
+            },
+        ]);
 
         return Inertia::render('Rosters/Edit', [
             'roster' => $roster,
@@ -66,7 +90,9 @@ class RosterController extends Controller
      */
     public function update(UpdateRosterRequest $request, Roster $roster): RedirectResponse
     {
-        $roster->update($request->safe()->only(['title', 'description', 'date', 'members_can_add_items']));
+        $roster->update($request->safe()->only([
+            'title', 'description', 'date', 'members_can_add_items', 'attendance_poll_option_id',
+        ]));
 
         return to_route('rosters.edit', $roster)->with('success', 'Roster updated.');
     }

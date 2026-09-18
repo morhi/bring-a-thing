@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -21,10 +22,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $unit
  * @property string|null $notes
  * @property Carbon|null $date
+ * @property int|null $attendance_poll_option_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'quantity', 'unit', 'notes', 'date'])]
+#[Fillable(['name', 'quantity', 'unit', 'notes', 'date', 'attendance_poll_option_id'])]
 class RosterItem extends Model
 {
     /** @use HasFactory<RosterItemFactory> */
@@ -35,7 +37,7 @@ class RosterItem extends Model
      *
      * @var list<string>
      */
-    protected $appends = ['is_past'];
+    protected $appends = ['is_past', 'effective_attendance_poll_option'];
 
     /**
      * Get the attributes that should be cast.
@@ -72,6 +74,37 @@ class RosterItem extends Model
     public function customFieldValues(): HasMany
     {
         return $this->hasMany(RosterItemCustomFieldValue::class);
+    }
+
+    /**
+     * The attendance-poll day this item is linked to, if any.
+     *
+     * Overrides the roster's own link when set, mirroring the date-override
+     * pattern used by isPast().
+     */
+    public function attendancePollOption(): BelongsTo
+    {
+        return $this->belongsTo(PollOption::class);
+    }
+
+    /**
+     * The item's own comment thread.
+     */
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    /**
+     * The attendance-poll day that gates claims on this item: its own link, or its roster's.
+     *
+     * Mirrors the item-overrides-roster fallback used by isPast().
+     */
+    protected function effectiveAttendancePollOption(): Attribute
+    {
+        return Attribute::get(fn (): ?PollOption => $this->attendance_poll_option_id !== null
+            ? $this->attendancePollOption
+            : $this->roster->attendancePollOption);
     }
 
     /**

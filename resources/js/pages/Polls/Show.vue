@@ -6,6 +6,7 @@ import Tag from 'primevue/tag';
 import { useToast } from 'primevue/usetoast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPollOption } from '@/lib/pollDate';
+import { responseFor } from '@/lib/attendance';
 import type { Auth, Poll, PollOption, PollResponseStatus } from '@/types';
 import { show as showGroup } from '@/actions/App/Http/Controllers/GroupController';
 import { edit as editPoll } from '@/actions/App/Http/Controllers/PollController';
@@ -28,16 +29,6 @@ const options = computed(() => props.poll.options ?? []);
 
 function isBest(option: PollOption): boolean {
     return props.bestOptionIds.includes(option.id);
-}
-
-function responseFor(
-    option: PollOption,
-    userId: number,
-): PollResponseStatus | null {
-    return (
-        option.responses?.find((response) => response.user_id === userId)
-            ?.status ?? null
-    );
 }
 
 function yesCount(option: PollOption): number {

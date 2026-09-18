@@ -8,11 +8,17 @@ import ProgressBar from 'primevue/progressbar';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import { useToast } from 'primevue/usetoast';
+import CommentThread from '@/components/CommentThread.vue';
+import { describeAvailability } from '@/lib/attendance';
 import type { Auth, Roster, RosterItem } from '@/types';
 import {
     destroy as destroyClaim,
     store as storeClaim,
 } from '@/actions/App/Http/Controllers/RosterItemClaimController';
+import {
+    destroy as destroyItemComment,
+    store as storeItemComment,
+} from '@/actions/App/Http/Controllers/RosterItemCommentController';
 
 const props = defineProps<{
     roster: Roster;
@@ -123,6 +129,12 @@ const unclaimedMembers = computed(() => {
 const claimForUserId = ref<number | null>(null);
 const claimForQuantity = ref<number | null>(null);
 
+const claimForAvailability = computed(() =>
+    claimForUserId.value === null
+        ? null
+        : availabilityFor(claimForUserId.value),
+);
+
 function submitClaimFor() {
     if (claimForUserId.value === null) {
         return;
@@ -137,6 +149,26 @@ function submitClaimFor() {
     claimForUserId.value = null;
     claimForQuantity.value = null;
 }
+
+// --- Attendance-poll availability warnings; never blocks claiming, see resources/js/lib/attendance.ts ---
+const myAvailability = computed(() =>
+    currentUserId.value === null
+        ? null
+        : describeAvailability(
+              props.item.effective_attendance_poll_option,
+              currentUserId.value,
+          ),
+);
+
+function availabilityFor(userId: number) {
+    return describeAvailability(
+        props.item.effective_attendance_poll_option,
+        userId,
+    );
+}
+
+// --- Item-level comment thread, collapsed until opened ---
+const showComments = ref(false);
 </script>
 
 <template>
@@ -203,9 +235,19 @@ function submitClaimFor() {
                             size="small"
                             @click="submitClaim(null)"
                         />
+                        <Tag
+                            v-if="myAvailability"
+                            severity="warn"
+                            :value="myAvailability.label"
+                        />
                     </template>
                     <template v-else-if="myClaim()">
                         <Tag severity="success" value="You're bringing this" />
+                        <Tag
+                            v-if="myAvailability"
+                            severity="warn"
+                            :value="myAvailability.label"
+                        />
                         <Button
                             label="Unclaim"
                             severity="danger"
@@ -251,6 +293,11 @@ function submitClaimFor() {
                             severity="secondary"
                             :disabled="claimForUserId === null"
                             @click="submitClaimFor"
+                        />
+                        <Tag
+                            v-if="claimForAvailability"
+                            severity="warn"
+                            :value="claimForAvailability.label"
                         />
                     </div>
                 </div>
@@ -328,6 +375,11 @@ function submitClaimFor() {
                         size="small"
                         @click="unclaim()"
                     />
+                    <Tag
+                        v-if="myAvailability"
+                        severity="warn"
+                        :value="myAvailability.label"
+                    />
                 </div>
                 <div
                     v-if="
@@ -363,8 +415,39 @@ function submitClaimFor() {
                         :disabled="claimForUserId === null"
                         @click="submitClaimFor"
                     />
+                    <Tag
+                        v-if="claimForAvailability"
+                        severity="warn"
+                        :value="claimForAvailability.label"
+                    />
                 </div>
             </template>
+        </div>
+
+        <div
+            class="border-surface-100 dark:border-surface-800 mt-3 border-t pt-3"
+        >
+            <Button
+                :label="`Comments (${item.comments?.length ?? 0})`"
+                severity="secondary"
+                text
+                size="small"
+                @click="showComments = !showComments"
+            />
+            <div v-if="showComments" class="mt-3">
+                <CommentThread
+                    :roster-id="roster.id"
+                    commentable-type="roster_item"
+                    :commentable-id="item.id"
+                    :comments="item.comments ?? []"
+                    :store-url="storeItemComment({ roster, item }).url"
+                    :destroy-url="
+                        (comment) =>
+                            destroyItemComment({ roster, item, comment }).url
+                    "
+                    :can-manage-parent="canManage"
+                />
+            </div>
         </div>
     </div>
 </template>

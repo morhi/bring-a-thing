@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -22,10 +23,11 @@ use Illuminate\Support\Str;
  * @property int|null $group_id
  * @property bool $members_can_add_items
  * @property string|null $share_token
+ * @property int|null $attendance_poll_option_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['title', 'description', 'date', 'members_can_add_items'])]
+#[Fillable(['title', 'description', 'date', 'members_can_add_items', 'attendance_poll_option_id'])]
 class Roster extends Model
 {
     /** @use HasFactory<RosterFactory> */
@@ -74,6 +76,25 @@ class Roster extends Model
     public function customFields(): HasMany
     {
         return $this->hasMany(CustomField::class);
+    }
+
+    /**
+     * The attendance-poll day this roster is linked to, if any.
+     *
+     * Gates claim eligibility on this day's attendance (see RosterItem::attendancePollOption()),
+     * unless an item overrides it with its own link.
+     */
+    public function attendancePollOption(): BelongsTo
+    {
+        return $this->belongsTo(PollOption::class);
+    }
+
+    /**
+     * The list-level comment thread.
+     */
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
     }
 
     /**

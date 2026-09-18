@@ -5,11 +5,13 @@ import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import DatePicker from 'primevue/datepicker';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import ArrowLeft from '@primeicons/vue/arrow-left';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { formatPollOption } from '@/lib/pollDate';
 import type { CustomField, Roster } from '@/types';
 import {
     destroy as destroyRoster,
@@ -113,7 +115,18 @@ const form = useForm({
     description: props.roster.description ?? '',
     date: props.roster.date,
     members_can_add_items: props.roster.members_can_add_items,
+    attendance_poll_option_id: props.roster.attendance_poll_option_id,
 });
+
+// --- Attendance-day link, gates claim-eligibility warnings; only offered when the group has an attendance poll ---
+const attendanceDayOptions = computed(() =>
+    (props.roster.group?.polls ?? []).flatMap((poll) =>
+        (poll.options ?? []).map((option) => ({
+            id: option.id,
+            label: `${poll.title}: ${formatPollOption(option)}`,
+        })),
+    ),
+);
 
 function submit() {
     form.patch(updateRoster(props.roster).url);
@@ -265,6 +278,39 @@ function confirmDeleteField(field: CustomField) {
                                 : 'Allow anyone with the shared link to add things to this roster'
                         }}
                     </label>
+                </div>
+
+                <div
+                    v-if="attendanceDayOptions.length > 0"
+                    class="flex flex-col gap-2"
+                >
+                    <label
+                        for="attendance-poll-option"
+                        class="text-sm font-medium"
+                    >
+                        Attendance day (optional)
+                    </label>
+                    <Select
+                        id="attendance-poll-option"
+                        v-model="form.attendance_poll_option_id"
+                        :options="attendanceDayOptions"
+                        option-label="label"
+                        option-value="id"
+                        placeholder="Not linked"
+                        show-clear
+                        :invalid="!!form.errors.attendance_poll_option_id"
+                    />
+                    <small class="text-surface-500">
+                        Members who haven't confirmed attendance for that day
+                        see a warning when claiming a thing, but can still claim
+                        it.
+                    </small>
+                    <small
+                        v-if="form.errors.attendance_poll_option_id"
+                        class="text-red-500"
+                    >
+                        {{ form.errors.attendance_poll_option_id }}
+                    </small>
                 </div>
 
                 <div class="flex gap-3">

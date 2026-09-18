@@ -8,11 +8,14 @@ import DatePicker from 'primevue/datepicker';
 import Dialog from 'primevue/dialog';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
 import RosterItemCard from '@/components/RosterItemCard.vue';
+import CommentThread from '@/components/CommentThread.vue';
+import { formatPollOption } from '@/lib/pollDate';
 import type { Auth, Roster, RosterItem } from '@/types';
 import {
     duplicate as duplicateRoster,
@@ -24,6 +27,10 @@ import {
     store as storeItem,
     update as updateItem,
 } from '@/actions/App/Http/Controllers/RosterItemController';
+import {
+    destroy as destroyRosterComment,
+    store as storeRosterComment,
+} from '@/actions/App/Http/Controllers/RosterCommentController';
 
 defineOptions({ layout: AppLayout });
 
@@ -137,6 +144,7 @@ const itemForm = useForm<{
     unit: string;
     notes: string;
     date: string | null;
+    attendance_poll_option_id: number | null;
     custom_fields: Record<number, string>;
 }>({
     name: '',
@@ -144,6 +152,7 @@ const itemForm = useForm<{
     unit: '',
     notes: '',
     date: null,
+    attendance_poll_option_id: null,
     custom_fields: {},
 });
 
@@ -152,6 +161,16 @@ function emptyCustomFieldValues(): Record<number, string> {
         (props.roster.custom_fields ?? []).map((field) => [field.id, '']),
     );
 }
+
+// --- Attendance-day link, offered only when the roster's group has an attendance poll ---
+const attendanceDayOptions = computed(() =>
+    (props.roster.group?.polls ?? []).flatMap((poll) =>
+        (poll.options ?? []).map((option) => ({
+            id: option.id,
+            label: `${poll.title}: ${formatPollOption(option)}`,
+        })),
+    ),
+);
 
 function openAddItem() {
     editingItem.value = null;
@@ -169,6 +188,7 @@ function openEditItem(item: RosterItem) {
     itemForm.unit = item.unit ?? '';
     itemForm.notes = item.notes ?? '';
     itemForm.date = item.date;
+    itemForm.attendance_poll_option_id = item.attendance_poll_option_id;
     itemForm.custom_fields = Object.fromEntries(
         (props.roster.custom_fields ?? []).map((field) => [
             field.id,
@@ -350,6 +370,21 @@ function confirmDeleteItem(item: RosterItem) {
                 </div>
             </template>
         </div>
+
+        <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="mb-4 text-lg font-medium">Comments</h2>
+            <CommentThread
+                :roster-id="roster.id"
+                commentable-type="roster"
+                :commentable-id="roster.id"
+                :comments="roster.comments ?? []"
+                :store-url="storeRosterComment(roster).url"
+                :destroy-url="
+                    (comment) => destroyRosterComment([roster, comment]).url
+                "
+                :can-manage-parent="canManage"
+            />
+        </div>
     </div>
 
     <Dialog
@@ -426,6 +461,34 @@ function confirmDeleteItem(item: RosterItem) {
                     show-button-bar
                     :invalid="!!itemForm.errors.date"
                 />
+            </div>
+
+            <div
+                v-if="attendanceDayOptions.length > 0"
+                class="flex flex-col gap-2"
+            >
+                <label
+                    for="item-attendance-poll-option"
+                    class="text-sm font-medium"
+                >
+                    Attendance day (optional, overrides the roster's link)
+                </label>
+                <Select
+                    id="item-attendance-poll-option"
+                    v-model="itemForm.attendance_poll_option_id"
+                    :options="attendanceDayOptions"
+                    option-label="label"
+                    option-value="id"
+                    placeholder="Not linked"
+                    show-clear
+                    :invalid="!!itemForm.errors.attendance_poll_option_id"
+                />
+                <small
+                    v-if="itemForm.errors.attendance_poll_option_id"
+                    class="text-red-500"
+                >
+                    {{ itemForm.errors.attendance_poll_option_id }}
+                </small>
             </div>
 
             <div

@@ -1,5 +1,7 @@
 import type { User } from '@/types/auth';
 import type { RosterItemCustomFieldValue } from '@/types/customField';
+import type { Comment } from '@/types/comment';
+import type { PollOption } from '@/types/poll';
 
 export type RosterItemClaim = {
     id: number;
@@ -20,9 +22,12 @@ export type RosterItem = {
     notes: string | null;
     date: string | null;
     is_past: boolean | null;
+    attendance_poll_option_id: number | null;
+    effective_attendance_poll_option: PollOption | null;
     created_at: string;
     updated_at: string;
     claims?: RosterItemClaim[];
     custom_field_values?: RosterItemCustomFieldValue[];
+    comments?: Comment[];
     [key: string]: unknown;
 };

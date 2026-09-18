@@ -20,7 +20,9 @@ class RosterItemController extends Controller
      */
     public function store(StoreRosterItemRequest $request, Roster $roster): RedirectResponse
     {
-        $item = $roster->items()->create($request->safe()->only(['name', 'quantity', 'unit', 'notes', 'date']));
+        $item = $roster->items()->create($request->safe()->only([
+            'name', 'quantity', 'unit', 'notes', 'date', 'attendance_poll_option_id',
+        ]));
 
         $this->syncCustomFieldValues($item, $request->input('custom_fields', []));
 
@@ -34,7 +36,9 @@ class RosterItemController extends Controller
      */
     public function update(UpdateRosterItemRequest $request, Roster $roster, RosterItem $item): RedirectResponse
     {
-        $item->update($request->safe()->only(['name', 'quantity', 'unit', 'notes', 'date']));
+        $item->update($request->safe()->only([
+            'name', 'quantity', 'unit', 'notes', 'date', 'attendance_poll_option_id',
+        ]));
 
         $this->syncCustomFieldValues($item, $request->input('custom_fields', []));
 
