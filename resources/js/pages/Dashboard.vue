@@ -126,7 +126,9 @@ function submitCreateRoster() {
     >
         <form class="flex flex-col gap-4" @submit.prevent="submitCreateGroup">
             <div class="flex flex-col gap-2">
-                <label for="group-name" class="text-sm font-medium">Name</label>
+                <label for="group-name" class="text-sm font-medium">
+                    Name <span class="text-red-500">*</span>
+                </label>
                 <InputText
                     id="group-name"
                     v-model="createGroupForm.name"
@@ -154,7 +156,7 @@ function submitCreateRoster() {
         <form class="flex flex-col gap-4" @submit.prevent="submitCreateRoster">
             <div class="flex flex-col gap-2">
                 <label for="roster-title" class="text-sm font-medium">
-                    Title
+                    Title <span class="text-red-500">*</span>
                 </label>
                 <InputText
                     id="roster-title"
@@ -171,7 +173,7 @@ function submitCreateRoster() {
             </div>
             <div class="flex flex-col gap-2">
                 <label for="roster-description" class="text-sm font-medium">
-                    Description (optional)
+                    Description
                 </label>
                 <Textarea
                     id="roster-description"

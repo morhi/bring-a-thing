@@ -395,7 +395,9 @@ function confirmDeleteItem(item: RosterItem) {
     >
         <form class="flex flex-col gap-4" @submit.prevent="submitItem">
             <div class="flex flex-col gap-2">
-                <label for="item-name" class="text-sm font-medium">Name</label>
+                <label for="item-name" class="text-sm font-medium">
+                    Name <span class="text-red-500">*</span>
+                </label>
                 <InputText
                     id="item-name"
                     v-model="itemForm.name"
@@ -410,7 +412,7 @@ function confirmDeleteItem(item: RosterItem) {
             <div class="flex gap-3">
                 <div class="flex flex-1 flex-col gap-2">
                     <label for="item-quantity" class="text-sm font-medium">
-                        Quantity (optional)
+                        Quantity
                     </label>
                     <InputNumber
                         id="item-quantity"
@@ -438,7 +440,7 @@ function confirmDeleteItem(item: RosterItem) {
 
             <div class="flex flex-col gap-2">
                 <label for="item-notes" class="text-sm font-medium"
-                    >Notes (optional)</label
+                    >Notes</label
                 >
                 <Textarea
                     id="item-notes"
@@ -450,7 +452,7 @@ function confirmDeleteItem(item: RosterItem) {
 
             <div class="flex flex-col gap-2">
                 <label for="item-date" class="text-sm font-medium">
-                    Date (optional, overrides the roster date)
+                    Date
                 </label>
                 <DatePicker
                     id="item-date"
@@ -461,6 +463,9 @@ function confirmDeleteItem(item: RosterItem) {
                     show-button-bar
                     :invalid="!!itemForm.errors.date"
                 />
+                <small class="text-surface-500">
+                    Overrides the roster date.
+                </small>
             </div>
 
             <div
@@ -471,7 +476,7 @@ function confirmDeleteItem(item: RosterItem) {
                     for="item-attendance-poll-option"
                     class="text-sm font-medium"
                 >
-                    Attendance day (optional, overrides the roster's link)
+                    Attendance day
                 </label>
                 <Select
                     id="item-attendance-poll-option"
@@ -483,6 +488,9 @@ function confirmDeleteItem(item: RosterItem) {
                     show-clear
                     :invalid="!!itemForm.errors.attendance_poll_option_id"
                 />
+                <small class="text-surface-500">
+                    Overrides the roster's link.
+                </small>
                 <small
                     v-if="itemForm.errors.attendance_poll_option_id"
                     class="text-red-500"

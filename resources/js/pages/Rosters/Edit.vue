@@ -221,7 +221,9 @@ function confirmDeleteField(field: CustomField) {
         <div class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm">
             <form class="flex max-w-md flex-col gap-4" @submit.prevent="submit">
                 <div class="flex flex-col gap-2">
-                    <label for="title" class="text-sm font-medium">Title</label>
+                    <label for="title" class="text-sm font-medium">
+                        Title <span class="text-red-500">*</span>
+                    </label>
                     <InputText
                         id="title"
                         v-model="form.title"
@@ -248,9 +250,7 @@ function confirmDeleteField(field: CustomField) {
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <label for="date" class="text-sm font-medium">
-                        Date (optional)
-                    </label>
+                    <label for="date" class="text-sm font-medium"> Date </label>
                     <DatePicker
                         id="date"
                         v-model="dateModel"
@@ -288,7 +288,7 @@ function confirmDeleteField(field: CustomField) {
                         for="attendance-poll-option"
                         class="text-sm font-medium"
                     >
-                        Attendance day (optional)
+                        Attendance day
                     </label>
                     <Select
                         id="attendance-poll-option"

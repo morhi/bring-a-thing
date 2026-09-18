@@ -80,9 +80,12 @@ function confirmRemove(friend: Friend) {
                 @submit.prevent="submit"
             >
                 <div class="flex flex-1 flex-col gap-2">
+                    <label for="friend-name" class="text-sm font-medium">
+                        Name
+                    </label>
                     <InputText
+                        id="friend-name"
                         v-model="form.name"
-                        placeholder="Name (optional)"
                         :invalid="!!form.errors.name"
                     />
                     <small v-if="form.errors.name" class="text-red-500">
@@ -90,10 +93,13 @@ function confirmRemove(friend: Friend) {
                     </small>
                 </div>
                 <div class="flex flex-1 flex-col gap-2">
+                    <label for="friend-email" class="text-sm font-medium">
+                        Email address <span class="text-red-500">*</span>
+                    </label>
                     <InputText
+                        id="friend-email"
                         v-model="form.email"
                         type="email"
-                        placeholder="Email address"
                         :invalid="!!form.errors.email"
                     />
                     <small v-if="form.errors.email" class="text-red-500">

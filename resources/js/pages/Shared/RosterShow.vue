@@ -238,7 +238,7 @@ const pastItems = computed(() =>
         <form class="flex flex-col gap-4" @submit.prevent="submitAddThing">
             <div class="flex flex-col gap-2">
                 <label for="shared-item-name" class="text-sm font-medium">
-                    Name
+                    Name <span class="text-red-500">*</span>
                 </label>
                 <InputText
                     id="shared-item-name"
@@ -257,7 +257,7 @@ const pastItems = computed(() =>
                         for="shared-item-quantity"
                         class="text-sm font-medium"
                     >
-                        Quantity (optional)
+                        Quantity
                     </label>
                     <InputNumber
                         id="shared-item-quantity"
@@ -282,7 +282,7 @@ const pastItems = computed(() =>
 
             <div class="flex flex-col gap-2">
                 <label for="shared-item-notes" class="text-sm font-medium">
-                    Notes (optional)
+                    Notes
                 </label>
                 <Textarea
                     id="shared-item-notes"
