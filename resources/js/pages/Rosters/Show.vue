@@ -22,6 +22,7 @@ import {
     edit as editRoster,
 } from '@/actions/App/Http/Controllers/RosterController';
 import { show as showGroup } from '@/actions/App/Http/Controllers/GroupController';
+import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
 import {
     destroy as destroyItem,
     store as storeItem,
@@ -261,6 +262,13 @@ function confirmDeleteItem(item: RosterItem) {
                     {{ roster.title }}
                 </h1>
                 <Tag v-if="roster.date" :value="formatDate(roster.date)" />
+                <Link
+                    v-if="roster.attendance_poll_option?.poll"
+                    :href="showPoll(roster.attendance_poll_option.poll).url"
+                    class="text-primary text-xs underline"
+                >
+                    {{ formatPollOption(roster.attendance_poll_option) }}
+                </Link>
             </div>
             <div class="flex items-center gap-3">
                 <div v-if="otherViewers.length" class="flex -space-x-2">

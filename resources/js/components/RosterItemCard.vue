@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import Times from '@primeicons/vue/times';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import ProgressBar from 'primevue/progressbar';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
+import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import CommentThread from '@/components/CommentThread.vue';
 import { describeAvailability } from '@/lib/attendance';
+import { formatPollOption } from '@/lib/pollDate';
 import type { Auth, Roster, RosterItem } from '@/types';
 import {
     destroy as destroyClaim,
@@ -19,6 +21,7 @@ import {
     destroy as destroyItemComment,
     store as storeItemComment,
 } from '@/actions/App/Http/Controllers/RosterItemCommentController';
+import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
 
 const props = defineProps<{
     roster: Roster;
@@ -35,6 +38,7 @@ const emit = defineEmits<{
 const page = usePage<{ auth: Auth }>();
 const currentUserId = computed(() => page.props.auth.user?.id ?? null);
 const toast = useToast();
+const confirm = useConfirm();
 
 function myClaim() {
     return (
@@ -101,6 +105,27 @@ function submitClaim(quantity: number | null, userId?: number) {
     );
 }
 
+/** Confirms via modal before claiming when the claiming user has an attendance warning, otherwise claims immediately. */
+function confirmClaim(
+    action: () => void,
+    availability: { label: string } | null,
+) {
+    if (!availability) {
+        action();
+        return;
+    }
+
+    confirm.require({
+        header: 'Claim despite attendance warning?',
+        message: availability.label,
+        acceptLabel: 'Claim anyway',
+        acceptProps: { severity: 'warn' },
+        rejectLabel: 'Cancel',
+        rejectProps: { severity: 'secondary', text: true },
+        accept: action,
+    });
+}
+
 function unclaim(userId?: number) {
     router.delete(
         destroyClaim({ roster: props.roster, item: props.item }).url,
@@ -140,14 +165,17 @@ function submitClaimFor() {
         return;
     }
 
-    submitClaim(
+    const userId = claimForUserId.value;
+    const quantity =
         props.item.quantity === null
             ? null
-            : (claimForQuantity.value ?? remaining()),
-        claimForUserId.value,
-    );
-    claimForUserId.value = null;
-    claimForQuantity.value = null;
+            : (claimForQuantity.value ?? remaining());
+
+    confirmClaim(() => {
+        submitClaim(quantity, userId);
+        claimForUserId.value = null;
+        claimForQuantity.value = null;
+    }, claimForAvailability.value);
 }
 
 // --- Attendance-poll availability warnings; never blocks claiming, see resources/js/lib/attendance.ts ---
@@ -188,6 +216,20 @@ const showComments = ref(false);
                         }}{{ item.unit ? ` ${item.unit}` : '' }})
                     </span>
                     <Tag v-if="dateLabel" severity="info" :value="dateLabel" />
+                    <Link
+                        v-if="item.effective_attendance_poll_option?.poll"
+                        :href="
+                            showPoll(item.effective_attendance_poll_option.poll)
+                                .url
+                        "
+                        class="text-primary text-xs underline"
+                    >
+                        {{
+                            formatPollOption(
+                                item.effective_attendance_poll_option,
+                            )
+                        }}
+                    </Link>
                 </div>
                 <p v-if="item.notes" class="text-surface-500 text-sm">
                     {{ item.notes }}
@@ -233,7 +275,12 @@ const showComments = ref(false);
                         <Button
                             label="I'll bring this"
                             size="small"
-                            @click="submitClaim(null)"
+                            @click="
+                                confirmClaim(
+                                    () => submitClaim(null),
+                                    myAvailability,
+                                )
+                            "
                         />
                         <Tag
                             v-if="myAvailability"
@@ -365,7 +412,12 @@ const showComments = ref(false);
                         :label="myClaim() ? 'Update claim' : 'Claim'"
                         size="small"
                         :disabled="claimQuantityInvalid"
-                        @click="submitClaim(claimQuantity)"
+                        @click="
+                            confirmClaim(
+                                () => submitClaim(claimQuantity),
+                                myAvailability,
+                            )
+                        "
                     />
                     <Button
                         v-if="myClaim()"

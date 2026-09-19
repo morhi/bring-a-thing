@@ -22,6 +22,7 @@ export type PollOption = {
     ends_at: string | null;
     label: string | null;
     responses?: PollResponse[];
+    poll?: Poll;
     [key: string]: unknown;
 };
 

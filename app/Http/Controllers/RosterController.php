@@ -40,6 +40,7 @@ class RosterController extends Controller
             'owner',
             'customFields',
             'attendancePollOption.responses.user',
+            'attendancePollOption.poll',
             'comments.user',
             'group' => function ($query) {
                 $query->with('members')->with(['polls' => function ($query) {
@@ -52,6 +53,7 @@ class RosterController extends Controller
                 'claims.user',
                 'customFieldValues.customField',
                 'attendancePollOption.responses.user',
+                'attendancePollOption.poll',
                 'comments.user',
             ])->orderBy('date');
         }]);
