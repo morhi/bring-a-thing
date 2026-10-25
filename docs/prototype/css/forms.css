@@ -1,0 +1,146 @@
+/* Forms: create pages and the group dialog.
+   Every block is a .field (label, control, hint); .form-grid spaces the fields. */
+
+.form-grid {
+  display: grid;
+  gap: var(--space-stack);
+}
+
+.form-grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+/* Poll option editor: rows plus the add button form one control */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-inner);
+}
+
+.options__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-inner);
+  width: 100%;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.option-row--slot {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) auto;
+}
+
+@media (max-width: 560px) {
+  .option-row--slot {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .option-row--slot .input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .option-row--slot .input--label {
+    grid-column: 1 / 2;
+  }
+}
+
+.option-row .input {
+  background: var(--surface-raised);
+  min-height: var(--control-height-sm);
+  padding-block: 6px;
+}
+
+.option-row .btn--icon {
+  justify-self: end;
+}
+
+/* Short controls keep their natural width instead of stretching */
+
+.input--date {
+  max-width: 220px;
+}
+
+/* Audience notice inside dialogs */
+
+.audience {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+  font-size: 14px;
+}
+
+.audience__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.audience__text b {
+  font-weight: 600;
+}
+
+/* Create pages: one form column, sticky action bar at the bottom */
+
+.form-page {
+  max-width: 820px;
+  gap: 32px;
+  padding-bottom: 0;
+}
+
+.form-page__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-page__head .back {
+  margin-bottom: 6px;
+}
+
+.form-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  margin-top: 8px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+}
+
+/* Stub views for standard pages */
+
+.stub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 60ch;
+}
+
+.stub .badge {
+  align-self: flex-start;
+}

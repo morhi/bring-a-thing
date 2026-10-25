@@ -1,0 +1,363 @@
+/* Start page: hero with the chain illustration, login form, three steps, footer */
+
+.welcome-header .app-header__inner {
+  min-height: 72px;
+}
+
+.hero {
+  display: grid;
+  gap: 40px;
+  align-items: start;
+  padding-block: 24px 8px;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 56px;
+    padding-block: 48px 16px;
+  }
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.hero__title {
+  font-size: clamp(36px, 4.4vw + 14px, 64px);
+  font-weight: 720;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  max-width: 14ch;
+}
+
+.hero__title .tag {
+  font-size: 0.78em;
+  vertical-align: 0.08em;
+  margin-inline: 0.04em;
+}
+
+.hero__lede {
+  font-size: 18px;
+  color: var(--fg-muted);
+  max-width: 50ch;
+}
+
+/* The chain: poll, fixed date, list, as three overlapping miniatures */
+
+.chain {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+@media (min-width: 560px) {
+  .chain {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .chain__step:nth-child(2) {
+    margin-top: 28px;
+  }
+
+  .chain__step:nth-child(3) {
+    margin-top: 56px;
+  }
+}
+
+.chain__step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chain__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chain__label b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.mini__title {
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: auto repeat(3, 1fr);
+  gap: 5px 6px;
+  align-items: center;
+  color: var(--fg-muted);
+}
+
+.mini-grid .avatar {
+  --size: 20px;
+  border-width: 1px;
+}
+
+.mini-grid__head {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--fg-soft);
+  white-space: nowrap;
+}
+
+.mini-grid__head--best {
+  color: var(--primary);
+}
+
+.mini-grid .mark {
+  width: 16px;
+  height: 16px;
+  margin-inline: auto;
+}
+
+.mini-grid .mark svg {
+  width: 9px;
+  height: 9px;
+}
+
+.mini-event {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-event__date {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mini-event__date .tag {
+  font-size: 12px;
+  padding: 1px 7px 2px;
+}
+
+.mini-event__people {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+}
+
+.mini-event__people .avatar {
+  --size: 20px;
+  border-width: 1px;
+}
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mini-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: var(--surface-muted);
+}
+
+.mini-list__item .mark {
+  width: 16px;
+  height: 16px;
+}
+
+.mini-list__item .mark svg {
+  width: 9px;
+  height: 9px;
+}
+
+.mini-list__item .grow {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.mini-list__who {
+  color: var(--fg-soft);
+}
+
+/* Login card */
+
+.login-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::after {
+  /* grain, kept to the top band and well below text contrast thresholds */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  opacity: 0.9;
+}
+
+@media (min-width: 720px) {
+  .login-card {
+    padding: 32px;
+  }
+}
+
+.login-card h2 {
+  font-size: 24px;
+}
+
+.login-card__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.login-card__note {
+  font-size: 13px;
+  color: var(--fg-soft);
+}
+
+.login-card__sent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+}
+
+.login-card__sent strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+
+/* Steps */
+
+.steps {
+  display: grid;
+  gap: 20px;
+  padding-block: 40px;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 720px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step__num {
+  font-family: var(--font-display);
+  font-weight: 760;
+  font-size: 34px;
+  color: var(--primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.step h3 {
+  font-size: 19px;
+}
+
+.step p {
+  color: var(--fg-muted);
+  max-width: 38ch;
+}
+
+/* Footer */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding-block: 24px 40px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--fg-soft);
+  font-size: 14px;
+}
+
+.site-footer nav {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.site-footer a {
+  color: var(--fg-muted);
+}
+
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+}
+
+.lang-switch button {
+  border: 0;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.lang-switch button[aria-pressed="true"] {
+  background: var(--surface-raised);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}

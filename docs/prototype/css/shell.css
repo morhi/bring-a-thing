@@ -1,0 +1,252 @@
+/* App shell: header, wordmark, user menu, review bar */
+
+.app-header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: color-mix(in oklab, var(--surface) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: var(--surface);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  text-decoration: none;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+}
+
+.wordmark .tag {
+  font-size: 17px;
+  padding: 1px 9px 2px;
+}
+
+.wordmark--lg {
+  font-size: 28px;
+}
+
+.wordmark--lg .tag {
+  font-size: 23px;
+  padding: 2px 11px 3px;
+}
+
+.app-header__spacer {
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bell {
+  position: relative;
+}
+
+.bell__count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--primary-fg);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.user-menu__button:hover {
+  background: var(--surface-sunken);
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+  animation: rise var(--duration-fast) var(--ease-out);
+}
+
+.menu__head {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.menu__name {
+  font-weight: 600;
+}
+
+.menu__email {
+  font-size: 13px;
+  color: var(--fg-soft);
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: var(--radius-xs);
+  font-size: 15px;
+  color: var(--fg);
+}
+
+.menu__item:hover {
+  background: var(--surface-sunken);
+}
+
+.menu .divider {
+  margin-block: 4px;
+}
+
+/* Breadcrumb / back link */
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.back:hover {
+  color: var(--fg);
+}
+
+.back svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Review bar: prototype controls, not part of the product */
+
+.review-bar {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.review-bar__toggle {
+  border: 1px solid #c026d3;
+  background: var(--surface-raised);
+  color: #a21caf;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+}
+
+.review-panel {
+  width: min(320px, calc(100vw - 24px));
+  background: var(--surface-raised);
+  border: 1px solid #c026d3;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  animation: rise var(--duration-fast) var(--ease-out);
+}
+
+.review-panel h2 {
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: #a21caf;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.review-panel .field__label {
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.review-panel .segmented {
+  align-self: flex-start;
+}
+
+.review-panel__features {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.review-panel__features b {
+  color: #a21caf;
+}

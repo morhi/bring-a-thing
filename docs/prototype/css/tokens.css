@@ -1,0 +1,203 @@
+/*
+  Bring a Thing: design tokens
+
+  Layout concept: one centered column (max 1120px), left-aligned content on a
+  faintly dotted ground. Cards only where an object needs its own edge. The one
+  bold element is the tilted "Thing" tag in the wordmark and on fixed dates;
+  everything else stays quiet.
+
+  Layer 1: primitives (never used directly in components)
+  Layer 2: semantic tokens with light and dark values (used everywhere)
+  Layer 3: component tokens only where a component deviates
+*/
+
+:root {
+  /* Layer 1: primitives. Green-biased neutrals so grey never reads as default grey. */
+  --green-50: #ecfdf5;
+  --green-100: #d1fae5;
+  --green-200: #a7f3d0;
+  --green-300: #6ee7b7;
+  --green-400: #34d399;
+  --green-500: #10b981;
+  --green-600: #059669;
+  --green-700: #047857;
+  --green-800: #065f46;
+  --green-900: #064e3b;
+  --green-950: #022c22;
+
+  --moss-0: #fbfcfa;
+  --moss-50: #f4f7f4;
+  --moss-100: #e8ede9;
+  --moss-200: #d9e1db;
+  --moss-300: #c1ccc5;
+  --moss-400: #98a89f;
+  --moss-500: #71817a;
+  --moss-600: #56665e;
+  --moss-700: #3f4c46;
+  --moss-800: #28322d;
+  --moss-900: #1a221e;
+  --moss-950: #0f1512;
+
+  --sun-100: #fef3c7;
+  --sun-400: #fbbf24;
+  --sun-700: #b45309;
+  --sun-800: #92400e;
+
+  --rose-100: #ffe4e6;
+  --rose-400: #fb7185;
+  --rose-700: #be123c;
+  --rose-800: #9f1239;
+
+  --sky-100: #e0f2fe;
+  --sky-700: #0369a1;
+
+  --font-display: 'Bricolage Grotesque', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+
+  /* Layer 2: semantic, light values */
+  color-scheme: light;
+  --surface: var(--moss-0);
+  --surface-muted: var(--moss-50);
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--moss-100);
+  --fg: var(--moss-900);
+  --fg-muted: var(--moss-600);
+  --fg-soft: var(--moss-500);
+  --fg-inverted: #ffffff;
+  --border: var(--moss-200);
+  --border-strong: var(--moss-300);
+
+  --primary: var(--green-700);           /* 5.5:1 on white */
+  --primary-hover: var(--green-800);
+  --primary-fg: #ffffff;
+  --primary-soft: var(--green-50);
+  --primary-soft-fg: var(--green-800);
+  --primary-ring: var(--green-600);      /* 3.8:1 on white, controls only */
+  --accent: var(--green-500);            /* surfaces and marks without text */
+
+  --success: var(--green-700);
+  --success-soft: var(--green-50);
+  --warning: var(--sun-700);
+  --warning-soft: var(--sun-100);
+  --danger: var(--rose-700);
+  --danger-soft: var(--rose-100);
+  --info: var(--sky-700);
+  --info-soft: var(--sky-100);
+
+  --focus-ring: var(--green-600);
+  --shadow-color: 20 40 30;
+  --shadow-sm: 0 1px 2px rgb(var(--shadow-color) / 0.06);
+  --shadow-md: 0 6px 24px -8px rgb(var(--shadow-color) / 0.16), 0 1px 2px rgb(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 24px 60px -20px rgb(var(--shadow-color) / 0.28), 0 2px 6px rgb(var(--shadow-color) / 0.08);
+
+  /* Textures: low-alpha, never behind running text */
+  --texture-dot-color: rgb(20 40 30 / 0.07);
+  --texture-dot-size: 22px;
+  --texture-hatch-color: rgb(20 40 30 / 0.05);
+  --texture-grain-opacity: 0.08;
+
+  /* Spacing contract for forms */
+  --space-label: 8px;     /* label to control, control to hint */
+  --space-stack: 16px;    /* between fields in a form */
+  --space-inner: 8px;     /* between repeated rows inside one control */
+
+  /* Layer 3: component tokens */
+  --control-height: 44px;
+  --control-height-sm: 36px;
+  --control-radius: var(--radius-sm);
+  --card-radius: var(--radius-lg);
+  --card-padding: 24px;
+  --tag-tilt: -3deg;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: var(--moss-950);
+    --surface-muted: #131a16;
+    --surface-raised: var(--moss-900);
+    --surface-sunken: #0b100d;
+    --fg: #e9efeb;
+    --fg-muted: var(--moss-400);
+    --fg-soft: #7d8c85;
+    --fg-inverted: var(--moss-950);
+    --border: var(--moss-800);
+    --border-strong: var(--moss-700);
+
+    --primary: var(--green-400);         /* 10.3:1 on moss-950 */
+    --primary-hover: var(--green-300);
+    --primary-fg: var(--green-950);      /* 7.9:1 on green-400 */
+    --primary-soft: #0f2b22;
+    --primary-soft-fg: var(--green-300);
+    --primary-ring: var(--green-500);
+    --accent: var(--green-500);
+
+    --success: var(--green-400);
+    --success-soft: #0f2b22;
+    --warning: var(--sun-400);
+    --warning-soft: #2b2110;
+    --danger: var(--rose-400);
+    --danger-soft: #2f1418;
+    --info: #7dd3fc;
+    --info-soft: #0f2433;
+
+    --focus-ring: var(--green-500);
+    --shadow-color: 0 0 0;
+    --shadow-md: 0 6px 24px -8px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
+
+    --texture-dot-color: rgb(233 239 235 / 0.07);
+    --texture-hatch-color: rgb(233 239 235 / 0.05);
+    --texture-grain-opacity: 0.1;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: var(--moss-950);
+  --surface-muted: #131a16;
+  --surface-raised: var(--moss-900);
+  --surface-sunken: #0b100d;
+  --fg: #e9efeb;
+  --fg-muted: var(--moss-400);
+  --fg-soft: #7d8c85;
+  --fg-inverted: var(--moss-950);
+  --border: var(--moss-800);
+  --border-strong: var(--moss-700);
+
+  --primary: var(--green-400);
+  --primary-hover: var(--green-300);
+  --primary-fg: var(--green-950);
+  --primary-soft: #0f2b22;
+  --primary-soft-fg: var(--green-300);
+  --primary-ring: var(--green-500);
+  --accent: var(--green-500);
+
+  --success: var(--green-400);
+  --success-soft: #0f2b22;
+  --warning: var(--sun-400);
+  --warning-soft: #2b2110;
+  --danger: var(--rose-400);
+  --danger-soft: #2f1418;
+  --info: #7dd3fc;
+  --info-soft: #0f2433;
+
+  --focus-ring: var(--green-500);
+  --shadow-color: 0 0 0;
+  --shadow-md: 0 6px 24px -8px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
+
+  --texture-dot-color: rgb(233 239 235 / 0.07);
+  --texture-hatch-color: rgb(233 239 235 / 0.05);
+  --texture-grain-opacity: 0.1;
+}
