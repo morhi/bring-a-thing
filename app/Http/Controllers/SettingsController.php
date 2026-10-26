@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Auth\SendEmailConfirmationLink;
+use App\Data\SettingsData;
 use App\Http\Requests\AddAccountEmailRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
@@ -15,14 +16,12 @@ use Inertia\Response;
 class SettingsController extends Controller
 {
     /**
-     * Show the account settings page.
+     * Show the account settings page (F-02, F-24).
      */
-    public function edit(): Response
+    public function edit(Request $request): Response
     {
         return Inertia::render('Settings', [
-            'name' => request()->user()->name,
-            'email' => request()->user()->email,
-            'hasPassword' => (bool) request()->user()->password,
+            'settings' => SettingsData::fromUser($request->user()),
         ]);
     }
 
@@ -35,7 +34,7 @@ class SettingsController extends Controller
             'name' => $request->string('name')->value(),
         ]);
 
-        return back()->with('success', 'Profile updated.');
+        return back()->with('success', __('ui.settings.saved'));
     }
 
     /**
@@ -52,7 +51,7 @@ class SettingsController extends Controller
 
         $sendConfirmationLink->handle($user);
 
-        return back()->with('success', 'A confirmation link has been sent to your email address.');
+        return back()->with('success', __('ui.settings.email.sent'));
     }
 
     /**
@@ -83,7 +82,7 @@ class SettingsController extends Controller
             'pending_email' => null,
         ])->save();
 
-        return to_route('settings.edit')->with('success', 'Email confirmed. You can now log in with it on other devices.');
+        return to_route('settings.edit')->with('success', __('ui.settings.email.confirmed'));
     }
 
     /**
@@ -91,10 +90,12 @@ class SettingsController extends Controller
      */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
+        $hadPassword = $request->user()->password !== null;
+
         $request->user()->update([
             'password' => $request->string('password')->value(),
         ]);
 
-        return back()->with('success', 'Password updated.');
+        return back()->with('success', __($hadPassword ? 'ui.settings.password.changeDone' : 'ui.settings.password.setDone'));
     }
 }

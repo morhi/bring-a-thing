@@ -7,6 +7,7 @@ use App\Actions\Auth\SendMagicLink;
 use App\Actions\Groups\JoinGroupViaLink;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
+use App\Enums\LoginLinkError;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RequestMagicLinkRequest;
 use App\Models\Group;
@@ -16,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 
 class MagicLinkController extends Controller
 {
@@ -56,7 +58,7 @@ class MagicLinkController extends Controller
 
         $sendMagicLink->handle($user, $roster);
 
-        return back()->with('success', 'A login link has been sent to your email address.');
+        return back()->with('success', __('ui.welcome.login.sentFlash'));
     }
 
     /**
@@ -85,6 +87,9 @@ class MagicLinkController extends Controller
      * before login, takes priority over both. A `join` invite token, set
      * when the link was requested through a closed invite link, joins that
      * group and lands there, unless the invite link was revoked meanwhile.
+     *
+     * An expired or altered link logs nobody in and returns to the start
+     * page, which offers a new link (F-01, section 8).
      */
     public function show(
         Request $request,
@@ -92,6 +97,12 @@ class MagicLinkController extends Controller
         CompletePendingSharedClaim $completePendingSharedClaim,
         JoinGroupViaLink $joinGroup,
     ): RedirectResponse {
+        if (! URL::hasValidSignature($request)) {
+            $error = URL::hasCorrectSignature($request) ? LoginLinkError::Expired : LoginLinkError::Invalid;
+
+            return to_route('welcome')->with('login_link_error', $error->value);
+        }
+
         // Following the link proves control of the address (F-01).
         if ($user->email_verified_at === null) {
             $user->forceFill(['email_verified_at' => now()])->save();

@@ -213,13 +213,13 @@ it('F-05: after an invitation, the person appears on the "Friends" page', functi
     $group = Group::factory()->create(['owner_id' => $owner->id]);
     $group->addMember($owner, GroupRole::Owner, now());
 
-    $this->actingAs($owner)->post(route('groups.invite', $group), ['name' => 'Cleo Invitee', 'email' => 'cleo@example.com']);
+    $this->actingAs($owner)->post(route('groups.invite', $group), ['invites' => [['name' => 'Cleo Invitee', 'email' => 'cleo@example.com']]]);
 
     $this->actingAs($owner)
         ->get(route('friends.index'))
         ->assertInertia(fn ($page) => $page
-            ->where('friends.0.name', 'Cleo Invitee')
-            ->where('friends.0.friend_user.email', 'cleo@example.com'));
+            ->where('friends.items.0.name', 'Cleo Invitee')
+            ->where('friends.items.0.email', 'cleo@example.com'));
 });
 
 it('F-05: a removed friend stays a member of the groups they were in', function () {
@@ -227,7 +227,7 @@ it('F-05: a removed friend stays a member of the groups they were in', function 
     $owner = User::factory()->create();
     $group = Group::factory()->create(['owner_id' => $owner->id]);
     $group->addMember($owner, GroupRole::Owner, now());
-    $this->actingAs($owner)->post(route('groups.invite', $group), ['name' => 'Dana Invitee', 'email' => 'dana@example.com']);
+    $this->actingAs($owner)->post(route('groups.invite', $group), ['invites' => [['name' => 'Dana Invitee', 'email' => 'dana@example.com']]]);
     $friend = Friend::query()->where('user_id', $owner->id)->firstOrFail();
 
     $this->actingAs($owner)->delete(route('friends.destroy', $friend))->assertRedirect();

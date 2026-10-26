@@ -78,3 +78,36 @@ it('rejects a password change when the confirmation does not match', function ()
 
     $response->assertInvalid('password');
 });
+
+it('F-02: shows the settings page with the account state', function () {
+    $user = User::factory()->shadow()->create(['name' => 'Jo', 'email' => null, 'pending_email' => 'jo@example.com']);
+
+    $this->actingAs($user)
+        ->get(route('settings.edit'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Settings')
+            ->where('settings.name', 'Jo')
+            ->where('settings.email', null)
+            ->where('settings.pending_email', 'jo@example.com')
+            ->where('settings.has_password', false)
+            ->where('settings.languages', ['en', 'de'])
+            ->where('settings.password_min_length', 8));
+});
+
+it('F-02: after setting a password, login with email and password succeeds', function () {
+    $user = User::factory()->shadow()->create(['email' => 'pw@example.com']);
+
+    $this->actingAs($user)
+        ->patch(route('settings.password'), [
+            'password' => 'a-new-password',
+            'password_confirmation' => 'a-new-password',
+        ])
+        ->assertSessionHas('success', __('ui.settings.password.setDone'));
+
+    auth()->logout();
+
+    $this->post(route('login.password'), ['email' => 'pw@example.com', 'password' => 'a-new-password'])
+        ->assertRedirect(route('dashboard'));
+    $this->assertAuthenticatedAs($user);
+});

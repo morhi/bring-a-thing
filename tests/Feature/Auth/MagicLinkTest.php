@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Auth\SendMagicLink;
 use App\Mail\MagicLinkMail;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -72,7 +73,8 @@ it('F-01: rejects an expired magic link', function () {
 
     $response = $this->get($url);
 
-    $response->assertForbidden();
+    // Section 8: the start page shows the note with "Request new link" instead of a bare 403.
+    $response->assertRedirect(route('welcome'))->assertSessionHas('login_link_error', 'expired');
     $this->assertGuest();
 });
 
@@ -85,7 +87,7 @@ it('F-01: rejects a tampered magic link', function () {
 
     $response = $this->get($tamperedUrl);
 
-    $response->assertForbidden();
+    $response->assertRedirect(route('welcome'))->assertSessionHas('login_link_error', 'invalid');
     $this->assertGuest();
 });
 
@@ -246,4 +248,23 @@ it('completes a pending shared-list claim started before login', function () {
     $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
     $this->assertAuthenticatedAs($user);
     $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $user->id]);
+});
+
+it('F-01: shows the expired login link note with a new link offer on the start page', function () {
+    $user = User::factory()->create();
+    $url = URL::temporarySignedRoute('login.consume', now()->subMinute(), ['user' => $user->id]);
+
+    $this->followingRedirects()
+        ->get($url)
+        ->assertInertia(fn ($page) => $page
+            ->component('Welcome')
+            ->where('welcome.login_link_error', 'expired')
+            ->where('welcome.link_expires_in_minutes', SendMagicLink::EXPIRES_IN_MINUTES));
+    $this->assertGuest();
+});
+
+it('F-01: shows no login link note on a normal visit to the start page', function () {
+    $this->get(route('welcome'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Welcome')->where('welcome.login_link_error', null));
 });

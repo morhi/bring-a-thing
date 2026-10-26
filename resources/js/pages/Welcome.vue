@@ -1,490 +1,175 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import Button from '@/components/ui/legacy/Button.vue';
-import { Users } from '@lucide/vue';
-import { ListChecks as ListCheck } from '@lucide/vue';
-import { RefreshCw as Sync } from '@lucide/vue';
-import { Calendar } from '@lucide/vue';
-import { MessagesSquare as Comments } from '@lucide/vue';
-import { Bell } from '@lucide/vue';
-import { LockOpen } from '@lucide/vue';
-import { Ban } from '@lucide/vue';
-import { ShoppingBag } from '@lucide/vue';
-import { House as Home } from '@lucide/vue';
-import { Map } from '@lucide/vue';
-import { Gift } from '@lucide/vue';
-import { ShoppingCart as CartPlus } from '@lucide/vue';
-import { Box } from '@lucide/vue';
-import { Send } from '@lucide/vue';
-import { CircleCheck as CheckCircle } from '@lucide/vue';
+import { ArrowRightIcon } from '@lucide/vue';
+import { computed } from 'vue';
+import LoginForm from '@/components/app/login-form.vue';
+import Mark from '@/components/app/mark.vue';
+import type { MarkAnswer } from '@/components/app/mark.vue';
+import UserAvatar from '@/components/app/user-avatar.vue';
+import LanguageSwitch from '@/components/app/shell/language-switch.vue';
+import { Button } from '@/components/ui/button';
+import { useI18n } from '@/composables/use-i18n';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
-import OnboardingForm from '@/components/OnboardingForm.vue';
-import type { Auth } from '@/types';
+import { dashboard } from '@/routes';
 
 defineOptions({ layout: WebsiteLayout });
 
-const page = usePage<{ auth: Auth }>();
+const props = defineProps<{
+    welcome: App.Data.WelcomeData;
+}>();
 
-const useCases = [
-    {
-        icon: ShoppingBag,
-        title: 'Potlucks & dinner parties',
-        description:
-            "Add every dish to a shared list and let members claim what they're bringing, so you don't end up with five salads and no dessert.",
-    },
-    {
-        icon: Home,
-        title: 'Weekly meal plans',
-        description:
-            'Plan "Meal Monday", "Meal Tuesday", and so on as separate things, each pinned to its own day, in a single reusable list.',
-    },
-    {
-        icon: Map,
-        title: 'Camping trips & shared stays',
-        description:
-            'Split gear, food, and supplies across everyone going, with quantities so nobody packs three tents and nobody packs none.',
-    },
-    {
-        icon: CartPlus,
-        title: 'House parties & shared purchases',
-        description:
-            'Track drinks, snacks, and equipment that a group is chipping in on, including things several people split the cost or quantity of.',
-    },
-    {
-        icon: Gift,
-        title: 'Group gifts & wish lists',
-        description:
-            'Coordinate a shared gift or a wish list for an occasion without spoiling the surprise in a group chat everyone can read.',
-    },
-    {
-        icon: Box,
-        title: 'Recurring household lists',
-        description:
-            'Duplicate a list you already set up, like a shared grocery run or a supply list for a regular household event, instead of rebuilding it each time.',
-    },
+const page = usePage();
+const { t, locale } = useI18n();
+
+const user = computed(() => page.props.auth.user);
+
+// The tilted tag sits inside the sentence, at a different place per language
+const titleParts = computed(() => {
+    const [before, after = ''] = t('welcome.title').split(':tag');
+
+    return { before, after };
+});
+
+// The illustration is a fixed example, so its people and dates never change
+const people = ['Lena Frei', 'Tobi Keller', 'Mia Rossi', 'Jonas Brand'];
+
+const pollRows: { name: string; marks: MarkAnswer[] }[] = [
+    { name: people[0], marks: ['yes', 'yes', 'maybe'] },
+    { name: people[1], marks: ['yes', 'maybe', 'yes'] },
+    { name: people[2], marks: ['no', 'yes', 'yes'] },
+    { name: people[3], marks: ['yes', 'no', 'none'] },
 ];
 
-const features = [
-    {
-        icon: Users,
-        title: 'Groups & lists',
-        description:
-            'Create a group for a household, a team, or a circle of friends, and attach any number of lists to it. Lists can stand entirely on their own too, no group required.',
-        available: true,
-    },
-    {
-        icon: ListCheck,
-        title: 'Flexible things & custom fields',
-        description:
-            'Add things with quantity, unit, and notes, then define custom fields (allergens, color, whatever fits) per list. Built for meal plans, birthdays, house parties, and similar shared lists of things.',
-        available: true,
-    },
-    {
-        icon: Sync,
-        title: 'Split claiming',
-        description:
-            'A single thing, like "10 chairs" or "2 kg potatoes", can be claimed by several members at once, each bringing their own share, instead of forcing one person to cover the whole thing.',
-        available: true,
-    },
-    {
-        icon: Bell,
-        title: 'Live claim updates',
-        description:
-            'Claims and changes appear instantly for everyone viewing a list, over real-time WebSockets. No refreshing to check who already brought what.',
-        available: true,
-    },
-    {
-        icon: LockOpen,
-        title: 'Passwordless sign-in',
-        description:
-            'Register with just an email and sign in with a magic link. Invited members get instant access without a forced account-creation step.',
-        available: true,
-    },
-    {
-        icon: Calendar,
-        title: 'Scheduling polls',
-        description:
-            'Propose candidate dates and let members vote yes, no, or maybe to find a date that works, or track ongoing day-by-day attendance for a longer group stay.',
-        available: false,
-    },
-    {
-        icon: Comments,
-        title: 'Comments on lists & things',
-        description:
-            'Discuss a list, or a single thing, in its own short thread, so questions like "can I bring a gluten-free version instead?" stay next to the thing they concern.',
-        available: false,
-    },
-    {
-        icon: Bell,
-        title: 'In-app notification center',
-        description:
-            'A running feed of invites, comments, and claims relevant to you, updated live, so you don’t have to recheck every list by hand.',
-        available: false,
-    },
-];
+function shortDate(iso: string): string {
+    const [year, month, day] = iso.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
 
-const steps = [
-    {
-        title: 'Create a list',
-        description:
-            'Name it, optionally attach it to a group, and add things with a quantity, a unit, and notes. Add custom fields if your event needs them.',
-    },
-    {
-        title: 'Invite your group',
-        description:
-            'Add members by email. They get their own magic link and can view and claim things right away, no account-creation flow required.',
-    },
-    {
-        title: 'Claim & track live',
-        description:
-            'Members claim a whole thing or a share of one. Every claim shows up for the whole group instantly, so the list stays accurate without anyone asking around.',
-    },
-];
+    return locale.value === 'de'
+        ? `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.`
+        : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
-const faqs = [
-    {
-        question:
-            'Is there a free app for organizing who brings what to a potluck or group event?',
-        answer: "Yes. Create a list, add the things you need, and invite your group by email. Everyone can see and claim things in real time, and there's no cost or ad-supported catch.",
-    },
-    {
-        question: 'Can more than one person bring part of the same thing?',
-        answer: 'Yes, split claiming lets several members each claim a portion of one thing, such as "10 chairs", specifying how much they personally are bringing.',
-    },
-    {
-        question: 'Do members need to create an account to join a list?',
-        answer: "No. Inviting someone by email gives them immediate access with their own magic-link sign-in; there's no separate registration step blocking participation.",
-    },
-    {
-        question: 'Does this app show ads or sell my data?',
-        answer: "No. There are no ads, no tracking, and no data sold to third parties. It's a paid-for-by-nobody-but-us tool built to do one job well.",
-    },
-];
+const pollDates = ['2026-11-20', '2026-11-21', '2026-11-27'];
+const bestDate = '2026-11-21';
+
+const listItems = computed(() => [
+    { name: t('welcome.mini.item1'), who: 'Lena', answer: 'yes' as MarkAnswer },
+    { name: t('welcome.mini.item2'), who: '4 + 2', answer: 'yes' as MarkAnswer },
+    { name: t('welcome.mini.item3'), who: '?', answer: 'none' as MarkAnswer },
+]);
+
+const steps = [1, 2, 3];
+
+const miniClass = 'border-border bg-surface-raised flex min-w-0 flex-col gap-2 rounded-xl border p-3 text-xs shadow-md';
 </script>
 
 <template>
-    <Head title="Bring A Thing" />
+    <Head :title="t('welcome.login.title')" />
 
-    <div>
-        <section class="mx-auto w-full max-w-7xl px-6 pt-20 pb-16 text-center">
-            <h1
-                class="text-surface-900 dark:text-surface-0 text-4xl font-bold tracking-tight sm:text-5xl"
-            >
-                Stop losing track of who's bringing what.
-            </h1>
-            <p
-                class="text-surface-600 dark:text-surface-300 mx-auto mt-6 max-w-2xl text-lg"
-            >
-                {{ page.props.name }} is a focused app for organizing shared
-                lists of things: potlucks, weekly meal plans, camping trips,
-                house parties, and group gifts. Add things, invite your group,
-                and watch claims update live, with no ads and no tracking.
-            </p>
-            <template v-if="page.props.auth.user">
-                <div class="mt-8 flex items-center justify-center gap-3">
-                    <Link href="/dashboard">
-                        <Button label="Go to dashboard" size="large" />
-                    </Link>
-                </div>
-            </template>
-            <template v-else>
-                <div id="get-started" class="mt-8 scroll-mt-24">
-                    <OnboardingForm />
-                </div>
-                <p class="text-surface-400 dark:text-surface-500 mt-4 text-sm">
-                    Already have an account? Enter your email above to log in.
-                </p>
-            </template>
-            <p
-                class="text-surface-400 dark:text-surface-500 mx-auto mt-6 max-w-2xl text-xs"
-            >
-                A free potluck list app, group packing list, and
-                who's-bringing-what tracker in one, without ads or account walls
-                for the people you invite.
-            </p>
-        </section>
+    <div class="flex flex-col">
+        <section class="grid items-start gap-10 pt-2 pb-2 min-[900px]:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] min-[900px]:gap-14 min-[900px]:pt-10">
+            <div class="flex min-w-0 flex-col gap-5">
+                <h1 class="max-w-[14ch] text-[clamp(36px,4.4vw+14px,64px)] leading-[1.02] font-[720] tracking-[-0.03em]">
+                    {{ titleParts.before
+                    }}<span class="bg-primary font-tag text-primary-fg inline-block rotate-(--tag-tilt) rounded-lg font-bold leading-[1.2] shadow-sm mx-[0.04em] px-2.5 pt-0.5 pb-[3px] align-[0.08em] text-[0.78em]">{{ t('welcome.tag') }}</span
+                    >{{ titleParts.after }}
+                </h1>
+                <p class="text-fg-muted max-w-[50ch] text-lg">{{ t('welcome.lede') }}</p>
 
-        <section
-            class="border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/50 border-y"
-        >
-            <div class="mx-auto w-full max-w-7xl px-6 py-16">
-                <h2
-                    class="text-surface-900 dark:text-surface-0 text-center text-2xl font-semibold"
-                >
-                    Built for the situations where lists get messy
-                </h2>
-                <p
-                    class="text-surface-600 dark:text-surface-300 mx-auto mt-3 max-w-xl text-center"
-                >
-                    A specialized tool for shared lists of things and claims,
-                    not a general-purpose event planner or to-do app.
-                </p>
-                <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div
-                        v-for="useCase in useCases"
-                        :key="useCase.title"
-                        class="dark:bg-surface-900 rounded-lg bg-white p-6 shadow-sm"
-                    >
-                        <component
-                            :is="useCase.icon"
-                            class="text-primary-500 h-6 w-6"
-                        />
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 mt-4 font-semibold"
-                        >
-                            {{ useCase.title }}
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            {{ useCase.description }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mx-auto w-full max-w-7xl px-6 py-16">
-            <h2
-                class="text-surface-900 dark:text-surface-0 text-center text-2xl font-semibold"
-            >
-                What the app actually does
-            </h2>
-            <p
-                class="text-surface-600 dark:text-surface-300 mx-auto mt-3 max-w-xl text-center"
-            >
-                A small set of specialized features for shared lists and claims,
-                some shipped today, some still on the roadmap.
-            </p>
-            <div class="mt-12 grid gap-12 sm:grid-cols-2">
-                <div>
-                    <h3
-                        class="text-primary-600 dark:text-primary-400 text-sm font-semibold tracking-wide uppercase"
-                    >
-                        Available now
-                    </h3>
-                    <ul
-                        class="divide-surface-200 dark:divide-surface-800 mt-4 divide-y"
-                    >
-                        <li
-                            v-for="feature in features.filter(
-                                (f) => f.available,
-                            )"
-                            :key="feature.title"
-                            class="flex gap-4 py-4 first:pt-0"
-                        >
-                            <component
-                                :is="feature.icon"
-                                class="text-primary-500 mt-1 h-5 w-5 shrink-0"
-                            />
-                            <div>
-                                <h4
-                                    class="text-surface-900 dark:text-surface-0 font-semibold"
+                <div class="relative mt-2 grid gap-3.5 min-[560px]:grid-cols-3 min-[560px]:items-start" aria-hidden="true">
+                    <div class="flex min-w-0 flex-col gap-2.5">
+                        <span class="text-fg-muted flex items-center gap-2 text-[13px] font-semibold">
+                            <b class="font-display text-primary text-[15px] tabular-nums">1</b>
+                            {{ t('welcome.chain.1') }}
+                        </span>
+                        <div :class="miniClass">
+                            <div class="font-display text-sm leading-tight font-[640]">{{ t('welcome.mini.poll') }}</div>
+                            <div class="text-fg-muted grid grid-cols-[auto_repeat(3,1fr)] items-center gap-x-1.5 gap-y-1">
+                                <span />
+                                <span
+                                    v-for="date in pollDates"
+                                    :key="date"
+                                    :class="['text-center text-[11px] font-semibold whitespace-nowrap', date === bestDate ? 'text-primary' : 'text-fg-soft']"
+                                    >{{ shortDate(date) }}</span
                                 >
-                                    {{ feature.title }}
-                                </h4>
-                                <p
-                                    class="text-surface-600 dark:text-surface-300 mt-1 text-sm"
-                                >
-                                    {{ feature.description }}
-                                </p>
+                                <template v-for="row in pollRows" :key="row.name">
+                                    <UserAvatar :name="row.name" size="sm" />
+                                    <Mark v-for="(mark, index) in row.marks" :key="index" :answer="mark" class="mx-auto size-4 [&_svg]:size-2.5" />
+                                </template>
                             </div>
-                        </li>
-                    </ul>
-                </div>
-                <div>
-                    <h3
-                        class="text-surface-500 dark:text-surface-400 text-sm font-semibold tracking-wide uppercase"
-                    >
-                        On the roadmap
-                    </h3>
-                    <ul
-                        class="divide-surface-200 dark:divide-surface-800 mt-4 divide-y"
-                    >
-                        <li
-                            v-for="feature in features.filter(
-                                (f) => !f.available,
-                            )"
-                            :key="feature.title"
-                            class="flex gap-4 py-4 first:pt-0"
-                        >
-                            <component
-                                :is="feature.icon"
-                                class="text-surface-400 dark:text-surface-500 mt-1 h-5 w-5 shrink-0"
-                            />
-                            <div>
-                                <h4
-                                    class="text-surface-900 dark:text-surface-0 font-semibold"
-                                >
-                                    {{ feature.title }}
-                                </h4>
-                                <p
-                                    class="text-surface-600 dark:text-surface-300 mt-1 text-sm"
-                                >
-                                    {{ feature.description }}
-                                </p>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <section
-            class="border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/50 border-y"
-        >
-            <div class="mx-auto w-full max-w-7xl px-6 py-16">
-                <h2
-                    class="text-surface-900 dark:text-surface-0 text-center text-2xl font-semibold"
-                >
-                    How it works
-                </h2>
-                <div class="mt-12 grid gap-8 sm:grid-cols-3">
-                    <div
-                        v-for="(step, index) in steps"
-                        :key="step.title"
-                        class="flex flex-col items-center text-center"
-                    >
-                        <div
-                            class="bg-primary-500 flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white"
-                        >
-                            {{ index + 1 }}
                         </div>
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 mt-4 font-semibold"
-                        >
-                            {{ step.title }}
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 max-w-xs text-sm"
-                        >
-                            {{ step.description }}
-                        </p>
+                    </div>
+
+                    <div class="flex min-w-0 flex-col gap-2.5 min-[560px]:mt-7">
+                        <span class="text-fg-muted flex items-center gap-2 text-[13px] font-semibold">
+                            <b class="font-display text-primary text-[15px] tabular-nums">2</b>
+                            {{ t('welcome.chain.2') }}
+                        </span>
+                        <div :class="miniClass">
+                            <div class="font-display text-sm leading-tight font-[640]">{{ t('welcome.mini.event') }}</div>
+                            <div class="flex items-baseline gap-2">
+                                <span class="bg-primary font-tag text-primary-fg inline-block rotate-(--tag-tilt) rounded-lg font-bold leading-[1.2] shadow-sm px-[7px] pt-px pb-0.5 text-xs">{{ shortDate('2026-11-14') }}</span>
+                                <span>18:00</span>
+                            </div>
+                            <div class="text-fg-muted flex items-center gap-1.5">
+                                <span class="flex -space-x-1.5">
+                                    <UserAvatar v-for="name in people" :key="name" :name="name" size="sm" />
+                                </span>
+                                <span>{{ t('welcome.mini.accepted') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex min-w-0 flex-col gap-2.5 min-[560px]:mt-14">
+                        <span class="text-fg-muted flex items-center gap-2 text-[13px] font-semibold">
+                            <b class="font-display text-primary text-[15px] tabular-nums">3</b>
+                            {{ t('welcome.chain.3') }}
+                        </span>
+                        <div :class="miniClass">
+                            <div class="font-display text-sm leading-tight font-[640]">{{ t('welcome.mini.list') }}</div>
+                            <div class="flex flex-col gap-1">
+                                <div v-for="item in listItems" :key="item.name" class="bg-surface-muted flex items-center gap-2 rounded-[7px] px-2 py-1">
+                                    <Mark :answer="item.answer" class="size-4 [&_svg]:size-2.5" />
+                                    <span class="text-fg min-w-0 flex-1 truncate font-medium">{{ item.name }}</span>
+                                    <span class="text-fg-soft">{{ item.who }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <section class="mx-auto w-full max-w-7xl px-6 py-16">
-            <div class="grid gap-10 sm:grid-cols-2">
-                <div class="flex gap-4">
-                    <LockOpen class="text-primary-500 h-6 w-6 shrink-0" />
-                    <div>
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 font-semibold"
-                        >
-                            Passwordless by default
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            Register with just an email and sign in with a magic
-                            link. Set a password later in account settings if
-                            you prefer it, entirely optional.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <Ban class="text-primary-500 h-6 w-6 shrink-0" />
-                    <div>
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 font-semibold"
-                        >
-                            No ads, ever
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            {{ page.props.name }} isn't funded by ads or by
-                            selling attention. It's a tool for organizing your
-                            group's shared lists, nothing else competing for
-                            space on the page.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <Send class="text-primary-500 h-6 w-6 shrink-0" />
-                    <div>
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 font-semibold"
-                        >
-                            No forced sign-up for invitees
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            Invite someone by email and they get access right
-                            away with their own magic link, instead of being
-                            stopped by a registration form before they can claim
-                            a thing.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <CheckCircle class="text-primary-500 h-6 w-6 shrink-0" />
-                    <div>
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 font-semibold"
-                        >
-                            Built for one job
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            {{ page.props.name }} does shared lists of things
-                            and claims well, rather than trying to be a full
-                            event-planning suite with budgets, seating charts,
-                            or invitations built in.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
+            <div class="box relative flex flex-col gap-5 overflow-hidden p-7 shadow-md md:p-8">
+                <span class="from-primary to-(--accent) absolute inset-x-0 top-0 h-1.5 bg-linear-to-r" aria-hidden="true" />
 
-        <section class="border-surface-200 dark:border-surface-800 border-t">
-            <div class="mx-auto w-full max-w-7xl px-6 py-16">
-                <h2
-                    class="text-surface-900 dark:text-surface-0 text-center text-2xl font-semibold"
-                >
-                    Common questions
-                </h2>
-                <div class="mx-auto mt-10 flex max-w-2xl flex-col gap-6">
-                    <div v-for="faq in faqs" :key="faq.question">
-                        <h3
-                            class="text-surface-900 dark:text-surface-0 font-semibold"
-                        >
-                            {{ faq.question }}
-                        </h3>
-                        <p
-                            class="text-surface-600 dark:text-surface-300 mt-2 text-sm"
-                        >
-                            {{ faq.answer }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="border-surface-200 dark:border-surface-800 border-t">
-            <div
-                class="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-6 py-16 text-center"
-            >
-                <h2
-                    class="text-surface-900 dark:text-surface-0 text-2xl font-semibold"
-                >
-                    Ready to stop chasing people in the group chat?
-                </h2>
-                <template v-if="page.props.auth.user">
-                    <Link href="/dashboard">
-                        <Button label="Go to dashboard" size="large" />
-                    </Link>
+                <template v-if="user">
+                    <h2 class="text-2xl">{{ t('welcome.loggedIn.title') }}</h2>
+                    <p class="text-fg-muted">{{ t('welcome.loggedIn.text', { name: user.name || user.email || t('common.noName') }) }}</p>
+                    <Button as-child size="lg" class="h-11 w-full rounded-full">
+                        <Link :href="dashboard().url" class="text-primary-fg hover:text-primary-fg no-underline">
+                            {{ t('welcome.loggedIn.open') }}
+                            <ArrowRightIcon aria-hidden="true" />
+                        </Link>
+                    </Button>
                 </template>
+
                 <template v-else>
-                    <a href="#get-started">
-                        <Button label="Create your first list" size="large" />
-                    </a>
+                    <h2 class="text-2xl">{{ t('welcome.login.title') }}</h2>
+                    <LoginForm :expires-in-minutes="props.welcome.link_expires_in_minutes" :link-error="props.welcome.login_link_error" />
                 </template>
             </div>
         </section>
+
+        <section class="border-border mt-10 grid gap-5 border-t py-10 md:grid-cols-3 md:gap-8" :aria-label="t('welcome.steps.label')">
+            <div v-for="step in steps" :key="step" class="flex flex-col gap-2">
+                <span class="font-display text-primary text-[34px] leading-none font-[760] tabular-nums" aria-hidden="true">{{ step }}</span>
+                <h3 class="text-[19px]">{{ t(`welcome.steps.${step}.title`) }}</h3>
+                <p class="text-fg-muted max-w-[38ch]">{{ t(`welcome.steps.${step}.text`) }}</p>
+            </div>
+        </section>
+
+        <div class="border-border flex flex-wrap items-center justify-end gap-4 border-t pt-6">
+            <LanguageSwitch />
+        </div>
     </div>
 </template>
