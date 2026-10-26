@@ -11,6 +11,10 @@ import { OptionCalendar } from './option-calendar.js';
 import { EventView } from './views/event.js'; // event
 import { PollView } from './views/poll.js'; // poll
 import { ListView } from './views/list.js'; // list
+import { SettingsView } from './views/settings.js'; // settings
+import { FriendsView } from './views/friends.js'; // friends
+import { NotificationsBell } from './notifications.js'; // notifications
+import { GroupSettingsView } from './views/group-settings.js'; // group-settings
 
 const dialogs = {
   newGroup: 'NewGroupDialog'
@@ -42,7 +46,11 @@ Object.entries({
   NewGroupDialog, OptionCalendar,
   EventView, // event
   PollView, // poll
-  ListView // list
+  ListView, // list
+  SettingsView, // settings
+  FriendsView, // friends
+  NotificationsBell, // notifications
+  GroupSettingsView // group-settings
 }).forEach(([name, component]) => app.component(name, component));
 
 app.mount('#app');

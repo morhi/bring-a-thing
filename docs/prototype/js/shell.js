@@ -1,7 +1,7 @@
 // App shell: header with wordmark, notifications and user menu; review bar; toasts.
 
 import { computed, ref, onMounted, onBeforeUnmount } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, currentUser, go, views, viewState, features } from './core.js';
+import { ui, currentUser, go, views, viewState, features } from './core.js';
 import { t } from './i18n.js';
 
 export const Wordmark = {
@@ -24,7 +24,6 @@ export const AppHeader = {
   setup() {
     const menu = ref(null);
     const user = currentUser;
-    const unread = computed(() => h.unread(user.value.id));
     const onDocClick = (event) => {
       if (menu.value && !menu.value.contains(event.target)) {
         ui.menuOpen = false;
@@ -34,7 +33,7 @@ export const AppHeader = {
     onMounted(() => document.addEventListener('click', onDocClick));
     onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
 
-    return { ui, user, unread, menu, go, t };
+    return { ui, user, menu, go, t };
   },
   template: `
     <header class="app-header">
@@ -42,10 +41,7 @@ export const AppHeader = {
         <Wordmark />
         <span class="app-header__spacer"></span>
         <div class="header-actions">
-          <button type="button" class="btn btn--ghost btn--icon bell" :aria-label="t('common.notifications.unread', { n: unread })" data-feature="F-23">
-            <Icon name="bell" />
-            <span class="bell__count" v-if="unread" aria-hidden="true">{{ unread }}</span>
-          </button>
+          <NotificationsBell />
           <div class="user-menu" ref="menu">
             <button type="button" class="user-menu__button" :aria-expanded="ui.menuOpen" aria-controls="user-menu" :aria-label="t('nav.menu')" @click="ui.menuOpen = !ui.menuOpen">
               <Avatar :id="user.id" />

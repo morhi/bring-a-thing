@@ -1,0 +1,153 @@
+/* Notifications panel behind the bell (F-23) */
+
+.notifications {
+  position: relative;
+}
+
+.notif-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(400px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  animation: rise var(--duration-fast) var(--ease-out);
+}
+
+/* The header's backdrop-filter contains fixed descendants, so on narrow screens the panel
+   anchors to the sticky header instead and spans the viewport width. */
+@media (max-width: 560px) {
+  .notifications {
+    position: static;
+  }
+
+  .notif-panel {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}
+
+.notif-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 14px 16px 10px;
+}
+
+.notif-panel__head .btn {
+  margin-left: auto;
+}
+
+.notif-panel__head h2 {
+  font-size: 17px;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-list > li + li {
+  border-top: 1px solid var(--border);
+}
+
+.notif {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 12px 16px;
+  color: var(--fg);
+}
+
+.notif:hover {
+  background: var(--surface-muted);
+}
+
+.notif__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--surface-muted);
+  color: var(--fg-muted);
+}
+
+.notif--unread .notif__icon {
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+}
+
+.notif__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notif__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.notif__text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.notif--unread .notif__text {
+  font-weight: 600;
+}
+
+.notif__meta {
+  font-size: 13px;
+  color: var(--fg-soft);
+}
+
+.notif__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex: none;
+  margin-top: 8px;
+}
+
+.notif-panel__empty {
+  padding: 4px 16px 16px;
+}
+
+.notif-panel__empty .empty {
+  padding: 20px;
+}
+
+.notif-panel__live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--fg-soft);
+}
+
+.notif-panel__live .badge {
+  font-size: 11px;
+  padding: 1px 8px;
+}

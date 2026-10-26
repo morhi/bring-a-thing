@@ -154,7 +154,7 @@ export const GroupView = {
               <span v-if="stats.upcoming"><b>{{ stats.upcoming }}</b> {{ t('word.upcoming') }}</span>
             </div>
           </div>
-          <button type="button" class="btn btn--ghost btn--sm" v-if="isOwner" @click="go('settings')"><Icon name="settings" /> {{ t('group.settings') }}</button>
+          <button type="button" class="btn btn--ghost btn--sm" v-if="canManage" @click="go('group-settings', { currentGroupId: group.id })" data-feature="F-03"><Icon name="settings" /> {{ t('group.settings') }}</button>
         </div>
         <div class="create-bar">
           <button type="button" class="btn btn--primary" @click="goCreate('new-poll', { groupId: group.id })" data-feature="F-06"><Icon name="poll" /> {{ t('group.new.poll') }}</button>

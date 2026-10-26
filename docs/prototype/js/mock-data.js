@@ -3,7 +3,8 @@
 
 export default {
   accounts: [
-    { id: 'u1', name: 'Maurice Hildebrandt', email: 'maurice@nordlicht.band', language: 'en', tone: 1 },
+    // settings: u1 is the only account with a password, matching the demo accounts in welcome.js
+    { id: 'u1', name: 'Maurice Hildebrandt', email: 'maurice@nordlicht.band', language: 'en', tone: 1, hasPassword: true },
     { id: 'u2', name: 'Lena Frei', email: 'lena.frei@gmail.com', language: 'de', tone: 2 },
     { id: 'u3', name: 'Tobias Keller', email: 'tobi.keller@bluewin.ch', language: 'de', tone: 3 },
     { id: 'u4', name: 'Sara Wyss', email: 'sara@wyss.ch', language: 'de', tone: 4 },
@@ -20,7 +21,13 @@ export default {
     { accountId: 'u1', friendId: 'u5' },
     { accountId: 'u1', friendId: 'u6' },
     { accountId: 'u1', friendId: 'u7' },
-    { accountId: 'u1', friendId: 'u8' }
+    { accountId: 'u1', friendId: 'u8' },
+    // friends: Lena and Tobias have their own circles, so the admin and member roles see a list too
+    { accountId: 'u2', friendId: 'u1' },
+    { accountId: 'u2', friendId: 'u3' },
+    { accountId: 'u2', friendId: 'u5' },
+    { accountId: 'u3', friendId: 'u1' },
+    { accountId: 'u3', friendId: 'u2' }
   ],
 
   groups: [
@@ -209,7 +216,7 @@ export default {
     { eventId: 'e1', accountId: 'u4', status: 'accepted' },
     { eventId: 'e1', accountId: 'u6', status: 'pending' },
 
-    { eventId: 'e2', accountId: 'u1', status: 'pending' },
+    { eventId: 'e2', accountId: 'u1', status: 'accepted' },
     { eventId: 'e2', accountId: 'u2', status: 'pending' },
     { eventId: 'e2', accountId: 'u3', status: 'accepted' },
     { eventId: 'e2', accountId: 'u4', status: 'declined' },
@@ -237,7 +244,7 @@ export default {
     { id: 'l2', title: 'Raclette evening', description: 'Bring what you can, I have the grill.', ownerId: 'u1', groupId: null, eventId: null, date: '2026-11-28', membersCanAddItems: true, shareToken: 'rcl-7f3a' },
     { id: 'l3', title: 'Kuchenbuffet Chilbi', description: '', ownerId: 'u7', groupId: 'g2', eventId: null, date: '2026-11-21', membersCanAddItems: true, shareToken: null },
     { id: 'l4', title: 'Proberaum snacks', description: 'Rotating list for rehearsal nights.', ownerId: 'u3', groupId: 'g1', eventId: null, date: null, membersCanAddItems: true, shareToken: null },
-    // list: l5 is an event list where owner and admin are still pending (F-15); l6 is a group list with dated items, a custom field and the attendance link (F-14, F-16, F-18)
+    // list: l5 is an event list where the admin is still pending (F-15); l6 is a group list with dated items, a custom field and the attendance link (F-14, F-16, F-18)
     { id: 'l5', title: 'Snacks für die Probe', description: 'Something to nibble on in the break.', ownerId: 'u3', groupId: null, eventId: 'e2', date: null, membersCanAddItems: false, shareToken: null },
     { id: 'l6', title: 'Weihnachtsmarkt Stand', description: 'Three days at the Christmas market. Claim a whole shift or part of the goods.', ownerId: 'u1', groupId: 'g1', eventId: null, date: '2026-12-11', membersCanAddItems: false, shareToken: null, attendanceOptionId: 'o61' }
   ],
@@ -293,11 +300,20 @@ export default {
     { itemId: 'i21', accountId: 'u4', quantity: 200 }
   ],
 
+  // notifications: every F-23 trigger appears for the owner (u1) or the member (u3); the admin (u2) has none, which shows the empty panel.
+  // refId points at the group, poll, event, list or item the trigger concerns; actorId is the person who acted.
   notifications: [
-    { id: 'n1', accountId: 'u1', type: 'new_poll', refId: 'p5', readAt: null, at: '2026-10-23T18:40' },
-    { id: 'n2', accountId: 'u1', type: 'new_event', refId: 'e2', readAt: null, at: '2026-10-24T09:12' },
-    { id: 'n3', accountId: 'u1', type: 'comment', refId: 'l1', readAt: null, at: '2026-10-24T21:05' },
-    { id: 'n4', accountId: 'u1', type: 'fixed', refId: 'e1', readAt: '2026-10-01T08:00', at: '2026-09-30T20:15' }
+    { id: 'n1', accountId: 'u1', type: 'new_poll', refId: 'p5', actorId: 'u7', readAt: null, at: '2026-10-23T18:40' },
+    { id: 'n2', accountId: 'u1', type: 'new_event', refId: 'e4', actorId: 'u7', readAt: null, at: '2026-10-24T09:12' },
+    { id: 'n3', accountId: 'u1', type: 'comment', refId: 'l1', actorId: 'u3', readAt: null, at: '2026-10-24T21:05' },
+    { id: 'n4', accountId: 'u1', type: 'fixed', refId: 'e1', actorId: 'u2', readAt: '2026-10-01T08:00', at: '2026-09-30T20:15' },
+    { id: 'n5', accountId: 'u1', type: 'invited', refId: 'g2', actorId: 'u7', readAt: '2026-01-20T09:30', at: '2026-01-15T17:05' },
+    { id: 'n6', accountId: 'u3', type: 'new_poll', refId: 'p8', actorId: 'u2', readAt: null, at: '2026-10-25T08:30' },
+    { id: 'n7', accountId: 'u3', type: 'claimed_for', refId: 'i3', actorId: 'u1', readAt: null, at: '2026-10-24T17:20' },
+    { id: 'n8', accountId: 'u3', type: 'comment', refId: 'l1', actorId: 'u2', readAt: null, at: '2026-10-24T18:30' },
+    { id: 'n9', accountId: 'u3', type: 'released', refId: 'i15', actorId: 'u1', readAt: '2026-10-11T07:45', at: '2026-10-10T21:10' },
+    { id: 'n10', accountId: 'u3', type: 'fixed', refId: 'e1', actorId: 'u2', readAt: '2026-10-01T12:00', at: '2026-09-30T20:15' },
+    { id: 'n11', accountId: 'u3', type: 'moved', refId: 'e3', actorId: 'u1', readAt: '2026-09-02T08:00', at: '2026-09-01T19:40' }
   ],
 
   // list

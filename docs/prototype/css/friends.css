@@ -1,0 +1,96 @@
+/* Friends page: head, friend rows, add form */
+
+.friends-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friends-head .back {
+  margin-bottom: 6px;
+}
+
+/* Two columns on wide screens: friends left, add form right */
+
+.friends-body {
+  display: grid;
+  gap: 40px;
+}
+
+@media (min-width: 960px) {
+  .friends-body {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 48px;
+    align-items: start;
+  }
+}
+
+.friends-side {
+  min-width: 0;
+}
+
+@media (min-width: 960px) {
+  .friends-side {
+    position: sticky;
+    top: calc(64px + 24px + env(safe-area-inset-top, 0px));
+  }
+}
+
+.friends-list {
+  padding: 4px 20px;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  min-width: 0;
+}
+
+.friend__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.friend__name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.friend__email {
+  font-size: 13px;
+  color: var(--fg-soft);
+  overflow-wrap: anywhere;
+}
+
+.friend__groups {
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.friend__remove {
+  flex: none;
+}
+
+.friend-add {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.friend-add__row {
+  display: flex;
+  gap: 8px;
+}
+
+.friend-add__row .input {
+  flex: 1;
+  min-width: 0;
+}

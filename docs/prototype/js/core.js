@@ -65,6 +65,7 @@ export const features = {
   'F-18': 'Attendance link',
   'F-19': 'Share link',
   'F-20': 'Comments', // list
+  'F-21': 'Live updates', // notifications
   'F-22': 'Dashboard',
   'F-23': 'Notifications',
   'F-24': 'Interface language'
@@ -74,11 +75,12 @@ export const views = {
   welcome: { component: 'WelcomeView', public: true, states: ['default', 'sent', 'password', 'error'] },
   dashboard: { component: 'DashboardView', states: ['default', 'caughtUp', 'empty'] },
   group: { component: 'GroupView', states: ['default', 'empty', 'noMembers'] },
+  'group-settings': { component: 'GroupSettingsView', states: [] }, // group-settings
   'new-poll': { component: 'CreatePollView', states: [] },
   'new-event': { component: 'CreateEventView', states: [] },
   'new-list': { component: 'CreateListView', states: [] },
-  settings: { component: 'StubView', states: [] },
-  friends: { component: 'StubView', states: [] },
+  settings: { component: 'SettingsView', states: ['default', 'noPassword'] }, // settings
+  friends: { component: 'FriendsView', states: ['default', 'empty'] }, // friends
   poll: { component: 'PollView', states: ['default', 'closed', 'noResponses', 'notInAudience', 'fixed', 'followUp'] }, // poll
   event: { component: 'EventView', states: ['default', 'past', 'noAcceptances', 'declined'] }, // event
   // list: the guest and invalid-link states hide the app header like a public page
