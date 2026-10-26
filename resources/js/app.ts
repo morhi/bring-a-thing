@@ -4,6 +4,7 @@ import '@fontsource-variable/instrument-sans';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';
 import { configureEcho } from '@laravel/echo-vue';
+import { t, tc } from '@/lib/i18n';
 
 configureEcho({
     broadcaster: 'reverb',
@@ -18,9 +19,12 @@ void createInertiaApp({
             return;
         }
 
-        createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .mount(el);
+        const app = createApp({ render: () => h(App, props) }).use(plugin);
+
+        // Templates can call $t() / $tc() without importing the helpers.
+        app.config.globalProperties.$t = t;
+        app.config.globalProperties.$tc = tc;
+        app.mount(el);
     },
     progress: {
         color: '#4B5563',

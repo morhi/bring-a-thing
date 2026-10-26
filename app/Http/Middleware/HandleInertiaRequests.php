@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Actions\I18n\LoadInterfaceTranslations;
 use App\Data\SharedPropsData;
+use App\Enums\Locale;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -36,9 +39,15 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $locale = Locale::fromSupported(app()->getLocale()) ?? Locale::fallback();
+
         return [
             ...parent::share($request),
             ...SharedPropsData::fromRequest($request)->toArray(),
+            // Once prop keyed per locale: sent a single time per language, and a language switch
+            // changes the key so the client fetches the new strings instead of keeping the old.
+            'translations' => Inertia::once(fn () => app(LoadInterfaceTranslations::class)->handle($locale))
+                ->as("translations.{$locale->value}"),
         ];
     }
 }

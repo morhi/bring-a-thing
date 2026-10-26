@@ -23,6 +23,8 @@ declare module '@inertiajs/core' {
                 success: string | null;
                 error: string | null;
             };
+            locale: 'en' | 'de';
+            translations: Record<string, string>;
             [key: string]: unknown;
         };
     }
@@ -30,6 +32,8 @@ declare module '@inertiajs/core' {
 
 declare module 'vue' {
     interface ComponentCustomProperties {
+        $t: typeof import('@/lib/i18n').t;
+        $tc: typeof import('@/lib/i18n').tc;
         $inertia: typeof Router;
         $page: Page;
         $headManager: ReturnType<typeof createHeadManager>;
