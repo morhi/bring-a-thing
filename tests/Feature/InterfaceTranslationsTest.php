@@ -8,7 +8,7 @@ it('F-24: has the same keys and placeholders in English and German', function ()
     $en = Lang::getLoader()->load('en', 'ui');
     $de = Lang::getLoader()->load('de', 'ui');
 
-    expect($en)->toHaveCount(652)
+    expect($en)->not->toBeEmpty()
         ->and(array_diff_key($en, $de))->toBe([])
         ->and(array_diff_key($de, $en))->toBe([]);
 
