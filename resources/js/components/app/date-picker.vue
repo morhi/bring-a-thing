@@ -68,16 +68,19 @@ const display = computed(() => {
         return '';
     }
 
-    const options: Intl.DateTimeFormatOptions =
-        locale.value === 'de'
-            ? { day: '2-digit', month: '2-digit', year: 'numeric' }
-            : { day: 'numeric', month: 'short', year: 'numeric' };
+    const date = new Date(value.value.year, value.value.month - 1, value.value.day);
 
-    return new Date(
-        value.value.year,
-        value.value.month - 1,
-        value.value.day,
-    ).toLocaleDateString(intlLocale.value, options);
+    if (locale.value === 'de') {
+        return new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+    }
+
+    // en-GB spells September "Sept" but every other month with three letters, so the month name comes from en-US
+    const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
+
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        .formatToParts(date)
+        .map((part) => (part.type === 'month' ? month : part.value))
+        .join('');
 });
 
 const valueId = computed(() => `${props.id}-value`);
@@ -142,6 +145,7 @@ function clear(): void {
                     :min-value="toDateValue(min)"
                     :max-value="toDateValue(max)"
                     :locale="intlLocale"
+                    :default-placeholder="value"
                     :week-starts-on="1"
                     prevent-deselect
                     initial-focus

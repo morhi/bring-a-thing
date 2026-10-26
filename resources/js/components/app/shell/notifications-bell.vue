@@ -16,13 +16,13 @@ const props = withDefaults(
 
 defineEmits<{ toggle: [] }>();
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 const button = useTemplateRef<InstanceType<typeof Button>>('button');
 
 const label = computed(() =>
     props.unread > 0
-        ? t('common.notifications.unread', { n: props.unread })
+        ? tc('common.notifications.unread', props.unread)
         : t('nav.notifications'),
 );
 
@@ -40,6 +40,7 @@ defineExpose({ focus });
 
 <template>
     <Button
+        type="button"
         ref="button"
         variant="ghost"
         size="icon-lg"

@@ -71,7 +71,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ page: App.Data.EventShowData }>();
 
-const { t, locale } = useI18n();
+const { t, tc, locale } = useI18n();
 const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 
 const event = computed(() => props.page.event);
@@ -348,8 +348,10 @@ useEcho<{ deleted?: boolean }>(
 );
 
 const buttonClass = 'h-(--control-height) px-4';
+// Outline buttons fall back to a translucent border color in dark mode, so the surface and text are set explicitly
+const outlineClass = 'bg-control text-fg hover:bg-surface-muted dark:bg-control dark:hover:bg-surface-muted';
 const rowClass =
-    'box flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:px-[22px] max-[560px]:flex-wrap';
+    'box text-fg flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:px-[22px] max-[560px]:flex-wrap';
 const badgeLinkClass =
     'border-border text-fg-muted hover:border-primary hover:text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 </script>
@@ -422,7 +424,7 @@ const badgeLinkClass =
                     v-if="permissions.can_edit || permissions.can_delete"
                     class="flex w-full flex-wrap gap-2 min-[720px]:ml-auto min-[720px]:w-auto"
                 >
-                    <Button v-if="permissions.can_edit" as-child variant="outline">
+                    <Button v-if="permissions.can_edit" as-child variant="outline" :class="outlineClass">
                         <Link :href="editEvent(event.slug).url">
                             <Pencil aria-hidden="true" />
                             {{ t('event.edit') }}
@@ -445,6 +447,7 @@ const badgeLinkClass =
                         v-if="canManage"
                         variant="ghost"
                         size="sm"
+                        class="text-fg-muted hover:text-fg"
                         :aria-pressed="managing"
                         @click="managing = !managing"
                     >
@@ -460,7 +463,7 @@ const badgeLinkClass =
                 <div class="flex flex-wrap gap-2" role="group" :aria-label="t('event.yourAnswer')">
                     <Button
                         :variant="page.own_status === 'accepted' ? 'default' : 'outline'"
-                        :class="buttonClass"
+                        :class="[buttonClass, page.own_status !== 'accepted' && outlineClass]"
                         :aria-pressed="page.own_status === 'accepted'"
                         :disabled="!canRespond || responding"
                         @click="respond('accepted')"
@@ -574,7 +577,7 @@ const badgeLinkClass =
                             >{{ page.lists.length }}</span
                         >
                     </h2>
-                    <Button v-if="permissions.can_create_list && page.lists.length" as-child variant="outline">
+                    <Button v-if="permissions.can_create_list && page.lists.length" as-child variant="outline" :class="outlineClass">
                         <Link :href="createList({ query: { event: event.slug } }).url">
                             <Plus aria-hidden="true" />
                             {{ t('group.new.list') }}
@@ -822,15 +825,15 @@ const badgeLinkClass =
                     <AlertDialogDescription>{{ t('event.delete.text') }}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <ul class="flex flex-wrap gap-2" data-feature="F-10">
-                    <li><Badge variant="outline">{{ t('event.delete.lists', { n: page.delete_counts.lists }) }}</Badge></li>
+                    <li><Badge variant="outline">{{ tc('event.delete.lists', page.delete_counts.lists) }}</Badge></li>
                     <li>
                         <Badge variant="outline">{{
-                            t('event.delete.polls', { n: page.delete_counts.follow_up_polls })
+                            tc('event.delete.polls', page.delete_counts.follow_up_polls)
                         }}</Badge>
                     </li>
                     <li>
                         <Badge variant="outline">{{
-                            t('event.delete.children', { n: page.delete_counts.child_events })
+                            tc('event.delete.children', page.delete_counts.child_events)
                         }}</Badge>
                     </li>
                 </ul>

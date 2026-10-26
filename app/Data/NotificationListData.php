@@ -27,7 +27,12 @@ class NotificationListData extends Data
      */
     public static function forUser(User $user, int $page): self
     {
-        $paginator = $user->notifications()->simplePaginate(self::PER_PAGE, page: $page);
+        $paginator = $user->notifications()
+            // The uuid key only makes pages stable for entries created in the same second; it is not chronological
+            ->reorder()
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->simplePaginate(self::PER_PAGE, page: $page);
 
         return new self(
             notifications: NotificationData::collectFor($paginator->getCollection()),

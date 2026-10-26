@@ -69,7 +69,7 @@ it('F-23: after fixing a date, the bell shows an unread notification to every ac
     $option->responses()->create(['user_id' => $first->id, 'status' => PollResponseStatus::Yes]);
     $option->responses()->create(['user_id' => $owner->id, 'status' => PollResponseStatus::Yes]);
 
-    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed.');
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed');
 
     expect(notifKinds($first))->toBe([NotificationKind::Fixed->value])
         ->and(notifKinds($owner))->toBe([])
@@ -123,7 +123,7 @@ it('F-23: a new poll notifies every member except its organizer', function () {
         'type' => 'date_finder',
         'granularity' => 'day',
         'options' => [['date' => '2027-10-01', 'starts_at' => null, 'ends_at' => null, 'label' => null]],
-    ])->assertSessionHas('success', 'Poll created.');
+    ])->assertSessionHas('success', 'Poll created');
 
     expect(notifKinds($owner))->toBe(['new_poll'])
         ->and(notifKinds($second))->toBe(['new_poll'])
@@ -338,4 +338,23 @@ describe('channel authorization', function () {
         expect($status($user))->toBe(200)
             ->and($status($other))->toBe(403);
     });
+});
+
+it('F-23: entries created in the same second are paged without skips or repeats', function () {
+    ['group' => $group, 'owner' => $owner, 'first' => $first] = notifGroup();
+    $event = notifEvent($group, $owner, []);
+
+    foreach (range(1, 25) as $ignored) {
+        $first->notify(new DateFixed($event, $owner));
+    }
+
+    $first->notifications()->update(['created_at' => now()->startOfSecond()]);
+
+    $ids = collect([1, 2])->flatMap(
+        fn (int $page) => collect($this->actingAs($first)->getJson(route('notifications.index', ['page' => $page]))->json('notifications'))->pluck('id'),
+    );
+
+    expect($ids)->toHaveCount(25)
+        ->and($ids->unique())->toHaveCount(25)
+        ->and($ids->all())->toBe($first->notifications()->reorder()->orderByDesc('created_at')->orderByDesc('id')->pluck('id')->all());
 });
