@@ -4,8 +4,8 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.11
-- **Approved:** 25.10.2026
+- **Version:** 1.12
+- **Approved:** 26.10.2026
 
 ## 2. Goal
 
@@ -25,11 +25,11 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Guest:** person without login who holds a share link. Sees the shared list without other people's email addresses. Claiming or adding opens a login on the same page (F-19).
 - **Account:** any logged-in person, including a shadow account (F-01). Creates groups and standalone lists and manages their own friends.
 - **Group owner:** creator of a group. May do everything in the group, including deleting it and granting or revoking the admin role.
-- **Group admin:** member appointed by the owner. Invites and removes members (not the owner), edits all polls, events and lists of the group, adds items regardless of F-14 and claims items for others. May not delete the group or change admin roles.
+- **Group admin:** member appointed by the owner. Invites and removes members (not the owner), edits all polls, events and lists of the group, adds items regardless of F-14 and claims items for others. May not delete the group, change admin roles or switch the group option (F-03).
 - **Member:** sees all polls and events of the group and the group lists, responds to polls, accepts or declines events, comments and claims items.
 - **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events.
 - **List owner:** whoever creates a list. Manages settings, items, custom fields and the share link of that list.
-- **Participants:** members with the participation status "accepted" or "pending" for an event. Only they see the lists and follow-up polls of that event (F-11, F-12).
+- **Participants:** members with the participation status "accepted" or "pending" for an event. Only they see the lists of that event (F-11, F-13). Only participants with "accepted" see and create its follow-up polls (F-12).
 
 ## 5. Features
 
@@ -72,12 +72,12 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A group has a name and members with the roles owner, admin or member (section 4).
 - The owner appoints members as admins and revokes the role again. The owner cannot be removed and can only delete the group.
 - Only the owner renames the group.
-- The group has the option "Members can set the participation status for others", off by default. Owners and admins can always do it.
+- The group has the option "Members can set the participation status for others", off by default. Only the owner switches it. Owners and admins can always set the status themselves.
 - A new group is created on its own page with name and invitations (F-04). Inviting can be skipped and done later.
 - Deleting a group deletes all its polls, events and lists after a confirmation.
 
 **Acceptance criteria:**
-- An admin sees no action to delete the group and no action to change roles.
+- An admin sees no action to delete the group and no action to change roles, and cannot switch the group option.
 - After deleting a group, its lists are no longer reachable.
 
 #### F-04 Inviting members (Core)
@@ -124,7 +124,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Members create a poll in a group. The respondents are all group members, except for a follow-up poll (F-12).
 - The poll works by day or with time slots. Each option consists of a date. With time slots it also has start and end. Every option can carry an optional label (for example "Lunch" or "Room free until 22:00"), and the grid header shows it on one line. Several slots on the same day are possible.
-- With two or more slots, "Use this time for all" applies one slot's start and end to all slots.
+- With two or more slots, "Use this time for all" applies one slot's start and end to all other slots. Locked options (F-08) keep their time.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
@@ -135,6 +135,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Two options with three yes and one no answer each both carry "Best option". Of two options with three yes answers, the one with fewer no answers alone carries it.
 - "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
 - An option with a label shows it in the grid header.
+- In an edited poll, "Use this time for all" leaves options with answers unchanged.
 
 #### F-07 Attendance poll (Secondary)
 
@@ -154,6 +155,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Organizer, owner and admins rename the poll, add options, remove options together with their responses and delete the poll.
+- An option that has answers keeps its date and time. Removing it, together with its answers, is the only way to change them, and asks for a confirmation.
 - They close the poll and reopen it. A closed poll accepts no responses and allows no changes to options.
 - A date finder poll closes by fixing dates (F-09). An attendance poll closes without a selection.
 - Reopening keeps events that were already created.
@@ -162,6 +164,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A response to a closed poll is rejected with the message "This poll is closed."
 - A member without the admin role sees no edit actions on other people's polls.
 - After reopening a fixed poll, its events still exist.
+- On an option with answers, the date and time fields are disabled; on an option without answers they can be edited.
 
 #### F-09 Fixing dates (Core)
 
@@ -172,6 +175,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Each selected option creates an event (F-10) with the poll's title, the option's date and time if any, and a reference to the poll.
 - The app derives participation per event from the responses: yes results in "accepted", maybe results in "pending", no or no response results in no participation status.
 - For a follow-up poll (F-12), the events get the source event as their parent event.
+- A fixed option (one that has an event) cannot be removed, and its date and time cannot be changed on the poll.
 
 **Acceptance criteria:**
 - Fixing three options creates three events with the options' dates.
@@ -203,11 +207,12 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Every group member accepts or declines while the event is not past, also without a previous participation status.
 - Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03). The per-person status controls appear after the "Manage" action on the participation block, for everyone who may use them.
-- A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims.
-- Only participants see the event's lists (F-13) and follow-up polls (F-12). Members without participation or with a decline see only the event's key details.
+- A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims. A status set for someone else, and removing a participant, never releases their claims. Only the person's own decline does.
+- Only participants see the event's lists (F-13). Only participants with "accepted" see follow-up polls and the action to create them (F-12). Members without participation or with a decline see only the event's key details.
 
 **Acceptance criteria:**
 - A decline with two claimed items shows both items in the confirmation, and both are free again afterwards.
+- When an admin sets a member to "declined", the member's claims stay.
 - A member who declined does not see the event's lists.
 - A past event allows no accepting or declining.
 
@@ -216,13 +221,14 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Schedule rehearsals or preparation dates only with the people who take part in the event.
 
 **Rules:**
-- Within the event, participants create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted".
+- Within the event, participants with "accepted" create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted".
 - The circle follows current participation: whoever accepts later sees the poll and can respond. Whoever declines no longer sees it, and their responses no longer count.
 - Fixing dates follows F-09, and the new events attach to the source event.
 - Child events do not offer follow-up polls. Follow-up polls exist only on events without a parent event.
 
 **Acceptance criteria:**
 - A group member without acceptance sees the follow-up poll neither in the group nor on the dashboard.
+- A person with "pending" sees neither the follow-up polls nor the "New follow-up poll" action.
 - A person who accepts after the follow-up poll was created can respond to it.
 - An event fixed from a follow-up poll appears in the source event under the child events.
 - A child event shows no "New follow-up poll" action.
@@ -328,12 +334,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Lists, items and events each have a comment thread. The event's thread is collapsed by default.
 - Cmd+Enter or Ctrl+Enter sends a comment.
-- Author, list owner, group owner and admins delete comments.
+- Author, group owner and admins delete comments. On lists and items the list owner does too. On events nobody else does, not even the organizer.
 
 **Acceptance criteria:**
 - A comment on an item appears only on the item, not in the list's thread.
 - A comment on an event appears only on that event.
 - Cmd+Enter in the comment field sends the comment.
+- A member who is neither author, group owner nor admin sees no delete action on an event comment.
 
 #### F-21 Live updates (Secondary)
 
@@ -398,7 +405,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Dashboard:** F-22, actions "New group" and "New list".
 - **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
-- **Group settings:** name, roles, delete (F-03).
+- **Group settings:** name, invite link, option, roles, delete (F-03, F-04).
 - **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
 - **Poll edit:** the "New poll" page in edit mode with the same components: title, options, close, delete (F-08).
 - **Event:** key details, participation with one's own accept or decline, lists, follow-up polls, child events, edit (F-10 to F-12).
@@ -456,6 +463,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Group settings without admin role:** a member sees "Not found".
 - **Event moved:** acceptances switch to "pending"; claims stay.
 - **Decline without claims:** no confirmation needed.
+- **Status set for another person:** claims stay, also on "declined".
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
 - **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden.
 - **Invalid share link:** shows a note that the link is no longer valid.
