@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.5
+- **Version:** 1.6
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -42,6 +42,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - The start page carries a single form for login and registration. The person enters their email and receives a login link by email. If the account has no name yet, the form asks for it. If the account has a password, the person can log in with the password instead.
 - An invitation by email (F-04) creates a shadow account immediately. It appears as a member right away, and the invited person logs in through a login link without registering.
+- A person who joins through an invite link (F-04) with name only gets a shadow account without an email and stays logged in on that browser. They can add an email at any time and receive a login link to keep access on other devices.
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
 - The login email is the only email the app sends.
@@ -50,6 +51,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A new email address receives a login link after entering email and name, and the link leads to the dashboard.
 - An expired or altered link shows an error and does not log in.
 - An email address invited twice results in exactly one account.
+- A name-only joiner who adds an email can log in on another device through the login link.
 - An account without a password shows no password field.
 
 #### F-02 Account and settings (Secondary)
@@ -77,18 +79,26 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-04 Inviting members (Core)
 
-**User goal:** Bring people into the group by email without them registering first.
+**User goal:** Bring people into the group by email or by a shared link without them registering first.
 
 **Rules:**
 - Owners and admins invite by email. The app creates a shadow account if needed (F-01) and saves the person as a friend of the inviting person (F-05).
 - Until their first login, the member carries the label "Invitation pending".
 - The invite field suggests matching friends.
 - Owners and admins remove members. Admins cannot remove the owner.
+- Owners and admins create one invite link per group and share it through any messenger. The "Copy invite link" button creates it on first use.
+- The link has a lock setting. Open (default): a person enters a name and joins as a member at once, labeled "Joined via link". Closed: the person must enter an email and log in through a login link before joining.
+- A person who joins through the link has the same access as any other member.
+- Owners and admins revoke or regenerate the link in group settings (F-03). The old link then shows "Not found".
 
 **Acceptance criteria:**
 - An invited person appears in the member list immediately with "Invitation pending", and the label disappears after their first login.
 - Typing the first letters of a saved friend shows them as a suggestion.
 - A member without the admin role sees no invite form.
+- With an open link, a person who enters a name appears in the member list at once.
+- With a closed link, a person appears as a member only after logging in with an email.
+- After revoking, the old link shows "Not found".
+- A member without the admin role sees no invite link button.
 
 #### F-05 Friends (Secondary)
 
