@@ -213,4 +213,7 @@ Vue components must have a single root element.
 - Before starting non-trivial work, skim `git log --oneline -20` against both files to check nothing recent (yours or someone else's) is undocumented; catch up the docs first if something is missing.
 - When a feature changes behavior described in `BRING_A_THING.md`, edit that section directly rather than appending a contradiction elsewhere in the file.
 - When a feature goes beyond what a phase in `IMPLEMENDATION.md` originally scoped (common for user-requested additions), add it as new checklist items and a note under **Deviations** in the relevant phase, add the commit hash(es) to that phase's `Commit(s)` line and to the Progress log table row, matching the existing style (see Phase 2–4 for examples of "added on request, beyond original phase scope").
-- `TODOS.md` already carries a reminder to this effect; this rule makes it a standing instruction rather than an easy-to-miss note.
+## Backlog
+
+- Open work lives in `.backlog/` (local, untracked), not in a `TODOS.md`. When you need to pick up work, load the `backlog` skill and continue with its `queued` or `ready` items. Record deferred or off-scope work there as a new item instead of in a file or a comment.
+- Standing notes for this project are in `.backlog/NOTES.md`.
