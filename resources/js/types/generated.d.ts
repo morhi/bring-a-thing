@@ -109,6 +109,7 @@ roster_slug: string,
 roster_title: string,
 };
 export type EventData = {
+id: number,
 slug: string,
 title: string,
 description: string | null,
@@ -124,6 +125,11 @@ organizer_id: number,
 organizer_name: string | null,
 origin_poll_slug: string | null,
 parent_event: App.Data.EventSummaryData | null,
+};
+export type EventDeleteCountsData = {
+lists: number,
+follow_up_polls: number,
+child_events: number,
 };
 export type EventFormData = {
 group_slug: string,
@@ -142,6 +148,7 @@ can_respond: boolean,
 can_set_status_for_others: boolean,
 can_remove_participants: boolean,
 can_create_follow_up_poll: boolean,
+can_create_list: boolean,
 can_comment: boolean,
 };
 export type EventShowData = {
@@ -152,11 +159,12 @@ pending_count: number,
 declined_count: number,
 participants: App.Data.ParticipationData[],
 own_claims: App.Data.EventClaimData[],
-lists: App.Data.EventLinkData[],
-follow_up_polls: App.Data.EventLinkData[],
+lists: App.Data.GroupListData[],
+follow_up_polls: App.Data.GroupPollData[],
 follow_up_audience_count: number,
-child_events: App.Data.EventSummaryData[],
+child_events: App.Data.GroupEventData[],
 comments: App.Data.CommentData[],
+delete_counts: App.Data.EventDeleteCountsData | null,
 permissions: App.Data.EventPermissionsData,
 };
 export type EventSummaryData = {
@@ -274,12 +282,37 @@ id: number,
 name: string | null,
 email: string,
 };
+export type NotificationData = {
+id: string,
+kind: App.Enums.NotificationKind,
+key: string,
+params: App.Data.NotificationParamsData,
+text: string,
+url: string | null,
+read_at: string | null,
+created_at: string,
+};
+export type NotificationListData = {
+notifications: App.Data.NotificationData[],
+unread: number,
+per_page: number,
+next_page: number | null,
+};
+export type NotificationParamsData = {
+name: string | null,
+title: string | null,
+group: string | null,
+list: string | null,
+item: string | null,
+date: string | null,
+};
 export type ParticipationData = {
 user_id: number,
 name: string | null,
 status: App.Enums.ParticipationStatus | null,
 };
 export type PollData = {
+id: number,
 slug: string,
 title: string,
 type: App.Enums.PollType,
@@ -300,6 +333,9 @@ group_name: string,
 member_count: number,
 source_event: App.Data.EventSummaryData | null,
 poll: App.Data.PollData | null,
+today: string,
+default_slot_start: string,
+default_slot_end: string,
 };
 export type PollOptionData = {
 slug: string,
@@ -347,6 +383,7 @@ user_name: string,
 quantity: number | null,
 };
 export type RosterData = {
+id: number,
 slug: string,
 title: string,
 description: string | null,
@@ -371,6 +408,8 @@ custom_fields: App.Data.CustomFieldData[],
 attendance_options: App.Data.AttendanceOptionData[],
 can_delete: boolean,
 can_duplicate: boolean,
+can_manage_fields: boolean,
+can_share: boolean,
 };
 export type RosterItemData = {
 id: number,
@@ -403,6 +442,7 @@ can_edit: boolean,
 can_delete: boolean,
 can_duplicate: boolean,
 can_add_items: boolean,
+can_edit_items: boolean,
 can_claim: boolean,
 needs_acceptance: boolean,
 can_manage_claims: boolean,
@@ -422,7 +462,6 @@ name: string | null,
 email: string | null,
 pending_email: string | null,
 has_password: boolean,
-language: App.Enums.Locale,
 languages: App.Enums.Locale[],
 password_min_length: number,
 };
@@ -433,13 +472,19 @@ export type SharedFlashData = {
 success: string | null,
 error: string | null,
 };
+export type SharedNotificationsData = {
+unread: number,
+};
 export type SharedPropsData = {
 name: string,
 auth: App.Data.SharedAuthData,
 locale: App.Enums.Locale,
 flash: App.Data.SharedFlashData,
+notifications: App.Data.SharedNotificationsData,
 };
 export type SharedRosterData = {
+token: string,
+link_expires_in_minutes: number,
 title: string,
 description: string | null,
 date: string | null,
@@ -469,6 +514,7 @@ export type GroupJoinMethod = 'invite' | 'link';
 export type GroupRole = 'owner' | 'admin' | 'member';
 export type Locale = 'en' | 'de';
 export type LoginLinkError = 'expired' | 'invalid';
+export type NotificationKind = 'invited' | 'new_poll' | 'new_event' | 'fixed' | 'moved' | 'comment' | 'claimed_for' | 'released';
 export type ParticipationStatus = 'accepted' | 'pending' | 'declined';
 export type PollGranularity = 'day' | 'hour';
 export type PollResponseStatus = 'yes' | 'no' | 'maybe';

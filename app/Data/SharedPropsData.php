@@ -13,6 +13,7 @@ class SharedPropsData extends Data
         public SharedAuthData $auth,
         public Locale $locale,
         public SharedFlashData $flash,
+        public SharedNotificationsData $notifications,
     ) {}
 
     /**
@@ -30,6 +31,7 @@ class SharedPropsData extends Data
                 success: $request->session()->get('success'),
                 error: $request->session()->get('error'),
             ),
+            notifications: SharedNotificationsData::forUser($user),
         );
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupInviteLinkController;
 use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollOptionController;
 use App\Http\Controllers\PollResponseController;
@@ -171,4 +172,12 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/comments', [EventCommentController::class, 'store'])->name('events.comments.store');
     Route::delete('/events/{event}/comments/{comment}', [EventCommentController::class, 'destroy'])->name('events.comments.destroy');
+});
+
+// Bell notifications (F-23): JSON for the header panel, scoped to the signed-in account.
+Route::middleware('auth')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+    Route::post('/notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Event;
 use App\Models\Roster;
 use App\Models\RosterItem;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
             'roster' => Roster::class,
             'roster_item' => RosterItem::class,
             'event' => Event::class,
+            'user' => User::class,
         ]);
 
         DB::prohibitDestructiveCommands(
