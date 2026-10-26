@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.10
+- **Version:** 1.11
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -435,7 +435,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Item:** list (required), name (text, required), quantity (number, optional), unit (text), notes (text), date (date), attendance day (optional), custom field values.
 - **Claim:** item, account, quantity (number, required for items with a quantity). At most one claim per account and item.
 - **Custom field:** list (required), name (text, required).
-- **Comment:** list or item (required), author (account, required), text (required), timestamp.
+- **Comment:** list, item or event (exactly one, required), author (account, required), text (required), timestamp.
 - **Notification:** account, type (choice per F-23), reference, read at (date).
 
 Groups, lists, items, polls, events and custom fields appear in URLs with random identifiers instead of sequential numbers, so nobody finds other people's content by trying numbers.
