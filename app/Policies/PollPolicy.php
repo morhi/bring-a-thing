@@ -46,7 +46,7 @@ class PollPolicy
      */
     public function update(User $user, Poll $poll): bool
     {
-        if ($poll->organizer_id === $user->getKey()) {
+        if ($poll->organizer_id === $user->getKey() && $poll->group->hasMember($user)) {
             return true;
         }
 

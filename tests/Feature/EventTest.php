@@ -183,6 +183,31 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
     expect(Event::query()->count())->toBe(0);
 });
 
+it('F-10: an organizer who left the group can neither update, delete nor set participation for others', function () {
+    [$group, , , $members] = eventGroup(2);
+    [$organizer, $member] = $members;
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id]);
+    $group->members()->detach($organizer);
+
+    $this->actingAs($organizer)->patch(route('events.update', $event), eventInput())->assertForbidden();
+    $this->actingAs($organizer)->delete(route('events.destroy', $event))->assertForbidden();
+    $this->actingAs($organizer)
+        ->put(route('events.participants.update', [$event, $member]), ['status' => 'declined'])
+        ->assertForbidden();
+    expect(Event::query()->count())->toBe(1);
+});
+
+it('F-10: an organizer who is still a member sets participation for others', function () {
+    [$group, , , $members] = eventGroup(2);
+    [$organizer, $member] = $members;
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id]);
+
+    expect($event->isManagedBy($organizer))->toBeTrue();
+    $this->actingAs($organizer)
+        ->put(route('events.participants.update', [$event, $member]), ['status' => 'declined'])
+        ->assertRedirect();
+});
+
 it('F-10: shows "Not found" to people outside the group', function () {
     [$group, $owner] = eventGroup(1);
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);

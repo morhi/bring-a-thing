@@ -218,7 +218,8 @@ class Event extends Model
      */
     public function isManagedBy(User $user): bool
     {
-        if ($this->organizer_id === $user->getKey()) {
+        // The organizer role lapses with the membership, so a removed member keeps no rights.
+        if ($this->organizer_id === $user->getKey() && $this->group->hasMember($user)) {
             return true;
         }
 
