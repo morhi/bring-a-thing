@@ -1,85 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import Avatar from '@/components/ui/legacy/Avatar.vue';
-import Button from '@/components/ui/legacy/Button.vue';
-import ConfirmDialog from '@/components/ui/legacy/ConfirmDialog.vue';
-import Menu from '@/components/ui/legacy/Menu.vue';
-import Toast from '@/components/ui/legacy/Toast.vue';
-import { Bell } from '@lucide/vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import 'vue-sonner/style.css';
 import FlashToasts from '@/components/FlashToasts.vue';
-import type { Auth } from '@/types';
-import { index as friendsIndex } from '@/actions/App/Http/Controllers/FriendController';
-import { edit as settingsEdit } from '@/actions/App/Http/Controllers/SettingsController';
-import { destroy as logout } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
+import AppHeader from '@/components/app/shell/app-header.vue';
+import ConnectionNote from '@/components/app/shell/connection-note.vue';
+import SiteFooter from '@/components/app/shell/site-footer.vue';
+import SkipLink from '@/components/app/shell/skip-link.vue';
+import { useConnectionLost } from '@/components/app/shell/use-connection-lost';
+import { Toaster } from '@/components/ui/sonner';
 
-const page = usePage<{ name: string; auth: Auth }>();
+const page = usePage();
+const { lost } = useConnectionLost();
 
-const userMenu = ref();
-const userMenuItems = [
-    {
-        label: 'Account settings',
-        command: () => router.visit(settingsEdit().url),
-    },
-    {
-        label: 'Friends',
-        command: () => router.visit(friendsIndex().url),
-    },
-    { label: 'Log out', command: () => router.post(logout().url) },
-];
+// The panel behind the bell comes later; until the backend shares notifications.unread the bell stays hidden
+const unread = computed(() => {
+    const notifications = page.props.notifications as
+        | { unread?: unknown }
+        | undefined;
 
-function toggleUserMenu(event: MouseEvent) {
-    userMenu.value?.toggle(event);
-}
+    return typeof notifications?.unread === 'number'
+        ? notifications.unread
+        : null;
+});
 
-function avatarLabel(name: string | null, email: string): string {
-    return (name ?? email).charAt(0).toUpperCase();
-}
+const notificationsOpen = ref(false);
 </script>
 
 <template>
-    <div class="bg-surface-50 dark:bg-surface-950 min-h-screen">
-        <Toast />
-        <ConfirmDialog />
-        <FlashToasts />
-        <header
-            class="border-surface-200 dark:border-surface-800 dark:bg-surface-900 flex items-center justify-between border-b bg-white px-6 py-3"
+    <div class="flex min-h-dvh flex-col">
+        <SkipLink />
+        <ConnectionNote v-if="lost" />
+        <AppHeader
+            variant="app"
+            :user="page.props.auth.user"
+            :current-url="page.url"
+            :unread="unread"
+            :notifications-open="notificationsOpen"
+            @toggle-notifications="notificationsOpen = !notificationsOpen"
+        />
+        <main
+            id="main"
+            tabindex="-1"
+            class="content-width flex-1 pt-8 pb-16 outline-none"
         >
-            <Link
-                href="/dashboard"
-                class="text-surface-900 dark:text-surface-0 text-lg font-semibold"
-            >
-                {{ page.props.name }}
-            </Link>
-            <div class="flex items-center gap-4">
-                <Button
-                    aria-label="Notifications"
-                    severity="secondary"
-                    text
-                    rounded
-                >
-                    <Bell />
-                </Button>
-                <template v-if="page.props.auth.user">
-                    <Avatar
-                        :label="
-                            avatarLabel(
-                                page.props.auth.user.name,
-                                page.props.auth.user.email,
-                            )
-                        "
-                        shape="circle"
-                        class="cursor-pointer"
-                        @click="toggleUserMenu"
-                    />
-                    <Menu ref="userMenu" :model="userMenuItems" popup />
-                </template>
-            </div>
-        </header>
-        <main class="p-6">
-            <div class="mx-auto w-full max-w-7xl">
-                <slot />
-            </div>
+            <slot />
         </main>
+        <SiteFooter />
+        <Toaster position="bottom-center" />
+        <FlashToasts />
     </div>
 </template>

@@ -1,26 +1,31 @@
+<script lang="ts">
+// Module scope: when a visit swaps the layout, both layouts' instances see the same flash object once
+const shownFlashes = new WeakSet<object>();
+</script>
+
 <script setup lang="ts">
-import { watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
-import { useToast } from '@/components/ui/legacy/useToast';
+import { watch } from 'vue';
+import { toast } from 'vue-sonner';
 
 const page = usePage();
-const toast = useToast();
 
+// Each response brings a new flash object, so the same message flashed twice in a row still shows twice
 watch(
-    () => page.props.flash.success,
-    (message) => {
-        if (message) {
-            toast.add({ severity: 'success', summary: message, life: 4000 });
+    () => page.props.flash,
+    (flash) => {
+        if (!flash || shownFlashes.has(flash)) {
+            return;
         }
-    },
-    { immediate: true },
-);
 
-watch(
-    () => page.props.flash.error,
-    (message) => {
-        if (message) {
-            toast.add({ severity: 'error', summary: message, life: 6000 });
+        shownFlashes.add(flash);
+
+        if (flash.success) {
+            toast.success(flash.success, { duration: 4000 });
+        }
+
+        if (flash.error) {
+            toast.error(flash.error, { duration: 6000 });
         }
     },
     { immediate: true },
