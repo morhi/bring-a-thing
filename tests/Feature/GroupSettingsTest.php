@@ -68,7 +68,7 @@ it('F-03: lets only the owner switch the option "Members can set the participati
     $this->actingAs($owner)
         ->patch(route('groups.update', $group), ['members_can_set_status' => true])
         ->assertRedirect(route('groups.edit', $group))
-        ->assertSessionHas('success', 'Group updated.');
+        ->assertSessionHas('success', 'Changes saved');
 
     expect($group->fresh()->members_can_set_status)->toBeTrue();
     expect($group->fresh()->name)->toBe($group->name);

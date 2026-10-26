@@ -175,6 +175,11 @@ function save(): void {
     if (!closed.value && options.value.length === 0) {
         optionsError.value = t('newPoll.optionsRequired');
 
+        // The early return skips the server, so the title error has to come from here too
+        if (!pollForm.title.trim()) {
+            pollForm.setError('title', t('newPoll.titleRequired'));
+        }
+
         return;
     }
 

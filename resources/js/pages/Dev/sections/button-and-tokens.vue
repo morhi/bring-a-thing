@@ -36,8 +36,8 @@ const colours = [
             <h3 class="font-display text-lg">Button variants and sizes</h3>
             <div v-for="variant in variants" :key="variant" class="flex flex-wrap items-center gap-3">
                 <span class="text-fg-muted w-24 text-sm">{{ variant }}</span>
-                <Button v-for="size in sizes" :key="size" :variant="variant" :size="size">{{ size }}</Button>
-                <Button :variant="variant" disabled>disabled</Button>
+                <Button type="button" v-for="size in sizes" :key="size" :variant="variant" :size="size">{{ size }}</Button>
+                <Button type="button" :variant="variant" disabled>disabled</Button>
             </div>
         </div>
 

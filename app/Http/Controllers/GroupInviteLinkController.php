@@ -20,7 +20,7 @@ class GroupInviteLinkController extends Controller
 
         $group->enableInviteLink();
 
-        return back()->with('success', 'Invite link created.');
+        return back()->with('success', __('ui.groupSettings.link.created'));
     }
 
     /**
@@ -30,7 +30,7 @@ class GroupInviteLinkController extends Controller
     {
         $group->update(['invite_link_locked' => $request->boolean('locked')]);
 
-        return back()->with('success', 'Invite link updated.');
+        return back()->with('success', __($request->boolean('locked') ? 'ui.groupSettings.link.nowClosed' : 'ui.groupSettings.link.nowOpen'));
     }
 
     /**
@@ -42,7 +42,7 @@ class GroupInviteLinkController extends Controller
 
         $group->regenerateInviteToken();
 
-        return back()->with('success', 'Invite link regenerated. The old link no longer works.');
+        return back()->with('success', __('ui.groupSettings.link.regenerated'));
     }
 
     /**
@@ -54,6 +54,6 @@ class GroupInviteLinkController extends Controller
 
         $group->revokeInviteLink();
 
-        return back()->with('success', 'Invite link revoked.');
+        return back()->with('success', __('ui.groupSettings.link.revoked'));
     }
 }

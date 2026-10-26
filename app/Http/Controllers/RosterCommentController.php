@@ -29,7 +29,7 @@ class RosterCommentController extends Controller
 
         $sendNotification->handle(new ListCommented($roster, $request->user()));
 
-        return back()->with('success', 'Comment posted.');
+        return back()->with('success', __('ui.event.comments.posted'));
     }
 
     /**
@@ -47,6 +47,6 @@ class RosterCommentController extends Controller
 
         CommentDeleted::dispatch($comment);
 
-        return back()->with('success', 'Comment removed.');
+        return back()->with('success', __('ui.event.comments.removed'));
     }
 }

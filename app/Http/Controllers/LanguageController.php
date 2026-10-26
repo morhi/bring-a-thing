@@ -21,6 +21,6 @@ class LanguageController extends Controller
         $request->session()->put('locale', $locale->value);
         $request->user()?->update(['language' => $locale->value]);
 
-        return back()->with('success', 'Language updated.');
+        return back()->with('success', __('ui.settings.saved', [], $locale->value));
     }
 }

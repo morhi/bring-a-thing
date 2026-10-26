@@ -37,7 +37,7 @@ it('F-04: creates the invite link on first use and keeps it on later copies', fu
     $this->actingAs($owner)
         ->post(route('groups.invite-link.store', $group))
         ->assertRedirect()
-        ->assertSessionHas('success', 'Invite link created.');
+        ->assertSessionHas('success', 'Invite link created');
     $token = $group->fresh()->invite_token;
 
     $this->actingAs($owner)->post(route('groups.invite-link.store', $group));
@@ -101,7 +101,7 @@ it('F-04: with an open link, a person who enters a name appears in the member li
 
     $joiner = User::query()->where('name', 'Link Joiner')->firstOrFail();
     $response->assertRedirect(route('groups.show', $group));
-    $response->assertSessionHas('success', 'You joined the group.');
+    $response->assertSessionHas('success', 'You joined the group');
     $this->assertAuthenticatedAs($joiner);
     expect($joiner->email)->toBeNull();
 
@@ -208,7 +208,7 @@ it('F-04: after revoking, the old link shows "Not found"', function () {
 
     $this->actingAs($owner)
         ->delete(route('groups.invite-link.destroy', $group))
-        ->assertSessionHas('success', 'Invite link revoked.');
+        ->assertSessionHas('success', 'Invite link revoked, the old link shows "Not found"');
     Auth::logout();
 
     expect($group->fresh()->invite_token)->toBeNull();
@@ -224,7 +224,7 @@ it('F-04: after regenerating, the old link shows "Not found" and the new one wor
 
     $this->actingAs($owner)
         ->post(route('groups.invite-link.regenerate', $group))
-        ->assertSessionHas('success', 'Invite link regenerated. The old link no longer works.');
+        ->assertSessionHas('success', 'New invite link created, the old one shows "Not found"');
     Auth::logout();
 
     $newToken = $group->fresh()->invite_token;
@@ -242,7 +242,7 @@ it('F-04: lets owners and admins switch the lock setting, but not members', func
 
     $this->actingAs($owner)
         ->patch(route('groups.invite-link.update', $group), ['locked' => true])
-        ->assertSessionHas('success', 'Invite link updated.');
+        ->assertSessionHas('success', 'Link is closed');
     expect($group->fresh()->invite_link_locked)->toBeTrue();
 
     $this->actingAs($admin)->patch(route('groups.invite-link.update', $group), ['locked' => false]);

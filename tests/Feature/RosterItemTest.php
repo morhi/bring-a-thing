@@ -21,7 +21,7 @@ it('allows the roster owner to add an item', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('success', 'Thing added.');
+    $response->assertSessionHas('success', 'Item added');
     $item = RosterItem::query()->where('name', 'Chairs')->firstOrFail();
     expect($item->roster_id)->toBe($roster->id);
     Event::assertDispatched(ItemChanged::class, fn (ItemChanged $event) => $event->itemId === $item->id && ! $event->deleted);

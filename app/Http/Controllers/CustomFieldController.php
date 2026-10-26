@@ -20,7 +20,7 @@ class CustomFieldController extends Controller
     {
         $roster->customFields()->create($request->safe()->only(['name']));
 
-        return back()->with('success', 'Custom field added.');
+        return back()->with('success', __('ui.list.fields.added'));
     }
 
     /**
@@ -30,7 +30,7 @@ class CustomFieldController extends Controller
     {
         $customField->update($request->safe()->only(['name']));
 
-        return back()->with('success', 'Custom field updated.');
+        return back()->with('success', __('ui.list.fields.updated'));
     }
 
     /**
@@ -42,6 +42,6 @@ class CustomFieldController extends Controller
 
         $customField->delete();
 
-        return back()->with('success', 'Custom field removed.');
+        return back()->with('success', __('ui.list.fields.removed'));
     }
 }

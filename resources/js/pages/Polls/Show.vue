@@ -259,14 +259,14 @@ const buttonClass = 'h-(--control-height) px-4';
                     </div>
                 </div>
                 <div v-if="permissions.can_edit || permissions.can_fix" class="flex flex-wrap gap-2.5" data-feature="F-08">
-                    <Button v-if="isDateFinder && permissions.can_fix" size="lg" :class="buttonClass" data-feature="F-09" @click="openFix">
+                    <Button type="button" v-if="isDateFinder && permissions.can_fix" size="lg" :class="buttonClass" data-feature="F-09" @click="openFix">
                         <Sparkles aria-hidden="true" />
                         {{ t('poll.actions.fix') }}
                     </Button>
-                    <Button v-if="permissions.can_close" variant="secondary" size="lg" :class="buttonClass" @click="close">
+                    <Button type="button" v-if="permissions.can_close" variant="secondary" size="lg" :class="buttonClass" @click="close">
                         {{ t('poll.actions.close') }}
                     </Button>
-                    <Button v-if="permissions.can_reopen" variant="secondary" size="lg" :class="buttonClass" @click="reopen">
+                    <Button type="button" v-if="permissions.can_reopen" variant="secondary" size="lg" :class="buttonClass" @click="reopen">
                         {{ t('poll.actions.reopen') }}
                     </Button>
                     <Button v-if="permissions.can_edit" as-child variant="ghost" size="lg" :class="buttonClass">
@@ -417,8 +417,8 @@ const buttonClass = 'h-(--control-height) px-4';
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" size="lg" :class="buttonClass" @click="fixOpen = false">{{ t('dialog.cancel') }}</Button>
-                    <Button size="lg" :class="buttonClass" :disabled="!selected.length || fixing" data-feature="F-09" @click="confirmFix">{{ fixLabel }}</Button>
+                    <Button type="button" variant="outline" size="lg" :class="buttonClass" @click="fixOpen = false">{{ t('dialog.cancel') }}</Button>
+                    <Button type="button" size="lg" :class="buttonClass" :disabled="!selected.length || fixing" data-feature="F-09" @click="confirmFix">{{ fixLabel }}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

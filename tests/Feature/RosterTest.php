@@ -14,7 +14,7 @@ it('creates a standalone roster owned by the requesting user', function () {
 
     $roster = Roster::query()->where('title', 'Camping Trip')->firstOrFail();
     $response->assertRedirect(route('rosters.show', $roster));
-    $response->assertSessionHas('success', 'Roster created.');
+    $response->assertSessionHas('success', 'List created');
     expect($roster->owner_id)->toBe($user->id);
     expect($roster->group_id)->toBeNull();
 });
@@ -99,7 +99,7 @@ it('allows the owner to update the roster', function () {
     $response = $this->actingAs($owner)->patch(route('rosters.update', $roster), ['title' => 'Renamed']);
 
     $response->assertRedirect(route('rosters.show', $roster));
-    $response->assertSessionHas('success', 'Roster updated.');
+    $response->assertSessionHas('success', 'List saved');
     expect($roster->fresh()->title)->toBe('Renamed');
 });
 
@@ -123,7 +123,7 @@ it('allows the owner to delete the roster', function () {
     $response = $this->actingAs($owner)->delete(route('rosters.destroy', $roster));
 
     $response->assertRedirect(route('dashboard'));
-    $response->assertSessionHas('success', 'Roster deleted.');
+    $response->assertSessionHas('success', 'List deleted');
     $this->assertModelMissing($roster);
 });
 
@@ -161,7 +161,7 @@ it('allows the owner to duplicate the roster with a cleared date', function () {
 
     $copy = Roster::query()->where('title', 'Meal Plan (copy)')->firstOrFail();
     $response->assertRedirect(route('rosters.show', $copy));
-    $response->assertSessionHas('success', 'Roster duplicated.');
+    $response->assertSessionHas('success', 'List duplicated');
     expect($copy->owner_id)->toBe($owner->id);
     expect($copy->date)->toBeNull();
 });

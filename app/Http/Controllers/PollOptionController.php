@@ -22,7 +22,7 @@ class PollOptionController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return back()->with('success', 'Option added.');
+        return back()->with('success', __('ui.poll.option.added'));
     }
 
     /**
@@ -34,17 +34,17 @@ class PollOptionController extends Controller
         $this->authorize('update', $poll);
 
         if ($poll->isClosed()) {
-            return back()->with('error', 'This poll is closed.');
+            return back()->with('error', __('ui.poll.closedNote'));
         }
 
         if ($option->isFixed()) {
-            return back()->with('error', 'A fixed option cannot be removed.');
+            return back()->with('error', __('ui.poll.option.fixedKept'));
         }
 
         $option->delete();
 
         PollChanged::dispatch($poll->id);
 
-        return back()->with('success', 'Option removed.');
+        return back()->with('success', __('ui.poll.option.removed'));
     }
 }

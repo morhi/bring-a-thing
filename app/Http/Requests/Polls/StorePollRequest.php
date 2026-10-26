@@ -63,7 +63,37 @@ class StorePollRequest extends FormRequest
                     $validator->errors()->add("options.{$index}.ends_at", 'The end time must be after the start time.');
                 }
             }
+
+            $this->validateDistinctOptions($validator);
         });
+    }
+
+    /**
+     * Reject option rows that repeat an earlier row's date and time (F-06).
+     */
+    private function validateDistinctOptions(Validator $validator): void
+    {
+        $seen = [];
+
+        foreach ($this->input('options', []) as $index => $row) {
+            if (! is_array($row) || empty($row['date']) || strtotime((string) $row['date']) === false) {
+                continue;
+            }
+
+            $key = implode('|', [
+                date('Y-m-d', strtotime((string) $row['date'])),
+                substr((string) ($row['starts_at'] ?? ''), 0, 5),
+                substr((string) ($row['ends_at'] ?? ''), 0, 5),
+            ]);
+
+            if (isset($seen[$key])) {
+                $validator->errors()->add("options.{$index}.date", __('ui.newPoll.duplicateOption'));
+
+                continue;
+            }
+
+            $seen[$key] = true;
+        }
     }
 
     /**

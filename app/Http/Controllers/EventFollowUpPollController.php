@@ -55,6 +55,6 @@ class EventFollowUpPollController extends Controller
 
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 
-        return to_route('polls.show', $poll)->with('success', 'Poll created.');
+        return to_route('polls.show', $poll)->with('success', __('ui.newPoll.created'));
     }
 }

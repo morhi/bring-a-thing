@@ -68,7 +68,7 @@ class PollController extends Controller
 
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 
-        return to_route('polls.show', $poll)->with('success', 'Poll created.');
+        return to_route('polls.show', $poll)->with('success', __('ui.newPoll.created'));
     }
 
     /**
@@ -109,7 +109,7 @@ class PollController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return to_route('polls.show', $poll)->with('success', 'Poll updated.');
+        return to_route('polls.show', $poll)->with('success', __('ui.poll.settings.saved'));
     }
 
     /**
@@ -121,7 +121,7 @@ class PollController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return back(fallback: route('polls.show', $poll))->with('success', 'Poll closed.');
+        return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.closed.toast'));
     }
 
     /**
@@ -139,7 +139,7 @@ class PollController extends Controller
 
         $events->each(fn (Event $event) => $sendNotification->handle(new DateFixed($event, $request->user())));
 
-        return to_route('polls.show', $poll)->with('success', $events->count() === 1 ? 'Date fixed.' : 'Dates fixed.');
+        return to_route('polls.show', $poll)->with('success', trans_choice('ui.poll.fix.fixed', $events->count()));
     }
 
     /**
@@ -153,7 +153,7 @@ class PollController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return back(fallback: route('polls.show', $poll))->with('success', 'Poll reopened.');
+        return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.reopened.toast'));
     }
 
     /**
@@ -172,9 +172,9 @@ class PollController extends Controller
         if ($event !== null) {
             EventUpdated::dispatch($event->id);
 
-            return to_route('events.show', $event)->with('success', 'Poll deleted.');
+            return to_route('events.show', $event)->with('success', __('ui.poll.settings.deleted'));
         }
 
-        return to_route('groups.show', $group)->with('success', 'Poll deleted.');
+        return to_route('groups.show', $group)->with('success', __('ui.poll.settings.deleted'));
     }
 }

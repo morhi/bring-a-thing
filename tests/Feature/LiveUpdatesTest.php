@@ -116,7 +116,7 @@ it('F-21: when a person claims an item, a second open session shows the claim wi
     ['roster' => $roster, 'accepted' => $accepted] = liveEventSetup();
     $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
 
-    $this->actingAs($accepted)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved.');
+    $this->actingAs($accepted)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved');
 
     EventFacade::assertDispatched(ClaimChanged::class, fn (ClaimChanged $broadcast) => $broadcast->broadcastOn()->name === 'private-roster.'.$roster->id
         && $broadcast->broadcastAs() === 'claim.changed'
@@ -177,7 +177,7 @@ it('broadcasts fixed options on the poll channel and poll changes such as closin
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
 
-    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed.');
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed');
     $this->actingAs($owner)->delete(route('polls.reopen', $poll))->assertRedirect();
 
     $fixedEventId = Event::query()->where('origin_poll_option_id', $option->id)->value('id');

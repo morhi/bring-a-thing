@@ -158,7 +158,7 @@ it('F-13 creates a list attached to an event for a participant', function () {
 
     $this->actingAs($pending)->post(route('rosters.store'), ['title' => 'Gig gear', 'event_id' => $event->id])
         ->assertRedirect()
-        ->assertSessionHas('success', 'Roster created.');
+        ->assertSessionHas('success', 'List created');
 
     $roster = Roster::query()->where('title', 'Gig gear')->sole();
     expect($roster->event_id)->toBe($event->id);
@@ -209,7 +209,7 @@ it('F-13 lets a group admin edit and delete another member\'s group list', funct
 
     $this->actingAs($admin)->delete(route('rosters.destroy', $roster))
         ->assertRedirect(route('groups.show', $group))
-        ->assertSessionHas('success', 'Roster deleted.');
+        ->assertSessionHas('success', 'List deleted');
     $this->assertModelMissing($roster);
 });
 
@@ -300,7 +300,7 @@ it('F-15 lets an admin claim an item for a member, and the item shows the member
     $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null]);
 
     $this->actingAs($admin)->post(route('rosters.items.claim.store', [$roster, $item]), ['user_id' => $member->id])
-        ->assertSessionHas('success', 'Claim saved.');
+        ->assertSessionHas('success', 'Claim saved');
 
     $this->actingAs($admin)->get(route('rosters.show', $roster))
         ->assertInertia(fn (Assert $page) => $page
@@ -342,7 +342,7 @@ it('F-15 lets an accepted participant claim on an event list', function () {
             ->where('page.permissions.needs_acceptance', false)
             ->where('page.items.0.can_claim', true));
 
-    $this->actingAs($accepted)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved.');
+    $this->actingAs($accepted)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved');
     expect($item->claims()->where('user_id', $accepted->id)->exists())->toBeTrue();
 });
 
@@ -360,7 +360,7 @@ it('F-15 lets the organizer claim on an event list only for accepted participant
     $this->actingAs($organizer)->post(route('rosters.items.claim.store', [$roster, $item]), ['user_id' => $pending->id, 'quantity' => 1])
         ->assertForbidden();
     $this->actingAs($organizer)->post(route('rosters.items.claim.store', [$roster, $item]), ['user_id' => $accepted->id, 'quantity' => 1])
-        ->assertSessionHas('success', 'Claim saved.');
+        ->assertSessionHas('success', 'Claim saved');
 
     $this->actingAs($organizer)->get(route('rosters.show', $roster))
         ->assertInertia(fn (Assert $page) => $page
@@ -376,7 +376,7 @@ it('F-15 lets a person whose acceptance went back to pending remove their own cl
     $item = RosterItem::factory()->create(['roster_id' => $roster->id]);
     $item->claims()->create(['user_id' => $pending->id, 'quantity' => null]);
 
-    $this->actingAs($pending)->delete(route('rosters.items.claim.destroy', [$roster, $item]))->assertSessionHas('success', 'Claim removed.');
+    $this->actingAs($pending)->delete(route('rosters.items.claim.destroy', [$roster, $item]))->assertSessionHas('success', 'Claim removed');
 
     expect($item->claims()->count())->toBe(0);
 });
@@ -414,7 +414,7 @@ it('F-18 asks a person with no for the linked day to confirm before claiming, an
     $this->actingAs($present)->get(route('rosters.show', $roster))
         ->assertInertia(fn (Assert $page) => $page->component('Rosters/Show', false)->where('page.items.0.attendance_warning', false));
 
-    $this->actingAs($absent)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved.');
+    $this->actingAs($absent)->post(route('rosters.items.claim.store', [$roster, $item]))->assertSessionHas('success', 'Claim saved');
 });
 
 it('F-18 warns about a person without an answer and exposes who is available for claiming for others', function () {
@@ -489,7 +489,7 @@ it('F-19 lets a person outside the group claim on an event list through its shar
 
     $this->actingAs($outsider)->get(route('shared-rosters.show', $roster->share_token))->assertOk();
     $this->actingAs($outsider)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $item]))
-        ->assertSessionHas('success', 'Claim saved.');
+        ->assertSessionHas('success', 'Claim saved');
 });
 
 it('F-19 keeps a pending participant from claiming on an event list through its share link', function () {
@@ -531,7 +531,7 @@ it('F-17 duplicates an event list into the same event without claims and without
     $item = RosterItem::factory()->create(['roster_id' => $roster->id]);
     $item->claims()->create(['user_id' => $organizer->id, 'quantity' => null]);
 
-    $this->actingAs($organizer)->post(route('rosters.duplicate', $roster))->assertSessionHas('success', 'Roster duplicated.');
+    $this->actingAs($organizer)->post(route('rosters.duplicate', $roster))->assertSessionHas('success', 'List duplicated');
 
     $copy = Roster::query()->whereKeyNot($roster->id)->sole();
     expect($copy->event_id)->toBe($event->id);

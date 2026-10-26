@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button';
             <EmptyState title="Title only" />
             <EmptyState title="No polls yet" text="Propose a few dates and let the group answer." />
             <EmptyState :icon="CalendarDays" title="With icon and action" text="An event is a fixed date. Create one directly or fix it from a poll.">
-                <Button>Create event</Button>
-                <Button variant="outline">Secondary action</Button>
+                <Button type="button">Create event</Button>
+                <Button type="button" variant="outline">Secondary action</Button>
             </EmptyState>
             <EmptyState
                 :icon="Users"

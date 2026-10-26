@@ -37,7 +37,7 @@ it('creates a date-finder poll from explicit day options', function () {
 
     $poll = Poll::query()->where('title', 'Dinner night')->firstOrFail();
     $response->assertRedirect(route('polls.show', $poll));
-    $response->assertSessionHas('success', 'Poll created.');
+    $response->assertSessionHas('success', 'Poll created');
     expect($poll->organizer_id)->toBe($owner->id);
     expect($poll->group_id)->toBe($group->id);
     expect($poll->options()->count())->toBe(2);
@@ -155,7 +155,7 @@ it('lets a member record and update their response to an option', function () {
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
 
     $this->actingAs($member)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'yes'])
-        ->assertSessionHas('success', 'Response saved.');
+        ->assertSessionHas('success', 'Answer saved');
     expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Yes);
 
     $this->actingAs($member)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'maybe']);
@@ -193,7 +193,7 @@ it('allows the organizer to rename the poll', function () {
     $response = $this->actingAs($owner)->patch(route('polls.update', $poll), ['title' => 'New title']);
 
     $response->assertRedirect(route('polls.show', $poll));
-    $response->assertSessionHas('success', 'Poll updated.');
+    $response->assertSessionHas('success', 'Poll saved');
     expect($poll->fresh()->title)->toBe('New title');
 });
 
@@ -226,7 +226,7 @@ it('allows the organizer to delete the poll, its options, and its responses', fu
     $response = $this->actingAs($owner)->delete(route('polls.destroy', $poll));
 
     $response->assertRedirect(route('groups.show', $group));
-    $response->assertSessionHas('success', 'Poll deleted.');
+    $response->assertSessionHas('success', 'Poll deleted');
     $this->assertModelMissing($poll);
     $this->assertModelMissing($option);
 });
@@ -248,7 +248,7 @@ it('lets the organizer add a day option to the poll', function () {
     $response = $this->actingAs($owner)->post(route('polls.options.store', $poll), ['date' => '2026-11-01']);
 
     $response->assertRedirect();
-    $response->assertSessionHas('success', 'Option added.');
+    $response->assertSessionHas('success', 'Option added');
     expect($poll->options()->count())->toBe(1);
 });
 
@@ -296,7 +296,7 @@ it('lets the organizer remove an option and its responses', function () {
     $response = $this->actingAs($owner)->delete(route('polls.options.destroy', [$poll, $option]));
 
     $response->assertRedirect();
-    $response->assertSessionHas('success', 'Option removed.');
+    $response->assertSessionHas('success', 'Option removed');
     $this->assertModelMissing($option);
 });
 
@@ -398,7 +398,7 @@ it('F-08: reopens a closed poll', function () {
 
     $response = $this->actingAs($owner)->delete(route('polls.reopen', $poll));
 
-    $response->assertSessionHas('success', 'Poll reopened.');
+    $response->assertSessionHas('success', 'Poll reopened');
     expect($poll->fresh()->isClosed())->toBeFalse();
 });
 
@@ -513,4 +513,36 @@ it('F-09: saving the edit page cannot remove a fixed option', function () {
         ->assertSessionHasErrors(['remove.0' => 'A fixed option cannot be removed.']);
 
     $this->assertModelExists($fixed);
+});
+
+it('F-06: rejects creating a poll with the same date and time twice', function () {
+    [$group, $owner] = createGroupWithMembers();
+
+    $this->actingAs($owner)->post(route('polls.store', $group), [
+        'title' => 'Call slots',
+        'type' => 'date_finder',
+        'granularity' => 'hour',
+        'options' => [
+            ['date' => '2027-03-01', 'starts_at' => '19:00', 'ends_at' => '21:00'],
+            ['date' => '2027-03-01', 'starts_at' => '19:00', 'ends_at' => '21:00'],
+        ],
+    ])->assertSessionHasErrors(['options.1.date' => 'This option is listed twice. Each date and time can appear only once.']);
+
+    expect(Poll::query()->where('title', 'Call slots')->exists())->toBeFalse();
+});
+
+it('F-06: rejects saving the edit page with the same date and time twice', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01']);
+
+    $this->actingAs($owner)->patch(route('polls.update', $poll), [
+        'title' => $poll->title,
+        'options' => [
+            ['slug' => $option->slug, 'date' => '2027-03-01'],
+            ['date' => '2027-03-01'],
+        ],
+    ])->assertSessionHasErrors('options.1.date');
+
+    expect($poll->options()->count())->toBe(1);
 });

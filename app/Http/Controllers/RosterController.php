@@ -56,7 +56,7 @@ class RosterController extends Controller
             EventUpdated::dispatch($roster->event_id);
         }
 
-        return to_route('rosters.show', $roster)->with('success', 'Roster created.');
+        return to_route('rosters.show', $roster)->with('success', __('ui.newList.created'));
     }
 
     /**
@@ -92,7 +92,7 @@ class RosterController extends Controller
             'title', 'description', 'date', 'members_can_add_items', 'attendance_poll_option_id',
         ]));
 
-        return to_route('rosters.show', $roster)->with('success', 'Roster updated.');
+        return to_route('rosters.show', $roster)->with('success', __('ui.list.settings.saved'));
     }
 
     /**
@@ -108,14 +108,14 @@ class RosterController extends Controller
         if ($roster->event !== null) {
             EventUpdated::dispatch($roster->event_id);
 
-            return to_route('events.show', $roster->event)->with('success', 'Roster deleted.');
+            return to_route('events.show', $roster->event)->with('success', __('ui.list.settings.deleted'));
         }
 
         if ($roster->group !== null) {
-            return to_route('groups.show', $roster->group)->with('success', 'Roster deleted.');
+            return to_route('groups.show', $roster->group)->with('success', __('ui.list.settings.deleted'));
         }
 
-        return to_route('dashboard')->with('success', 'Roster deleted.');
+        return to_route('dashboard')->with('success', __('ui.list.settings.deleted'));
     }
 
     /**
@@ -127,6 +127,6 @@ class RosterController extends Controller
 
         $copy = $roster->duplicate();
 
-        return to_route('rosters.show', $copy)->with('success', 'Roster duplicated.');
+        return to_route('rosters.show', $copy)->with('success', __('ui.list.settings.duplicated'));
     }
 }

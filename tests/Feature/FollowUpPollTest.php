@@ -75,7 +75,7 @@ it('F-12: an accepted participant creates a follow-up poll within the event', fu
 
     $this->actingAs($accepted)->post(route('events.polls.store', $event), followUpPollInput())
         ->assertSessionHasNoErrors()
-        ->assertSessionHas('success', 'Poll created.');
+        ->assertSessionHas('success', 'Poll created');
 
     $poll = Poll::query()->sole();
 
@@ -147,7 +147,7 @@ it('F-12: a person who declines no longer counts in totals, best option and fixi
             ->where('page.poll.options.1.yes_count', 1)
             ->where('page.best_option_slugs', [$second->slug]));
 
-    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$second->slug]])->assertSessionHas('success', 'Date fixed.');
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$second->slug]])->assertSessionHas('success', 'Date fixed');
 
     expect($second->event->participations()->pluck('user_id')->all())->toBe([$owner->id]);
 });
@@ -156,7 +156,7 @@ it('F-12: an event fixed from a follow-up poll appears in the source event under
     [, $owner, $event, $accepted] = followUpGroup();
     [$poll, $option] = followUpPoll($event, $owner);
 
-    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed.');
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success', 'Date fixed');
 
     $child = $option->event()->sole();
 
@@ -194,9 +194,23 @@ it('F-12: managers create follow-up polls on an event without acceptances, outsi
             ->where('page.permissions.can_create_follow_up_poll', true)
             ->where('page.follow_up_audience_count', 2));
 
-    $this->actingAs($owner)->post(route('events.polls.store', $event), followUpPollInput())->assertSessionHas('success', 'Poll created.');
+    $this->actingAs($owner)->post(route('events.polls.store', $event), followUpPollInput())->assertSessionHas('success', 'Poll created');
     $this->actingAs($outsider)->get(route('events.polls.create', $event))->assertNotFound();
     $this->actingAs($outsider)->post(route('events.polls.store', $event), followUpPollInput())->assertNotFound();
 
     expect(Poll::query()->where('event_id', $event->id)->count())->toBe(1);
+});
+
+it('F-12: a follow-up poll organizer who left the group no longer sees the poll', function () {
+    [$group, , $event, $accepted] = followUpGroup();
+    [$poll] = followUpPoll($event, $accepted);
+    $plainPoll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $accepted->id]);
+
+    expect(Poll::query()->visibleTo($accepted)->pluck('id')->all())->toEqualCanonicalizing([$poll->id, $plainPoll->id]);
+
+    $group->members()->detach($accepted);
+
+    expect($poll->fresh()->includesMember($accepted))->toBeFalse();
+    expect(Poll::query()->visibleTo($accepted)->exists())->toBeFalse();
+    $this->actingAs($accepted)->get(route('polls.show', $poll))->assertNotFound();
 });

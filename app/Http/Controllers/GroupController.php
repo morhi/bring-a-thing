@@ -53,10 +53,10 @@ class GroupController extends Controller
         $invites = $this->sendInvites($group, $request->validated('invites') ?? [], $request->user(), $inviteMember);
 
         if ($invites === 0) {
-            return to_route('groups.show', $group)->with('success', 'Group created.');
+            return to_route('groups.show', $group)->with('success', __('ui.newGroup.created'));
         }
 
-        return to_route('groups.show', $group)->with('success', $invites === 1 ? 'Group created, 1 person invited.' : "Group created, {$invites} people invited.");
+        return to_route('groups.show', $group)->with('success', trans_choice('ui.newGroup.createdInvited', $invites, ['n' => $invites]));
     }
 
     /**
@@ -93,7 +93,7 @@ class GroupController extends Controller
     {
         $group->update($request->safe()->only(['name', 'members_can_set_status']));
 
-        return to_route('groups.edit', $group)->with('success', 'Group updated.');
+        return to_route('groups.edit', $group)->with('success', __('ui.settings.saved'));
     }
 
     /**
@@ -105,7 +105,7 @@ class GroupController extends Controller
 
         $group->delete();
 
-        return to_route('dashboard')->with('success', 'Group deleted.');
+        return to_route('dashboard')->with('success', __('ui.groupSettings.deleted'));
     }
 
     /**
@@ -115,7 +115,7 @@ class GroupController extends Controller
     {
         $invites = $this->sendInvites($group, $request->validated('invites'), $request->user(), $inviteMember);
 
-        return back()->with('success', $invites === 1 ? 'An invite has been sent.' : "{$invites} invites have been sent.");
+        return back()->with('success', trans_choice('ui.group.invite.sent', $invites, ['n' => $invites]));
     }
 
     /**
@@ -127,7 +127,7 @@ class GroupController extends Controller
 
         $group->members()->detach($member);
 
-        return back()->with('success', 'Member removed.');
+        return back()->with('success', __('ui.groupSettings.removed', ['name' => $member->name ?? $member->email]));
     }
 
     /**
@@ -137,7 +137,7 @@ class GroupController extends Controller
     {
         $group->members()->updateExistingPivot($member, ['role' => $request->enum('role', GroupRole::class)]);
 
-        return back()->with('success', 'Member role updated.');
+        return back()->with('success', __('ui.groupSettings.roleChanged.'.$request->enum('role', GroupRole::class)->value, ['name' => $member->name ?? $member->email]));
     }
 
     /**

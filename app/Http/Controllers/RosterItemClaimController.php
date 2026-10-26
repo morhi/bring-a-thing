@@ -29,7 +29,7 @@ class RosterItemClaimController extends Controller
 
         $sendNotification->handle(new ClaimedForYou($item, $target, $request->user()));
 
-        return back()->with('success', 'Claim saved.');
+        return back()->with('success', __('ui.list.claim.saved'));
     }
 
     /**
@@ -47,6 +47,6 @@ class RosterItemClaimController extends Controller
             $sendNotification->handle(new ClaimReleased($item, User::findOrFail($targetId), $request->user()));
         }
 
-        return back()->with('success', 'Claim removed.');
+        return back()->with('success', __('ui.list.claim.removed'));
     }
 }

@@ -17,8 +17,8 @@ import { Label } from '@/components/ui/label';
                     <Input :id="`fp-title-${mode}`" class="max-w-field" />
                 </div>
                 <template #actions>
-                    <Button variant="outline">Cancel</Button>
-                    <Button>Create poll</Button>
+                    <Button type="button" variant="outline">Cancel</Button>
+                    <Button type="button">Create poll</Button>
                 </template>
             </FormPage>
             <p class="text-sm font-semibold text-fg-muted">{{ mode || 'light' }} (edit, long title, no actions slot)</p>

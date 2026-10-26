@@ -52,7 +52,7 @@ class CompletePendingSharedClaim
 
         if (! $roster->acceptsShareLinkClaimFrom($user) || $roster->excludesShareLinkVisitor($user)) {
             return redirect()->route('shared-rosters.show', $roster->share_token)
-                ->with('error', 'Accept the event first to claim items.');
+                ->with('error', __('ui.list.claim.acceptFirst'));
         }
 
         try {
@@ -64,6 +64,6 @@ class CompletePendingSharedClaim
 
         ClaimChanged::dispatch($roster->id, $item->id, $user->id);
 
-        return redirect()->route('shared-rosters.show', $roster->share_token)->with('success', 'Claim saved.');
+        return redirect()->route('shared-rosters.show', $roster->share_token)->with('success', __('ui.list.claim.saved'));
     }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Lock, Plus, X } from '@lucide/vue';
 import { useMediaQuery } from '@vueuse/core';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
     addDays,
     dateLocale,
@@ -140,6 +140,12 @@ const monthCells = computed(() => {
 
 type MonthCell = (typeof monthCells.value)[number];
 
+const weeks = computed(() =>
+    Array.from({ length: 6 }, (_, row) =>
+        monthCells.value.slice(row * 7, row * 7 + 7),
+    ),
+);
+
 function shiftMonth(delta: number): void {
     monthCursor.value = new Date(
         monthCursor.value.getFullYear(),
@@ -189,6 +195,7 @@ function dayPointerDown(cell: MonthCell, event: PointerEvent): void {
         return;
     }
 
+    activeDay.value = cell.value;
     paint = !cell.selected;
     lastPainted = cell.value;
     emit('update:modelValue', setDay(cell.value, paint));
@@ -230,13 +237,102 @@ function dayPointerUp(): void {
     lastPainted = null;
 }
 
+// Roving tabindex (WAI-ARIA grid): the day grid is one tab stop, arrow keys move inside it
+const monthGrid = ref<HTMLElement | null>(null);
+const activeDay = ref<string | null>(null);
+
+function isFocusable(cell: MonthCell): boolean {
+    return !cell.past && !props.disabled;
+}
+
+const tabStop = computed(() => {
+    const cells = monthCells.value;
+    const inMonth = cells.filter((cell) => !cell.outside && isFocusable(cell));
+    const candidates = [
+        cells.find((cell) => cell.value === activeDay.value),
+        inMonth.find((cell) => cell.selected),
+        inMonth.find((cell) => cell.today),
+        inMonth[0],
+        cells.find(isFocusable),
+    ];
+
+    return candidates.find((cell) => cell && isFocusable(cell))?.value ?? null;
+});
+
+function daysInMonth(year: number, month: number): number {
+    return new Date(year, month + 1, 0).getDate();
+}
+
+function keyTarget(date: Date, event: KeyboardEvent): Date | null {
+    const monday = mondayOf(date);
+    const shiftMonthBy = (delta: number) =>
+        new Date(
+            date.getFullYear(),
+            date.getMonth() + delta,
+            Math.min(
+                date.getDate(),
+                daysInMonth(date.getFullYear(), date.getMonth() + delta),
+            ),
+        );
+    const targets: Record<string, () => Date> = {
+        ArrowLeft: () => addDays(date, -1),
+        ArrowRight: () => addDays(date, 1),
+        ArrowUp: () => addDays(date, -7),
+        ArrowDown: () => addDays(date, 7),
+        Home: () => monday,
+        End: () => addDays(monday, 6),
+        PageUp: () => shiftMonthBy(-1),
+        PageDown: () => shiftMonthBy(1),
+    };
+
+    return targets[event.key]?.() ?? null;
+}
+
+function focusDay(value: string): void {
+    const target = fromIso(value);
+    const cursor = monthCursor.value;
+
+    if (
+        target.getFullYear() !== cursor.getFullYear() ||
+        target.getMonth() !== cursor.getMonth()
+    ) {
+        monthCursor.value = new Date(
+            target.getFullYear(),
+            target.getMonth(),
+            1,
+        );
+    }
+
+    activeDay.value = value;
+    nextTick(() =>
+        monthGrid.value
+            ?.querySelector<HTMLButtonElement>(`[data-day="${value}"]`)
+            ?.focus(),
+    );
+}
+
 function dayKey(cell: MonthCell, event: KeyboardEvent): void {
-    if (event.key !== 'Enter' && event.key !== ' ') {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        activeDay.value = cell.value;
+        emit('update:modelValue', setDay(cell.value, !cell.selected));
+
+        return;
+    }
+
+    const target = keyTarget(fromIso(cell.value), event);
+
+    if (!target || props.disabled) {
         return;
     }
 
     event.preventDefault();
-    emit('update:modelValue', setDay(cell.value, !cell.selected));
+    // Past days take no options and cannot hold focus, so movement stops at today
+    const value = toIso(target) < props.today ? props.today : toIso(target);
+
+    if (value !== cell.value) {
+        focusDay(value);
+    }
 }
 
 /* Slot mode */
@@ -299,6 +395,42 @@ function slotsFor(day: string): { option: OptionDraft; index: number }[] {
         );
 }
 
+const slotNotice = ref<string | null>(null);
+
+function hasSlot(
+    day: string,
+    start: string,
+    end: string,
+    options = props.modelValue,
+): boolean {
+    return options.some(
+        (option) =>
+            option.date === day && option.start === start && option.end === end,
+    );
+}
+
+// Same time as the last slot, pushed by an hour per clash, so a repeated click never adds a twin
+function freeSlot(day: string, time: SlotTime): SlotTime | null {
+    const duration = toMinutes(time.end) - toMinutes(time.start);
+
+    for (
+        let start = toMinutes(time.start);
+        start + duration < 24 * 60;
+        start += 60
+    ) {
+        const candidate = {
+            start: toTime(start),
+            end: toTime(start + duration),
+        };
+
+        if (!hasSlot(day, candidate.start, candidate.end)) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
 function addSlot(day: string): void {
     const last = [...props.modelValue]
         .reverse()
@@ -311,11 +443,18 @@ function addSlot(day: string): void {
         return;
     }
 
+    const free = freeSlot(day, time);
+    slotNotice.value = free ? null : t('cal.slotTaken');
+
+    if (!free) {
+        return;
+    }
+
     emit(
         'update:modelValue',
         sortOptions([
             ...props.modelValue,
-            { date: day, start: time.start, end: time.end, label: '' },
+            { date: day, start: free.start, end: free.end, label: '' },
         ]),
     );
 }
@@ -515,13 +654,20 @@ function gridPointerUp(): void {
         return;
     }
 
-    if (gesture.kind === 'draw' && draft.value) {
+    const drawn = draft.value;
+
+    if (
+        gesture.kind === 'draw' &&
+        drawn &&
+        !hasSlot(drawn.date, drawn.start, drawn.end)
+    ) {
         emit(
             'update:modelValue',
-            sortOptions([...props.modelValue, { ...draft.value, label: '' }]),
+            sortOptions([...props.modelValue, { ...drawn, label: '' }]),
         );
-        draft.value = null;
     }
+
+    draft.value = null;
 
     // Moving keeps array positions stable during the drag; sort once it ends
     if (gesture.kind !== 'draw') {
@@ -540,6 +686,7 @@ function hourLabel(hour: number): string {
     <div class="flex w-full min-w-0 flex-col gap-2" data-feature="F-06">
         <div class="flex items-center justify-between gap-2">
             <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 :aria-label="t('cal.prev')"
@@ -553,6 +700,7 @@ function hourLabel(hour: number): string {
                 >{{ mode === 'day' ? monthLabel : weekLabel }}</span
             >
             <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 :aria-label="t('cal.next')"
@@ -564,8 +712,10 @@ function hourLabel(hour: number): string {
 
         <div
             v-if="mode === 'day'"
+            ref="monthGrid"
             data-month
-            role="group"
+            role="grid"
+            aria-multiselectable="true"
             :aria-label="monthLabel"
             class="flex touch-none flex-col gap-1 select-none"
             @pointermove="dayPointerMove"
@@ -580,45 +730,57 @@ function hourLabel(hour: number): string {
                     >{{ label }}</span
                 >
             </div>
-            <div class="grid grid-cols-7 gap-1">
-                <button
-                    v-for="cell in monthCells"
+            <div
+                v-for="(week, row) in weeks"
+                :key="row"
+                role="row"
+                class="grid grid-cols-7 gap-1"
+            >
+                <div
+                    v-for="cell in week"
                     :key="cell.value"
-                    type="button"
-                    :data-day="cell.value"
-                    :disabled="cell.past || disabled"
-                    :aria-pressed="cell.selected"
-                    :aria-disabled="cell.locked || undefined"
-                    :aria-label="cell.spoken"
-                    :title="cell.label || undefined"
-                    :class="
-                        cn(
-                            'bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 place-items-center rounded-lg border border-transparent p-0 font-semibold tabular-nums',
-                            'enabled:hover:border-border-strong disabled:text-fg-soft transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-60',
-                            cell.outside &&
-                                'text-fg-soft bg-transparent font-medium',
-                            cell.today &&
-                                'shadow-[inset_0_0_0_1.5px_var(--border-strong)]',
-                            cell.selected &&
-                                'border-primary bg-primary text-primary-fg enabled:hover:border-primary-hover enabled:hover:bg-primary-hover',
-                            cell.locked && 'cursor-not-allowed',
-                        )
-                    "
-                    @pointerdown.prevent="dayPointerDown(cell, $event)"
-                    @keydown="dayKey(cell, $event)"
+                    role="gridcell"
+                    :aria-selected="cell.selected"
+                    class="flex"
                 >
-                    <span>{{ cell.day }}</span>
-                    <Lock
-                        v-if="cell.locked"
-                        class="absolute top-1 right-1 size-2.5"
-                        aria-hidden="true"
-                    />
-                    <span
-                        v-if="cell.label"
-                        class="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-current"
-                        aria-hidden="true"
-                    />
-                </button>
+                    <button
+                        type="button"
+                        :data-day="cell.value"
+                        :tabindex="cell.value === tabStop ? 0 : -1"
+                        :disabled="cell.past || disabled"
+                        :aria-pressed="cell.selected"
+                        :aria-disabled="cell.locked || undefined"
+                        :aria-label="cell.spoken"
+                        :title="cell.label || undefined"
+                        :class="
+                            cn(
+                                'bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 w-full place-items-center rounded-lg border border-transparent p-0 font-semibold tabular-nums',
+                                'enabled:hover:border-border-strong disabled:text-fg-soft transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-60',
+                                cell.outside &&
+                                    'text-fg-soft bg-transparent font-medium',
+                                cell.today &&
+                                    'shadow-[inset_0_0_0_1.5px_var(--border-strong)]',
+                                cell.selected &&
+                                    'border-primary bg-primary text-primary-fg enabled:hover:border-primary-hover enabled:hover:bg-primary-hover',
+                                cell.locked && 'cursor-not-allowed',
+                            )
+                        "
+                        @pointerdown.prevent="dayPointerDown(cell, $event)"
+                        @keydown="dayKey(cell, $event)"
+                    >
+                        <span>{{ cell.day }}</span>
+                        <Lock
+                            v-if="cell.locked"
+                            class="absolute top-1 right-1 size-2.5"
+                            aria-hidden="true"
+                        />
+                        <span
+                            v-if="cell.label"
+                            class="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-current"
+                            aria-hidden="true"
+                        />
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -658,6 +820,7 @@ function hourLabel(hour: number): string {
                     <!-- Keyboard path for slots: drawing needs a pointer, this button does not -->
                     <Button
                         v-if="!day.past && !disabled"
+                        type="button"
                         variant="ghost"
                         size="icon-xs"
                         :aria-label="t('cal.addSlot', { date: day.spoken })"
@@ -784,6 +947,13 @@ function hourLabel(hour: number): string {
 
         <p class="text-fg-muted text-sm">
             {{ mode === 'day' ? t('cal.hintDay') : t('cal.hintSlots') }}
+        </p>
+        <p
+            class="text-danger text-sm empty:hidden"
+            role="status"
+            aria-live="polite"
+        >
+            {{ mode === 'slots' ? slotNotice : null }}
         </p>
     </div>
 </template>

@@ -31,13 +31,13 @@ class SharedRosterClaimController extends Controller
             abort_if($roster->excludesShareLinkVisitor($user), 404);
 
             if (! $roster->acceptsShareLinkClaimFrom($user)) {
-                return back()->with('error', 'Accept the event first to claim items.');
+                return back()->with('error', __('ui.list.claim.acceptFirst'));
             }
 
             $claimItem->handle($item, $user, $quantity);
             ClaimChanged::dispatch($roster->id, $item->id, $user->id);
 
-            return back()->with('success', 'Claim saved.');
+            return back()->with('success', __('ui.list.claim.saved'));
         }
 
         $request->session()->put('pending_shared_claim', [
@@ -47,6 +47,6 @@ class SharedRosterClaimController extends Controller
         ]);
 
         return redirect()->route('welcome')
-            ->with('success', "Log in or sign up to claim \"{$item->name}\" — we'll save your claim right after.");
+            ->with('success', __('ui.list.guest.pendingClaim', ['item' => $item->name]));
     }
 }

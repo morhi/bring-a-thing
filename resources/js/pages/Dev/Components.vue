@@ -68,6 +68,7 @@ onMounted(() => {
                 aria-label="Page tools"
             >
                 <Button
+                    type="button"
                     variant="outline"
                     :aria-pressed="dark"
                     @click="toggleTheme"
@@ -81,6 +82,7 @@ onMounted(() => {
                     aria-label="Language"
                 >
                     <Button
+                        type="button"
                         v-for="code in ['en', 'de'] as const"
                         :key="code"
                         :variant="locale === code ? 'default' : 'outline'"
@@ -97,6 +99,7 @@ onMounted(() => {
                     aria-label="Viewport width"
                 >
                     <Button
+                        type="button"
                         v-for="option in frames"
                         :key="option.label"
                         :variant="

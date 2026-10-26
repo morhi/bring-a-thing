@@ -17,7 +17,7 @@ it('creates a group with the requesting user as owner and member', function () {
 
     $group = Group::query()->where('name', 'Family Trip')->firstOrFail();
     $response->assertRedirect(route('groups.show', $group));
-    $response->assertSessionHas('success', 'Group created.');
+    $response->assertSessionHas('success', 'Group created');
     expect($group->owner_id)->toBe($user->id);
     expect($group->members()->whereKey($user->id)->first()?->pivot->role)->toBe(GroupRole::Owner);
 });
@@ -59,7 +59,7 @@ it('allows the owner to update the group', function () {
     $response = $this->actingAs($owner)->patch(route('groups.update', $group), ['name' => 'Renamed']);
 
     $response->assertRedirect(route('groups.edit', $group));
-    $response->assertSessionHas('success', 'Group updated.');
+    $response->assertSessionHas('success', 'Changes saved');
     expect($group->fresh()->name)->toBe('Renamed');
 });
 
@@ -83,7 +83,7 @@ it('allows the owner to delete the group', function () {
     $response = $this->actingAs($owner)->delete(route('groups.destroy', $group));
 
     $response->assertRedirect(route('dashboard'));
-    $response->assertSessionHas('success', 'Group deleted.');
+    $response->assertSessionHas('success', 'Group deleted');
     $this->assertModelMissing($group);
 });
 
@@ -124,7 +124,7 @@ it('F-03: creates a group with invitations, which can also be skipped', function
 
     $group = Group::query()->where('name', 'Choir')->firstOrFail();
     $response->assertRedirect(route('groups.show', $group));
-    $response->assertSessionHas('success', 'Group created, 2 people invited.');
+    $response->assertSessionHas('success', 'Group created, 2 people invited');
     expect($group->members()->count())->toBe(3);
     expect($group->members()->where('email', 'ben@example.com')->first()?->pivot->accepted_at)->toBeNull();
 });

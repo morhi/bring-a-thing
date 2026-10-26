@@ -28,6 +28,6 @@ class PollResponseController extends Controller
 
         PollResponseUpdated::dispatch($poll->id, $option->id, $request->user()->id);
 
-        return back()->with('success', 'Response saved.');
+        return back()->with('success', __('ui.poll.answer.saved'));
     }
 }

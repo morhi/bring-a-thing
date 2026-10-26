@@ -71,7 +71,7 @@ it('F-04: invites a new email address without a name, as typed into the invite f
 
     $this->actingAs($owner)
         ->post(route('groups.invite', $group), ['invites' => [['email' => 'nameless@example.com']]])
-        ->assertSessionHas('success', 'An invite has been sent.');
+        ->assertSessionHas('success', 'An invite has been sent');
 
     $invitee = User::query()->where('email', 'nameless@example.com')->firstOrFail();
     expect($invitee->name)->toBeNull();
@@ -89,7 +89,7 @@ it('F-04: invites every selected person at once', function () {
             ['email' => 'one@example.com', 'name' => 'One Friend'],
             ['email' => 'two@example.com'],
         ]])
-        ->assertSessionHas('success', '2 invites have been sent.');
+        ->assertSessionHas('success', '2 invites have been sent');
 
     expect($group->members()->whereIn('email', ['one@example.com', 'two@example.com'])->count())->toBe(2);
     Mail::assertQueued(MagicLinkMail::class, 2);

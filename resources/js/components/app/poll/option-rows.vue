@@ -203,6 +203,7 @@ function applyTimeToAll(source: OptionDraft): void {
                     aria-hidden="true"
                 />
                 <Button
+                    type="button"
                     variant="ghost"
                     size="icon-sm"
                     :class="cn('justify-self-end', mode === 'slots' && 'max-md:order-1')"

@@ -223,7 +223,7 @@ it('F-08: after reopening a fixed poll, its events still exist', function () {
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]]);
 
-    $this->actingAs($owner)->delete(route('polls.reopen', $poll))->assertSessionHas('success', 'Poll reopened.');
+    $this->actingAs($owner)->delete(route('polls.reopen', $poll))->assertSessionHas('success', 'Poll reopened');
 
     expect($poll->fresh()->isClosed())->toBeFalse()
         ->and(Event::query()->where('origin_poll_option_id', $option->id)->exists())->toBeTrue()
@@ -256,7 +256,7 @@ it('F-08: on an option with answers the date and time are locked, on an option w
             ['slug' => $open->slug, 'date' => '2027-03-06'],
             ['date' => '2027-03-07'],
         ],
-    ])->assertSessionHasNoErrors()->assertSessionHas('success', 'Poll updated.');
+    ])->assertSessionHasNoErrors()->assertSessionHas('success', 'Poll saved');
 
     expect($answered->fresh()->label)->toBe('Lunch')
         ->and($answered->fresh()->date->format('Y-m-d'))->toBe('2027-03-01')
@@ -296,7 +296,7 @@ it('F-09: fixing three options creates three events with the options\' dates', f
 
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => $options->take(3)->pluck('slug')->all()])
         ->assertRedirect(route('polls.show', $poll))
-        ->assertSessionHas('success', 'Dates fixed.');
+        ->assertSessionHas('success', 'Dates fixed');
 
     $events = Event::query()->where('group_id', $poll->group_id)->orderBy('date')->get();
     expect($events)->toHaveCount(3)
@@ -393,7 +393,7 @@ it('F-09: a reopened poll with a fixed option closes without a new selection', f
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]]);
     $this->actingAs($owner)->delete(route('polls.reopen', $poll));
 
-    $this->actingAs($owner)->post(route('polls.close', $poll))->assertSessionHas('success', 'Poll closed.');
+    $this->actingAs($owner)->post(route('polls.close', $poll))->assertSessionHas('success', 'Poll closed');
 
     expect($poll->fresh()->isClosed())->toBeTrue();
 });
@@ -407,7 +407,7 @@ it('F-09: events fixed from a follow-up poll get the source event as parent', fu
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
 
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])
-        ->assertSessionHas('success', 'Date fixed.');
+        ->assertSessionHas('success', 'Date fixed');
 
     expect($option->event->parent_event_id)->toBe($source->id);
 });

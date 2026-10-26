@@ -27,7 +27,7 @@ class RosterItemController extends Controller
 
         ItemChanged::dispatch($roster->id, $item->id);
 
-        return back()->with('success', 'Thing added.');
+        return back()->with('success', __('ui.list.item.added'));
     }
 
     /**
@@ -43,7 +43,7 @@ class RosterItemController extends Controller
 
         ItemChanged::dispatch($roster->id, $item->id);
 
-        return back()->with('success', 'Thing updated.');
+        return back()->with('success', __('ui.list.item.saved'));
     }
 
     /**
@@ -57,7 +57,7 @@ class RosterItemController extends Controller
 
         ItemChanged::dispatch($roster->id, $item->id, deleted: true);
 
-        return back()->with('success', 'Thing removed.');
+        return back()->with('success', __('ui.list.item.deleted'));
     }
 
     /**

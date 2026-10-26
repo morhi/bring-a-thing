@@ -223,6 +223,7 @@ const rowClass =
         >
             <h2 class="text-[17px]">{{ t('nav.notifications') }}</h2>
             <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 class="ml-auto"
@@ -324,7 +325,7 @@ const rowClass =
             class="border-border flex flex-wrap items-center gap-2 border-t px-4 py-3 text-sm"
         >
             <span class="text-fg-muted">{{ t('notif.loadFailed') }}</span>
-            <Button variant="ghost" size="sm" @click="emit('retry')">{{
+            <Button type="button" variant="ghost" size="sm" @click="emit('retry')">{{
                 t('notif.retry')
             }}</Button>
         </div>
@@ -334,6 +335,7 @@ const rowClass =
             class="border-border border-t px-4 py-2.5"
         >
             <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 class="w-full"

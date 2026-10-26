@@ -56,6 +56,7 @@ function selectTheme(value: unknown): void {
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
             <Button
+                type="button"
                 variant="ghost"
                 size="icon-lg"
                 class="rounded-full"

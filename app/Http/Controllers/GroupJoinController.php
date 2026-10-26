@@ -63,14 +63,14 @@ class GroupJoinController extends Controller
         if ($user !== null) {
             $joinGroup->handle($group, $user);
 
-            return to_route('groups.show', $group)->with('success', 'You joined the group.');
+            return to_route('groups.show', $group)->with('success', __('ui.join.joined'));
         }
 
         if ($group->invite_link_locked) {
             $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
             $sendMagicLink->handle($user, joinGroup: $group);
 
-            return back()->with('success', 'A login link has been sent to your email address.');
+            return back()->with('success', __('ui.welcome.login.sentFlash'));
         }
 
         $user = User::query()->create([
@@ -84,6 +84,6 @@ class GroupJoinController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return to_route('groups.show', $group)->with('success', 'You joined the group.');
+        return to_route('groups.show', $group)->with('success', __('ui.join.joined'));
     }
 }

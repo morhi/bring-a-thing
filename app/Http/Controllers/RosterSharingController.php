@@ -19,7 +19,7 @@ class RosterSharingController extends Controller
 
         $roster->enableSharing();
 
-        return back()->with('success', 'Sharing enabled. Anyone with the link can view and claim items.');
+        return back()->with('success', __('ui.list.share.enabled'));
     }
 
     /**
@@ -31,7 +31,7 @@ class RosterSharingController extends Controller
 
         $roster->regenerateShareToken();
 
-        return back()->with('success', 'Share link regenerated. The old link no longer works.');
+        return back()->with('success', __('ui.list.share.regenerated'));
     }
 
     /**
@@ -43,6 +43,6 @@ class RosterSharingController extends Controller
 
         $roster->disableSharing();
 
-        return back()->with('success', 'Sharing disabled.');
+        return back()->with('success', __('ui.list.share.disabled'));
     }
 }

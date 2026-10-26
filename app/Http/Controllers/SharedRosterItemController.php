@@ -27,13 +27,13 @@ class SharedRosterItemController extends Controller
 
         if (! $user = $request->user()) {
             return redirect()->route('welcome')
-                ->with('success', 'Log in or sign up, then you can add things to this list.');
+                ->with('success', __('ui.list.guest.pendingAdd'));
         }
 
         $item = $roster->items()->create($request->safe()->only(['name', 'quantity', 'unit', 'notes']));
 
         ItemChanged::dispatch($roster->id, $item->id);
 
-        return back()->with('success', 'Thing added.');
+        return back()->with('success', __('ui.list.item.added'));
     }
 }

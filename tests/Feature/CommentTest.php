@@ -43,7 +43,7 @@ it('lets a member post a list-level comment', function () {
     $response = $this->actingAs($member)->post(route('rosters.comments.store', $roster), ['body' => 'Looking forward to this!']);
 
     $response->assertRedirect();
-    $response->assertSessionHas('success', 'Comment posted.');
+    $response->assertSessionHas('success', 'Comment posted');
     $this->assertDatabaseHas('comments', [
         'commentable_type' => 'roster',
         'commentable_id' => $roster->id,

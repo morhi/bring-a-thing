@@ -90,9 +90,12 @@ function requestRemove(index: number, option: OptionDraft): void {
         <p class="text-fg-muted">
             Organizers pick poll options by day (month grid, click or drag) or
             as time slots (week grid, draw, move, resize; the plus per day is
-            the keyboard path). The rows below share the same v-model and carry
-            times and labels. Locked options have answers and keep date and
-            time; fixed ones cannot be removed. Removing a locked option emits
+            the keyboard path and skips times that already exist). The month
+            grid is one tab stop: arrow keys move by day and week, Home and End
+            to the row ends, Page Up and Page Down by month, Enter or Space
+            toggles. The rows below share the same v-model and carry times and
+            labels. Locked options have answers and keep date and time; fixed
+            ones cannot be removed. Removing a locked option emits
             <code>request-remove</code> for the page to confirm.
         </p>
         <div
