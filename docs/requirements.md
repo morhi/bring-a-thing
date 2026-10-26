@@ -1,0 +1,465 @@
+# Requirements: Bring a Thing
+
+## 1. Header
+
+- **Project:** Bring a Thing
+- **Type:** App
+- **Version:** 1.3
+- **Approved:** 25.10.2026
+
+## 2. Goal
+
+Bands, clubs, groups of friends and teams organize shared dates with several tools today: Doodle to find a date, a messenger for accepting and declining, and a shared list for who brings or does what. Once a date is fixed, the connection is lost. Follow-up dates such as rehearsals go to everyone instead of only the people who accepted, and tasks end up with people who are not even coming.
+
+Bring a Thing connects these steps in one chain: find a date, fix it, determine the participants, schedule follow-up dates only with them, and then distribute tasks and things to bring. The app stays general and fits a band gig as well as a club event, a trip or a dinner. The goal is reached when an organizer creates a poll for an occasion, fixes the date after the responses and opens a list for the participants in under 5 minutes, without needing another tool.
+
+## 3. Stage and scope
+
+**Stage: MVP.** A backend with login, groups, lists, polls, comments and live updates already exists. The frontend gets a complete redesign. The MVP covers all features in section 5, including the event chain (F-09 to F-12) that the existing backend does not cover yet.
+
+**Later stages:**
+- Feedback to the platform team: group owners and admins rate their satisfaction and suggest improvements. A global super user role manages the responses with the statuses "planned" and "rejected".
+
+## 4. Users and roles
+
+- **Guest:** person without login who holds a share link. Sees the shared list without other people's email addresses. Claiming or adding opens a login on the same page (F-19).
+- **Account:** any logged-in person, including a shadow account (F-01). Creates groups and standalone lists and manages their own friends.
+- **Group owner:** creator of a group. May do everything in the group, including deleting it and granting or revoking the admin role.
+- **Group admin:** member appointed by the owner. Invites and removes members (not the owner), edits all polls, events and lists of the group, adds items regardless of F-14 and claims items for others. May not delete the group or change admin roles.
+- **Member:** sees all polls and events of the group and the group lists, responds to polls, accepts or declines events, comments and claims items.
+- **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events.
+- **List owner:** whoever creates a list. Manages settings, items, custom fields and the share link of that list.
+- **Participants:** members with the participation status "accepted" or "pending" for an event. Only they see the lists and follow-up polls of that event (F-11, F-12).
+
+## 5. Features
+
+### MVP
+
+#### F-01 Login via magic link (Core)
+
+**User goal:** Join without a registration barrier, even when only invited.
+
+**Rules:**
+- The start page carries a single form for login and registration. The person enters their email and receives a login link by email. If the account has no name yet, the form asks for it. If the account has a password, the person can log in with the password instead.
+- An invitation by email (F-04) creates a shadow account immediately. It appears as a member right away, and the invited person logs in through a login link without registering.
+- The login link is signed and expires.
+- A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
+- The login email is the only email the app sends.
+
+**Acceptance criteria:**
+- A new email address receives a login link after entering email and name, and the link leads to the dashboard.
+- An expired or altered link shows an error and does not log in.
+- An email address invited twice results in exactly one account.
+- An account without a password shows no password field.
+
+#### F-02 Account and settings (Secondary)
+
+**User goal:** Manage one's own name and password.
+
+**Rules:**
+- The settings contain name, set or change password, and logout. Common practice applies.
+
+**Acceptance criteria:**
+- After setting a password, login with email and password succeeds.
+
+#### F-03 Groups (Core)
+
+**User goal:** Create a fixed circle of people once and reuse it for all polls, events and lists.
+
+**Rules:**
+- A group has a name and members with the roles owner, admin or member (section 4).
+- The owner appoints members as admins and revokes the role again. The owner cannot be removed and can only delete the group.
+- Deleting a group deletes all its polls, events and lists after a confirmation.
+
+**Acceptance criteria:**
+- An admin sees no action to delete the group and no action to change roles.
+- After deleting a group, its lists are no longer reachable.
+
+#### F-04 Inviting members (Core)
+
+**User goal:** Bring people into the group by email without them registering first.
+
+**Rules:**
+- Owners and admins invite by email. The app creates a shadow account if needed (F-01) and saves the person as a friend of the inviting person (F-05).
+- Until their first login, the member carries the label "Invitation pending".
+- The invite field suggests matching friends.
+- Owners and admins remove members. Admins cannot remove the owner.
+
+**Acceptance criteria:**
+- An invited person appears in the member list immediately with "Invitation pending", and the label disappears after their first login.
+- Typing the first letters of a saved friend shows them as a suggestion.
+- A member without the admin role sees no invite form.
+
+#### F-05 Friends (Secondary)
+
+**User goal:** Avoid retyping frequent contacts for every invitation.
+
+**Rules:**
+- Every invitation saves the invited person as a friend. On the "Friends" page, the person adds friends by email and removes them.
+- Removing a friend does not change any group membership.
+
+**Acceptance criteria:**
+- After an invitation, the person appears on the "Friends" page.
+- A removed friend stays a member of the groups they were in.
+
+#### F-06 Date finder poll (Core)
+
+**User goal:** Find the right date among several proposals.
+
+**Rules:**
+- Members create a poll in a group. The respondents are all group members, except for a follow-up poll (F-12).
+- The poll works by day or with time slots. By day, each option consists of a date. With time slots, each option consists of date, start, end and an optional label (for example "Lunch"). Several slots on the same day are possible.
+- Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
+- The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie, all of these options carry the label.
+- The mode (by day or time slots) cannot change after creation.
+
+**Acceptance criteria:**
+- A poll with three time slots on the same date shows three separate columns.
+- When a person changes their answer from no to yes, the grid shows one yes answer and no additional row.
+- Two options with three yes answers each both carry "Best option".
+
+#### F-07 Attendance poll (Secondary)
+
+**User goal:** See over a period who is around on which day or in which slot, for example at a camp or a holiday week.
+
+**Rules:**
+- By day, the app creates one option per day from a date range. With time slots, the organizer enters each slot individually as in F-06.
+- Responses follow F-06. The poll has no best option and cannot be fixed (F-09). It stays open until the organizer closes it.
+
+**Acceptance criteria:**
+- The range 03.08. to 07.08. results in five options.
+- An attendance poll offers no "Fix date" action.
+
+#### F-08 Editing and closing polls (Core)
+
+**User goal:** Adjust a poll afterwards and stop responses.
+
+**Rules:**
+- Organizer, owner and admins rename the poll, add options, remove options together with their responses and delete the poll.
+- They close the poll and reopen it. A closed poll accepts no responses and allows no changes to options.
+- A date finder poll closes by fixing dates (F-09). An attendance poll closes without a selection.
+- Reopening keeps events that were already created.
+
+**Acceptance criteria:**
+- A response to a closed poll is rejected with the message "This poll is closed."
+- A member without the admin role sees no edit actions on other people's polls.
+- After reopening a fixed poll, its events still exist.
+
+#### F-09 Fixing dates (Core)
+
+**User goal:** Turn the responses into one or more binding dates, for example three rehearsals out of ten proposals.
+
+**Rules:**
+- Organizer, owner and admins select one or more options of a date finder poll and confirm. The poll closes.
+- Each selected option creates an event (F-10) with the poll's title, the option's date and time if any, and a reference to the poll.
+- The app derives participation per event from the responses: yes results in "accepted", maybe results in "pending", no or no response results in no participation status.
+- For a follow-up poll (F-12), the events get the source event as their parent event.
+
+**Acceptance criteria:**
+- Fixing three options creates three events with the options' dates.
+- A person with yes on option A and maybe on option B is "accepted" for event A and "pending" for event B.
+- A person without a response appears as a participant in none of the events.
+
+#### F-10 Events (Core)
+
+**User goal:** Track a fixed date with acceptances and declines, also without a prior poll.
+
+**Rules:**
+- An event belongs to a group and has a title, description, location, start (date, optional time) and an optional end.
+- An event results from fixing a date (F-09) or is created directly: a member creates it and thereby asks all group members to accept or decline. This replaces a poll with only one date.
+- For a directly created event, every member starts as "pending". The organizer is "accepted".
+- Organizer, owner and admins edit and delete the event. Deleting removes its lists, follow-up polls and child events after a confirmation.
+- When the date or time changes, the app resets all acceptances to "pending", because the acceptance applied to the old date.
+- The event shows acceptances, pending responses and declines with counts, its lists, follow-up polls and child events.
+- An event whose start has passed counts as past. There is no other status.
+
+**Acceptance criteria:**
+- A directly created event in a group with five members shows one accepted organizer and four pending responses.
+- After moving the event from 12.03. to 19.03., all acceptances are "pending" again.
+- Deleting an event with a list also removes the list.
+
+#### F-11 Participation (Core)
+
+**User goal:** Accept or decline bindingly without leaving claimed items hanging.
+
+**Rules:**
+- Every group member accepts or declines while the event is not past, also without a previous participation status.
+- Organizer, owner and admins remove participants and set the status for others.
+- A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims.
+- Only participants see the event's lists (F-13) and follow-up polls (F-12). Members without participation or with a decline see only the event's key details.
+
+**Acceptance criteria:**
+- A decline with two claimed items shows both items in the confirmation, and both are free again afterwards.
+- A member who declined does not see the event's lists.
+- A past event allows no accepting or declining.
+
+#### F-12 Follow-up poll (Core)
+
+**User goal:** Schedule rehearsals or preparation dates only with the people who take part in the event.
+
+**Rules:**
+- Within the event, participants create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted".
+- The circle follows current participation: whoever accepts later sees the poll and can respond. Whoever declines no longer sees it, and their responses no longer count.
+- Fixing dates follows F-09, and the new events attach to the source event.
+
+**Acceptance criteria:**
+- A group member without acceptance sees the follow-up poll neither in the group nor on the dashboard.
+- A person who accepts after the follow-up poll was created can respond to it.
+- An event fixed from a follow-up poll appears in the source event under the child events.
+
+#### F-13 Lists (Core)
+
+**User goal:** Collect who brings or takes on what.
+
+**Rules:**
+- A list has a title, a description and an optional date. It is standalone, belongs to a group or belongs to an event.
+- A standalone list is visible only to its owner, to people with a share link (F-19) and to people with claims. A group list is visible to all members. An event list is visible only to participants (F-11).
+- A list has no status of its own. It is past when its date has passed.
+- List owner, group owner and group admins edit and delete the list.
+
+**Acceptance criteria:**
+- A group member does not see another member's standalone list.
+- An event list appears for an accepted person and is missing for a person who declined.
+
+#### F-14 Items (Core)
+
+**User goal:** Describe things to bring and tasks precisely enough that it is clear what is needed.
+
+**Rules:**
+- An item has a name, an optional quantity and unit (for example "2 kg potatoes"), notes, a date and values for custom fields (F-16).
+- An item without a quantity is a task and has at most one person claiming it.
+- An item's date overrides the list's date. A list can thus contain "Dinner Monday" and "Dinner Tuesday", each with its own date. Items with a date appear grouped by date.
+- The list owner can always add items. With the setting "Members can add items", everyone who sees the list and people with a share link can do so as well. Group owner and admins can do so regardless of the setting.
+- Only list owner, group owner and admins edit and delete items.
+
+**Acceptance criteria:**
+- Without the setting, a member sees no add action; an admin does.
+- An item dated 14.03. in a list dated 12.03. appears under 14.03.
+
+#### F-15 Claiming (Core)
+
+**User goal:** Say "I'll bring this" or "I'll do this", also for part of the quantity.
+
+**Rules:**
+- For an item with a quantity, several people each claim a partial quantity. The total may not exceed the quantity.
+- Every person changes and removes their own claim.
+- List owner, group owner and admins claim for another person who can see the list, and remove other people's claims.
+- For event lists, only participants with "accepted" can claim. People with "pending" see a note that they need to accept first.
+- The item shows who claimed how much and what is still missing.
+
+**Acceptance criteria:**
+- For "10 chairs" with claims of 6 and 4, the app rejects a further claim.
+- A task with one claiming person offers no claim to others.
+- An admin claims an item for a member, and the item shows the member as claiming.
+- A person with "pending" sees the note about accepting instead of the claim action on an event list.
+
+#### F-16 Custom fields (Secondary)
+
+**User goal:** Adapt items to the occasion, for example with "Allergens" or "Color".
+
+**Rules:**
+- The list owner creates, renames and deletes text fields per list. Every item shows the fields with their values.
+- Deleting a field removes its values after a confirmation.
+
+**Acceptance criteria:**
+- A field "Allergens" appears in the form of every item of the list and not in other lists.
+
+#### F-17 Duplicating lists (Secondary)
+
+**User goal:** Reuse a proven list as a template, for example last week's meal plan.
+
+**Rules:**
+- The list owner duplicates a list. The copy takes over title, description, items and custom fields, but no claims, no comments and no date.
+
+**Acceptance criteria:**
+- The copy of a list with three items and two claims contains three items without claims and without a date.
+
+#### F-18 Attendance link (Secondary)
+
+**User goal:** See when claiming whether one is around on the day in question.
+
+**Rules:**
+- A group list or an item optionally references an option of an attendance poll of the same group. An item's reference overrides the list's.
+- List and item show the day with a link to the poll.
+- A person who answered no or nothing for that day sees a warning and must confirm a claim ("Claim anyway"). The app never blocks the claim. This also applies when claiming for others.
+
+**Acceptance criteria:**
+- A person with no for the linked day sees a confirmation before claiming; a person with yes does not.
+- The selection offers only attendance polls of the same group.
+
+#### F-19 Share link (Secondary)
+
+**User goal:** Let people outside the group bring things without adding them to the group.
+
+**Rules:**
+- The list owner enables, regenerates or disables a share link. Regenerating invalidates the old link.
+- Anyone with the link sees the list without logging in. Other people's email addresses do not appear.
+- Claiming and, with the setting from F-14, adding open the login on the same page. After login, the app completes the action automatically and returns to the list.
+- Whoever may see the list anyway lands on the normal list view.
+
+**Acceptance criteria:**
+- A guest claims an item, logs in through the login link and then sees their claim in the list.
+- After regenerating, the old link shows a note that it is no longer valid.
+
+#### F-20 Comments (Secondary)
+
+**User goal:** Clarify details without switching to another channel.
+
+**Rules:**
+- Lists and items each have a comment thread.
+- Cmd+Enter or Ctrl+Enter sends a comment.
+- Author, list owner, group owner and admins delete comments.
+
+**Acceptance criteria:**
+- A comment on an item appears only on the item, not in the list's thread.
+- Cmd+Enter in the comment field sends the comment.
+
+#### F-21 Live updates (Secondary)
+
+**User goal:** See what others are doing without reloading.
+
+**Rules:**
+- Claims, items, comments, poll responses and acceptances appear in all open views without reloading.
+- Lists and polls show who is currently viewing them.
+
+**Acceptance criteria:**
+- When a person claims an item, a second open session shows the claim within 2 seconds.
+
+#### F-22 Dashboard (Core)
+
+**User goal:** See at a glance where one needs to respond or get something done.
+
+**Rules:**
+- The dashboard shows "Waiting for you" at the top: open polls without a complete response and events with the status "pending".
+- Below, it shows upcoming events with one's own acceptance, one's own claims on upcoming lists, groups and standalone lists.
+- Past events and lists are missing from the dashboard and stay reachable through group and event.
+
+**Acceptance criteria:**
+- An open poll in which a person answered two of five options appears under "Waiting for you".
+- After accepting, the event disappears from "Waiting for you" and appears under the upcoming events.
+
+#### F-23 Notifications (Secondary)
+
+**User goal:** Learn what has happened without checking everything.
+
+**Rules:**
+- A bell in the header shows in-app notifications for: invitation to a group, new poll, new event, fixed date, moved event, new comment in a list with one's own claim, claim or release by another person on one's behalf.
+- New notifications appear live. The person marks them as read.
+- The app sends no emails for these.
+
+**Acceptance criteria:**
+- After fixing a date, the bell shows an unread notification to every accepted person.
+- "Mark all as read" sets the counter to zero.
+
+#### F-24 Interface language (Secondary)
+
+**User goal:** Use the app in English or German.
+
+**Rules:**
+- On a first visit, the app picks the language from the browser. If the browser asks for neither English nor German, it uses English.
+- A language switch on the start page and in the settings (F-02) changes the language.
+- A logged-in account keeps its choice across devices.
+- The login email uses the account's language.
+- Content that people write (titles, items, comments) is not translated.
+
+**Acceptance criteria:**
+- A browser set to German shows the start page in German on the first visit.
+- A browser set to French shows English.
+- After switching to German in the settings, a login on another device shows German.
+- The login email for an account set to German is in German.
+
+## 6. Structure
+
+**Navigation:** header with logo (leads to the dashboard), notifications (F-23) and user menu (settings, friends, logout). There is no permanent sidebar; groups, events and lists link to each other on their pages.
+
+**Pages:**
+- **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
+- **Dashboard:** F-22, actions "New group" and "New list".
+- **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
+- **Group settings:** name, roles, delete (F-03).
+- **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
+- **Poll settings:** title, options, close, delete (F-08).
+- **Event:** key details, participation with one's own accept or decline, lists, follow-up polls, child events, edit (F-10 to F-12).
+- **List:** items with claims, comments, attendance day (F-13 to F-15, F-18, F-20).
+- **List settings:** title, description, date, add setting, custom fields, attendance link, share link, duplicate, delete (F-14, F-16 to F-19).
+- **Shared list:** view for guests with login on the same page (F-19).
+- **New poll:** title, type, granularity, option calendar and option rows, audience note; from a group or, as a follow-up, from an event (F-06, F-07, F-12).
+- **New event:** title, date, time, location, description, audience note (F-10).
+- **New list:** title, description, date, placement, add setting (F-13, F-14).
+- **Settings** and **Friends:** F-02, F-05, language switch (F-24).
+
+Creating a group and editing items happen in dialogs. Creating a poll, an event or a list has its own page, reached from the group, the event or the dashboard, with a cancel action that returns to where the person came from.
+
+**Main flows:**
+1. **Find a gig date:** open the group, "New poll", create a date finder with four dates. Members respond. The organizer chooses "Fix date", selects one date and confirms. The event is created with the acceptances.
+2. **Rehearsals only with those who accepted:** open the event, "Follow-up poll", date finder with time slots on several evenings. Only accepted participants respond. The organizer fixes three slots; three rehearsals appear under the event.
+3. **Distribute tasks and things to bring:** open the event, "New list", enter items such as "PA system", "Extension reel" or "Drinks, 2 crates". Participants claim; the organizer assigns the remaining items.
+4. **Single date:** open the group, "New event" with date and time. Members accept or decline on the dashboard or in the event.
+5. **Decline after accepting:** open the event, "Decline", confirmation with one's own claims, confirm. The items are free again.
+6. **Bringing from outside:** open the list, enable the share link and share it. A guest claims an item and logs in on the same page.
+
+## 7. Data
+
+- **Account:** email (text, required, unique), name (text, required from the first login), password (optional), language (choice: English, German, required).
+- **Friend:** account (required), befriended account (required), display name (text).
+- **Group:** name (text, required), owner (account, required).
+- **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
+- **Poll:** group (required), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
+- **Poll option:** poll (required), date (required), start and end (time, required for time slots), label (text), fixed (yes/no).
+- **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
+- **Event:** group (required), organizer (account, required), title (text, required), description (text), location (text), start (date, required; time optional), end (date and time, optional), origin (poll option, optional), parent event (optional, one level).
+- **Participation:** event, account, status (choice: accepted, pending, declined, required). At most one participation per account and event.
+- **List:** title (text, required), description (text), owner (account, required), group or event (each optional, at most one), date (date), members can add items (yes/no), share link (text, optional), attendance day (option of an attendance poll, optional).
+- **Item:** list (required), name (text, required), quantity (number, optional), unit (text), notes (text), date (date), attendance day (optional), custom field values.
+- **Claim:** item, account, quantity (number, required for items with a quantity). At most one claim per account and item.
+- **Custom field:** list (required), name (text, required).
+- **Comment:** list or item (required), author (account, required), text (required), timestamp.
+- **Notification:** account, type (choice per F-23), reference, read at (date).
+
+Groups, lists, items, polls, events and custom fields appear in URLs with random identifiers instead of sequential numbers, so nobody finds other people's content by trying numbers.
+
+## 8. States and edge cases
+
+- **No groups and lists:** the dashboard explains both entry points and offers "New group" and "New list".
+- **Nothing waiting:** "Waiting for you" shows "All caught up." instead of an empty area.
+- **Group without other members:** the group shows the invite form prominently.
+- **Empty list:** shows the action "Add first item" or, without the right to add, a note that the owner has not added anything yet.
+- **Everything claimed:** the list shows "All taken".
+- **Poll without responses:** fixing is possible; the events then have only the organizer as participant if they answered yes.
+- **Poll closed:** the grid is read-only and shows the fixed options highlighted.
+- **Fixing without a selection:** the confirmation stays disabled.
+- **Event without acceptances:** lists and follow-up polls can be created; the page shows a note that nobody has accepted yet.
+- **Event past:** accepting and declining are disabled, lists stay readable.
+- **Event moved:** acceptances switch to "pending"; claims stay.
+- **Decline without claims:** no confirmation needed.
+- **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
+- **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden.
+- **Invalid share link:** shows a note that the link is no longer valid.
+- **Expired login link:** shows a note with the action "Request new link".
+- **Attendance link without an attendance poll in the group:** the field does not appear.
+- **Live update connection lost:** the app shows a note and refreshes after reconnecting.
+
+## 9. Non-functional requirements
+
+- **Language:** English and German (F-24). Dates follow the active language: 15.10.2026 in German, 15 Oct 2026 in English. Times in 24-hour format in both.
+- **Devices:** mobile first from 375 px width for all functions, desktop up to 1440 px without functional differences. No horizontal scrolling except in the poll's response grid.
+- **Accessibility:** WCAG 2.2 level AA, including the response grid.
+- **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice on the start page.
+- **Volume:** groups up to 50 members, polls up to 60 options, lists up to 200 items. Pages load in under 1 second, live updates appear in under 2 seconds (see open question 1).
+
+## 10. Out of scope
+
+- Calendar synchronization and calendar export
+- Chat beyond comments
+- Costs, fees and splitting expenses
+- Setlists and other occasion-specific content
+- Native apps
+- Polls without a group and poll responses without an account
+- Recurring events and automatically recurring lists (duplication only)
+- Emails other than the login email, including reminders
+- Status fields for lists and items; past is derived from the date
+- More than one level of child events
+
+## 11. Open questions
+
+1. **Volume targets:** Are 50 members, 60 options and 200 items realistic? Owner: Maurice.
