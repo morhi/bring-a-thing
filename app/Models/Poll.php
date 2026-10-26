@@ -23,6 +23,7 @@ use Illuminate\Support\Collection;
  * @property PollGranularity $granularity
  * @property int $organizer_id
  * @property int $group_id
+ * @property int|null $event_id
  * @property Carbon|null $closed_at
  * @property int|null $chosen_option_id
  * @property Carbon|null $created_at
@@ -62,6 +63,14 @@ class Poll extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    /**
+     * The source event of a follow-up poll (F-12), if any.
+     */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
     }
 
     /**

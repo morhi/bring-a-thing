@@ -84,6 +84,14 @@ class Group extends Model
     }
 
     /**
+     * The events of the group, including events fixed from polls.
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    /**
      * Whether the given user is the group's owner or an admin member.
      */
     public function isAtLeastAdmin(User $user): bool

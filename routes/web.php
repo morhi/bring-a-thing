@@ -4,6 +4,9 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DevComponentsController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventParticipationController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupInviteLinkController;
@@ -62,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::patch('/settings/email', [SettingsController::class, 'addEmail'])->name('settings.email');
+    Route::get('/settings/email/confirm/{user}', [SettingsController::class, 'confirmEmail'])->middleware('signed')->name('settings.email.confirm');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -120,4 +124,23 @@ Route::middleware('auth')->group(function () {
     Route::delete('/polls/{poll}/options/{option}', [PollOptionController::class, 'destroy'])->name('polls.options.destroy');
 
     Route::post('/polls/{poll}/options/{option}/responses', [PollResponseController::class, 'store'])->name('polls.responses.store');
+});
+
+// Component catalogue for developers; never registered outside local.
+if (app()->environment('local')) {
+    Route::get('/dev/components', DevComponentsController::class)->name('dev.components');
+}
+
+// Events and participation (F-10, F-11).
+Route::middleware('auth')->group(function () {
+    Route::get('/groups/{group}/events/create', [EventController::class, 'create'])->name('events.create');
+    Route::post('/groups/{group}/events', [EventController::class, 'store'])->name('events.store');
+    Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+    Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::patch('/events/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    Route::put('/events/{event}/participation', [EventParticipationController::class, 'update'])->name('events.participation.update');
+    Route::put('/events/{event}/participants/{member}', [EventParticipationController::class, 'updateFor'])->name('events.participants.update');
+    Route::delete('/events/{event}/participants/{member}', [EventParticipationController::class, 'destroy'])->name('events.participants.destroy');
 });

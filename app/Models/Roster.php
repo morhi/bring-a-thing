@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $date
  * @property int $owner_id
  * @property int|null $group_id
+ * @property int|null $event_id
  * @property bool $members_can_add_items
  * @property string|null $share_token
  * @property int|null $attendance_poll_option_id
@@ -60,6 +61,14 @@ class Roster extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    /**
+     * The event the list is attached to, if any.
+     */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
     }
 
     /**
