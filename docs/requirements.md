@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.7
+- **Version:** 1.8
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -73,6 +73,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The owner appoints members as admins and revokes the role again. The owner cannot be removed and can only delete the group.
 - Only the owner renames the group.
 - The group has the option "Members can set the participation status for others", off by default. Owners and admins can always do it.
+- A new group is created on its own page with name and invitations (F-04). Inviting can be skipped and done later.
 - Deleting a group deletes all its polls, events and lists after a confirmation.
 
 **Acceptance criteria:**
@@ -86,7 +87,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Owners and admins invite by email. The app creates a shadow account if needed (F-01) and saves the person as a friend of the inviting person (F-05).
 - Until their first login, the member carries the label "Invitation pending".
-- The invite field suggests matching friends.
+- One invite field takes an email address or a name. It suggests matching friends by name or email, and an email that matches a friend selects that friend. Text that is neither a friend nor an email address offers no invitation. Selected people appear as removable chips. The same component offers "Copy invite link", and it is used when creating a group, on the group page and in group settings. The link's lock setting is managed in group settings.
 - Owners and admins remove members. Admins cannot remove the owner.
 - Removing a member ends the membership only. Participations, claims and responses stay.
 - Owners and admins create one invite link per group and share it through any messenger. The "Copy invite link" button creates it on first use.
@@ -97,6 +98,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Acceptance criteria:**
 - An invited person appears in the member list immediately with "Invitation pending", and the label disappears after their first login.
 - Typing the first letters of a saved friend shows them as a suggestion.
+- Typing a friend's email address selects that friend and creates no second invitation.
 - A member without the admin role sees no invite form.
 - With an open link, a person who enters a name appears in the member list at once.
 - With a closed link, a person appears as a member only after logging in with an email.
@@ -197,7 +199,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Every group member accepts or declines while the event is not past, also without a previous participation status.
-- Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03).
+- Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03). The per-person status controls appear after the "Manage" action on the participation block, for everyone who may use them.
 - A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims.
 - Only participants see the event's lists (F-13) and follow-up polls (F-12). Members without participation or with a decline see only the event's key details.
 
@@ -390,6 +392,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Pages:**
 - **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
 - **Dashboard:** F-22, actions "New group" and "New list".
+- **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
 - **Group settings:** name, roles, delete (F-03).
 - **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
