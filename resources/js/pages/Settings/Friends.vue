@@ -52,7 +52,10 @@ function sharedGroupsLabel(friend: App.Data.FriendData): string {
 function add(): void {
     form.post(storeFriend.url(), {
         preserveScroll: true,
-        onSuccess: () => form.reset(),
+        onSuccess: () => {
+            form.reset();
+            form.clearErrors();
+        },
     });
 }
 
@@ -68,7 +71,10 @@ function confirmRemove(): void {
         return;
     }
 
-    router.delete(destroyFriend.url(friend.slug), { preserveScroll: true });
+    router.delete(destroyFriend.url(friend.slug), {
+        preserveScroll: true,
+        onSuccess: () => form.clearErrors(),
+    });
 }
 </script>
 

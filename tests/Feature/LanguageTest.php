@@ -127,3 +127,11 @@ it('F-02: lets the settings page switch the account language', function () {
 
     expect($user->fresh()->language)->toBe('de');
 });
+
+it('F-24: returns German validation messages for a user whose language is German', function () {
+    $user = User::factory()->language('de')->create();
+
+    $this->actingAs($user)
+        ->patch(route('settings.profile'), ['name' => ''])
+        ->assertInvalid(['name' => 'Name ist erforderlich.']);
+});

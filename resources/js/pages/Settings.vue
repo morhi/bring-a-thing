@@ -152,7 +152,7 @@ function logOut(): void {
                         <span class="[overflow-wrap:anywhere]">{{ t('settings.email.pendingText', { email: settings.pending_email }) }}</span>
                     </div>
 
-                    <FormField :label="t('settings.email')" control="settings-add-email" required :hint="t('settings.email.addHint')" :error="emailForm.errors.email">
+                    <FormField :label="t('settings.email')" control="settings-add-email" required :hint="t('settings.email.fieldHint')" :error="emailForm.errors.email">
                         <template #default="{ id, describedBy, invalid }">
                             <Input
                                 :id="id"

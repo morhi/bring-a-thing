@@ -1,5 +1,9 @@
 {
     "Your magic link": "Dein Anmeldelink",
+    "Confirm your email address": "Bestätige deine E-Mail-Adresse",
+    "Confirm your email address for :app": "Bestätige deine E-Mail-Adresse für :app",
+    "Click the button below to confirm this email address. This link expires in :minutes minutes.": "Klicke auf die Schaltfläche unten, um diese E-Mail-Adresse zu bestätigen. Dieser Link ist :minutes Minuten gültig.",
+    "Confirm email": "E-Mail bestätigen",
     "Log in to :app": "Bei :app anmelden",
     "Click the button below to log in. This link expires in :minutes minutes.": "Klicke auf die Schaltfläche unten, um dich anzumelden. Dieser Link ist :minutes Minuten gültig.",
     "Log in": "Anmelden",

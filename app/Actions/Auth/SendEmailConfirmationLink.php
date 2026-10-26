@@ -32,7 +32,7 @@ class SendEmailConfirmationLink
 
         Mail::to($user->pending_email)
             ->locale($user->language ?? app()->getLocale())
-            ->queue(new MagicLinkMail($url, SendMagicLink::EXPIRES_IN_MINUTES));
+            ->queue(new MagicLinkMail($url, SendMagicLink::EXPIRES_IN_MINUTES, confirmation: true));
     }
 
     /**

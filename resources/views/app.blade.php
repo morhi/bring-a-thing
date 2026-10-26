@@ -11,9 +11,22 @@
         {{-- Apply the system color scheme before first paint so dark mode does not flash --}}
         <script>
             (function () {
-                const appearance = '{{ $appearance ?? "system" }}';
+                // Same key and values as use-theme.ts; storage can be blocked, then the system preference applies
+                let stored = null;
 
-                if (appearance !== 'system') {
+                try {
+                    stored = window.localStorage.getItem('bat.theme');
+                } catch (e) {}
+
+                const appearance = stored === 'light' || stored === 'dark' ? stored : '{{ $appearance ?? "system" }}';
+
+                if (appearance === 'dark') {
+                    document.documentElement.classList.add('dark');
+
+                    return;
+                }
+
+                if (appearance === 'light') {
                     return;
                 }
 

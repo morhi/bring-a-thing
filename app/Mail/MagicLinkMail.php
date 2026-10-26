@@ -17,7 +17,7 @@ class MagicLinkMail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public function __construct(public string $url, public int $expiresInMinutes)
+    public function __construct(public string $url, public int $expiresInMinutes, public bool $confirmation = false)
     {
         //
     }
@@ -28,7 +28,7 @@ class MagicLinkMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('Your magic link'),
+            subject: $this->confirmation ? __('Confirm your email address') : __('Your magic link'),
         );
     }
 
@@ -38,7 +38,7 @@ class MagicLinkMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.auth.magic-link',
+            markdown: $this->confirmation ? 'emails.auth.confirm-email' : 'emails.auth.magic-link',
             with: [
                 'url' => $this->url,
                 'expiresInMinutes' => $this->expiresInMinutes,

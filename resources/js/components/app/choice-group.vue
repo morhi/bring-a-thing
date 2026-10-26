@@ -63,7 +63,7 @@ function optionId(value: string, part: string): string {
 const cardClass =
     'relative flex cursor-pointer flex-col gap-1 rounded-xl border-2 border-depth-2-border bg-depth-2 py-3.5 pr-12 pl-5 transition-colors ' +
     'hover:border-fg-soft has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary-soft has-[[data-state=checked]]:shadow-[inset_0_0_0_1px_var(--primary)] ' +
-    'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring ' +
+    'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring has-focus-visible:ring-2 has-focus-visible:ring-ring ' +
     'has-disabled:cursor-not-allowed has-disabled:opacity-60 has-disabled:hover:border-depth-2-border';
 
 const indicatorClass =

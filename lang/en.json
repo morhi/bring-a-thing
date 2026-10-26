@@ -1,5 +1,9 @@
 {
     "Your magic link": "Your magic link",
+    "Confirm your email address": "Confirm your email address",
+    "Confirm your email address for :app": "Confirm your email address for :app",
+    "Click the button below to confirm this email address. This link expires in :minutes minutes.": "Click the button below to confirm this email address. This link expires in :minutes minutes.",
+    "Confirm email": "Confirm email",
     "Log in to :app": "Log in to :app",
     "Click the button below to log in. This link expires in :minutes minutes.": "Click the button below to log in. This link expires in :minutes minutes.",
     "Log in": "Log in",
