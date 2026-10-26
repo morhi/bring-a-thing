@@ -24,6 +24,7 @@ class UpdatePollRequest extends FormRequest
      *
      * Type and granularity cannot change after creation (F-06), so they are
      * not read. options is optional: without it only the title changes.
+     * remove lists the slugs of options to delete with their responses.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -39,6 +40,8 @@ class UpdatePollRequest extends FormRequest
             'options.*.starts_at' => $isHourGranularity ? ['required', 'date_format:H:i'] : ['prohibited'],
             'options.*.ends_at' => $isHourGranularity ? ['required', 'date_format:H:i'] : ['prohibited'],
             'options.*.label' => ['nullable', 'string', 'max:100'],
+            'remove' => ['sometimes', 'array'],
+            'remove.*' => ['required', 'string', 'distinct'],
         ];
     }
 
@@ -51,7 +54,7 @@ class UpdatePollRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            if (! $this->has('options') || $validator->errors()->isNotEmpty()) {
+            if ((! $this->has('options') && ! $this->filled('remove')) || $validator->errors()->isNotEmpty()) {
                 return;
             }
 
@@ -62,6 +65,10 @@ class UpdatePollRequest extends FormRequest
             }
 
             $existing = $this->poll()->options()->with('responses', 'event')->get()->keyBy('slug');
+
+            foreach ($this->input('remove', []) as $index => $slug) {
+                $this->validateRemoval($validator, $index, $existing->get($slug));
+            }
 
             foreach ($this->input('options', []) as $index => $row) {
                 $this->validateRow($validator, $index, $row, $existing->get($row['slug'] ?? ''));
@@ -94,6 +101,22 @@ class UpdatePollRequest extends FormRequest
             "options.{$index}.date",
             $option->isFixed() ? 'A fixed option keeps its date and time.' : 'An option with answers keeps its date and time.',
         );
+    }
+
+    /**
+     * Validate that an option to remove belongs to the poll and is not fixed (F-09).
+     */
+    private function validateRemoval(Validator $validator, int|string $index, ?PollOption $option): void
+    {
+        if ($option === null) {
+            $validator->errors()->add("remove.{$index}", 'This option does not belong to the poll.');
+
+            return;
+        }
+
+        if ($option->isFixed()) {
+            $validator->errors()->add("remove.{$index}", 'A fixed option cannot be removed.');
+        }
     }
 
     /**

@@ -10,8 +10,6 @@ use App\Models\PollOption;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Create a group whose owner organizes an event with one accepted, one pending and one uninvolved member.
  *

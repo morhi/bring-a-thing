@@ -2,10 +2,12 @@
 
 use App\Enums\GroupRole;
 use App\Enums\PollResponseStatus;
+use App\Models\Event;
 use App\Models\Group;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 function createGroupWithMembers(): array
 {
@@ -190,7 +192,7 @@ it('allows the organizer to rename the poll', function () {
 
     $response = $this->actingAs($owner)->patch(route('polls.update', $poll), ['title' => 'New title']);
 
-    $response->assertRedirect(route('polls.edit', $poll));
+    $response->assertRedirect(route('polls.show', $poll));
     $response->assertSessionHas('success', 'Poll updated.');
     expect($poll->fresh()->title)->toBe('New title');
 });
@@ -202,7 +204,7 @@ it('allows a group admin to rename a poll they did not organize', function () {
 
     $response = $this->actingAs($member)->patch(route('polls.update', $poll), ['title' => 'New title']);
 
-    $response->assertRedirect(route('polls.edit', $poll));
+    $response->assertRedirect(route('polls.show', $poll));
     expect($poll->fresh()->title)->toBe('New title');
 });
 
@@ -362,7 +364,7 @@ it('F-08: closes an attendance poll without a selection', function () {
 
     $response = $this->actingAs($owner)->post(route('polls.close', $poll), []);
 
-    $response->assertRedirect(route('polls.edit', $poll));
+    $response->assertRedirect(route('polls.show', $poll));
     $poll->refresh();
     expect($poll->isClosed())->toBeTrue();
 });
@@ -385,7 +387,7 @@ it('allows a group admin to close and reopen a poll they did not organize', func
     $this->actingAs($member)->post(route('polls.close', $poll), [])->assertRedirect();
     expect($poll->fresh()->isClosed())->toBeTrue();
 
-    $this->actingAs($member)->delete(route('polls.reopen', $poll))->assertRedirect(route('polls.edit', $poll));
+    $this->actingAs($member)->delete(route('polls.reopen', $poll))->assertRedirect(route('polls.show', $poll));
     expect($poll->fresh()->isClosed())->toBeFalse();
 });
 
@@ -433,4 +435,82 @@ it('rejects removing an option from a closed poll', function () {
 
     $response->assertSessionHas('error', 'This poll is closed.');
     $this->assertModelExists($option);
+});
+
+it('F-07: creates an attendance poll by day from the days picked in the option calendar', function () {
+    [$group, $owner] = createGroupWithMembers();
+
+    $this->actingAs($owner)->post(route('polls.store', $group), [
+        'title' => 'Band week',
+        'type' => 'attendance',
+        'granularity' => 'day',
+        'options' => [['date' => '2027-08-03', 'label' => 'Arrival'], ['date' => '2027-08-05']],
+    ])->assertSessionHasNoErrors();
+
+    $poll = Poll::query()->where('title', 'Band week')->firstOrFail();
+    expect($poll->options()->pluck('date')->map->toDateString()->all())->toBe(['2027-08-03', '2027-08-05'])
+        ->and($poll->options()->first()->label)->toBe('Arrival');
+});
+
+it('F-08: closing from the poll page returns to the poll page', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'attendance']);
+
+    $this->actingAs($owner)
+        ->from(route('polls.edit', $poll))
+        ->post(route('polls.close', $poll))
+        ->assertRedirect(route('polls.edit', $poll));
+});
+
+it('F-08: deleting a follow-up poll returns to its event', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'event_id' => $event->id]);
+
+    $this->actingAs($owner)->delete(route('polls.destroy', $poll))->assertRedirect(route('events.show', $event));
+});
+
+it('F-06: the poll pages carry the poll id for live updates and the calendar defaults', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+
+    $this->actingAs($owner)->get(route('polls.show', $poll))
+        ->assertInertia(fn (Assert $page) => $page->component('Polls/Show')->where('page.poll.id', $poll->id));
+
+    $this->actingAs($owner)->get(route('polls.create', $group))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Polls/Create')
+            ->where('form.today', now()->toDateString())
+            ->where('form.default_slot_start', '19:30')
+            ->where('form.default_slot_end', '22:00'));
+});
+
+it('F-08: saving the edit page removes the listed options with their answers', function () {
+    [$group, $owner, $member] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $kept = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01']);
+    $removed = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-02']);
+    $removed->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::Yes]);
+
+    $this->actingAs($owner)->patch(route('polls.update', $poll), [
+        'title' => 'Renamed',
+        'options' => [['slug' => $kept->slug, 'date' => '2027-03-01', 'label' => 'Evening']],
+        'remove' => [$removed->slug],
+    ])->assertSessionHasNoErrors()->assertRedirect(route('polls.show', $poll));
+
+    $this->assertModelMissing($removed);
+    expect($kept->fresh()->label)->toBe('Evening');
+});
+
+it('F-09: saving the edit page cannot remove a fixed option', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $fixed = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01']);
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$fixed->slug]]);
+    $this->actingAs($owner)->delete(route('polls.reopen', $poll));
+
+    $this->actingAs($owner)->patch(route('polls.update', $poll), ['title' => $poll->title, 'remove' => [$fixed->slug]])
+        ->assertSessionHasErrors(['remove.0' => 'A fixed option cannot be removed.']);
+
+    $this->assertModelExists($fixed);
 });

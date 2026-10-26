@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Notifications\SendInAppNotification;
 use App\Actions\Polls\CreatePollOptions;
 use App\Actions\Polls\FixPollOptions;
 use App\Actions\Polls\UpdatePoll;
@@ -16,8 +17,11 @@ use App\Http\Requests\Polls\ClosePollRequest;
 use App\Http\Requests\Polls\FixPollRequest;
 use App\Http\Requests\Polls\StorePollRequest;
 use App\Http\Requests\Polls\UpdatePollRequest;
+use App\Models\Event;
 use App\Models\Group;
 use App\Models\Poll;
+use App\Notifications\DateFixed;
+use App\Notifications\PollCreated;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +47,7 @@ class PollController extends Controller
     /**
      * Create a new poll on the group, with either explicit option rows or an auto-expanded date range.
      */
-    public function store(StorePollRequest $request, Group $group, CreatePollOptions $createOptions): RedirectResponse
+    public function store(StorePollRequest $request, Group $group, CreatePollOptions $createOptions, SendInAppNotification $sendNotification): RedirectResponse
     {
         $poll = Poll::query()->make([
             'title' => $request->string('title')->value(),
@@ -61,6 +65,8 @@ class PollController extends Controller
             $request->input('starts_on'),
             $request->input('ends_on'),
         );
+
+        $sendNotification->handle(new PollCreated($poll, $request->user()));
 
         return to_route('polls.show', $poll)->with('success', 'Poll created.');
     }
@@ -90,15 +96,20 @@ class PollController extends Controller
     }
 
     /**
-     * Rename the poll and, from the edit page, change and add options.
+     * Rename the poll and, from the edit page, change and add options; the edit page returns to the poll.
      */
     public function update(UpdatePollRequest $request, Poll $poll, UpdatePoll $updatePoll): RedirectResponse
     {
-        $updatePoll->handle($poll, $request->string('title')->value(), $request->has('options') ? $request->validated('options') : null);
+        $updatePoll->handle(
+            $poll,
+            $request->string('title')->value(),
+            $request->has('options') ? $request->validated('options') : null,
+            $request->validated('remove', []),
+        );
 
         PollChanged::dispatch($poll->id);
 
-        return to_route('polls.edit', $poll)->with('success', 'Poll updated.');
+        return to_route('polls.show', $poll)->with('success', 'Poll updated.');
     }
 
     /**
@@ -110,13 +121,13 @@ class PollController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return to_route('polls.edit', $poll)->with('success', 'Poll closed.');
+        return back(fallback: route('polls.show', $poll))->with('success', 'Poll closed.');
     }
 
     /**
      * Fix the selected options as events and close the poll (F-09).
      */
-    public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions): RedirectResponse
+    public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions, SendInAppNotification $sendNotification): RedirectResponse
     {
         $events = $fixPollOptions->handle($poll, $request->selectedOptions());
 
@@ -125,6 +136,8 @@ class PollController extends Controller
         if ($poll->event_id !== null) {
             EventUpdated::dispatch($poll->event_id);
         }
+
+        $events->each(fn (Event $event) => $sendNotification->handle(new DateFixed($event, $request->user())));
 
         return to_route('polls.show', $poll)->with('success', $events->count() === 1 ? 'Date fixed.' : 'Dates fixed.');
     }
@@ -140,23 +153,26 @@ class PollController extends Controller
 
         PollChanged::dispatch($poll->id);
 
-        return to_route('polls.edit', $poll)->with('success', 'Poll reopened.');
+        return back(fallback: route('polls.show', $poll))->with('success', 'Poll reopened.');
     }
 
     /**
-     * Delete the poll, its options, and every response on them.
+     * Delete the poll, its options, and every response on them; a follow-up poll returns to its event.
      */
     public function destroy(Poll $poll): RedirectResponse
     {
         $this->authorize('delete', $poll);
 
         $group = $poll->group;
+        $event = $poll->event;
         $poll->delete();
 
         PollChanged::dispatch($poll->id, deleted: true);
 
-        if ($poll->event_id !== null) {
-            EventUpdated::dispatch($poll->event_id);
+        if ($event !== null) {
+            EventUpdated::dispatch($event->id);
+
+            return to_route('events.show', $event)->with('success', 'Poll deleted.');
         }
 
         return to_route('groups.show', $group)->with('success', 'Poll deleted.');

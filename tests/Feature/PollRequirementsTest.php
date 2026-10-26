@@ -10,8 +10,6 @@ use App\Models\PollOption;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Create a group with an owner and the given number of plain members, and a date finder poll by the owner.
  *

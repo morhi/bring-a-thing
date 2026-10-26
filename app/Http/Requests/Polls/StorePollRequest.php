@@ -26,8 +26,9 @@ class StorePollRequest extends FormRequest
      *
      * Options are explicit day/slot rows for a date-finder poll or an
      * hour-granularity attendance poll (custom per-day slots, e.g. "lunch"
-     * and "dinner"); a day-granularity attendance poll instead takes a date
-     * range, expanded server-side into one option per day.
+     * and "dinner"); a day-granularity attendance poll takes either the
+     * days picked in the option calendar or a date range, expanded
+     * server-side into one option per day (F-07).
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -70,7 +71,7 @@ class StorePollRequest extends FormRequest
      */
     public function usesExplicitOptions(): bool
     {
-        return $this->enum('type', PollType::class) === PollType::DateFinder || $this->isHourGranularity();
+        return $this->enum('type', PollType::class) === PollType::DateFinder || $this->isHourGranularity() || $this->filled('options');
     }
 
     /**

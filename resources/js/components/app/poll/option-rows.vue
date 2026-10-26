@@ -2,6 +2,7 @@
 import { Lock, Minus } from '@lucide/vue';
 import { computed } from 'vue';
 import { describeOption, formatDate } from '@/components/app/poll/dates';
+import TimePicker from '@/components/app/time-picker.vue';
 import type {
     OptionCalendarMode,
     OptionDraft,
@@ -19,8 +20,10 @@ const props = withDefaults(
         // Edit mode shows the answer count of existing options
         showMeta?: boolean;
         disabled?: boolean;
+        // Keeps the time picker ids unique when several row lists share a page
+        idPrefix?: string;
     }>(),
-    { showMeta: false, disabled: false },
+    { showMeta: false, disabled: false, idPrefix: 'option' },
 );
 
 const emit = defineEmits<{
@@ -106,7 +109,7 @@ function applyTimeToAll(source: OptionDraft): void {
                     cn(
                         'bg-surface-muted grid items-center gap-2 rounded-lg p-2',
                         mode === 'slots'
-                            ? 'grid-cols-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto_auto]'
+                            ? 'grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_auto]'
                             : 'grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto_auto]',
                     )
                 "
@@ -115,7 +118,7 @@ function applyTimeToAll(source: OptionDraft): void {
                     :class="
                         cn(
                             'flex min-w-0 items-center gap-1.5 text-sm font-semibold',
-                            mode === 'slots' && 'col-span-2 sm:col-span-1',
+                            mode === 'slots' && 'col-span-2 md:col-span-1',
                         )
                     "
                 >
@@ -138,28 +141,28 @@ function applyTimeToAll(source: OptionDraft): void {
                         })
                     }}</span>
                 </span>
-                <template v-if="mode === 'slots'">
-                    <Input
-                        type="time"
-                        :model-value="option.start ?? ''"
+                <div
+                    v-if="mode === 'slots'"
+                    class="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 md:col-span-1"
+                >
+                    <TimePicker
+                        :id="`${idPrefix}-${index}-start`"
+                        :model-value="option.start"
                         :disabled="disabled || isFrozen(option)"
+                        required
                         :aria-label="`${t('newPoll.start')}, ${describeOption({ ...option, start: null, end: null, label: null }, locale)}`"
-                        class="bg-surface-raised h-9"
-                        @update:model-value="
-                            update(index, { start: String($event) })
-                        "
+                        @update:model-value="update(index, { start: $event })"
                     />
-                    <Input
-                        type="time"
-                        :model-value="option.end ?? ''"
+                    <span class="text-fg-muted" aria-hidden="true">–</span>
+                    <TimePicker
+                        :id="`${idPrefix}-${index}-end`"
+                        :model-value="option.end"
                         :disabled="disabled || isFrozen(option)"
+                        required
                         :aria-label="`${t('newPoll.end')}, ${describeOption({ ...option, start: null, end: null, label: null }, locale)}`"
-                        class="bg-surface-raised h-9"
-                        @update:model-value="
-                            update(index, { end: String($event) })
-                        "
+                        @update:model-value="update(index, { end: $event })"
                     />
-                </template>
+                </div>
                 <Input
                     type="text"
                     :model-value="option.label"
@@ -169,8 +172,9 @@ function applyTimeToAll(source: OptionDraft): void {
                     :class="
                         cn(
                             'bg-surface-raised h-9',
-                            mode === 'day' &&
-                                'order-1 col-span-2 sm:order-none sm:col-span-1',
+                            mode === 'day'
+                                ? 'order-1 col-span-2 sm:order-none sm:col-span-1'
+                                : 'max-md:order-1',
                         )
                     "
                     @update:model-value="
@@ -179,7 +183,12 @@ function applyTimeToAll(source: OptionDraft): void {
                 />
                 <span
                     v-if="showMeta"
-                    class="text-fg-muted flex items-center gap-1.5 text-xs whitespace-nowrap max-sm:hidden"
+                    :class="
+                        cn(
+                            'text-fg-muted flex items-center gap-1.5 text-xs whitespace-nowrap',
+                            mode === 'slots' ? 'max-md:hidden' : 'max-sm:hidden',
+                        )
+                    "
                 >
                     <template v-if="option.id">{{
                         tc('cal.answerCount', option.answerCount ?? 0)
@@ -188,11 +197,15 @@ function applyTimeToAll(source: OptionDraft): void {
                         t('group.polls.fixed')
                     }}</Badge>
                 </span>
-                <span v-else class="max-sm:hidden" aria-hidden="true" />
+                <span
+                    v-else
+                    :class="mode === 'slots' ? 'max-md:hidden' : 'max-sm:hidden'"
+                    aria-hidden="true"
+                />
                 <Button
                     variant="ghost"
                     size="icon-sm"
-                    class="justify-self-end"
+                    :class="cn('justify-self-end', mode === 'slots' && 'max-md:order-1')"
                     :disabled="disabled || !!option.fixed"
                     :aria-label="`${t('newPoll.removeOption')}: ${describeOption(option, locale)}`"
                     @click="remove(index)"
@@ -202,7 +215,7 @@ function applyTimeToAll(source: OptionDraft): void {
                 <button
                     v-if="canApplyToAll(option)"
                     type="button"
-                    class="text-primary hover:text-primary-hover col-span-full min-h-7 justify-self-start px-0.5 text-[13px] font-semibold underline underline-offset-[3px]"
+                    class="text-primary hover:text-primary-hover order-2 col-span-full min-h-7 justify-self-start px-0.5 text-[13px] font-semibold underline underline-offset-[3px]"
                     @click="applyTimeToAll(option)"
                 >
                     {{ t('newPoll.applyTimeToAll') }}

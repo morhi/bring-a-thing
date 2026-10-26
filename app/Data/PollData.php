@@ -14,6 +14,7 @@ class PollData extends Data
      * @param  array<int, PollOptionData>  $options
      */
     public function __construct(
+        public int $id,
         public string $slug,
         public string $title,
         public PollType $type,
@@ -34,7 +35,7 @@ class PollData extends Data
      *
      * granularity "day" is the "by day" mode and "hour" the "time slots"
      * mode; uses_time_slots states the same as a flag. source_event is set
-     * for a follow-up poll (F-12).
+     * for a follow-up poll (F-12). id names the broadcast channels (F-21).
      */
     public static function fromPoll(Poll $poll): self
     {
@@ -43,6 +44,7 @@ class PollData extends Data
         $bestOptionIds = $poll->bestOptions()->pluck('id');
 
         return new self(
+            id: $poll->id,
             slug: $poll->slug,
             title: $poll->title,
             type: $poll->type,
