@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.9
+- **Version:** 1.10
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -410,7 +410,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **New list:** title, description, date, placement, add setting (F-13, F-14).
 - **Settings** and **Friends:** F-02, F-05, language switch (F-24).
 
-Creating a group and editing items happen in dialogs. Creating a poll, an event or a list has its own page, reached from the group, the event or the dashboard, with a cancel action that returns to where the person came from.
+Editing items happens in a dialog. Creating a group, a poll, an event or a list has its own page, reached from the group, the event or the dashboard, with a cancel action that returns to where the person came from.
 
 **Main flows:**
 1. **Find a gig date:** open the group, "New poll", create a date finder with four dates. Members respond. The organizer chooses "Fix date", selects one date and confirms. The event is created with the acceptances.
