@@ -1,9 +1,8 @@
-import Aura from '@primeuix/themes/aura';
+import '@fontsource-variable/familjen-grotesk';
+import '@fontsource-variable/gabarito';
+import '@fontsource-variable/instrument-sans';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';
-import PrimeVue from 'primevue/config';
-import ConfirmationService from 'primevue/confirmationservice';
-import ToastService from 'primevue/toastservice';
 import { configureEcho } from '@laravel/echo-vue';
 
 configureEcho({
@@ -21,14 +20,6 @@ void createInertiaApp({
 
         createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(PrimeVue, {
-                theme: {
-                    preset: Aura,
-                },
-                license: import.meta.env.VITE_PRIMEVUE_LICENSE,
-            })
-            .use(ToastService)
-            .use(ConfirmationService)
             .mount(el);
     },
     progress: {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import Avatar from 'primevue/avatar';
-import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
-import { useConfirm } from 'primevue/useconfirm';
-import ArrowLeft from '@primeicons/vue/arrow-left';
+import Avatar from '@/components/ui/legacy/Avatar.vue';
+import Button from '@/components/ui/legacy/Button.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
+import { ArrowLeft } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Friend } from '@/types';
 import { edit as editSettings } from '@/actions/App/Http/Controllers/SettingsController';

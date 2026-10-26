@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
-import { useToast } from 'primevue/usetoast';
+import Button from '@/components/ui/legacy/Button.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import { useToast } from '@/components/ui/legacy/useToast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPollOption } from '@/lib/pollDate';
 import { responseFor } from '@/lib/attendance';

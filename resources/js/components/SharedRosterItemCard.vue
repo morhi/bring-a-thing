@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
-import ProgressBar from 'primevue/progressbar';
-import Tag from 'primevue/tag';
-import { useToast } from 'primevue/usetoast';
+import Button from '@/components/ui/legacy/Button.vue';
+import InputNumber from '@/components/ui/legacy/InputNumber.vue';
+import ProgressBar from '@/components/ui/legacy/ProgressBar.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import { useToast } from '@/components/ui/legacy/useToast';
 import type { Auth, SharedRosterItem } from '@/types';
 import { store as storeSharedClaim } from '@/actions/App/Http/Controllers/SharedRosterClaimController';
 

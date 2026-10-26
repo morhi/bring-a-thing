@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputNumber from 'primevue/inputnumber';
-import InputText from 'primevue/inputtext';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
-import { useToast } from 'primevue/usetoast';
+import Button from '@/components/ui/legacy/Button.vue';
+import Dialog from '@/components/ui/legacy/Dialog.vue';
+import InputNumber from '@/components/ui/legacy/InputNumber.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import Textarea from '@/components/ui/legacy/Textarea.vue';
+import { useToast } from '@/components/ui/legacy/useToast';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
 import SharedRosterItemCard from '@/components/SharedRosterItemCard.vue';
 import OnboardingForm, {

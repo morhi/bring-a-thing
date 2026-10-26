@@ -1,12 +1,495 @@
 @import 'tailwindcss';
-@import 'tailwindcss-primeui';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@theme inline {
+/*
+  Bring a Thing design tokens, ported from docs/prototype/css/tokens.css.
+
+  Layer 1: primitives, never used in markup (no utilities are generated for them)
+  Layer 2: semantic tokens with light (:root) and dark (.dark) values
+  Layer 3: component tokens only where a component deviates
+
+  The @theme blocks map layer 2 onto Tailwind utilities, including the names
+  shadcn-vue components expect (background, card, popover, muted, ...).
+*/
+
+/* Layer 1: primitives */
+
+:root {
+    /* Green-biased neutrals so grey never reads as default grey */
+    --green-50: oklch(0.979 0.021 166.1);
+    --green-100: oklch(0.95 0.051 163.1);
+    --green-200: oklch(0.905 0.089 164.2);
+    --green-300: oklch(0.845 0.13 165);
+    --green-400: oklch(0.773 0.153 163.2);
+    --green-500: oklch(0.696 0.149 162.5);
+    --green-600: oklch(0.596 0.127 163.2);
+    --green-700: oklch(0.508 0.105 165.6);
+    --green-800: oklch(0.432 0.086 166.9);
+    --green-900: oklch(0.378 0.073 168.9);
+    --green-950: oklch(0.262 0.049 172.6);
+
+    --moss-0: oklch(0.99 0.003 128.5);
+    --moss-50: oklch(0.973 0.005 145.5);
+    --moss-100: oklch(0.941 0.008 151.9);
+    --moss-200: oklch(0.902 0.012 153.7);
+    --moss-300: oklch(0.835 0.015 158.2);
+    --moss-400: oklch(0.716 0.022 161.2);
+    --moss-500: oklch(0.588 0.022 167.4);
+    --moss-600: oklch(0.494 0.023 163.8);
+    --moss-700: oklch(0.403 0.019 165.8);
+    --moss-800: oklch(0.306 0.016 163.7);
+    --moss-900: oklch(0.243 0.014 163.6);
+    --moss-950: oklch(0.188 0.011 163.5);
+
+    --sun-100: oklch(0.962 0.058 95.6);
+    --sun-400: oklch(0.837 0.164 84.4);
+    --sun-700: oklch(0.555 0.146 49);
+    --sun-800: oklch(0.473 0.125 46.2);
+
+    --rose-100: oklch(0.941 0.03 12.6);
+    --rose-400: oklch(0.719 0.169 13.4);
+    --rose-700: oklch(0.514 0.198 16.9);
+    --rose-800: oklch(0.455 0.171 13.7);
+
+    --sky-100: oklch(0.951 0.025 236.8);
+    --sky-300: oklch(0.828 0.101 230.3);
+    --sky-700: oklch(0.5 0.119 242.7);
+
+    --white: oklch(1 0 0);
+
+    --duration-fast: 120ms;
+    --duration-base: 220ms;
+}
+
+/* Fonts, radius and motion are mode-independent, so they live in the theme and are always emitted */
+
+@theme static {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-display:
+        'Familjen Grotesk Variable', 'Instrument Sans Variable', ui-sans-serif,
+        system-ui, sans-serif;
+    --font-tag:
+        'Gabarito Variable', 'Instrument Sans Variable', ui-sans-serif,
+        system-ui, sans-serif;
+    --font-heading: var(--font-display);
+
+    /* shadcn scale: lg is the control radius (prototype radius-sm), 2xl the card, 3xl the page container */
+    --radius-xs: 6px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+    --radius-2xl: 22px;
+    --radius-3xl: 26px;
+
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Layer 2: semantic tokens, light */
+
+:root {
+    color-scheme: light;
+
+    /* Page ground: a tinted emerald-leaning neutral with two large soft glows; containers sit on it as raised surfaces */
+    --ground: oklch(0.958 0.009 150.7);
+    --ground-glow-a: oklch(0.773 0.153 163.2 / 0.14);
+    --ground-glow-b: oklch(0.905 0.089 164.2 / 0.4);
+    --surface: var(--moss-0);
+    --surface-muted: var(--moss-50);
+    --surface-raised: var(--white);
+    --surface-sunken: var(--moss-100);
+    --progress-track: oklch(0.795 0.018 159);
+    --fg: var(--moss-900);
+    --fg-muted: var(--moss-600);
+    --fg-soft: oklch(0.509 0.022 167.2);
+    --fg-inverted: var(--white);
+    --border: var(--moss-200);
+    --border-strong: var(--moss-300);
+
+    /* Depth: level 1 the page containers, 2 boxes inside them, 3 boxes inside those; backgrounds alternate per level */
+    --depth-1-bg: var(--surface-raised);
+    --depth-1-border: var(--moss-200);
+    --depth-2-bg: oklch(0.946 0.009 150.7);
+    --depth-2-border: oklch(0.808 0.019 155.7);
+    --depth-3-bg: var(--white);
+    --depth-3-border: oklch(0.751 0.023 158.4);
+
+    --primary: var(--green-700);
+    --primary-hover: var(--green-800);
+    --primary-fg: var(--white);
+    --primary-soft: var(--green-50);
+    --primary-soft-fg: var(--green-800);
+    --primary-ring: var(--green-600);
+    --accent: var(--green-500);
+
+    --success: var(--green-700);
+    --success-soft: var(--green-50);
+    --warning: oklch(0.521 0.136 49.6);
+    --warning-soft: var(--sun-100);
+    --danger: var(--rose-700);
+    --danger-soft: var(--rose-100);
+    --info: var(--sky-700);
+    --info-soft: var(--sky-100);
+
+    --focus-ring: var(--green-600);
+
+    --shadow-color: 0.256 0.032 161.2;
+    --elevation-sm: 0 1px 2px oklch(var(--shadow-color) / 0.06);
+    --elevation-md:
+        0 6px 24px -8px oklch(var(--shadow-color) / 0.16),
+        0 1px 2px oklch(var(--shadow-color) / 0.06);
+    --elevation-lg:
+        0 24px 60px -20px oklch(var(--shadow-color) / 0.28),
+        0 2px 6px oklch(var(--shadow-color) / 0.08);
+    --elevation-card:
+        0 1px 2px oklch(var(--shadow-color) / 0.05),
+        0 10px 28px -14px oklch(var(--shadow-color) / 0.16);
+    --elevation-header:
+        0 1px 0 oklch(var(--shadow-color) / 0.04),
+        0 8px 24px -16px oklch(var(--shadow-color) / 0.2);
+
+    /* Textures: low-alpha, never behind running text */
+    --texture-dot-color: oklch(var(--shadow-color) / 0.07);
+    --texture-dot-size: 22px;
+    --texture-hatch-color: oklch(var(--shadow-color) / 0.05);
+    --texture-grain-opacity: 0.08;
+
+    /* Spacing contract for forms */
+    --space-label: 8px;
+    --space-stack: 16px;
+    --space-inner: 8px;
+
+    /* Layer 3: component tokens */
+    --control-height: 44px;
+    --control-height-sm: 36px;
+    --control-radius: var(--radius-lg);
+    --control-bg: var(--white);
+    --control-border: oklch(0.58 0.024 162.5);
+    --card-radius: var(--radius-2xl);
+    --card-padding: 24px;
+    --container-radius: var(--radius-3xl);
+    --tag-tilt: -3deg;
+    --content-max-width: 1120px;
+    --content-gutter: 32px;
+    --content-gutter-sm: 16px;
+    --field-max-width: 40rem;
+}
+
+/* Layer 2: semantic tokens, dark */
+
+.dark {
+    color-scheme: dark;
+
+    --ground: oklch(0.165 0.011 163.2);
+    --ground-glow-a: oklch(0.773 0.153 163.2 / 0.09);
+    --ground-glow-b: oklch(0.378 0.073 168.9 / 0.4);
+    --surface: var(--moss-950);
+    --surface-muted: oklch(0.217 0.015 157.4);
+    --surface-raised: oklch(0.246 0.016 160.6);
+    --surface-sunken: oklch(0.166 0.01 158.8);
+    --progress-track: var(--moss-700);
+    --fg: oklch(0.946 0.008 157.1);
+    --fg-muted: var(--moss-400);
+    --fg-soft: oklch(0.676 0.019 169.8);
+    --fg-inverted: var(--moss-950);
+    --border: oklch(0.321 0.018 161.3);
+    --border-strong: var(--moss-700);
+
+    /* Dark level 1 equals the form container color, level 2 is 5% lighter */
+    --depth-1-bg: var(--surface-raised);
+    --depth-1-border: oklch(0.321 0.018 161.3);
+    --depth-2-bg: color-mix(in oklab, var(--depth-1-bg) 95%, white 5%);
+    --depth-2-border: oklch(0.409 0.022 160.2);
+    --depth-3-bg: oklch(0.204 0.014 163.1);
+    --depth-3-border: oklch(0.467 0.023 162.2);
+
+    --primary: var(--green-400);
+    --primary-hover: var(--green-300);
+    --primary-fg: var(--green-950);
+    --primary-soft: oklch(0.264 0.038 169.7);
+    --primary-soft-fg: var(--green-300);
+    --primary-ring: var(--green-500);
+    --accent: var(--green-500);
+
+    --success: var(--green-400);
+    --success-soft: oklch(0.264 0.038 169.7);
+    --warning: var(--sun-400);
+    --warning-soft: oklch(0.255 0.032 79.8);
+    --danger: var(--rose-400);
+    --danger-soft: oklch(0.233 0.044 11.7);
+    --info: var(--sky-300);
+    --info-soft: oklch(0.251 0.039 241.7);
+
+    --focus-ring: var(--green-500);
+
+    --shadow-color: 0 0 0;
+    --elevation-md:
+        0 6px 24px -8px oklch(0 0 0 / 0.5), 0 1px 2px oklch(0 0 0 / 0.4);
+    --elevation-lg:
+        0 24px 60px -20px oklch(0 0 0 / 0.7), 0 2px 6px oklch(0 0 0 / 0.4);
+    /* Shadows alone vanish on a dark ground, so containers add an inner top highlight */
+    --elevation-card:
+        inset 0 1px 0 oklch(0.946 0.008 157.1 / 0.05),
+        0 1px 2px oklch(0 0 0 / 0.4), 0 12px 32px -16px oklch(0 0 0 / 0.6);
+    --elevation-header:
+        inset 0 -1px 0 oklch(0.946 0.008 157.1 / 0.04),
+        0 8px 24px -16px oklch(0 0 0 / 0.7);
+
+    --texture-dot-color: oklch(0.946 0.008 157.1 / 0.06);
+    --texture-hatch-color: oklch(0.946 0.008 157.1 / 0.05);
+    --texture-grain-opacity: 0.1;
+
+    --control-bg: oklch(0.2 0.013 159.9);
+    --control-border: oklch(0.584 0.019 162.4);
+}
+
+/* shadcn-vue variable names, aliased to the semantic layer; some components read these directly */
+
+:root {
+    --radius: var(--control-radius);
+    --background: var(--ground);
+    --foreground: var(--fg);
+    --card: var(--depth-1-bg);
+    --card-foreground: var(--fg);
+    --popover: var(--depth-1-bg);
+    --popover-foreground: var(--fg);
+    --primary-foreground: var(--primary-fg);
+    --secondary: var(--surface-sunken);
+    --secondary-foreground: var(--fg);
+    --muted: var(--surface-muted);
+    --muted-foreground: var(--fg-muted);
+    --accent-foreground: var(--primary-soft-fg);
+    --destructive: var(--danger);
+    --input: var(--control-border);
+    --ring: var(--focus-ring);
+}
+
+/* Default palette removed so markup can only use semantic colors */
+
+@theme inline {
+    --color-*: initial;
+    --color-transparent: transparent;
+    --color-current: currentColor;
+    --color-black: oklch(0 0 0);
+    --color-white: oklch(1 0 0);
+
+    --color-ground: var(--ground);
+    --color-surface: var(--surface);
+    --color-surface-muted: var(--surface-muted);
+    --color-surface-raised: var(--surface-raised);
+    --color-surface-sunken: var(--surface-sunken);
+    --color-progress-track: var(--progress-track);
+    --color-fg: var(--fg);
+    --color-fg-muted: var(--fg-muted);
+    --color-fg-soft: var(--fg-soft);
+    --color-fg-inverted: var(--fg-inverted);
+    --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
+    --color-depth-1: var(--depth-1-bg);
+    --color-depth-1-border: var(--depth-1-border);
+    --color-depth-2: var(--depth-2-bg);
+    --color-depth-2-border: var(--depth-2-border);
+    --color-depth-3: var(--depth-3-bg);
+    --color-depth-3-border: var(--depth-3-border);
+    --color-primary: var(--primary);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-fg: var(--primary-fg);
+    --color-primary-soft: var(--primary-soft);
+    --color-primary-soft-fg: var(--primary-soft-fg);
+    --color-primary-ring: var(--primary-ring);
+    --color-mark: var(--accent);
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
+    --color-info: var(--info);
+    --color-info-soft: var(--info-soft);
+    --color-focus-ring: var(--focus-ring);
+    --color-control: var(--control-bg);
+    --color-control-border: var(--control-border);
+
+    /* shadcn names; accent there means a quiet highlight, so it maps to primary-soft, while the prototype's green accent is "mark" */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--primary-soft);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --shadow-sm: var(--elevation-sm);
+    --shadow-md: var(--elevation-md);
+    --shadow-lg: var(--elevation-lg);
+    --shadow-card: var(--elevation-card);
+    --shadow-header: var(--elevation-header);
+
+    --container-content: var(--content-max-width);
+    --container-field: var(--field-max-width);
+}
+
+@utility cn-font-heading {
+    font-family: var(--font-heading);
+}
+
+/* The one content width for every app view */
+
+@utility content-width {
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin-inline: auto;
+    padding-left: max(var(--content-gutter-sm), env(safe-area-inset-left, 0px));
+    padding-right: max(
+        var(--content-gutter-sm),
+        env(safe-area-inset-right, 0px)
+    );
+
+    @media (min-width: 720px) {
+        padding-left: max(var(--content-gutter), env(safe-area-inset-left, 0px));
+        padding-right: max(
+            var(--content-gutter),
+            env(safe-area-inset-right, 0px)
+        );
+    }
+}
+
+/*
+  Depth, ported from docs/prototype/css/depth.css. A .box picks its level from
+  the number of .box ancestors (deeper stays at 3). Floating surfaces
+  (.box-float: dialogs, menus, panels) restart at level 1 above the page.
+*/
+
+@layer components {
+    :where(.box, .box-float) {
+        --box-bg: var(--depth-1-bg);
+        --box-border: var(--depth-1-border);
+        --box-edge: 2px;
+        --box-radius: var(--card-radius);
+        --box-shadow: var(--elevation-card);
+        background-color: var(--box-bg);
+        border: var(--box-edge) solid var(--box-border);
+        border-radius: var(--box-radius);
+    }
+
+    :where(.box, .box-float) :where(.box) {
+        --box-bg: var(--depth-2-bg);
+        --box-border: var(--depth-2-border);
+        --box-radius: 25px;
+        --box-shadow: none;
+    }
+
+    :where(.box, .box-float) :where(.box) :where(.box) {
+        --box-bg: var(--depth-3-bg);
+        --box-border: var(--depth-3-border);
+        --box-radius: var(--radius-xl);
+        --box-shadow: none;
+    }
+
+    .box-float {
+        --box-bg: var(--depth-1-bg);
+        --box-border: var(--border-strong);
+        --box-shadow: var(--elevation-lg);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply text-fg font-sans antialiased;
+        position: relative;
+        line-height: 1.5;
+        background-color: var(--ground);
+        /* The glows stay fixed so long pages keep the same soft shapes in view */
+        background-image:
+            radial-gradient(
+                70% 55% at 6% -10%,
+                var(--ground-glow-a),
+                transparent 70%
+            ),
+            radial-gradient(
+                55% 45% at 102% 85%,
+                var(--ground-glow-b),
+                transparent 70%
+            );
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Dots only in the top band behind header and page title, never under running text */
+    body::after {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto;
+        height: 520px;
+        z-index: -1;
+        pointer-events: none;
+        background-image: radial-gradient(
+            var(--texture-dot-color) 1px,
+            transparent 1.2px
+        );
+        background-size: var(--texture-dot-size) var(--texture-dot-size);
+        mask-image: linear-gradient(
+            to bottom,
+            #000 0,
+            #000 200px,
+            transparent 100%
+        );
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: var(--font-display);
+        font-weight: 640;
+        letter-spacing: -0.015em;
+        line-height: 1.15;
+        text-wrap: balance;
+    }
+
+    a {
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+    }
+
+    [tabindex='-1']:focus-visible {
+        outline: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
 }

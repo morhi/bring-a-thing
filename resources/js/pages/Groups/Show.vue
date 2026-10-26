@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import Times from '@primeicons/vue/times';
-import Avatar from 'primevue/avatar';
-import Button from 'primevue/button';
-import DatePicker from 'primevue/datepicker';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
-import { useConfirm } from 'primevue/useconfirm';
+import { X as Times } from '@lucide/vue';
+import Avatar from '@/components/ui/legacy/Avatar.vue';
+import Button from '@/components/ui/legacy/Button.vue';
+import DatePicker from '@/components/ui/legacy/DatePicker.vue';
+import Dialog from '@/components/ui/legacy/Dialog.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Select from '@/components/ui/legacy/Select.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import Textarea from '@/components/ui/legacy/Textarea.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateOnly, formatTimeOnly } from '@/lib/pollDate';
 import type {

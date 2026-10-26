@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import Times from '@primeicons/vue/times';
-import Button from 'primevue/button';
-import InputNumber from 'primevue/inputnumber';
-import ProgressBar from 'primevue/progressbar';
-import Select from 'primevue/select';
-import Tag from 'primevue/tag';
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
+import { X as Times } from '@lucide/vue';
+import Button from '@/components/ui/legacy/Button.vue';
+import InputNumber from '@/components/ui/legacy/InputNumber.vue';
+import ProgressBar from '@/components/ui/legacy/ProgressBar.vue';
+import Select from '@/components/ui/legacy/Select.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
+import { useToast } from '@/components/ui/legacy/useToast';
 import CommentThread from '@/components/CommentThread.vue';
 import { describeAvailability } from '@/lib/attendance';
 import { formatPollOption } from '@/lib/pollDate';

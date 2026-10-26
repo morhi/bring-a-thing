@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
-import { useConfirm } from 'primevue/useconfirm';
-import ArrowLeft from '@primeicons/vue/arrow-left';
+import Button from '@/components/ui/legacy/Button.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
+import { ArrowLeft } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Group } from '@/types';
 import {

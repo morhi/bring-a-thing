@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Textarea from 'primevue/textarea';
+import Button from '@/components/ui/legacy/Button.vue';
+import Dialog from '@/components/ui/legacy/Dialog.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Textarea from '@/components/ui/legacy/Textarea.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Group, Roster } from '@/types';
 import {

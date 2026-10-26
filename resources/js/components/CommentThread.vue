@@ -2,10 +2,10 @@
 import { computed, ref, watch } from 'vue';
 import { router, useForm, usePage } from '@inertiajs/vue3';
 import { useEcho } from '@laravel/echo-vue';
-import Avatar from 'primevue/avatar';
-import Button from 'primevue/button';
-import Textarea from 'primevue/textarea';
-import { useConfirm } from 'primevue/useconfirm';
+import Avatar from '@/components/ui/legacy/Avatar.vue';
+import Button from '@/components/ui/legacy/Button.vue';
+import Textarea from '@/components/ui/legacy/Textarea.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
 import type { Auth, Comment } from '@/types';
 
 const props = defineProps<{

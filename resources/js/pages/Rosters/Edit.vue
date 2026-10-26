@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import Checkbox from 'primevue/checkbox';
-import DatePicker from 'primevue/datepicker';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
-import Textarea from 'primevue/textarea';
-import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
-import ArrowLeft from '@primeicons/vue/arrow-left';
+import Button from '@/components/ui/legacy/Button.vue';
+import Checkbox from '@/components/ui/legacy/Checkbox.vue';
+import DatePicker from '@/components/ui/legacy/DatePicker.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Select from '@/components/ui/legacy/Select.vue';
+import Textarea from '@/components/ui/legacy/Textarea.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
+import { useToast } from '@/components/ui/legacy/useToast';
+import { ArrowLeft } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatPollOption } from '@/lib/pollDate';
 import type { CustomField, Roster } from '@/types';

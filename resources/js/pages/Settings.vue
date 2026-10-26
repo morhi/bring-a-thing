@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
-import Password from 'primevue/password';
+import Button from '@/components/ui/legacy/Button.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Password from '@/components/ui/legacy/Password.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
     updatePassword,

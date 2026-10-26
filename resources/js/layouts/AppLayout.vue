@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import Avatar from 'primevue/avatar';
-import Button from 'primevue/button';
-import ConfirmDialog from 'primevue/confirmdialog';
-import Menu from 'primevue/menu';
-import Toast from 'primevue/toast';
-import Bell from '@primeicons/vue/bell';
+import Avatar from '@/components/ui/legacy/Avatar.vue';
+import Button from '@/components/ui/legacy/Button.vue';
+import ConfirmDialog from '@/components/ui/legacy/ConfirmDialog.vue';
+import Menu from '@/components/ui/legacy/Menu.vue';
+import Toast from '@/components/ui/legacy/Toast.vue';
+import { Bell } from '@lucide/vue';
 import FlashToasts from '@/components/FlashToasts.vue';
 import type { Auth } from '@/types';
 import { index as friendsIndex } from '@/actions/App/Http/Controllers/FriendController';

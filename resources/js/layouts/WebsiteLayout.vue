@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import Toast from 'primevue/toast';
+import Button from '@/components/ui/legacy/Button.vue';
+import Toast from '@/components/ui/legacy/Toast.vue';
 import FlashToasts from '@/components/FlashToasts.vue';
 import type { Auth } from '@/types';
 

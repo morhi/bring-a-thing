@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import Button from 'primevue/button';
-import DatePicker from 'primevue/datepicker';
-import InputText from 'primevue/inputtext';
-import Select from 'primevue/select';
-import Tag from 'primevue/tag';
-import { useConfirm } from 'primevue/useconfirm';
-import ArrowLeft from '@primeicons/vue/arrow-left';
+import Button from '@/components/ui/legacy/Button.vue';
+import DatePicker from '@/components/ui/legacy/DatePicker.vue';
+import InputText from '@/components/ui/legacy/InputText.vue';
+import Select from '@/components/ui/legacy/Select.vue';
+import Tag from '@/components/ui/legacy/Tag.vue';
+import { useConfirm } from '@/components/ui/legacy/useConfirm';
+import { ArrowLeft } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
     formatDateOnly,
