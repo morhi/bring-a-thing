@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PollResponseStatus;
+use App\Events\PollResponseUpdated;
 use App\Http\Requests\Polls\StorePollResponseRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
@@ -24,6 +25,8 @@ class PollResponseController extends Controller
             ['user_id' => $request->user()->getKey()],
             ['status' => $request->enum('status', PollResponseStatus::class)],
         );
+
+        PollResponseUpdated::dispatch($poll->id, $option->id, $request->user()->id);
 
         return back()->with('success', 'Response saved.');
     }

@@ -32,6 +32,26 @@ class EventPolicy
     }
 
     /**
+     * Determine whether the user can read and write the event's comment thread (F-20).
+     *
+     * Participants ("accepted" or "pending") and the event's managers can.
+     * Other members see only the key details (F-11), so the thread stays
+     * hidden from them; outsiders get "Not found".
+     */
+    public function comment(User $user, Event $event): Response
+    {
+        if (! $event->group->hasMember($user)) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($event->hasParticipant($user) || $event->isManagedBy($user)) {
+            return Response::allow();
+        }
+
+        return Response::deny('Accept the event first to comment.');
+    }
+
+    /**
      * Determine whether the user can edit the event: organizer, group owner and admins (F-10).
      */
     public function update(User $user, Event $event): bool

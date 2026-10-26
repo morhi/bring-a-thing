@@ -26,11 +26,32 @@ class Comment extends Model
     use HasFactory;
 
     /**
-     * The roster or roster item this comment is on.
+     * The roster, roster item or event this comment is on (exactly one, F-20).
      */
     public function commentable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * The private channel whose viewers see this comment's thread live (F-21).
+     *
+     * Item comments go to their list's channel, because the item thread is
+     * shown on the list page.
+     */
+    public function broadcastChannelName(): string
+    {
+        $commentable = $this->commentable;
+
+        if ($commentable instanceof Event) {
+            return 'event.'.$commentable->id;
+        }
+
+        if ($commentable instanceof RosterItem) {
+            return 'roster.'.$commentable->roster_id;
+        }
+
+        return 'roster.'.$this->commentable_id;
     }
 
     /**

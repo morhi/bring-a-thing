@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\RosterItems\ClaimRosterItem;
-use App\Events\RosterItemSaved;
+use App\Events\ClaimChanged;
 use App\Http\Requests\RosterItems\ClaimRosterItemRequest;
 use App\Http\Requests\RosterItems\UnclaimRosterItemRequest;
 use App\Models\Roster;
@@ -22,7 +22,7 @@ class RosterItemClaimController extends Controller
 
         $claimItem->handle($item, $target, $request->input('quantity') !== null ? (float) $request->input('quantity') : null);
 
-        RosterItemSaved::dispatch($item);
+        ClaimChanged::dispatch($item->roster_id, $item->id, $target->id);
 
         return back()->with('success', 'Claim saved.');
     }
@@ -36,7 +36,7 @@ class RosterItemClaimController extends Controller
 
         $item->claims()->where('user_id', $targetId)->delete();
 
-        RosterItemSaved::dispatch($item);
+        ClaimChanged::dispatch($item->roster_id, $item->id, $targetId);
 
         return back()->with('success', 'Claim removed.');
     }

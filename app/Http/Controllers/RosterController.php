@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Data\RosterFormData;
 use App\Data\RosterShowData;
+use App\Events\EventUpdated;
 use App\Http\Requests\Rosters\StoreRosterRequest;
 use App\Http\Requests\Rosters\UpdateRosterRequest;
 use App\Models\Event;
@@ -50,6 +51,10 @@ class RosterController extends Controller
         $roster->group_id = $request->event() ? null : $request->group()?->getKey();
         $roster->event_id = $request->event()?->getKey();
         $roster->save();
+
+        if ($roster->event_id !== null) {
+            EventUpdated::dispatch($roster->event_id);
+        }
 
         return to_route('rosters.show', $roster)->with('success', 'Roster created.');
     }
@@ -98,6 +103,10 @@ class RosterController extends Controller
         $this->authorize('delete', $roster);
 
         $roster->delete();
+
+        if ($roster->event_id !== null) {
+            EventUpdated::dispatch($roster->event_id);
+        }
 
         return to_route('dashboard')->with('success', 'Roster deleted.');
     }

@@ -26,6 +26,7 @@ class DeleteEvent
 
             $event->rosters->each(fn (Roster $roster) => $this->deleteRoster($roster));
             $event->polls->each(fn (Poll $poll) => $poll->delete());
+            $event->comments()->delete();
             $event->delete();
         });
     }

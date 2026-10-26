@@ -6,6 +6,7 @@ use App\Actions\Polls\CreateFollowUpPoll;
 use App\Data\PollFormData;
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Events\EventUpdated;
 use App\Http\Requests\Polls\StoreFollowUpPollRequest;
 use App\Models\Event;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -47,6 +48,8 @@ class EventFollowUpPollController extends Controller
             $request->input('starts_on'),
             $request->input('ends_on'),
         );
+
+        EventUpdated::dispatch($event->id);
 
         return to_route('polls.show', $poll)->with('success', 'Poll created.');
     }

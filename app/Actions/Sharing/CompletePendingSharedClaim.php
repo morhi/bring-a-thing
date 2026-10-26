@@ -3,7 +3,7 @@
 namespace App\Actions\Sharing;
 
 use App\Actions\RosterItems\ClaimRosterItem;
-use App\Events\RosterItemSaved;
+use App\Events\ClaimChanged;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
@@ -62,7 +62,7 @@ class CompletePendingSharedClaim
                 ->with('error', $exception->validator->errors()->first());
         }
 
-        RosterItemSaved::dispatch($item);
+        ClaimChanged::dispatch($roster->id, $item->id, $user->id);
 
         return redirect()->route('shared-rosters.show', $roster->share_token)->with('success', 'Claim saved.');
     }

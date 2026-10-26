@@ -6,12 +6,14 @@ use App\Enums\ParticipationStatus;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -116,6 +118,14 @@ class Event extends Model
     }
 
     /**
+     * The event's own comment thread, oldest first (F-20).
+     */
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable')->oldest();
+    }
+
+    /**
      * The moment the event starts, at midnight when it has no time.
      */
     public function startsAt(): Carbon
@@ -140,6 +150,23 @@ class Event extends Model
         }
 
         return $this->startsAt()->isPast();
+    }
+
+    /**
+     * Limit the query to events that have not started, mirroring isPast() (F-22).
+     *
+     * An event without a time stays current for its whole day.
+     */
+    #[Scope]
+    protected function upcoming(Builder $query): void
+    {
+        $today = now()->toDateString();
+
+        $query->where(fn (Builder $query) => $query
+            ->whereDate('date', '>', $today)
+            ->orWhere(fn (Builder $query) => $query
+                ->whereDate('date', $today)
+                ->where(fn (Builder $query) => $query->whereNull('starts_at')->orWhere('starts_at', '>', now()->format('H:i:s')))));
     }
 
     /**

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\RosterItems\ClaimRosterItem;
-use App\Events\RosterItemSaved;
+use App\Events\ClaimChanged;
 use App\Http\Requests\SharedRosters\ClaimSharedRosterItemRequest;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -35,7 +35,7 @@ class SharedRosterClaimController extends Controller
             }
 
             $claimItem->handle($item, $user, $quantity);
-            RosterItemSaved::dispatch($item);
+            ClaimChanged::dispatch($roster->id, $item->id, $user->id);
 
             return back()->with('success', 'Claim saved.');
         }

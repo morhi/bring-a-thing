@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\GroupRole;
-use App\Events\RosterItemSaved;
+use App\Events\ItemChanged;
 use App\Models\Group;
 use App\Models\Roster;
 use App\Models\User;
@@ -18,7 +18,7 @@ it('exposes whether share-link visitors may add things', function () {
 });
 
 it('lets an authenticated visitor add a thing via the shared link when the setting is on', function () {
-    Event::fake([RosterItemSaved::class]);
+    Event::fake([ItemChanged::class]);
     $owner = User::factory()->create();
     $visitor = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
@@ -31,7 +31,7 @@ it('lets an authenticated visitor add a thing via the shared link when the setti
 
     $response->assertRedirect();
     $this->assertDatabaseHas('roster_items', ['roster_id' => $roster->id, 'name' => 'Napkins']);
-    Event::assertDispatched(RosterItemSaved::class);
+    Event::assertDispatched(ItemChanged::class);
 });
 
 it('forbids adding a thing via the shared link when the setting is off', function () {
@@ -49,7 +49,7 @@ it('forbids adding a thing via the shared link when the setting is off', functio
 });
 
 it('lets an authenticated non-member add a thing via the shared link for a group-attached roster', function () {
-    Event::fake([RosterItemSaved::class]);
+    Event::fake([ItemChanged::class]);
     $owner = User::factory()->create();
     $visitor = User::factory()->create();
     $group = Group::factory()->create(['owner_id' => $owner->id]);

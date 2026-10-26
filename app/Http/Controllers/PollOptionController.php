@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PollChanged;
 use App\Http\Requests\Polls\StorePollOptionRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
@@ -18,6 +19,8 @@ class PollOptionController extends Controller
     public function store(StorePollOptionRequest $request, Poll $poll): RedirectResponse
     {
         $poll->options()->create($request->safe()->only(['date', 'starts_at', 'ends_at', 'label']));
+
+        PollChanged::dispatch($poll->id);
 
         return back()->with('success', 'Option added.');
     }
@@ -39,6 +42,8 @@ class PollOptionController extends Controller
         }
 
         $option->delete();
+
+        PollChanged::dispatch($poll->id);
 
         return back()->with('success', 'Option removed.');
     }

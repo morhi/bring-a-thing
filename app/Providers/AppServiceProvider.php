@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Event;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use Carbon\CarbonImmutable;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'roster' => Roster::class,
             'roster_item' => RosterItem::class,
+            'event' => Event::class,
         ]);
 
         DB::prohibitDestructiveCommands(

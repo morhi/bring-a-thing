@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\ParticipationStatus;
+use App\Models\Comment;
 use App\Models\Event;
 use App\Models\EventParticipation;
 use App\Models\Poll;
@@ -19,6 +20,7 @@ class EventShowData extends Data
      * @param  array<int, EventLinkData>  $lists
      * @param  array<int, EventLinkData>  $follow_up_polls
      * @param  array<int, EventSummaryData>  $child_events
+     * @param  array<int, CommentData>  $comments
      */
     public function __construct(
         public EventData $event,
@@ -32,6 +34,7 @@ class EventShowData extends Data
         public array $follow_up_polls,
         public int $follow_up_audience_count,
         public array $child_events,
+        public array $comments,
         public EventPermissionsData $permissions,
     ) {}
 
@@ -44,11 +47,12 @@ class EventShowData extends Data
      * polls only for their audience: "accepted" and managers (F-12);
      * everyone else gets the key details. follow_up_audience_count feeds
      * the audience note of "New follow-up poll".
-     * own_claims feeds the decline confirmation.
+     * own_claims feeds the decline confirmation. comments is the event's
+     * own thread, only for those who may comment (F-20).
      */
     public static function forUser(Event $event, User $user): self
     {
-        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents', 'rosters', 'polls');
+        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents', 'rosters', 'polls', 'comments.user');
 
         $statuses = $event->participations->keyBy('user_id');
         $participants = $event->group->members
@@ -63,6 +67,8 @@ class EventShowData extends Data
             ->each(fn (Poll $poll) => $poll->setRelation('event', $event))
             ->filter(fn (Poll $poll) => $poll->includesMember($user));
 
+        $permissions = EventPermissionsData::forUser($event, $user);
+
         return new self(
             event: EventData::fromEvent($event),
             own_status: $event->statusOf($user),
@@ -75,7 +81,8 @@ class EventShowData extends Data
             follow_up_polls: $followUpPolls->map(fn (Poll $poll) => new EventLinkData($poll->slug, $poll->title))->values()->all(),
             follow_up_audience_count: $event->followUpAudience()->count(),
             child_events: $event->childEvents->map(fn (Event $child) => EventSummaryData::fromEvent($child))->all(),
-            permissions: EventPermissionsData::forUser($event, $user),
+            comments: $permissions->can_comment ? $event->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $event), $user))->all() : [],
+            permissions: $permissions,
         );
     }
 }

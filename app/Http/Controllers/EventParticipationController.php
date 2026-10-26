@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Events\SetParticipation;
 use App\Enums\ParticipationStatus;
+use App\Events\ParticipationChanged;
 use App\Http\Requests\Events\SetParticipantStatusRequest;
 use App\Http\Requests\Events\UpdateOwnParticipationRequest;
 use App\Models\Event;
@@ -27,6 +28,8 @@ class EventParticipationController extends Controller
 
         $setParticipation->handle($event, $request->user(), $status, $request->user(), $request->boolean('confirm_release'));
 
+        ParticipationChanged::dispatch($event->id, $request->user()->id);
+
         $message = $status === ParticipationStatus::Accepted ? 'You accepted the event.' : 'You declined the event.';
 
         return back()->with('success', $message);
@@ -39,6 +42,8 @@ class EventParticipationController extends Controller
     {
         $setParticipation->handle($event, $member, $request->enum('status', ParticipationStatus::class), $request->user());
 
+        ParticipationChanged::dispatch($event->id, $member->id);
+
         return back()->with('success', 'Participation updated.');
     }
 
@@ -50,6 +55,8 @@ class EventParticipationController extends Controller
         $this->authorize('removeParticipant', $event);
 
         $event->participations()->where('user_id', $member->getKey())->delete();
+
+        ParticipationChanged::dispatch($event->id, $member->id);
 
         return back()->with('success', 'Participant removed.');
     }

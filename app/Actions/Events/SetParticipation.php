@@ -3,6 +3,7 @@
 namespace App\Actions\Events;
 
 use App\Enums\ParticipationStatus;
+use App\Events\ClaimChanged;
 use App\Models\Event;
 use App\Models\EventParticipation;
 use App\Models\RosterItemClaim;
@@ -19,6 +20,7 @@ class SetParticipation
      * lists, and only after they confirmed it: without confirmation the
      * decline is rejected with the affected items, so nothing is released
      * by surprise. A status set by someone else never releases claims.
+     * Each released claim is broadcast to its list once the transaction commits (F-21).
      *
      * @throws ValidationException when an own decline would release claims and was not confirmed
      */
@@ -34,7 +36,10 @@ class SetParticipation
         }
 
         return DB::transaction(function () use ($event, $person, $status, $claims) {
-            $claims->each(fn (RosterItemClaim $claim) => $claim->delete());
+            $claims->each(function (RosterItemClaim $claim) {
+                $claim->delete();
+                ClaimChanged::dispatch($claim->rosterItem->roster_id, $claim->roster_item_id, $claim->user_id);
+            });
 
             return $event->participations()->updateOrCreate(
                 ['user_id' => $person->getKey()],

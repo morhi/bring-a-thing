@@ -1,8 +1,7 @@
 <?php
 
 use App\Enums\GroupRole;
-use App\Events\RosterItemDeleted;
-use App\Events\RosterItemSaved;
+use App\Events\ItemChanged;
 use App\Models\CustomField;
 use App\Models\Group;
 use App\Models\Roster;
@@ -11,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Event;
 
 it('allows the roster owner to add an item', function () {
-    Event::fake([RosterItemSaved::class]);
+    Event::fake([ItemChanged::class]);
     $owner = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id]);
 
@@ -25,7 +24,7 @@ it('allows the roster owner to add an item', function () {
     $response->assertSessionHas('success', 'Thing added.');
     $item = RosterItem::query()->where('name', 'Chairs')->firstOrFail();
     expect($item->roster_id)->toBe($roster->id);
-    Event::assertDispatched(RosterItemSaved::class, fn ($event) => $event->item->is($item));
+    Event::assertDispatched(ItemChanged::class, fn (ItemChanged $event) => $event->itemId === $item->id && ! $event->deleted);
 });
 
 it('forbids a group member without add-item permission from adding an item', function () {
@@ -107,7 +106,7 @@ it('forbids a non-owner from updating or deleting an item', function () {
 });
 
 it('allows the owner to delete an item and broadcasts the deletion', function () {
-    Event::fake([RosterItemDeleted::class]);
+    Event::fake([ItemChanged::class]);
     $owner = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id]);
     $item = RosterItem::factory()->create(['roster_id' => $roster->id]);
@@ -116,7 +115,7 @@ it('allows the owner to delete an item and broadcasts the deletion', function ()
 
     $response->assertRedirect();
     $this->assertModelMissing($item);
-    Event::assertDispatched(RosterItemDeleted::class, fn ($event) => $event->itemId === $item->id && $event->rosterId === $roster->id);
+    Event::assertDispatched(ItemChanged::class, fn (ItemChanged $event) => $event->itemId === $item->id && $event->rosterId === $roster->id && $event->deleted);
 });
 
 it('saves custom field values for an item', function () {

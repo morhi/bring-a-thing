@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DevComponentsController;
+use App\Http\Controllers\EventCommentController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventFollowUpPollController;
 use App\Http\Controllers\EventParticipationController;
@@ -46,8 +47,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/login/needs-name', [MagicLinkController::class, 'needsName'])->name('magic-link.needs-name');
 });
 
+// The signature is checked in the controller, so a bad link lands on the start page with a note.
 Route::get('/login/{user}', [MagicLinkController::class, 'show'])
-    ->middleware('signed')
     ->name('login.consume');
 
 // Shared list links: viewable and claimable by anyone with the link, logged
@@ -57,9 +58,10 @@ Route::post('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::
 Route::post('/shared/{token}/items', [SharedRosterItemController::class, 'store'])->name('shared-rosters.items.store');
 
 // Group invite links: open to guests on purpose, joining is the point (F-04).
-// A revoked or replaced token is "Not found" via the binding.
-Route::get('/join/{group:invite_token}', [GroupJoinController::class, 'show'])->name('groups.join.show');
-Route::post('/join/{group:invite_token}', [GroupJoinController::class, 'store'])->name('groups.join.store');
+// A revoked or replaced token is "Not found"; the controller resolves it so
+// the join page can render that state inside the app's layout.
+Route::get('/join/{token}', [GroupJoinController::class, 'show'])->name('groups.join.show');
+Route::post('/join/{token}', [GroupJoinController::class, 'store'])->name('groups.join.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -75,6 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/settings/friends/{friend}', [FriendController::class, 'destroy'])->name('friends.destroy');
 
     Route::post('/groups', [GroupController::class, 'store'])->name('groups.store');
+    Route::get('/groups/new', [GroupController::class, 'create'])->name('groups.create');
     Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
     Route::get('/groups/{group}/edit', [GroupController::class, 'edit'])->name('groups.edit');
     Route::patch('/groups/{group}', [GroupController::class, 'update'])->name('groups.update');
@@ -162,4 +165,10 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/polls/create', [EventFollowUpPollController::class, 'create'])->name('events.polls.create');
     Route::post('/events/{event}/polls', [EventFollowUpPollController::class, 'store'])->name('events.polls.store');
+});
+
+// Event comment thread (F-20).
+Route::middleware('auth')->group(function () {
+    Route::post('/events/{event}/comments', [EventCommentController::class, 'store'])->name('events.comments.store');
+    Route::delete('/events/{event}/comments/{comment}', [EventCommentController::class, 'destroy'])->name('events.comments.destroy');
 });

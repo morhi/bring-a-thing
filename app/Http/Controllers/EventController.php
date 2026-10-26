@@ -7,6 +7,7 @@ use App\Actions\Events\DeleteEvent;
 use App\Actions\Events\UpdateEvent;
 use App\Data\EventFormData;
 use App\Data\EventShowData;
+use App\Events\EventUpdated;
 use App\Http\Requests\Events\StoreEventRequest;
 use App\Http\Requests\Events\UpdateEventRequest;
 use App\Models\Event;
@@ -74,6 +75,8 @@ class EventController extends Controller
     {
         $updateEvent->handle($event, $request->eventAttributes());
 
+        EventUpdated::dispatch($event->id);
+
         return to_route('events.show', $event)->with('success', 'Event updated.');
     }
 
@@ -86,6 +89,12 @@ class EventController extends Controller
 
         $group = $event->group;
         $deleteEvent->handle($event);
+
+        EventUpdated::dispatch($event->id, deleted: true);
+
+        if ($event->parent_event_id !== null) {
+            EventUpdated::dispatch($event->parent_event_id);
+        }
 
         return to_route('groups.show', $group)->with('success', 'Event deleted.');
     }

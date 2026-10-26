@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\RosterItemDeleted;
-use App\Events\RosterItemSaved;
+use App\Events\ItemChanged;
 use App\Http\Requests\RosterItems\StoreRosterItemRequest;
 use App\Http\Requests\RosterItems\UpdateRosterItemRequest;
 use App\Models\Roster;
@@ -26,7 +25,7 @@ class RosterItemController extends Controller
 
         $this->syncCustomFieldValues($item, $request->input('custom_fields', []));
 
-        RosterItemSaved::dispatch($item);
+        ItemChanged::dispatch($roster->id, $item->id);
 
         return back()->with('success', 'Thing added.');
     }
@@ -42,7 +41,7 @@ class RosterItemController extends Controller
 
         $this->syncCustomFieldValues($item, $request->input('custom_fields', []));
 
-        RosterItemSaved::dispatch($item);
+        ItemChanged::dispatch($roster->id, $item->id);
 
         return back()->with('success', 'Thing updated.');
     }
@@ -56,7 +55,7 @@ class RosterItemController extends Controller
 
         $item->delete();
 
-        RosterItemDeleted::dispatch($roster->id, $item->id);
+        ItemChanged::dispatch($roster->id, $item->id, deleted: true);
 
         return back()->with('success', 'Thing removed.');
     }

@@ -18,7 +18,7 @@ class CommentData extends Data
     ) {}
 
     /**
-     * Build one comment of a list or item thread for the viewing user (F-20).
+     * Build one comment of a list, item or event thread for the viewing user (F-20).
      */
     public static function forUser(Comment $comment, User $user): self
     {

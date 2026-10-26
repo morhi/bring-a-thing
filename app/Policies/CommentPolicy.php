@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Comment;
+use App\Models\Event;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
@@ -10,10 +11,10 @@ use App\Models\User;
 class CommentPolicy
 {
     /**
-     * Determine whether the user can delete the comment.
+     * Determine whether the user can delete the comment (F-20).
      *
-     * Granted to the comment's own author, and to whoever can manage the
-     * roster it's on (owner, or group admin for a group-attached roster).
+     * Author, group owner and admins always can. On lists and items the
+     * list owner can too; on events nobody else, not even the organizer.
      */
     public function delete(User $user, Comment $comment): bool
     {
@@ -21,10 +22,22 @@ class CommentPolicy
             return true;
         }
 
-        $roster = $comment->commentable instanceof RosterItem
-            ? $comment->commentable->roster
-            : $comment->commentable;
+        $commentable = $comment->commentable;
 
-        return $roster instanceof Roster && $user->can('update', $roster);
+        if ($commentable instanceof Event) {
+            return $commentable->group->isAtLeastAdmin($user);
+        }
+
+        $roster = $commentable instanceof RosterItem ? $commentable->roster : $commentable;
+
+        if (! $roster instanceof Roster) {
+            return false;
+        }
+
+        if ($roster->owner_id === $user->getKey()) {
+            return true;
+        }
+
+        return $roster->managingGroup()?->isAtLeastAdmin($user) ?? false;
     }
 }

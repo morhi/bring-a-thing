@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\GroupRole;
-use App\Events\RosterItemSaved;
+use App\Events\ClaimChanged;
 use App\Models\Group;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -75,7 +75,7 @@ it('redirects a member who already has full access to the normal roster page', f
 });
 
 it('lets an already authenticated guest claim an item directly', function () {
-    Event::fake([RosterItemSaved::class]);
+    Event::fake([ClaimChanged::class]);
     $owner = User::factory()->create();
     $claimant = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id]);
@@ -86,7 +86,7 @@ it('lets an already authenticated guest claim an item directly', function () {
 
     $response->assertRedirect();
     $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $claimant->id]);
-    Event::assertDispatched(RosterItemSaved::class);
+    Event::assertDispatched(ClaimChanged::class);
 });
 
 it('stashes a guest claim intent and sends an unauthenticated visitor to log in', function () {

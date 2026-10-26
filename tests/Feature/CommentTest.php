@@ -2,8 +2,8 @@
 
 use App\Actions\Comments\PostComment;
 use App\Enums\GroupRole;
+use App\Events\CommentAdded;
 use App\Events\CommentDeleted;
-use App\Events\CommentPosted;
 use App\Models\Comment;
 use App\Models\Group;
 use App\Models\Roster;
@@ -35,7 +35,7 @@ function rosterWithGroupMembers(User $owner, array $members): Roster
 }
 
 it('lets a member post a list-level comment', function () {
-    Event::fake([CommentPosted::class]);
+    Event::fake([CommentAdded::class]);
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $roster = rosterWithGroupMembers($owner, [$member]);
@@ -50,7 +50,7 @@ it('lets a member post a list-level comment', function () {
         'user_id' => $member->id,
         'body' => 'Looking forward to this!',
     ]);
-    Event::assertDispatched(CommentPosted::class, fn (CommentPosted $event) => $event->rosterId === $roster->id);
+    Event::assertDispatched(CommentAdded::class, fn (CommentAdded $event) => $event->channelName === 'roster.'.$roster->id);
 });
 
 it('lets a member post an item-level comment', function () {
@@ -130,7 +130,7 @@ it('returns 404 deleting an item comment through the wrong item', function () {
     $this->actingAs($owner)->delete(route('rosters.items.comments.destroy', [$roster, $otherItem, $comment]))->assertNotFound();
 });
 
-it('broadcasts posted and deleted comment events on the roster private channel', function () {
+it('broadcasts added and deleted comment events on the roster private channel', function () {
     config(['broadcasting.default' => 'reverb']);
     require base_path('routes/channels.php');
 
@@ -138,11 +138,11 @@ it('broadcasts posted and deleted comment events on the roster private channel',
     $roster = rosterWithGroupMembers($owner, []);
     $comment = Comment::factory()->create(['commentable_type' => 'roster', 'commentable_id' => $roster->id, 'user_id' => $owner->id]);
 
-    $postedEvent = new CommentPosted($comment, $roster->id);
-    expect($postedEvent->broadcastOn()->name)->toBe('private-roster.'.$roster->id);
-    expect($postedEvent->broadcastAs())->toBe('comment.posted');
+    $addedEvent = new CommentAdded($comment);
+    expect($addedEvent->broadcastOn()->name)->toBe('private-roster.'.$roster->id);
+    expect($addedEvent->broadcastAs())->toBe('comment.added');
 
-    $deletedEvent = new CommentDeleted($roster->id, $comment->id, 'roster', $roster->id);
+    $deletedEvent = new CommentDeleted($comment);
     expect($deletedEvent->broadcastOn()->name)->toBe('private-roster.'.$roster->id);
     expect($deletedEvent->broadcastAs())->toBe('comment.deleted');
 });

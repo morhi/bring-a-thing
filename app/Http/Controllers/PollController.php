@@ -9,6 +9,9 @@ use App\Data\PollFormData;
 use App\Data\PollShowData;
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Events\EventUpdated;
+use App\Events\OptionFixed;
+use App\Events\PollChanged;
 use App\Http\Requests\Polls\ClosePollRequest;
 use App\Http\Requests\Polls\FixPollRequest;
 use App\Http\Requests\Polls\StorePollRequest;
@@ -93,6 +96,8 @@ class PollController extends Controller
     {
         $updatePoll->handle($poll, $request->string('title')->value(), $request->has('options') ? $request->validated('options') : null);
 
+        PollChanged::dispatch($poll->id);
+
         return to_route('polls.edit', $poll)->with('success', 'Poll updated.');
     }
 
@@ -103,6 +108,8 @@ class PollController extends Controller
     {
         $poll->close();
 
+        PollChanged::dispatch($poll->id);
+
         return to_route('polls.edit', $poll)->with('success', 'Poll closed.');
     }
 
@@ -112,6 +119,12 @@ class PollController extends Controller
     public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions): RedirectResponse
     {
         $events = $fixPollOptions->handle($poll, $request->selectedOptions());
+
+        OptionFixed::dispatch($poll->id, $events->pluck('origin_poll_option_id')->all(), $events->pluck('id')->all());
+
+        if ($poll->event_id !== null) {
+            EventUpdated::dispatch($poll->event_id);
+        }
 
         return to_route('polls.show', $poll)->with('success', $events->count() === 1 ? 'Date fixed.' : 'Dates fixed.');
     }
@@ -125,6 +138,8 @@ class PollController extends Controller
 
         $poll->reopen();
 
+        PollChanged::dispatch($poll->id);
+
         return to_route('polls.edit', $poll)->with('success', 'Poll reopened.');
     }
 
@@ -137,6 +152,12 @@ class PollController extends Controller
 
         $group = $poll->group;
         $poll->delete();
+
+        PollChanged::dispatch($poll->id, deleted: true);
+
+        if ($poll->event_id !== null) {
+            EventUpdated::dispatch($poll->event_id);
+        }
 
         return to_route('groups.show', $group)->with('success', 'Poll deleted.');
     }

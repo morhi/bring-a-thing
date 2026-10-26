@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Comments\PostComment;
+use App\Events\CommentAdded;
 use App\Events\CommentDeleted;
-use App\Events\CommentPosted;
 use App\Http\Requests\Rosters\StoreRosterCommentRequest;
 use App\Models\Comment;
 use App\Models\Roster;
@@ -23,7 +23,7 @@ class RosterCommentController extends Controller
     {
         $comment = $postComment->handle($roster, $request->user(), $request->validated('body'));
 
-        CommentPosted::dispatch($comment, $roster->id);
+        CommentAdded::dispatch($comment);
 
         return back()->with('success', 'Comment posted.');
     }
@@ -39,10 +39,9 @@ class RosterCommentController extends Controller
 
         $this->authorize('delete', $comment);
 
-        [$commentableType, $commentableId] = [$comment->commentable_type, $comment->commentable_id];
         $comment->delete();
 
-        CommentDeleted::dispatch($roster->id, $comment->id, $commentableType, $commentableId);
+        CommentDeleted::dispatch($comment);
 
         return back()->with('success', 'Comment removed.');
     }

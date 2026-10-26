@@ -37,6 +37,70 @@ export type CustomFieldValueData = {
 custom_field_id: number,
 value: string | null,
 };
+export type DashboardClaimData = {
+roster_slug: string,
+roster_title: string,
+item_name: string,
+quantity: number | null,
+unit: string | null,
+date: string | null,
+};
+export type DashboardCountsData = {
+waiting: number,
+upcoming: number,
+claims: number,
+groups: number,
+lists: number,
+};
+export type DashboardData = {
+waiting: App.Data.DashboardWaitingData[],
+upcoming: App.Data.DashboardEventData[],
+claims: App.Data.DashboardClaimData[],
+groups: App.Data.DashboardGroupData[],
+lists: App.Data.DashboardListData[],
+counts: App.Data.DashboardCountsData,
+};
+export type DashboardEventData = {
+slug: string,
+title: string,
+group_slug: string,
+group_name: string,
+date: string,
+starts_at: string | null,
+location: string | null,
+is_fixed_from_poll: boolean,
+accepted_count: number,
+accepted_names: string[],
+};
+export type DashboardGroupData = {
+slug: string,
+name: string,
+role: App.Enums.GroupRole,
+member_count: number,
+open_poll_count: number,
+upcoming_event_count: number,
+};
+export type DashboardListData = {
+slug: string,
+title: string,
+date: string | null,
+claimed_count: number,
+item_count: number,
+is_shared: boolean,
+};
+export type DashboardWaitingData = {
+kind: App.Enums.DashboardWaitingKind,
+slug: string,
+title: string,
+group_slug: string,
+group_name: string,
+answered: number | null,
+total: number | null,
+date: string | null,
+starts_at: string | null,
+accepted_count: number | null,
+source_event: App.Data.EventSummaryData | null,
+};
 export type EventClaimData = {
 item_name: string,
 quantity: number | null,
@@ -78,6 +142,7 @@ can_respond: boolean,
 can_set_status_for_others: boolean,
 can_remove_participants: boolean,
 can_create_follow_up_poll: boolean,
+can_comment: boolean,
 };
 export type EventShowData = {
 event: App.Data.EventData,
@@ -91,6 +156,7 @@ lists: App.Data.EventLinkData[],
 follow_up_polls: App.Data.EventLinkData[],
 follow_up_audience_count: number,
 child_events: App.Data.EventSummaryData[],
+comments: App.Data.CommentData[],
 permissions: App.Data.EventPermissionsData,
 };
 export type EventSummaryData = {
@@ -99,6 +165,31 @@ title: string,
 date: string,
 starts_at: string | null,
 is_past: boolean,
+};
+export type FriendData = {
+slug: string,
+name: string | null,
+email: string | null,
+invitation_pending: boolean,
+shared_groups: string[],
+};
+export type FriendsData = {
+items: App.Data.FriendData[],
+};
+export type GroupEventData = {
+slug: string,
+title: string,
+date: string,
+starts_at: string | null,
+location: string | null,
+is_past: boolean,
+is_from_poll: boolean,
+accepted_count: number,
+pending_count: number,
+own_status: App.Enums.ParticipationStatus | null,
+};
+export type GroupFormData = {
+friends: App.Data.InviteFriendData[],
 };
 export type GroupInviteLinkData = {
 url: string | null,
@@ -109,14 +200,79 @@ token: string,
 group_name: string,
 locked: boolean,
 member_count: number,
+members: App.Data.GroupJoinMemberData[],
 is_authenticated: boolean,
 needs_email: boolean,
+has_email: boolean,
+};
+export type GroupJoinMemberData = {
+id: number,
+name: string | null,
+};
+export type GroupListData = {
+slug: string,
+title: string,
+date: string | null,
+item_count: number,
+claimed_count: number,
+};
+export type GroupMemberData = {
+id: number,
+name: string | null,
+email: string | null,
+role: App.Enums.GroupRole,
+is_pending: boolean,
+joined_via_link: boolean,
+};
+export type GroupPermissionsData = {
+can_manage_settings: boolean,
+can_invite: boolean,
+};
+export type GroupPollData = {
+slug: string,
+title: string,
+type: App.Enums.PollType,
+is_closed: boolean,
+is_fixed: boolean,
+option_count: number,
+answered_count: number,
+audience_count: number,
+follow_up_event_title: string | null,
+};
+export type GroupSettingsData = {
+slug: string,
+name: string,
+members_can_set_status: boolean,
+members: App.Data.GroupMemberData[],
+invite_link: App.Data.GroupInviteLinkData,
+permissions: App.Data.GroupSettingsPermissionsData,
+friends: App.Data.InviteFriendData[],
+poll_count: number,
+event_count: number,
+list_count: number,
 };
 export type GroupSettingsPermissionsData = {
 can_rename: boolean,
 can_switch_option: boolean,
 can_change_roles: boolean,
 can_delete: boolean,
+};
+export type GroupShowData = {
+slug: string,
+name: string,
+own_role: App.Enums.GroupRole,
+members: App.Data.GroupMemberData[],
+polls: App.Data.GroupPollData[],
+events: App.Data.GroupEventData[],
+lists: App.Data.GroupListData[],
+permissions: App.Data.GroupPermissionsData,
+invite_link: App.Data.GroupInviteLinkData | null,
+friends: App.Data.InviteFriendData[],
+};
+export type InviteFriendData = {
+id: number,
+name: string | null,
+email: string,
 };
 export type ParticipationData = {
 user_id: number,
@@ -261,6 +417,15 @@ attendance_options: App.Data.AttendanceOptionData[],
 is_all_taken: boolean,
 permissions: App.Data.RosterPermissionsData,
 };
+export type SettingsData = {
+name: string | null,
+email: string | null,
+pending_email: string | null,
+has_password: boolean,
+language: App.Enums.Locale,
+languages: App.Enums.Locale[],
+password_min_length: number,
+};
 export type SharedAuthData = {
 user: App.Data.SharedUserData | null,
 };
@@ -293,11 +458,17 @@ email_verified_at: string | null,
 created_at: string | null,
 updated_at: string | null,
 };
+export type WelcomeData = {
+login_link_error: App.Enums.LoginLinkError | null,
+link_expires_in_minutes: number,
+};
 }
 namespace Enums {
+export type DashboardWaitingKind = 'poll' | 'event';
 export type GroupJoinMethod = 'invite' | 'link';
 export type GroupRole = 'owner' | 'admin' | 'member';
 export type Locale = 'en' | 'de';
+export type LoginLinkError = 'expired' | 'invalid';
 export type ParticipationStatus = 'accepted' | 'pending' | 'declined';
 export type PollGranularity = 'day' | 'hour';
 export type PollResponseStatus = 'yes' | 'no' | 'maybe';

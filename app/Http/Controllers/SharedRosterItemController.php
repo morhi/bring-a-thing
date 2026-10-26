@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\RosterItemSaved;
+use App\Events\ItemChanged;
 use App\Http\Requests\SharedRosters\StoreSharedRosterItemRequest;
 use App\Models\Roster;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +32,7 @@ class SharedRosterItemController extends Controller
 
         $item = $roster->items()->create($request->safe()->only(['name', 'quantity', 'unit', 'notes']));
 
-        RosterItemSaved::dispatch($item);
+        ItemChanged::dispatch($roster->id, $item->id);
 
         return back()->with('success', 'Thing added.');
     }

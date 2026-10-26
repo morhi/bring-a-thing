@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\GroupRole;
-use App\Events\RosterItemSaved;
+use App\Events\ClaimChanged;
 use App\Models\Group;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -27,7 +27,7 @@ function rosterWithMembers(User $owner, array $members, array $rosterAttributes 
 }
 
 it('claims an unquantified item exclusively', function () {
-    Event::fake([RosterItemSaved::class]);
+    Event::fake([ClaimChanged::class]);
     $owner = User::factory()->create();
     $claimant = User::factory()->create();
     $roster = rosterWithMembers($owner, [$claimant]);
@@ -37,7 +37,7 @@ it('claims an unquantified item exclusively', function () {
 
     $response->assertRedirect();
     $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id, 'user_id' => $claimant->id]);
-    Event::assertDispatched(RosterItemSaved::class);
+    Event::assertDispatched(ClaimChanged::class, fn (ClaimChanged $event) => $event->itemId === $item->id && $event->userId === $claimant->id);
 });
 
 it('blocks a second exclusive claim on an unquantified item', function () {
