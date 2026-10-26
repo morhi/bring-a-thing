@@ -11,7 +11,7 @@ Do not start Stage B before Stage A is reviewed and approved by Maurice. Ask for
 
 ## Sources of truth
 
-- `docs/requirements.md` (v1.9) defines behavior. Where anything else disagrees with it, the requirements win.
+- `docs/requirements.md` (v1.10) defines behavior. Where anything else disagrees with it, the requirements win.
 - `docs/prototype/` shows the approved UI concept and design system. In Stage B it is a reference for layout, content hierarchy, wording and flows, not code to copy.
 - `BRING_A_THING.md` and `IMPLEMENDATION.md` describe the app as it exists today (PrimeVue frontend, backend up to Phase 6). They are history, not targets. `CLAUDE.md` asks to keep them in sync with the app; at the end of Stage B, propose to Maurice how to retire or rewrite them so that `docs/requirements.md` stays the single behavior document.
 
@@ -36,7 +36,7 @@ Batches 1 to 3 are done and committed (`docs:` prototype commits in `git log`). 
 
 - Name stays "Bring a Thing". Copy reads "bring or take on", because lists cover any task, not only things to bring (requirements v1.4).
 - Fonts: headlines Familjen Grotesk (`--font-display`), the tilted "Thing" tag and `.tag` Gabarito (`--font-tag`), body Instrument Sans.
-- Depth system in `css/depth.css` and `--depth-*` tokens: three nesting levels with distinct background and border per level, in light and dark.
+- Depth system in `css/depth.css` and `--depth-*` tokens: three nesting levels with distinct background per level, a 2 px border on every level, a 25 px radius on level 2 boxes, in light and dark. Dark level 1 equals the form container color, level 2 is 5% lighter.
 - One content width for all app views: max 1120 px, 32 px gutters, 16 px at 375 px; form fields cap at 40rem.
 - Every empty state uses the dashed, hatched `EmptyState`.
 - Poll edit and list edit are the create pages in edit mode, not dialogs. Creating a group has its own page with the shared `InviteField` (email or name, friend suggestions, chips, invite link).
