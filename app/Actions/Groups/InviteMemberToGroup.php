@@ -5,6 +5,7 @@ namespace App\Actions\Groups;
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
 use App\Actions\Friends\AddFriend;
+use App\Enums\GroupJoinMethod;
 use App\Enums\GroupRole;
 use App\Models\Group;
 use App\Models\User;
@@ -30,8 +31,8 @@ class InviteMemberToGroup
     {
         $user = $this->findOrCreateUser->handle($email, $name);
 
-        if (! $group->members()->whereKey($user->getKey())->exists()) {
-            $group->addMember($user, GroupRole::Member);
+        if (! $group->hasMember($user)) {
+            $group->addMember($user, GroupRole::Member, joinedVia: GroupJoinMethod::Invite);
         }
 
         $this->sendMagicLink->handle($user);

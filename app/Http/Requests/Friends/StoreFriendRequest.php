@@ -35,7 +35,7 @@ class StoreFriendRequest extends FormRequest
     private function notOwnEmail(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
-            if (strcasecmp($value, $this->user()->email) === 0) {
+            if (strcasecmp($value, (string) $this->user()->email) === 0) {
                 $fail('You cannot add yourself as a friend.');
             }
         };

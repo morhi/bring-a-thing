@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Group;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class GroupPolicy
 {
@@ -24,9 +25,34 @@ class GroupPolicy
     }
 
     /**
-     * Determine whether the user can update the group.
+     * Determine whether the user can open the group settings.
+     *
+     * Owners and admins manage the invite link there; anyone else sees
+     * "Not found" (section 8), so the page's existence stays hidden.
+     */
+    public function manageSettings(User $user, Group $group): Response
+    {
+        if ($group->isAtLeastAdmin($user)) {
+            return Response::allow();
+        }
+
+        return Response::denyAsNotFound();
+    }
+
+    /**
+     * Determine whether the user can rename the group (F-03: owner only).
      */
     public function update(User $user, Group $group): bool
+    {
+        return $group->owner_id === $user->getKey();
+    }
+
+    /**
+     * Determine whether the user can switch the option "Members can set the participation status for others".
+     *
+     * F-03: only the owner switches it; admins cannot.
+     */
+    public function switchOption(User $user, Group $group): bool
     {
         return $group->owner_id === $user->getKey();
     }
@@ -43,6 +69,14 @@ class GroupPolicy
      * Determine whether the user can invite members to the group.
      */
     public function invite(User $user, Group $group): bool
+    {
+        return $group->isAtLeastAdmin($user);
+    }
+
+    /**
+     * Determine whether the user can create, lock, revoke or regenerate the group's invite link (F-04).
+     */
+    public function manageInviteLink(User $user, Group $group): bool
     {
         return $group->isAtLeastAdmin($user);
     }

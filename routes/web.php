@@ -6,6 +6,8 @@ use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\GroupInviteLinkController;
+use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollOptionController;
@@ -50,10 +52,16 @@ Route::get('/shared/{token}', [SharedRosterController::class, 'show'])->name('sh
 Route::post('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::class, 'store'])->name('shared-rosters.items.claim.store');
 Route::post('/shared/{token}/items', [SharedRosterItemController::class, 'store'])->name('shared-rosters.items.store');
 
+// Group invite links: open to guests on purpose, joining is the point (F-04).
+// A revoked or replaced token is "Not found" via the binding.
+Route::get('/join/{group:invite_token}', [GroupJoinController::class, 'show'])->name('groups.join.show');
+Route::post('/join/{group:invite_token}', [GroupJoinController::class, 'store'])->name('groups.join.store');
+
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::patch('/settings/email', [SettingsController::class, 'addEmail'])->name('settings.email');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -67,6 +75,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/groups/{group}', [GroupController::class, 'update'])->name('groups.update');
     Route::delete('/groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
     Route::post('/groups/{group}/invite', [GroupController::class, 'invite'])->name('groups.invite');
+    Route::post('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'store'])->name('groups.invite-link.store');
+    Route::patch('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'update'])->name('groups.invite-link.update');
+    Route::post('/groups/{group}/invite-link/regenerate', [GroupInviteLinkController::class, 'regenerate'])->name('groups.invite-link.regenerate');
+    Route::delete('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'destroy'])->name('groups.invite-link.destroy');
     Route::patch('/groups/{group}/members/{member}', [GroupController::class, 'updateMemberRole'])->name('groups.members.update');
     Route::delete('/groups/{group}/members/{member}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');
 

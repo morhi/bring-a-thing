@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GroupJoinMethod;
 use App\Enums\GroupRole;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property GroupRole $role
  * @property Carbon|null $accepted_at
+ * @property GroupJoinMethod|null $joined_via
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -31,7 +33,16 @@ class GroupMember extends Pivot
         return [
             'role' => GroupRole::class,
             'accepted_at' => 'datetime',
+            'joined_via' => GroupJoinMethod::class,
         ];
+    }
+
+    /**
+     * Whether the member joined through the group's invite link, for the "Joined via link" label.
+     */
+    public function joinedViaLink(): bool
+    {
+        return $this->joined_via === GroupJoinMethod::Link;
     }
 
     /**

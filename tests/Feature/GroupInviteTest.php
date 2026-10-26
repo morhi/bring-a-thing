@@ -23,7 +23,7 @@ it('creates a shadow user, adds them as a member, and sends a magic link when in
     Mail::assertQueued(MagicLinkMail::class, fn ($mail) => $mail->hasTo($invitee->email));
 });
 
-it('reuses an existing user for a shared invite email across different groups', function () {
+it('F-01: reuses an existing user for a shared invite email across different groups', function () {
     Mail::fake();
     $owner = User::factory()->create();
     $groupOne = Group::factory()->create(['owner_id' => $owner->id]);

@@ -1,5 +1,23 @@
 declare namespace App {
 namespace Data {
+export type GroupInviteLinkData = {
+url: string | null,
+locked: boolean,
+};
+export type GroupJoinData = {
+token: string,
+group_name: string,
+locked: boolean,
+member_count: number,
+is_authenticated: boolean,
+needs_email: boolean,
+};
+export type GroupSettingsPermissionsData = {
+can_rename: boolean,
+can_switch_option: boolean,
+can_change_roles: boolean,
+can_delete: boolean,
+};
 export type SharedAuthData = {
 user: App.Data.SharedUserData | null,
 };
@@ -16,7 +34,7 @@ flash: App.Data.SharedFlashData,
 export type SharedUserData = {
 id: number,
 name: string | null,
-email: string,
+email: string | null,
 language: App.Enums.Locale | null,
 email_verified_at: string | null,
 created_at: string | null,
@@ -24,6 +42,7 @@ updated_at: string | null,
 };
 }
 namespace Enums {
+export type GroupJoinMethod = 'invite' | 'link';
 export type GroupRole = 'owner' | 'admin' | 'member';
 export type Locale = 'en' | 'de';
 export type PollGranularity = 'day' | 'hour';

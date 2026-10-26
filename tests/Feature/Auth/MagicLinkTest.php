@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
-it('creates a shadow user and sends a magic link when requesting a link for a new email with a name', function () {
+it('F-01: creates a shadow user and sends a magic link when requesting a link for a new email with a name', function () {
     Mail::fake();
 
     $response = $this->post(route('magic-link.store'), ['name' => 'New Person', 'email' => 'new@example.com']);
@@ -54,7 +54,7 @@ it('rejects a magic link request with an invalid email', function () {
     $response->assertInvalid('email');
 });
 
-it('logs in the user when visiting a valid signed magic link', function () {
+it('F-01: logs in the user when visiting a valid signed magic link', function () {
     $user = User::factory()->create();
 
     $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
@@ -65,7 +65,7 @@ it('logs in the user when visiting a valid signed magic link', function () {
     $this->assertAuthenticatedAs($user);
 });
 
-it('rejects an expired magic link', function () {
+it('F-01: rejects an expired magic link', function () {
     $user = User::factory()->create();
 
     $url = URL::temporarySignedRoute('login.consume', now()->subMinute(), ['user' => $user->id]);
@@ -76,7 +76,7 @@ it('rejects an expired magic link', function () {
     $this->assertGuest();
 });
 
-it('rejects a tampered magic link', function () {
+it('F-01: rejects a tampered magic link', function () {
     $user = User::factory()->create();
     $other = User::factory()->create();
 
@@ -119,7 +119,7 @@ it('reports that a password is needed for an account that has one set', function
     $response->assertOk()->assertJson(['hasPassword' => true]);
 });
 
-it('reports that no password is needed for a shadow account without one', function () {
+it('F-01: reports that no password is needed for a shadow account without one', function () {
     $user = User::factory()->shadow()->create(['email' => 'no-password@example.com']);
 
     $response = $this->getJson(route('magic-link.needs-name', ['email' => $user->email]));

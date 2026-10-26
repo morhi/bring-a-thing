@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Groups\InviteMemberToGroup;
+use App\Data\GroupInviteLinkData;
+use App\Data\GroupSettingsPermissionsData;
 use App\Enums\GroupRole;
 use App\Http\Requests\Groups\InviteGroupMemberRequest;
 use App\Http\Requests\Groups\StoreGroupRequest;
@@ -45,35 +47,43 @@ class GroupController extends Controller
 
         $group->load('members', 'rosters', 'polls');
 
+        $user = $request->user();
+
         return Inertia::render('Groups/Show', [
             'group' => $group,
-            'canManage' => $request->user()->can('update', $group),
-            'canManageMembers' => $request->user()->can('invite', $group),
+            'canManage' => $user->can('manageSettings', $group),
+            'canManageMembers' => $user->can('invite', $group),
+            'inviteLink' => $user->can('manageInviteLink', $group) ? GroupInviteLinkData::fromGroup($group) : null,
             'isOwner' => $group->owner_id === $request->user()->getKey(),
             'friends' => $request->user()->friends,
         ]);
     }
 
     /**
-     * Show the owner-only group settings page.
+     * Show the group settings page to owners and admins.
+     *
+     * Owner-only actions (rename, option, roles, delete) are flagged in
+     * permissions so the page hides them from admins (F-03).
      */
-    public function edit(Group $group): Response
+    public function edit(Request $request, Group $group): Response
     {
-        $this->authorize('update', $group);
+        $this->authorize('manageSettings', $group);
+
+        $group->load('members');
 
         return Inertia::render('Groups/Edit', [
             'group' => $group,
+            'inviteLink' => GroupInviteLinkData::fromGroup($group),
+            'permissions' => GroupSettingsPermissionsData::forUser($group, $request->user()),
         ]);
     }
 
     /**
-     * Update the group's settings.
+     * Update the group's name and the option "Members can set the participation status for others".
      */
     public function update(UpdateGroupRequest $request, Group $group): RedirectResponse
     {
-        $group->update([
-            'name' => $request->string('name')->value(),
-        ]);
+        $group->update($request->safe()->only(['name', 'members_can_set_status']));
 
         return to_route('groups.edit', $group)->with('success', 'Group updated.');
     }

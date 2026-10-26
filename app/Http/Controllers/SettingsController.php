@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\SendMagicLink;
+use App\Http\Requests\AddAccountEmailRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +19,7 @@ class SettingsController extends Controller
     {
         return Inertia::render('Settings', [
             'name' => request()->user()->name,
+            'email' => request()->user()->email,
             'hasPassword' => (bool) request()->user()->password,
         ]);
     }
@@ -31,6 +34,21 @@ class SettingsController extends Controller
         ]);
 
         return back()->with('success', 'Profile updated.');
+    }
+
+    /**
+     * Add an email to a name-only account and send a login link to it.
+     *
+     * The login link keeps access on other devices (F-01).
+     */
+    public function addEmail(AddAccountEmailRequest $request, SendMagicLink $sendMagicLink): RedirectResponse
+    {
+        $user = $request->user();
+        $user->update(['email' => $request->string('email')->value()]);
+
+        $sendMagicLink->handle($user);
+
+        return back()->with('success', 'Email added. A login link has been sent to it.');
     }
 
     /**

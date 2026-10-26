@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string|null $name
- * @property string $email
+ * @property string|null $email
  * @property string|null $language
  * @property Carbon|null $email_verified_at
  * @property string|null $password

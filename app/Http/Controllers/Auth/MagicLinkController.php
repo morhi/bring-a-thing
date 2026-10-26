@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
+use App\Actions\Groups\JoinGroupViaLink;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RequestMagicLinkRequest;
+use App\Models\Group;
 use App\Models\Roster;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -80,14 +82,30 @@ class MagicLinkController extends Controller
      * A `roster` query parameter, set when the link was issued right after
      * onboarding created a first roster, lands the user there instead of
      * the dashboard. A pending claim from a shared list link, started
-     * before login, takes priority over both.
+     * before login, takes priority over both. A `join` invite token, set
+     * when the link was requested through a closed invite link, joins that
+     * group and lands there, unless the invite link was revoked meanwhile.
      */
-    public function show(Request $request, User $user, CompletePendingSharedClaim $completePendingSharedClaim): RedirectResponse
-    {
+    public function show(
+        Request $request,
+        User $user,
+        CompletePendingSharedClaim $completePendingSharedClaim,
+        JoinGroupViaLink $joinGroup,
+    ): RedirectResponse {
         Auth::login($user);
 
         if ($redirect = $completePendingSharedClaim->handle($request, $user)) {
             return $redirect;
+        }
+
+        $group = $request->filled('join')
+            ? Group::query()->where('invite_token', $request->string('join')->value())->first()
+            : null;
+
+        if ($group !== null) {
+            $joinGroup->handle($group, $user);
+
+            return redirect()->route('groups.show', $group);
         }
 
         $roster = Roster::query()->find($request->integer('roster'));
