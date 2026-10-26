@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import { dashboard, login, welcome } from '@/routes';
@@ -42,6 +42,10 @@ const menuItems = computed(() =>
     items.value.filter((item) => item.key !== 'nav.dashboard'),
 );
 const homeHref = computed(() => (props.user ? dashboard().url : welcome().url));
+
+const bell = useTemplateRef<InstanceType<typeof NotificationsBell>>('bell');
+
+defineExpose({ focusBell: () => bell.value?.focus() });
 </script>
 
 <template>
@@ -71,12 +75,19 @@ const homeHref = computed(() => (props.user ? dashboard().url : welcome().url));
                     <LanguageSwitch />
                     <ThemeToggle />
                 </div>
-                <NotificationsBell
+                <!-- Static below 560 px, so the panel anchors to the sticky header and spans the viewport -->
+                <div
                     v-if="isApp && unread !== null"
-                    :unread="unread"
-                    :expanded="notificationsOpen"
-                    @toggle="$emit('toggleNotifications')"
-                />
+                    class="relative max-[560px]:static"
+                >
+                    <NotificationsBell
+                        ref="bell"
+                        :unread="unread"
+                        :expanded="notificationsOpen"
+                        @toggle="$emit('toggleNotifications')"
+                    />
+                    <slot name="notifications" />
+                </div>
                 <AccountMenu
                     v-if="isApp && user"
                     :user="user"

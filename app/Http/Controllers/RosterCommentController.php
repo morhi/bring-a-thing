@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Comments\PostComment;
+use App\Actions\Notifications\SendInAppNotification;
 use App\Events\CommentAdded;
 use App\Events\CommentDeleted;
 use App\Http\Requests\Rosters\StoreRosterCommentRequest;
 use App\Models\Comment;
 use App\Models\Roster;
+use App\Notifications\ListCommented;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -19,11 +21,13 @@ class RosterCommentController extends Controller
     /**
      * Post a comment on the roster's list-level thread.
      */
-    public function store(StoreRosterCommentRequest $request, Roster $roster, PostComment $postComment): RedirectResponse
+    public function store(StoreRosterCommentRequest $request, Roster $roster, PostComment $postComment, SendInAppNotification $sendNotification): RedirectResponse
     {
         $comment = $postComment->handle($roster, $request->user(), $request->validated('body'));
 
         CommentAdded::dispatch($comment);
+
+        $sendNotification->handle(new ListCommented($roster, $request->user()));
 
         return back()->with('success', 'Comment posted.');
     }

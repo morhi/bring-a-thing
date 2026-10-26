@@ -15,8 +15,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Create a group with its owner and one plain member.
  *
@@ -67,7 +65,7 @@ it('F-22: an open poll answered on two of five options appears under "Waiting fo
     $poll = dashboardPoll($group, $owner, 5, $member, 2);
 
     $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
-        ->component('Dashboard', false)
+        ->component('Dashboard')
         ->has('waiting', 1)
         ->where('waiting.0.kind', 'poll')
         ->where('waiting.0.slug', $poll->slug)

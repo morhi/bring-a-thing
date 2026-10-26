@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BellIcon } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 
@@ -8,13 +8,17 @@ const props = withDefaults(
     defineProps<{
         unread?: number;
         expanded?: boolean;
+        // id of the panel the bell opens
+        controls?: string;
     }>(),
-    { unread: 0, expanded: false },
+    { unread: 0, expanded: false, controls: 'notifications-panel' },
 );
 
 defineEmits<{ toggle: [] }>();
 
 const { t } = useI18n();
+
+const button = useTemplateRef<InstanceType<typeof Button>>('button');
 
 const label = computed(() =>
     props.unread > 0
@@ -26,15 +30,23 @@ const label = computed(() =>
 const badge = computed(() =>
     props.unread > 99 ? '99+' : String(props.unread),
 );
+
+function focus(): void {
+    (button.value?.$el as HTMLElement | undefined)?.focus();
+}
+
+defineExpose({ focus });
 </script>
 
 <template>
     <Button
+        ref="button"
         variant="ghost"
         size="icon-lg"
         class="relative rounded-full"
         :aria-label="label"
         :aria-expanded="expanded"
+        :aria-controls="controls"
         data-feature="F-23"
         @click="$emit('toggle')"
     >
