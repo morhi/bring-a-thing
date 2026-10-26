@@ -37,7 +37,7 @@ it('F-01: a name-only joiner who adds an email can log in on another device thro
 
     $this->patch(route('settings.email'), ['email' => 'joiner@example.com'])
         ->assertRedirect()
-        ->assertSessionHas('success', 'A confirmation link has been sent to your email address.');
+        ->assertSessionHas('success', 'If this address can be used, we sent a confirmation link to it.');
     $confirmUrl = null;
     Mail::assertQueued(MagicLinkMail::class, function (MagicLinkMail $mail) use (&$confirmUrl) {
         $confirmUrl = $mail->url;
@@ -190,13 +190,28 @@ it('F-01: logging in through a magic link verifies the email', function () {
     expect($user->fresh()->email_verified_at)->not->toBeNull();
 });
 
-it('F-01: rejects adding an email that another account already uses', function () {
+it('F-04: adding a registered email answers like a new one and sends no mail', function () {
+    Mail::fake();
     User::factory()->create(['email' => 'taken@example.com']);
     $nameOnly = User::factory()->create(['email' => null]);
+    $other = User::factory()->create(['email' => null]);
 
-    $this->actingAs($nameOnly)->patch(route('settings.email'), ['email' => 'taken@example.com'])->assertInvalid('email');
+    $this->actingAs($nameOnly)->from(route('settings.edit'))->patch(route('settings.email'), ['email' => 'Taken@Example.com'])
+        ->assertRedirect(route('settings.edit'))
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', __('ui.settings.email.sent'));
+    Mail::assertNothingQueued();
+    Mail::assertNothingSent();
 
-    expect($nameOnly->fresh()->email)->toBeNull();
+    $this->actingAs($other)->from(route('settings.edit'))->patch(route('settings.email'), ['email' => 'new@example.com'])
+        ->assertRedirect(route('settings.edit'))
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', __('ui.settings.email.sent'));
+    Mail::assertQueued(MagicLinkMail::class, fn (MagicLinkMail $mail) => $mail->hasTo('new@example.com'));
+
+    $nameOnly->refresh();
+    expect($nameOnly->email)->toBeNull();
+    expect($nameOnly->pending_email)->toBe('Taken@Example.com');
 });
 
 it('F-01: offers adding an email only to accounts without one', function () {

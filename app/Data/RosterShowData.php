@@ -62,7 +62,7 @@ class RosterShowData extends Data
         ]);
 
         $permissions = RosterPermissionsData::forUser($roster, $user);
-        $items = $roster->items->map(fn (RosterItem $item) => RosterItemData::forUser($item, $user, $permissions->can_claim));
+        $items = $roster->items->map(fn (RosterItem $item) => RosterItemData::forUser($item, $user, $permissions->can_claim, $permissions->can_manage_claims));
 
         return new self(
             roster: RosterData::forUser($roster, $user),

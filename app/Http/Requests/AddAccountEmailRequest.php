@@ -20,12 +20,16 @@ class AddAccountEmailRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
+     * No uniqueness rule: telling taken addresses apart would let a
+     * name-only account probe which emails are registered. The controller
+     * answers the same either way and confirmation re-checks uniqueness.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255'],
         ];
     }
 }

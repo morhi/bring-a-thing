@@ -52,7 +52,7 @@ class RosterData extends Data
             owner_name: $roster->owner?->name,
             members_can_add_items: $roster->members_can_add_items,
             attendance_poll_option_id: $roster->attendance_poll_option_id,
-            attendance_day: $roster->attendancePollOption ? AttendanceDayData::fromOption($roster->attendancePollOption) : null,
+            attendance_day: $roster->attendancePollOption ? AttendanceDayData::fromOption($roster->attendancePollOption, $user, $roster->isManagedBy($user)) : null,
             share_url: $roster->share_token !== null && $roster->isManagedBy($user)
                 ? route('shared-rosters.show', $roster->share_token)
                 : null,

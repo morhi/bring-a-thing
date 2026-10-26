@@ -47,9 +47,12 @@ class RosterItemData extends Data
      * offers no claim. attendance_warning asks for "Claim anyway" when the
      * user answered no or nothing for the item's effective attendance day.
      */
-    public static function forUser(RosterItem $item, User $user, bool $userMayClaim): self
+    public static function forUser(RosterItem $item, User $user, bool $userMayClaim, bool $userManagesClaims): self
     {
-        $data = self::build($item, true);
+        $data = self::build($item, true, $user);
+        $attendanceOption = $item->effective_attendance_poll_option;
+
+        $data->attendance_day = $attendanceOption ? AttendanceDayData::fromOption($attendanceOption, $user, $userManagesClaims) : null;
         $ownClaim = $item->claims->firstWhere('user_id', $user->getKey());
         $openToUser = $ownClaim !== null || ! $data->is_fully_claimed;
 
@@ -63,13 +66,15 @@ class RosterItemData extends Data
     /**
      * Build an item of the shared list for a share link visitor (F-19).
      *
-     * Leaves out user IDs, comments and attendance details; claiming opens the login on the same page.
+     * Leaves out user IDs, comments and attendance details; claiming opens
+     * the login on the same page. A logged-in visitor's own claim stays
+     * changeable even when the item is fully claimed.
      */
-    public static function forShareLink(RosterItem $item): self
+    public static function forShareLink(RosterItem $item, ?User $viewer = null): self
     {
-        $data = self::build($item, false);
-        $data->attendance_day = null;
-        $data->can_claim = ! $data->is_fully_claimed;
+        $data = self::build($item, false, $viewer);
+        $ownClaim = $viewer ? $item->claims->firstWhere('user_id', $viewer->getKey()) : null;
+        $data->can_claim = $ownClaim !== null || ! $data->is_fully_claimed;
 
         return $data;
     }
@@ -77,13 +82,12 @@ class RosterItemData extends Data
     /**
      * Build the parts shared by the list page and the shared list.
      */
-    private static function build(RosterItem $item, bool $withUserIds): self
+    private static function build(RosterItem $item, bool $withUserIds, ?User $viewer = null): self
     {
         $quantity = $item->quantity === null ? null : (float) $item->quantity;
         $claimed = (float) $item->claims->sum('quantity');
         $remaining = $quantity === null ? null : max(0.0, round($quantity - $claimed, 2));
         $effectiveDate = $item->date ?? $item->roster->date;
-        $attendanceOption = $item->effective_attendance_poll_option;
 
         return new self(
             id: $item->id,
@@ -99,11 +103,11 @@ class RosterItemData extends Data
             claimed_quantity: $claimed,
             remaining_quantity: $remaining,
             is_fully_claimed: $quantity === null ? $item->claims->isNotEmpty() : $remaining <= 0,
-            claims: $item->claims->map(fn (RosterItemClaim $claim) => RosterClaimData::fromClaim($claim, $withUserIds))->all(),
+            claims: $item->claims->map(fn (RosterItemClaim $claim) => RosterClaimData::fromClaim($claim, $withUserIds, $viewer))->all(),
             custom_field_values: $item->customFieldValues
                 ->map(fn (RosterItemCustomFieldValue $value) => new CustomFieldValueData($value->custom_field_id, $value->value))
                 ->all(),
-            attendance_day: $attendanceOption ? AttendanceDayData::fromOption($attendanceOption) : null,
+            attendance_day: null,
             attendance_warning: false,
             can_claim: false,
             comments: [],

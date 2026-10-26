@@ -32,10 +32,17 @@ class AttendanceDayData extends Data
      * else answered no or nothing and gets the "Claim anyway" warning,
      * also when someone claims for them. unavailable_user_ids holds the
      * explicit no answers, so the warning can name which of the two it is.
+     *
+     * Other people's answers only reach viewers who claim for others on the
+     * list and may see the poll themselves; everyone else gets just their own
+     * answer, which keeps the field names stable for the claim warning.
      */
-    public static function fromOption(PollOption $option): self
+    public static function fromOption(PollOption $option, User $viewer, bool $viewerManagesClaims): self
     {
         $option->loadMissing('poll', 'responses');
+        $responses = $viewerManagesClaims && $option->poll->isOpenTo($viewer)
+            ? $option->responses
+            : $option->responses->where('user_id', $viewer->getKey());
 
         return new self(
             option_id: $option->id,
@@ -44,12 +51,12 @@ class AttendanceDayData extends Data
             date: $option->date->format('Y-m-d'),
             starts_at: EventSummaryData::time($option->starts_at),
             label: $option->label,
-            available_user_ids: $option->responses
+            available_user_ids: $responses
                 ->filter(fn (PollResponse $response) => $response->status !== PollResponseStatus::No)
                 ->pluck('user_id')
                 ->values()
                 ->all(),
-            unavailable_user_ids: $option->responses
+            unavailable_user_ids: $responses
                 ->filter(fn (PollResponse $response) => $response->status === PollResponseStatus::No)
                 ->pluck('user_id')
                 ->values()

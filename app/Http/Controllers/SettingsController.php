@@ -42,14 +42,19 @@ class SettingsController extends Controller
      *
      * The address stays pending until confirmed, so nobody can attach an
      * email they do not control and take over its later logins (F-01).
-     * A new request replaces the previous pending address.
+     * A new request replaces the previous pending address. A registered
+     * address gets the same answer and pending state but no mail, so the
+     * response does not reveal which emails exist.
      */
     public function addEmail(AddAccountEmailRequest $request, SendEmailConfirmationLink $sendConfirmationLink): RedirectResponse
     {
         $user = $request->user();
-        $user->forceFill(['pending_email' => $request->string('email')->value()])->save();
+        $email = $request->string('email')->value();
+        $user->forceFill(['pending_email' => $email])->save();
 
-        $sendConfirmationLink->handle($user);
+        if (! User::query()->whereRaw('lower(email) = ?', [mb_strtolower($email)])->exists()) {
+            $sendConfirmationLink->handle($user);
+        }
 
         return back()->with('success', __('ui.settings.email.sent'));
     }
