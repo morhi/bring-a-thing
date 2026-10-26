@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.8
+- **Version:** 1.9
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -123,15 +123,18 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Members create a poll in a group. The respondents are all group members, except for a follow-up poll (F-12).
-- The poll works by day or with time slots. By day, each option consists of a date. With time slots, each option consists of date, start, end and an optional label (for example "Lunch"). Several slots on the same day are possible.
+- The poll works by day or with time slots. Each option consists of a date. With time slots it also has start and end. Every option can carry an optional label (for example "Lunch" or "Room free until 22:00"), and the grid header shows it on one line. Several slots on the same day are possible.
+- With two or more slots, "Use this time for all" applies one slot's start and end to all slots.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
-- The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie, all of these options carry the label.
+- The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
 
 **Acceptance criteria:**
 - A poll with three time slots on the same date shows three separate columns.
 - When a person changes their answer from no to yes, the grid shows one yes answer and no additional row.
-- Two options with three yes answers each both carry "Best option".
+- Two options with three yes and one no answer each both carry "Best option". Of two options with three yes answers, the one with fewer no answers alone carries it.
+- "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
+- An option with a label shows it in the grid header.
 
 #### F-07 Attendance poll (Secondary)
 
@@ -323,12 +326,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Clarify details without switching to another channel.
 
 **Rules:**
-- Lists and items each have a comment thread.
+- Lists, items and events each have a comment thread. The event's thread is collapsed by default.
 - Cmd+Enter or Ctrl+Enter sends a comment.
 - Author, list owner, group owner and admins delete comments.
 
 **Acceptance criteria:**
 - A comment on an item appears only on the item, not in the list's thread.
+- A comment on an event appears only on that event.
 - Cmd+Enter in the comment field sends the comment.
 
 #### F-21 Live updates (Secondary)
@@ -479,6 +483,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - Emails other than the login email, including reminders
 - Status fields for lists and items; past is derived from the date
 - More than one level of child events
+- **Later:** QR codes for share and invite links, automatic deletion of old polls and lists, list expiry after the event, Excel export of poll results, event participation and list items.
 
 ## 11. Open questions
 
