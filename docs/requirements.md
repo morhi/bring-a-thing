@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.3
+- **Version:** 1.4
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -223,7 +223,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-14 Items (Core)
 
-**User goal:** Describe things to bring and tasks precisely enough that it is clear what is needed.
+**User goal:** Describe what needs to be brought or done precisely enough that it is clear what is needed.
 
 **Rules:**
 - An item has a name, an optional quantity and unit (for example "2 kg potatoes"), notes, a date and values for custom fields (F-16).
@@ -289,7 +289,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-19 Share link (Secondary)
 
-**User goal:** Let people outside the group bring things without adding them to the group.
+**User goal:** Let people outside the group take on items without adding them to the group.
 
 **Rules:**
 - The list owner enables, regenerates or disables a share link. Regenerating invalidates the old link.
@@ -396,7 +396,7 @@ Creating a group and editing items happen in dialogs. Creating a poll, an event 
 3. **Distribute tasks and things to bring:** open the event, "New list", enter items such as "PA system", "Extension reel" or "Drinks, 2 crates". Participants claim; the organizer assigns the remaining items.
 4. **Single date:** open the group, "New event" with date and time. Members accept or decline on the dashboard or in the event.
 5. **Decline after accepting:** open the event, "Decline", confirmation with one's own claims, confirm. The items are free again.
-6. **Bringing from outside:** open the list, enable the share link and share it. A guest claims an item and logs in on the same page.
+6. **Taking part from outside:** open the list, enable the share link and share it. A guest claims an item and logs in on the same page.
 
 ## 7. Data
 
