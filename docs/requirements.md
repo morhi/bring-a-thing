@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.6
+- **Version:** 1.7
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -71,6 +71,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - A group has a name and members with the roles owner, admin or member (section 4).
 - The owner appoints members as admins and revokes the role again. The owner cannot be removed and can only delete the group.
+- Only the owner renames the group.
+- The group has the option "Members can set the participation status for others", off by default. Owners and admins can always do it.
 - Deleting a group deletes all its polls, events and lists after a confirmation.
 
 **Acceptance criteria:**
@@ -86,6 +88,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Until their first login, the member carries the label "Invitation pending".
 - The invite field suggests matching friends.
 - Owners and admins remove members. Admins cannot remove the owner.
+- Removing a member ends the membership only. Participations, claims and responses stay.
 - Owners and admins create one invite link per group and share it through any messenger. The "Copy invite link" button creates it on first use.
 - The link has a lock setting. Open (default): a person enters a name and joins as a member at once, labeled "Joined via link". Closed: the person must enter an email and log in through a login link before joining.
 - A person who joins through the link has the same access as any other member.
@@ -194,7 +197,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Every group member accepts or declines while the event is not past, also without a previous participation status.
-- Organizer, owner and admins remove participants and set the status for others.
+- Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03).
 - A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims.
 - Only participants see the event's lists (F-13) and follow-up polls (F-12). Members without participation or with a decline see only the event's key details.
 
@@ -390,10 +393,10 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
 - **Group settings:** name, roles, delete (F-03).
 - **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
-- **Poll settings:** title, options, close, delete (F-08).
+- **Poll edit:** the "New poll" page in edit mode with the same components: title, options, close, delete (F-08).
 - **Event:** key details, participation with one's own accept or decline, lists, follow-up polls, child events, edit (F-10 to F-12).
 - **List:** items with claims, comments, attendance day (F-13 to F-15, F-18, F-20).
-- **List settings:** title, description, date, add setting, custom fields, attendance link, share link, duplicate, delete (F-14, F-16 to F-19).
+- **List edit:** the "New list" page in edit mode with the same components: title, description, date, add setting, custom fields, attendance link, share link, duplicate, delete (F-14, F-16 to F-19).
 - **Shared list:** view for guests with login on the same page (F-19).
 - **New poll:** title, type, granularity, option calendar and option rows, audience note; from a group or, as a follow-up, from an event (F-06, F-07, F-12).
 - **New event:** title, date, time, location, description, audience note (F-10).
@@ -443,6 +446,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Event without acceptances:** lists and follow-up polls can be created; the page shows a note that nobody has accepted yet.
 - **Event past:** accepting and declining are disabled, lists stay readable.
 - **Child event:** shows no "New follow-up poll" action; lists can still be created.
+- **Group settings without admin role:** a member sees "Not found".
 - **Event moved:** acceptances switch to "pending"; claims stay.
 - **Decline without claims:** no confirmation needed.
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
@@ -458,7 +462,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Devices:** mobile first from 375 px width for all functions, desktop up to 1440 px without functional differences. No horizontal scrolling except in the poll's response grid.
 - **Accessibility:** WCAG 2.2 level AA, including the response grid.
 - **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice on the start page.
-- **Volume:** groups up to 50 members, polls up to 60 options, lists up to 200 items. Pages load in under 1 second, live updates appear in under 2 seconds (see open question 1).
+- **Volume:** groups up to 50 members, polls up to 60 options, lists up to 200 items. Expected usage: about 5 groups per account and about 5 polls, events and lists each per group per year. Pages load in under 1 second, live updates appear in under 2 seconds.
 
 ## 10. Out of scope
 
@@ -475,4 +479,4 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 
 ## 11. Open questions
 
-1. **Volume targets:** Are 50 members, 60 options and 200 items realistic? Owner: Maurice.
+No open questions.
