@@ -8,6 +8,8 @@ use App\Models\RosterItem;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 
+beforeEach(fn () => $this->withoutVite());
+
 it('shows a shared list to a guest without requiring authentication', function () {
     $owner = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id, 'title' => 'Camping Trip']);

@@ -20,12 +20,12 @@ class UnclaimRosterItemRequest extends FormRequest
         $targetId = $this->integer('user_id') ?: $this->user()->getKey();
 
         if ($targetId === $this->user()->getKey()) {
-            return $this->user()->can('claim', $item);
+            return $this->user()->can('unclaim', $item);
         }
 
         $target = User::find($targetId);
 
-        return $target !== null && $this->user()->can('claimFor', [$item, $target]);
+        return $target !== null && $this->user()->can('unclaimFor', [$item, $target]);
     }
 
     /**

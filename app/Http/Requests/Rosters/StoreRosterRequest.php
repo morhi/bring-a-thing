@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Rosters;
 
+use App\Models\Event;
 use App\Models\Group;
 use App\Models\Roster;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -14,6 +15,12 @@ class StoreRosterRequest extends FormRequest
      */
     public function authorize(): bool
     {
+        $event = $this->event();
+
+        if ($event) {
+            return $this->user()->can('createForEvent', [Roster::class, $event]);
+        }
+
         $group = $this->group();
 
         if ($group) {
@@ -34,7 +41,9 @@ class StoreRosterRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'date' => ['nullable', 'date'],
-            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+            'members_can_add_items' => ['boolean'],
+            'group_id' => ['nullable', 'integer', 'exists:groups,id', 'prohibits:event_id'],
+            'event_id' => ['nullable', 'integer', 'exists:events,id'],
         ];
     }
 
@@ -46,5 +55,15 @@ class StoreRosterRequest extends FormRequest
         $groupId = $this->integer('group_id');
 
         return $groupId ? Group::query()->find($groupId) : null;
+    }
+
+    /**
+     * The event the roster should be attached to, if any (F-13).
+     */
+    public function event(): ?Event
+    {
+        $eventId = $this->integer('event_id');
+
+        return $eventId ? Event::query()->find($eventId) : null;
     }
 }

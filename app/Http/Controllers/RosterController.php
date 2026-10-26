@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PollType;
+use App\Data\RosterFormData;
+use App\Data\RosterShowData;
 use App\Http\Requests\Rosters\StoreRosterRequest;
 use App\Http\Requests\Rosters\UpdateRosterRequest;
+use App\Models\Event;
+use App\Models\Group;
 use App\Models\Roster;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -17,73 +20,61 @@ class RosterController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Create a new roster, standalone or attached to a group.
+     * Show the "New list" page, placed in the group or event given in the query (F-13).
+     */
+    public function create(Request $request): Response
+    {
+        $group = $request->filled('group') ? Group::query()->where('slug', $request->string('group'))->firstOrFail() : null;
+        $event = $request->filled('event') ? Event::query()->where('slug', $request->string('event'))->firstOrFail() : null;
+
+        if ($event !== null) {
+            $this->authorize('createForEvent', [Roster::class, $event]);
+        }
+
+        if ($group !== null) {
+            $this->authorize('createForGroup', [Roster::class, $group]);
+        }
+
+        return Inertia::render('Rosters/Create', [
+            'form' => RosterFormData::forCreate($request->user(), $group, $event),
+        ]);
+    }
+
+    /**
+     * Create a new roster: standalone, attached to a group or attached to an event (F-13).
      */
     public function store(StoreRosterRequest $request): RedirectResponse
     {
-        $roster = Roster::query()->make($request->safe()->only(['title', 'description', 'date']));
+        $roster = Roster::query()->make($request->safe()->only(['title', 'description', 'date', 'members_can_add_items']));
         $roster->owner_id = $request->user()->getKey();
-        $roster->group_id = $request->group()?->getKey();
+        $roster->group_id = $request->event() ? null : $request->group()?->getKey();
+        $roster->event_id = $request->event()?->getKey();
         $roster->save();
 
         return to_route('rosters.show', $roster)->with('success', 'Roster created.');
     }
 
     /**
-     * Show the roster: metadata and items (items arrive in Phase 4).
+     * Show the list with its items, claims and comments (F-13 to F-20).
      */
     public function show(Request $request, Roster $roster): Response
     {
         $this->authorize('view', $roster);
 
-        $roster->load([
-            'owner',
-            'customFields',
-            'attendancePollOption.responses.user',
-            'attendancePollOption.poll',
-            'comments.user',
-            'group' => function ($query) {
-                $query->with('members')->with(['polls' => function ($query) {
-                    $query->where('type', PollType::Attendance)->with('options');
-                }]);
-            },
-        ]);
-        $roster->load(['items' => function ($query) {
-            $query->with([
-                'claims.user',
-                'customFieldValues.customField',
-                'attendancePollOption.responses.user',
-                'attendancePollOption.poll',
-                'comments.user',
-            ])->orderBy('date');
-        }]);
-
         return Inertia::render('Rosters/Show', [
-            'roster' => $roster,
-            'canManage' => $request->user()->can('update', $roster),
-            'canAddItems' => $roster->canBeAddedToBy($request->user()),
+            'page' => RosterShowData::forUser($roster, $request->user()),
         ]);
     }
 
     /**
-     * Show the owner-only roster settings page.
+     * Show the list settings: the "New list" page in edit mode.
      */
-    public function edit(Roster $roster): Response
+    public function edit(Request $request, Roster $roster): Response
     {
         $this->authorize('update', $roster);
 
-        $roster->load([
-            'customFields',
-            'attendancePollOption',
-            'group' => function ($query) {
-                $query->with(['polls' => function ($query) {
-                    $query->where('type', PollType::Attendance)->with('options');
-                }]);
-            },
-        ]);
-
         return Inertia::render('Rosters/Edit', [
-            'roster' => $roster,
+            'form' => RosterFormData::forEdit($roster, $request->user()),
         ]);
     }
 

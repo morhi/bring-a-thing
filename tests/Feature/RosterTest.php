@@ -57,14 +57,14 @@ it('allows the owner to view a standalone roster', function () {
     $response->assertOk();
 });
 
-it('forbids a non-owner from viewing a standalone roster', function () {
+it('section 8: shows not found to a non-owner viewing a standalone roster', function () {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id]);
 
     $response = $this->actingAs($outsider)->get(route('rosters.show', $roster));
 
-    $response->assertForbidden();
+    $response->assertNotFound();
 });
 
 it('allows a group member to view a group-attached roster', function () {
@@ -80,7 +80,7 @@ it('allows a group member to view a group-attached roster', function () {
     $response->assertOk();
 });
 
-it('forbids a non-member from viewing a group-attached roster', function () {
+it('section 8: shows not found to a non-member viewing a group-attached roster', function () {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
     $group = Group::factory()->create(['owner_id' => $owner->id]);
@@ -89,7 +89,7 @@ it('forbids a non-member from viewing a group-attached roster', function () {
 
     $response = $this->actingAs($outsider)->get(route('rosters.show', $roster));
 
-    $response->assertForbidden();
+    $response->assertNotFound();
 });
 
 it('allows the owner to update the roster', function () {
@@ -200,8 +200,8 @@ it('exposes the group and custom fields on the roster settings page', function (
     $response = $this->actingAs($owner)->get(route('rosters.edit', $roster));
 
     $response->assertInertia(fn ($page) => $page
-        ->where('roster.group.id', $group->id)
-        ->has('roster.custom_fields', 1)
+        ->where('form.group.id', $group->id)
+        ->has('form.custom_fields', 1)
     );
 });
 

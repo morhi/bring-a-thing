@@ -2,71 +2,44 @@
 
 namespace App\Http\Controllers;
 
+use App\Data\SharedRosterData;
 use App\Models\Roster;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class SharedRosterController extends Controller
 {
     /**
-     * Show a shared, read-only view of the roster to anyone with the link.
+     * Show a shared, read-only view of the roster to anyone with the link (F-19).
      *
-     * A visitor who is already authenticated and can view the roster the
-     * normal way (owner or group member) is sent to the regular roster page
-     * instead, since that gives them the full, live-updating experience.
-     * Claimer identities are reduced to a display name only, since this page
-     * carries no authentication boundary at all.
+     * Whoever may see the list anyway lands on the normal list view. A
+     * member of an event's group who is no participant gets "Not found",
+     * so the link is no way around the participation rules (F-13). An
+     * unknown, regenerated or disabled token shows the note that the link
+     * is no longer valid, still with a 404 status.
      */
-    public function show(Request $request, string $token): Response|RedirectResponse
+    public function show(Request $request, string $token): Response|RedirectResponse|SymfonyResponse
     {
-        $roster = Roster::query()->where('share_token', $token)->firstOrFail();
+        $roster = Roster::query()->where('share_token', $token)->first();
+
+        if ($roster === null) {
+            return Inertia::render('Shared/RosterInvalid')->toResponse($request)->setStatusCode(404);
+        }
 
         $user = $request->user();
+
         if ($user && $user->can('view', $roster)) {
             return redirect()->route('rosters.show', $roster);
         }
 
-        $roster->load([
-            'customFields',
-            'items' => fn ($query) => $query
-                ->with(['claims.user:id,name', 'customFieldValues.customField'])
-                ->orderBy('date'),
-        ]);
+        abort_if($user && $roster->excludesShareLinkVisitor($user), 404);
 
         return Inertia::render('Shared/RosterShow', [
             'token' => $token,
-            'roster' => [
-                'title' => $roster->title,
-                'description' => $roster->description,
-                'date' => $roster->date?->toDateString(),
-                'can_add_items' => $roster->canBeAddedToByShareLinkVisitor(),
-                'custom_fields' => $roster->customFields->map(fn ($field) => [
-                    'id' => $field->id,
-                    'name' => $field->name,
-                ]),
-                'items' => $roster->items->map(fn ($item) => [
-                    'id' => $item->id,
-                    'slug' => $item->slug,
-                    'name' => $item->name,
-                    'quantity' => $item->quantity,
-                    'unit' => $item->unit,
-                    'notes' => $item->notes,
-                    'date' => $item->date?->toDateString(),
-                    'is_past' => $item->is_past,
-                    'custom_field_values' => $item->customFieldValues->map(fn ($value) => [
-                        'id' => $value->id,
-                        'value' => $value->value,
-                        'custom_field_id' => $value->custom_field_id,
-                    ]),
-                    'claims' => $item->claims->map(fn ($claim) => [
-                        'id' => $claim->id,
-                        'quantity' => $claim->quantity,
-                        'user_name' => $claim->user->name ?? 'Someone',
-                    ]),
-                ]),
-            ],
+            'roster' => SharedRosterData::fromRoster($roster),
         ]);
     }
 }

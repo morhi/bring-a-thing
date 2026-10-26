@@ -18,6 +18,7 @@ class SharedRosterClaimController extends Controller
      * intended claim is stashed in the session and resumed automatically
      * after they log in or sign up (see CompletePendingSharedClaim), so
      * claiming from a shared link never requires joining the list's group.
+     * Members of an event's group stay bound to the participation rules (F-13, F-15).
      */
     public function store(ClaimSharedRosterItemRequest $request, string $token, RosterItem $item, ClaimRosterItem $claimItem): RedirectResponse
     {
@@ -27,6 +28,12 @@ class SharedRosterClaimController extends Controller
         $quantity = $request->input('quantity') !== null ? (float) $request->input('quantity') : null;
 
         if ($user = $request->user()) {
+            abort_if($roster->excludesShareLinkVisitor($user), 404);
+
+            if (! $roster->acceptsShareLinkClaimFrom($user)) {
+                return back()->with('error', 'Accept the event first to claim items.');
+            }
+
             $claimItem->handle($item, $user, $quantity);
             RosterItemSaved::dispatch($item);
 

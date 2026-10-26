@@ -50,6 +50,11 @@ class CompletePendingSharedClaim
             return redirect()->route('shared-rosters.show', $roster->share_token);
         }
 
+        if (! $roster->acceptsShareLinkClaimFrom($user) || $roster->excludesShareLinkVisitor($user)) {
+            return redirect()->route('shared-rosters.show', $roster->share_token)
+                ->with('error', 'Accept the event first to claim items.');
+        }
+
         try {
             $this->claimItem->handle($item, $user, $intent['quantity'] ?? null);
         } catch (ValidationException $exception) {

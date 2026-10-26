@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class RosterItemPolicy
 {
@@ -33,17 +34,39 @@ class RosterItemPolicy
     }
 
     /**
-     * Determine whether the user can claim (or update their own claim on) the item.
+     * Determine whether the user can claim (or update their own claim on) the item (F-15).
+     *
+     * On event lists only participants with "accepted" claim; a pending
+     * participant gets the note to accept first.
      */
-    public function claim(User $user, RosterItem $item): bool
+    public function claim(User $user, RosterItem $item): Response
     {
-        return $user->can('view', $item->roster);
+        if (! $item->roster->isVisibleTo($user)) {
+            return Response::denyAsNotFound();
+        }
+
+        if (! $item->roster->allowsClaimsBy($user)) {
+            return Response::deny('Accept the event first to claim items.');
+        }
+
+        return Response::allow();
+    }
+
+    /**
+     * Determine whether the user can remove their own claim on the item (F-15).
+     *
+     * Needs no acceptance: a moved event resets acceptances to "pending"
+     * while claims stay, and the person must still be able to let go.
+     */
+    public function unclaim(User $user, RosterItem $item): bool
+    {
+        return $item->roster->isVisibleTo($user);
     }
 
     /**
      * Determine whether the user may claim or unclaim the item on behalf of other members.
      *
-     * Granted to the roster owner and, for group-attached rosters, group admins.
+     * Granted to list owner, group owner and admins, and for event lists the event's organizer.
      */
     public function manageClaims(User $user, RosterItem $item): bool
     {
@@ -51,10 +74,24 @@ class RosterItemPolicy
     }
 
     /**
-     * Determine whether the user may claim or unclaim the item specifically for the given target member.
+     * Determine whether the user may claim the item specifically for the given target person (F-15).
+     *
+     * The target must see the list and, on event lists, have accepted.
      */
     public function claimFor(User $user, RosterItem $item, User $target): bool
     {
-        return $this->manageClaims($user, $item) && $target->can('view', $item->roster);
+        if (! $this->manageClaims($user, $item)) {
+            return false;
+        }
+
+        return $item->roster->isVisibleTo($target) && $item->roster->allowsClaimsBy($target);
+    }
+
+    /**
+     * Determine whether the user may remove the given target person's claim on the item (F-15).
+     */
+    public function unclaimFor(User $user, RosterItem $item, User $target): bool
+    {
+        return $this->manageClaims($user, $item);
     }
 }
