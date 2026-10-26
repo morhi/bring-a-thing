@@ -176,7 +176,6 @@ export const JoinView = {
 
       <div class="join-body" v-else>
         <div class="join-intro" data-feature="F-04">
-          <span class="badge badge--primary join-lock"><Icon :name="open ? 'unlock' : 'lock'" class="icon-sm" /> {{ open ? t('groupSettings.link.openTitle') : t('groupSettings.link.closedTitle') }}</span>
           <h1>{{ t('join.title', { group: group.name }) }}</h1>
           <p class="lede">{{ t(open ? 'join.lede.open' : 'join.lede.closed', { group: group.name }) }}</p>
           <div class="join-members">

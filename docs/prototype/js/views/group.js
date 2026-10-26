@@ -4,7 +4,54 @@ import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser
 import { ui, h, data, currentUser, go, openDialog, goCreate, viewState, toast, nextId, createInviteLink, inviteUrl, copyText } from '../core.js';
 import { t, formatDate, relativeDay, isPast } from '../i18n.js';
 
+// One poll row; closed and fixed polls render the same row inside the collapsed section.
+const PollRow = {
+  props: { poll: { type: Object, required: true } },
+  setup() {
+    function pollMeta(poll) {
+      const total = h.audience(poll).length;
+      const answered = Array.from(h.respondents(poll.id)).filter((id) => h.audience(poll).includes(id)).length;
+
+      return { total, answered, options: h.options(poll.id).length };
+    }
+
+    function pollStatus(poll) {
+      if (!poll.closedAt) {
+        return { label: t('group.polls.open'), cls: 'badge--primary' };
+      }
+
+      if (h.options(poll.id).some((option) => option.fixed)) {
+        return { label: t('group.polls.fixed'), cls: 'badge--success' };
+      }
+
+      return { label: t('group.polls.closed'), cls: '' };
+    }
+
+    return { pollMeta, pollStatus, go, h, t };
+  },
+  template: `
+    <button type="button" class="card card--interactive poll-row" @click="go('poll', { currentPollId: poll.id })" :data-feature="poll.eventId ? 'F-12' : (poll.type === 'attendance' ? 'F-07' : 'F-06')">
+      <span :class="['poll-row__icon', !poll.closedAt ? 'poll-row__icon--open' : '']"><Icon :name="poll.type === 'attendance' ? 'grid' : 'poll'" /></span>
+      <span class="poll-row__main">
+        <span class="poll-row__title">{{ poll.title }}</span>
+        <span class="poll-row__meta">
+          <span>{{ poll.type === 'attendance' ? t('group.polls.attendance') : t('group.polls.dateFinder') }}</span>
+          <span>{{ t('group.polls.options', { n: pollMeta(poll).options }) }}</span>
+          <span v-if="poll.eventId" class="badge badge--primary badge--regular">{{ t('group.polls.followUp', { event: h.event(poll.eventId).title }) }}</span>
+        </span>
+      </span>
+      <span class="poll-row__aside">
+        <span class="response-count" v-if="!poll.closedAt">
+          <ProgressBar :done="pollMeta(poll).answered" :total="pollMeta(poll).total" />
+          {{ pollMeta(poll).answered }}/{{ pollMeta(poll).total }}
+        </span>
+        <span :class="['badge', pollStatus(poll).cls]">{{ pollStatus(poll).label }}</span>
+      </span>
+    </button>`
+};
+
 export const GroupView = {
+  components: { PollRow },
   setup() {
     const state = viewState('group');
     const user = currentUser;
@@ -31,6 +78,10 @@ export const GroupView = {
         .filter((poll) => h.audience(poll).includes(user.value.id) || !poll.eventId)
         .sort((a, b) => (a.closedAt ? 1 : 0) - (b.closedAt ? 1 : 0) || b.createdAt.localeCompare(a.createdAt));
     });
+
+    const openPolls = computed(() => polls.value.filter((poll) => !poll.closedAt));
+    const closedPolls = computed(() => polls.value.filter((poll) => poll.closedAt));
+    const closedOpen = ref(false);
 
     const events = computed(() => (state.value === 'default' ? h.eventsOf(group.value.id) : []));
     const upcomingEvents = computed(() => events.value.filter((event) => !isPast(event.start)).sort((a, b) => a.start.localeCompare(b.start)));
@@ -103,7 +154,6 @@ export const GroupView = {
     }
 
     // invite-link: the button creates the link on first use, then copies it (F-04)
-    const linkOpen = computed(() => !group.value.inviteLink || group.value.inviteLink.open);
     const canShare = typeof navigator.share === 'function';
 
     async function copyLink() {
@@ -125,25 +175,6 @@ export const GroupView = {
       navigator.share({ title: group.value.name, url: inviteUrl(group.value) }).catch(() => {});
     }
 
-    function pollMeta(poll) {
-      const total = h.audience(poll).length;
-      const answered = Array.from(h.respondents(poll.id)).filter((id) => h.audience(poll).includes(id)).length;
-
-      return { total, answered, options: h.options(poll.id).length };
-    }
-
-    function pollStatus(poll) {
-      if (!poll.closedAt) {
-        return { label: t('group.polls.open'), cls: 'badge--primary' };
-      }
-
-      if (h.options(poll.id).some((option) => option.fixed)) {
-        return { label: t('group.polls.fixed'), cls: 'badge--success' };
-      }
-
-      return { label: t('group.polls.closed'), cls: '' };
-    }
-
     function myStatus(eventId) {
       const status = h.participation(eventId, user.value.id);
 
@@ -159,10 +190,10 @@ export const GroupView = {
     }
 
     return {
-      ui, state, user, group, canManage, isOwner, members, polls, upcomingEvents, pastEvents, lists, stats,
+      ui, state, user, group, canManage, isOwner, members, polls, openPolls, closedPolls, closedOpen, upcomingEvents, pastEvents, lists, stats,
       inviteEmail, inviteError, suggestions, suggestionsOpen, pickSuggestion, invite,
-      linkOpen, canShare, copyLink, shareLink,
-      pollMeta, pollStatus, myStatus, go, openDialog, goCreate, h, t, formatDate, relativeDay
+      canShare, copyLink, shareLink,
+      myStatus, go, openDialog, goCreate, h, t, formatDate, relativeDay
     };
   },
   template: `
@@ -194,24 +225,15 @@ export const GroupView = {
               <h2 id="polls-title">{{ t('group.polls') }}<span class="section-head__count" v-if="polls.length">{{ polls.length }}</span></h2>
             </div>
             <div class="stack" v-if="polls.length">
-              <button type="button" class="card card--interactive poll-row" v-for="poll in polls" :key="poll.id" @click="go('poll', { currentPollId: poll.id })" :data-feature="poll.eventId ? 'F-12' : (poll.type === 'attendance' ? 'F-07' : 'F-06')">
-                <span :class="['poll-row__icon', !poll.closedAt ? 'poll-row__icon--open' : '']"><Icon :name="poll.type === 'attendance' ? 'grid' : 'poll'" /></span>
-                <span class="poll-row__main">
-                  <span class="poll-row__title">{{ poll.title }}</span>
-                  <span class="poll-row__meta">
-                    <span>{{ poll.type === 'attendance' ? t('group.polls.attendance') : t('group.polls.dateFinder') }}</span>
-                    <span>{{ t('group.polls.options', { n: pollMeta(poll).options }) }}</span>
-                    <span v-if="poll.eventId" class="badge badge--primary badge--regular">{{ t('group.polls.followUp', { event: h.event(poll.eventId).title }) }}</span>
-                  </span>
-                </span>
-                <span class="poll-row__aside">
-                  <span class="response-count" v-if="!poll.closedAt">
-                    <ProgressBar :done="pollMeta(poll).answered" :total="pollMeta(poll).total" />
-                    {{ pollMeta(poll).answered }}/{{ pollMeta(poll).total }}
-                  </span>
-                  <span :class="['badge', pollStatus(poll).cls]">{{ pollStatus(poll).label }}</span>
-                </span>
-              </button>
+              <PollRow v-for="poll in openPolls" :key="poll.id" :poll="poll" />
+              <template v-if="closedPolls.length">
+                <button type="button" class="btn btn--ghost btn--sm poll-closed-toggle" :aria-expanded="closedOpen" aria-controls="closed-polls" data-feature="F-08" @click="closedOpen = !closedOpen">
+                  <Icon name="chevron" :class="['icon-sm', 'poll-closed-toggle__icon', closedOpen ? 'poll-closed-toggle__icon--open' : '']" /> {{ t('group.polls.closedSection', { n: closedPolls.length }) }}
+                </button>
+                <div class="stack" id="closed-polls" v-if="closedOpen">
+                  <PollRow v-for="poll in closedPolls" :key="poll.id" :poll="poll" />
+                </div>
+              </template>
             </div>
             <EmptyState v-else :title="t('group.polls.empty.title')" :text="t('group.polls.empty.text')">
               <button type="button" class="btn btn--primary" @click="goCreate('new-poll', { groupId: group.id })"><Icon name="plus" /> {{ t('group.new.poll') }}</button>
@@ -324,10 +346,7 @@ export const GroupView = {
               </FormField>
             </form>
             <div class="invite-link" data-feature="F-04">
-              <button type="button" class="btn btn--secondary" :title="linkOpen ? t('group.link.lockOpen') : t('group.link.lockClosed')" @click="copyLink">
-                <Icon :name="linkOpen ? 'unlock' : 'lock'" /> {{ t('group.link.copy') }}
-                <span class="visually-hidden">({{ linkOpen ? t('group.link.lockOpen') : t('group.link.lockClosed') }})</span>
-              </button>
+              <button type="button" class="btn btn--secondary" @click="copyLink"><Icon name="link" /> {{ t('group.link.copy') }}</button>
               <button type="button" class="btn btn--ghost btn--icon" v-if="canShare" :aria-label="t('group.link.share')" @click="shareLink"><Icon name="share" /></button>
             </div>
             </template>

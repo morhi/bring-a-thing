@@ -28,6 +28,7 @@ const paths = {
   sparkle: '<path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
   globe: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" fill="none" stroke="currentColor" stroke-width="2"/>',
   dots: '<circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/>',
+  comment: '<path d="M5 5.5h14a1.5 1.5 0 011.5 1.5v8a1.5 1.5 0 01-1.5 1.5h-7L8 20v-3.5H5A1.5 1.5 0 013.5 15V7A1.5 1.5 0 015 5.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
   // invite-link
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   unlock: '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 017.6-1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
@@ -200,14 +201,13 @@ export const ChoiceGroup = {
   props: {
     modelValue: { type: String, required: true },
     name: { type: String, required: true },
-    options: { type: Array, required: true },
-    disabled: Boolean // edit-mode
+    options: { type: Array, required: true }
   },
   emits: ['update:modelValue'],
   template: `
     <div class="choice-group">
       <label class="choice" v-for="option in options" :key="option.value" :data-feature="option.feature || null">
-        <input type="radio" :name="name" :value="option.value" :checked="option.value === modelValue" :disabled="disabled" @change="$emit('update:modelValue', option.value)">
+        <input type="radio" :name="name" :value="option.value" :checked="option.value === modelValue" @change="$emit('update:modelValue', option.value)">
         <span class="choice__title">{{ option.title }}</span>
         <span class="choice__hint" v-if="option.hint">{{ option.hint }}</span>
       </label>

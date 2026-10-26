@@ -309,21 +309,6 @@
   outline-offset: 2px;
 }
 
-/* edit-mode: type and granularity are read-only after creation */
-.choice:has(input:disabled) {
-  cursor: default;
-  border-color: var(--border);
-}
-
-.choice:has(input:disabled) input {
-  cursor: default;
-}
-
-.choice:has(input:disabled):not(:has(input:checked)) {
-  background: var(--surface-muted);
-  color: var(--fg-muted);
-}
-
 .choice__title {
   font-weight: 600;
   font-size: 15px;
@@ -481,7 +466,7 @@
   border-radius: 8px;
   background: var(--primary);
   color: var(--primary-fg);
-  font-family: var(--font-display);
+  font-family: var(--font-tag);
   font-weight: 700;
   line-height: 1.2;
   transform: rotate(var(--tag-tilt));

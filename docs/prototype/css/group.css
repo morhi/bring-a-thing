@@ -138,7 +138,7 @@
   flex: 1;
 }
 
-/* Invite link next to the email invite: lock icon shows the link's lock setting */
+/* Invite link next to the email invite */
 
 .invite-link {
   display: flex;
@@ -366,4 +366,24 @@
 .notice {
   font-size: 14px;
   color: var(--fg-soft);
+}
+
+/* Closed and fixed polls collapse into one section */
+
+.poll-closed-toggle {
+  align-self: flex-start;
+}
+
+.poll-closed-toggle__icon {
+  transition: transform 0.15s ease;
+}
+
+.poll-closed-toggle__icon--open {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poll-closed-toggle__icon {
+    transition: none;
+  }
 }

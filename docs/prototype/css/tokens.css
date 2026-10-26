@@ -51,7 +51,8 @@
   --sky-100: #e0f2fe;
   --sky-700: #0369a1;
 
-  --font-display: 'Bricolage Grotesque', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Familjen Grotesk', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-tag: 'Gabarito', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 
   --radius-xs: 6px;

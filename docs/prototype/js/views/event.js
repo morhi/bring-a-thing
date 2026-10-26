@@ -459,14 +459,14 @@ export const EventView = {
               <li class="participant" v-for="id in column.ids" :key="id">
                 <Avatar :id="id" size="sm" />
                 <span class="participant__name">{{ personName(id) }} <span class="soft small" v-if="id === user.id">({{ t('group.member.you') }})</span></span>
-                <template v-if="id !== user.id">
+                <span class="participant__controls" v-if="id !== user.id">
                   <select class="select input--sm participant__status" v-if="canSetStatus" :value="column.status" :aria-label="t('event.setStatus', { name: personName(id) })" @change="changeStatus(id, $event.target.value)" :data-feature="canManage ? null : 'F-03'">
                     <option value="accepted">{{ t('event.accepted') }}</option>
                     <option value="pending">{{ t('event.pending') }}</option>
                     <option value="declined">{{ t('event.declined') }}</option>
                   </select>
                   <button type="button" class="btn btn--ghost btn--icon btn--sm" v-if="canManage" :aria-label="t('event.remove', { name: personName(id) })" @click="removeParticipant(id)"><Icon name="x" /></button>
-                </template>
+                </span>
               </li>
             </ul>
             <p class="soft small" v-else>{{ t('event.none') }}</p>

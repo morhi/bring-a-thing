@@ -31,10 +31,6 @@
   overflow-wrap: anywhere;
 }
 
-.join-lock svg {
-  flex: none;
-}
-
 .join-members {
   display: flex;
   align-items: center;

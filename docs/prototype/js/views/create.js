@@ -324,13 +324,20 @@ export const CreatePollView = {
           <input class="input" id="poll-title" v-model="form.title" :placeholder="t('newPoll.namePlaceholder')" :aria-invalid="errors.title ? 'true' : null">
         </FormField>
 
-        <FormField :label="t('newPoll.type')" group>
-          <ChoiceGroup name="poll-type" v-model="form.type" :options="typeOptions" :disabled="editing" />
-        </FormField>
+        <div class="row" v-if="editing" :title="t('newPoll.modeLocked')">
+          <span class="badge badge--outline">{{ form.type === 'attendance' ? t('group.polls.attendance') : t('group.polls.dateFinder') }}</span>
+          <span class="badge badge--outline">{{ form.mode === 'slots' ? t('newPoll.mode.slots') : t('newPoll.mode.day') }}</span>
+        </div>
 
-        <FormField :label="t('newPoll.mode')" group :hint="t('newPoll.modeLocked')">
-          <ChoiceGroup name="poll-mode" v-model="form.mode" :options="modeOptions" :disabled="editing" />
-        </FormField>
+        <template v-else>
+          <FormField :label="t('newPoll.type')" group>
+            <ChoiceGroup name="poll-type" v-model="form.type" :options="typeOptions" />
+          </FormField>
+
+          <FormField :label="t('newPoll.mode')" group>
+            <ChoiceGroup name="poll-mode" v-model="form.mode" :options="modeOptions" />
+          </FormField>
+        </template>
 
         <FormField v-if="editing" :label="t('poll.edit.status')" group data-feature="F-08">
           <div class="row">

@@ -1,7 +1,7 @@
 // List page (F-13 to F-20): items with claims, comments, attendance day and the share-link guest view.
 // Editing happens on the list edit page (views/create.js), which shares the helpers exported here.
 
-import { ref, reactive, computed, nextTick, watch } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
+import { ref, reactive, computed, nextTick, watch, onBeforeUnmount } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
 import { ui, h, data, currentUser, go, goCreate, viewState, toast, nextId } from '../core.js';
 import { t, formatDate, relativeDay, isPast, TODAY } from '../i18n.js';
 
@@ -150,6 +150,120 @@ const CommentThread = {
     </div>`
 };
 
+// Overflow menu of one item: claim for someone, comments, edit, delete. Closes on Escape, outside click and Tab; focus returns to the trigger.
+const ItemMenu = {
+  props: {
+    itemId: { type: String, required: true },
+    candidates: { type: Array, default: () => [] },
+    canComment: Boolean,
+    canEdit: Boolean
+  },
+  emits: ['claim-for', 'comment', 'edit', 'delete'],
+  setup(props, { emit }) {
+    const open = ref(false);
+    const choosing = ref(false);
+    const root = ref(null);
+    const trigger = ref(null);
+    const panel = ref(null);
+
+    function items() {
+      return panel.value ? Array.from(panel.value.querySelectorAll('[role="menuitem"]')) : [];
+    }
+
+    function close(returnFocus = true) {
+      open.value = false;
+      choosing.value = false;
+      document.removeEventListener('pointerdown', onOutside);
+
+      if (returnFocus && trigger.value) {
+        trigger.value.focus();
+      }
+    }
+
+    function onOutside(event) {
+      if (root.value && !root.value.contains(event.target)) {
+        close(false);
+      }
+    }
+
+    function toggle() {
+      if (open.value) {
+        close();
+
+        return;
+      }
+
+      open.value = true;
+      document.addEventListener('pointerdown', onOutside);
+      nextTick(() => {
+        const first = items()[0];
+
+        if (first) {
+          first.focus();
+        }
+      });
+    }
+
+    function onKeydown(event) {
+      if (!open.value) {
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        close();
+
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        close(false);
+
+        return;
+      }
+
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+      const list = items();
+      const index = list.indexOf(document.activeElement);
+      const target = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: list.length - 1 }[event.key];
+
+      if (list.length) {
+        list[(target + list.length) % list.length].focus();
+      }
+    }
+
+    function pick(name, payload) {
+      close();
+      emit(name, payload);
+    }
+
+    function toggleChoosing() {
+      choosing.value = !choosing.value;
+    }
+
+    onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside));
+
+    return { open, choosing, root, trigger, panel, toggle, onKeydown, pick, toggleChoosing, nameOf, t };
+  },
+  template: `
+    <div class="item-menu" ref="root" @keydown="onKeydown">
+      <button type="button" class="btn btn--ghost btn--icon btn--sm" ref="trigger" aria-haspopup="menu" :aria-expanded="open" :aria-controls="'menu-' + itemId" :aria-label="t('list.item.more')" @click="toggle"><Icon name="dots" /></button>
+      <div class="item-menu__panel" role="menu" :id="'menu-' + itemId" ref="panel" v-if="open">
+        <button type="button" class="item-menu__item" role="menuitem" v-if="candidates.length" :aria-expanded="choosing" data-feature="F-15" @click="toggleChoosing">{{ t('list.claim.for') }}<Icon name="chevron" :class="['icon-sm', 'item-menu__chevron', choosing ? 'item-menu__chevron--open' : '']" /></button>
+        <template v-if="choosing">
+          <button type="button" class="item-menu__item item-menu__item--sub" role="menuitem" v-for="id in candidates" :key="id" @click="pick('claim-for', id)">{{ nameOf(id) }}</button>
+        </template>
+        <button type="button" class="item-menu__item" role="menuitem" v-if="canComment" data-feature="F-20" @click="pick('comment')">{{ t('list.comments.add') }}</button>
+        <button type="button" class="item-menu__item" role="menuitem" v-if="canEdit" @click="pick('edit')">{{ t('list.item.edit') }}</button>
+        <button type="button" class="item-menu__item item-menu__item--danger" role="menuitem" v-if="canEdit" @click="pick('delete')">{{ t('list.item.delete') }}</button>
+      </div>
+    </div>`
+};
+
 // Add or edit one item (F-14) with custom field values (F-16) and the attendance day override (F-18).
 const ItemDialog = {
   props: { list: { type: Object, required: true }, item: Object, canDelete: Boolean },
@@ -244,7 +358,7 @@ const ItemDialog = {
 };
 
 export const ListView = {
-  components: { ConfirmDialog, CommentThread, ItemDialog },
+  components: { ConfirmDialog, CommentThread, ItemDialog, ItemMenu },
   setup() {
     const state = viewState('list');
     const user = currentUser;
@@ -527,14 +641,7 @@ export const ListView = {
       return !guest.value && !claim.synthetic && (claim.accountId === user.value.id || canEdit.value);
     }
 
-    function claimFor(item, changeEvent) {
-      const accountId = changeEvent.target.value;
-      changeEvent.target.value = '';
-
-      if (!accountId) {
-        return;
-      }
-
+    function claimForId(item, accountId) {
       if (item.quantity === null) {
         requestClaim(item, accountId, null);
 
@@ -561,6 +668,23 @@ export const ListView = {
       }
 
       openThreads.add(item.id);
+    }
+
+    function openComment(item) {
+      if (openThreads.has(item.id)) {
+        openThreads.delete(item.id);
+
+        return;
+      }
+
+      openThreads.add(item.id);
+      nextTick(() => {
+        const input = document.getElementById(`comment-${item.id}`);
+
+        if (input) {
+          input.focus();
+        }
+      });
     }
 
     function commentCount(item) {
@@ -701,7 +825,7 @@ export const ListView = {
       ui, state, user, list, guest, linkInvalid, group, event, canSee, isOwner, canEdit, canAdd, isPending, canClaim,
       listDate, past, items, progress, allTaken, grouped, groups, listOption,
       claimsOf, ownClaim, remainingOf, statusLabel, fieldEntries, optionFor, warnFor, candidatesFor,
-      claimForm, startClaim, cancelClaim, submitClaim, requestClaim, removeClaim, canRemoveClaim, claimFor,
+      claimForm, startClaim, cancelClaim, submitClaim, requestClaim, removeClaim, canRemoveClaim, claimForId, openComment,
       confirm, runConfirm, openThreads, toggleThread, commentCount, listCommentCount,
       itemDialog, openItemDialog, askDeleteItem, backTarget, back, edit,
       login, pendingLabel, openLogin, sendLink, completeLogin,
@@ -843,16 +967,9 @@ export const ListView = {
                   <button type="button" class="btn btn--secondary btn--sm" v-if="ownClaim(item) && item.quantity !== null" @click="startClaim(item)">{{ t('list.claim.change') }}</button>
                   <button type="button" class="btn btn--ghost btn--sm" v-if="ownClaim(item)" @click="removeClaim(ownClaim(item))">{{ t('list.claim.removeOwn') }}</button>
                 </template>
-                <label class="claim-for" v-if="canEdit && remainingOf(item) > 0 && candidatesFor(item).length" data-feature="F-15">
-                  <span class="visually-hidden">{{ t('list.claim.for') }}</span>
-                  <select class="select input--sm" @change="claimFor(item, $event)">
-                    <option value="">{{ t('list.claim.for') }}</option>
-                    <option v-for="id in candidatesFor(item)" :key="id" :value="id">{{ nameOf(id) }}</option>
-                  </select>
-                </label>
                 <span class="item__actions-spacer"></span>
-                <button type="button" class="btn btn--ghost btn--sm" v-if="!guest" :aria-expanded="openThreads.has(item.id)" :aria-controls="'thread-' + item.id" @click="toggleThread(item)" data-feature="F-20"><Icon name="dots" /> {{ t('list.comments.count', { n: commentCount(item) }) }}</button>
-                <button type="button" class="btn btn--ghost btn--icon btn--sm" v-if="canEdit" :aria-label="t('list.item.edit')" @click="openItemDialog(item)"><Icon name="settings" /></button>
+                <button type="button" class="btn btn--ghost btn--sm item__comments" v-if="!guest && (commentCount(item) > 0 || openThreads.has(item.id))" :aria-expanded="openThreads.has(item.id)" :aria-controls="'thread-' + item.id" :aria-label="t('list.comments.count', { n: commentCount(item) })" @click="toggleThread(item)" data-feature="F-20"><Icon name="comment" /> {{ commentCount(item) }}</button>
+                <ItemMenu v-if="!guest" :item-id="item.id" :candidates="canEdit && remainingOf(item) > 0 ? candidatesFor(item) : []" :can-comment="commentCount(item) === 0 && !openThreads.has(item.id)" :can-edit="canEdit" @claim-for="claimForId(item, $event)" @comment="openComment(item)" @edit="openItemDialog(item)" @delete="askDeleteItem(item)" />
               </div>
 
               <div class="item__thread" :id="'thread-' + item.id" v-if="!guest && openThreads.has(item.id)" data-feature="F-20">
