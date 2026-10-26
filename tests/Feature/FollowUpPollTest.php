@@ -94,12 +94,12 @@ it('F-12: a group member without acceptance sees the follow-up poll neither in t
 
     foreach ([$pending, $uninvolved] as $member) {
         $this->actingAs($member)->get(route('groups.show', $group))
-            ->assertInertia(fn (Assert $page) => $page->has('group.polls', 1)->where('group.polls.0.event_id', null));
+            ->assertInertia(fn (Assert $page) => $page->has('page.polls', 1)->where('page.polls.0.follow_up_event_title', null));
         $this->actingAs($member)->get(route('dashboard'))->assertOk()->assertDontSee($poll->slug);
     }
 
     $this->actingAs($accepted)->get(route('groups.show', $group))
-        ->assertInertia(fn (Assert $page) => $page->has('group.polls', 2));
+        ->assertInertia(fn (Assert $page) => $page->has('page.polls', 2));
 });
 
 it('F-12: a person with "pending" sees neither the follow-up polls nor the "New follow-up poll" action', function () {

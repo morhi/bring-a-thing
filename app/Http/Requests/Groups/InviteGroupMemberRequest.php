@@ -20,13 +20,17 @@ class InviteGroupMemberRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
+     * The invite field sends every selected person at once. A friend comes
+     * with their name; a new email address comes without one (F-04).
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', $this->notAlreadyInGroup()],
+            'invites' => ['required', 'array', 'min:1', 'max:50'],
+            'invites.*.email' => ['required', 'email', 'max:255', 'distinct:ignore_case', $this->notAlreadyInGroup()],
+            'invites.*.name' => ['nullable', 'string', 'max:255'],
         ];
     }
 

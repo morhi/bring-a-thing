@@ -11,6 +11,8 @@ use Illuminate\Validation\Validator;
 
 class JoinGroupRequest extends FormRequest
 {
+    private ?Group $group = null;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -78,11 +80,10 @@ class JoinGroupRequest extends FormRequest
     }
 
     /**
-     * The group the invite link belongs to.
+     * The group the invite link belongs to; an unknown or revoked token is "Not found".
      */
     public function group(): Group
     {
-        /** @var Group */
-        return $this->route('group');
+        return $this->group ??= Group::query()->where('invite_token', (string) $this->route('token'))->firstOrFail();
     }
 }

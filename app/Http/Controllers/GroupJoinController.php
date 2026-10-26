@@ -13,18 +13,25 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class GroupJoinController extends Controller
 {
     /**
      * Show the join page of a group's invite link (F-04).
      *
-     * An unknown, revoked or replaced token resolves to "Not found" through
-     * route model binding. Existing members go straight to the group.
+     * An unknown, revoked or replaced token renders the page's "Not found"
+     * state with a 404 status, so the person learns to ask for a new link.
+     * Existing members go straight to the group.
      */
-    public function show(Request $request, Group $group): Response|RedirectResponse
+    public function show(Request $request, string $token): SymfonyResponse
     {
+        $group = Group::query()->where('invite_token', $token)->first();
+
+        if ($group === null) {
+            return Inertia::render('Groups/Join', ['join' => null])->toResponse($request)->setStatusCode(404);
+        }
+
         $user = $request->user();
 
         if ($user !== null && $group->hasMember($user)) {
@@ -33,7 +40,7 @@ class GroupJoinController extends Controller
 
         return Inertia::render('Groups/Join', [
             'join' => GroupJoinData::fromGroup($group, $user),
-        ]);
+        ])->toResponse($request);
     }
 
     /**
@@ -45,11 +52,12 @@ class GroupJoinController extends Controller
      */
     public function store(
         JoinGroupRequest $request,
-        Group $group,
+        string $token,
         JoinGroupViaLink $joinGroup,
         FindOrCreateUserByEmail $findOrCreateUser,
         SendMagicLink $sendMagicLink,
     ): RedirectResponse {
+        $group = $request->group();
         $user = $request->user();
 
         if ($user !== null) {

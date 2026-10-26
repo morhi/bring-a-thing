@@ -27,7 +27,7 @@ class InviteMemberToGroup
      * existing user's own name is never overwritten. Also saves the invitee
      * as a friend of the inviter, for easier re-referencing next time.
      */
-    public function handle(Group $group, string $email, string $name, User $inviter): User
+    public function handle(Group $group, string $email, ?string $name, User $inviter): User
     {
         $user = $this->findOrCreateUser->handle($email, $name);
 

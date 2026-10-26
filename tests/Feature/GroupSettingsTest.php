@@ -31,11 +31,11 @@ it('F-03: an admin sees no action to delete the group or change roles, and canno
         ->get(route('groups.edit', $group))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('permissions.can_delete', false)
-            ->where('permissions.can_change_roles', false)
-            ->where('permissions.can_switch_option', false)
-            ->where('permissions.can_rename', false)
-            ->has('inviteLink'));
+            ->where('page.permissions.can_delete', false)
+            ->where('page.permissions.can_change_roles', false)
+            ->where('page.permissions.can_switch_option', false)
+            ->where('page.permissions.can_rename', false)
+            ->has('page.invite_link'));
 
     $this->actingAs($admin)->patch(route('groups.update', $group), ['members_can_set_status' => true])->assertForbidden();
     $this->actingAs($admin)->patch(route('groups.update', $group), ['name' => 'Renamed'])->assertForbidden();
@@ -52,12 +52,13 @@ it('F-03: shows the owner every settings action', function () {
     $this->actingAs($owner)
         ->get(route('groups.edit', $group))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('permissions.can_delete', true)
-            ->where('permissions.can_change_roles', true)
-            ->where('permissions.can_switch_option', true)
-            ->where('permissions.can_rename', true)
-            ->where('group.members_can_set_status', false)
-            ->has('group.members', 3));
+            ->where('page.permissions.can_delete', true)
+            ->where('page.permissions.can_change_roles', true)
+            ->where('page.permissions.can_switch_option', true)
+            ->where('page.permissions.can_rename', true)
+            ->where('page.members_can_set_status', false)
+            ->has('page.members', 3)
+            ->where('page.members.0.role', 'owner'));
 });
 
 it('F-03: lets only the owner switch the option "Members can set the participation status for others", off by default', function () {

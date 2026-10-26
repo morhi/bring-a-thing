@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Groups\InviteMemberToGroup;
-use App\Data\GroupInviteLinkData;
-use App\Data\GroupSettingsPermissionsData;
+use App\Data\GroupFormData;
+use App\Data\GroupSettingsData;
+use App\Data\GroupShowData;
 use App\Enums\GroupRole;
 use App\Http\Requests\Groups\InviteGroupMemberRequest;
 use App\Http\Requests\Groups\StoreGroupRequest;
@@ -12,7 +13,6 @@ use App\Http\Requests\Groups\UpdateGroupMemberRoleRequest;
 use App\Http\Requests\Groups\UpdateGroupRequest;
 use App\Models\Group;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,9 +24,23 @@ class GroupController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Create a new group with the requesting user as owner and first member.
+     * Show the "New group" page with friend suggestions for the invitations (F-03, F-04).
      */
-    public function store(StoreGroupRequest $request): RedirectResponse
+    public function create(Request $request): Response
+    {
+        $this->authorize('create', Group::class);
+
+        return Inertia::render('Groups/Create', [
+            'form' => GroupFormData::forUser($request->user()),
+        ]);
+    }
+
+    /**
+     * Create a new group with the requesting user as owner and first member.
+     *
+     * The optional invitations go out right away (F-03, F-04).
+     */
+    public function store(StoreGroupRequest $request, InviteMemberToGroup $inviteMember): RedirectResponse
     {
         $group = Group::query()->make([
             'name' => $request->string('name')->value(),
@@ -36,29 +50,24 @@ class GroupController extends Controller
 
         $group->addMember($request->user(), GroupRole::Owner, now());
 
-        return to_route('groups.show', $group)->with('success', 'Group created.');
+        $invites = $this->sendInvites($group, $request->validated('invites') ?? [], $request->user(), $inviteMember);
+
+        if ($invites === 0) {
+            return to_route('groups.show', $group)->with('success', 'Group created.');
+        }
+
+        return to_route('groups.show', $group)->with('success', $invites === 1 ? 'Group created, 1 person invited.' : "Group created, {$invites} people invited.");
     }
 
     /**
-     * Show the group: members, invite form, attached lists and polls.
-     *
-     * Follow-up polls appear only to their audience (F-12).
+     * Show the group: members with invite, polls, events and group lists.
      */
     public function show(Request $request, Group $group): Response
     {
         $this->authorize('view', $group);
 
-        $user = $request->user();
-
-        $group->load(['members', 'rosters', 'polls' => fn (HasMany $polls) => $polls->visibleTo($user)]);
-
         return Inertia::render('Groups/Show', [
-            'group' => $group,
-            'canManage' => $user->can('manageSettings', $group),
-            'canManageMembers' => $user->can('invite', $group),
-            'inviteLink' => $user->can('manageInviteLink', $group) ? GroupInviteLinkData::fromGroup($group) : null,
-            'isOwner' => $group->owner_id === $request->user()->getKey(),
-            'friends' => $request->user()->friends,
+            'page' => GroupShowData::forUser($group, $request->user()),
         ]);
     }
 
@@ -72,12 +81,8 @@ class GroupController extends Controller
     {
         $this->authorize('manageSettings', $group);
 
-        $group->load('members');
-
         return Inertia::render('Groups/Edit', [
-            'group' => $group,
-            'inviteLink' => GroupInviteLinkData::fromGroup($group),
-            'permissions' => GroupSettingsPermissionsData::forUser($group, $request->user()),
+            'page' => GroupSettingsData::forUser($group, $request->user()),
         ]);
     }
 
@@ -104,13 +109,13 @@ class GroupController extends Controller
     }
 
     /**
-     * Invite a member to the group by email.
+     * Invite the people selected in the invite field by email (F-04).
      */
     public function invite(InviteGroupMemberRequest $request, Group $group, InviteMemberToGroup $inviteMember): RedirectResponse
     {
-        $inviteMember->handle($group, $request->string('email')->value(), $request->string('name')->value(), $request->user());
+        $invites = $this->sendInvites($group, $request->validated('invites'), $request->user(), $inviteMember);
 
-        return back()->with('success', 'An invite has been sent.');
+        return back()->with('success', $invites === 1 ? 'An invite has been sent.' : "{$invites} invites have been sent.");
     }
 
     /**
@@ -133,5 +138,19 @@ class GroupController extends Controller
         $group->members()->updateExistingPivot($member, ['role' => $request->enum('role', GroupRole::class)]);
 
         return back()->with('success', 'Member role updated.');
+    }
+
+    /**
+     * Invite each person and return how many were invited.
+     *
+     * @param  array<int, array{email: string, name?: string|null}>  $invites
+     */
+    private function sendInvites(Group $group, array $invites, User $inviter, InviteMemberToGroup $inviteMember): int
+    {
+        foreach ($invites as $invite) {
+            $inviteMember->handle($group, $invite['email'], $invite['name'] ?? null, $inviter);
+        }
+
+        return count($invites);
     }
 }

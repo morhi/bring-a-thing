@@ -63,7 +63,7 @@ it('F-04: a member without the admin role sees no invite link button', function 
 
     $this->actingAs($member)
         ->get(route('groups.show', $group))
-        ->assertInertia(fn (Assert $page) => $page->where('inviteLink', null));
+        ->assertInertia(fn (Assert $page) => $page->where('page.invite_link', null));
     $this->actingAs($member)->post(route('groups.invite-link.store', $group))->assertForbidden();
     $this->actingAs($member)->post(route('groups.invite-link.regenerate', $group))->assertForbidden();
     $this->actingAs($member)->delete(route('groups.invite-link.destroy', $group))->assertForbidden();
@@ -75,9 +75,9 @@ it('F-04: shows the invite link to owners without exposing the token in the grou
     $this->actingAs($owner)
         ->get(route('groups.show', $group))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('inviteLink.url', route('groups.join.show', $group->invite_token))
-            ->where('inviteLink.locked', false)
-            ->missing('group.invite_token'));
+            ->where('page.invite_link.url', route('groups.join.show', $group->invite_token))
+            ->where('page.invite_link.locked', false)
+            ->missing('page.invite_token'));
 });
 
 it('F-04: a member without the admin role sees no invite form', function () {
@@ -87,9 +87,9 @@ it('F-04: a member without the admin role sees no invite form', function () {
 
     $this->actingAs($member)
         ->get(route('groups.show', $group))
-        ->assertInertia(fn (Assert $page) => $page->where('canManageMembers', false));
+        ->assertInertia(fn (Assert $page) => $page->where('page.permissions.can_invite', false)->where('page.friends', []));
     $this->actingAs($member)
-        ->post(route('groups.invite', $group), ['name' => 'Jane', 'email' => 'jane@example.com'])
+        ->post(route('groups.invite', $group), ['invites' => [['name' => 'Jane', 'email' => 'jane@example.com']]])
         ->assertForbidden();
 });
 
@@ -107,10 +107,10 @@ it('F-04: with an open link, a person who enters a name appears in the member li
     $this->get(route('groups.show', $group))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('group.members.1.name', 'Link Joiner')
-            ->where('group.members.1.pivot.role', 'member')
-            ->where('group.members.1.pivot.joined_via', 'link')
-            ->whereNot('group.members.1.pivot.accepted_at', null));
+            ->where('page.members.1.name', 'Link Joiner')
+            ->where('page.members.1.role', 'member')
+            ->where('page.members.1.joined_via_link', true)
+            ->where('page.members.1.is_pending', false));
 });
 
 it('F-01: keeps a name-only joiner logged in on that browser', function () {
@@ -133,7 +133,6 @@ it('F-04: requires a name to join through an open link', function () {
 });
 
 it('F-04: shows the join page for a valid link', function () {
-    $this->withoutVite();
     [$group] = groupWithOwner(locked: true);
 
     $this->get(route('groups.join.show', $group->invite_token))
@@ -143,7 +142,9 @@ it('F-04: shows the join page for a valid link', function () {
             ->where('join.group_name', $group->name)
             ->where('join.locked', true)
             ->where('join.needs_email', true)
-            ->where('join.is_authenticated', false));
+            ->where('join.is_authenticated', false)
+            ->has('join.members', 1)
+            ->missing('join.members.0.email'));
 });
 
 it('F-04: with a closed link, a person appears as a member only after logging in with an email', function () {
@@ -209,12 +210,13 @@ it('F-04: after revoking, the old link shows "Not found"', function () {
     Auth::logout();
 
     expect($group->fresh()->invite_token)->toBeNull();
-    $this->get(route('groups.join.show', $oldToken))->assertNotFound();
+    $this->get(route('groups.join.show', $oldToken))
+        ->assertNotFound()
+        ->assertInertia(fn (Assert $page) => $page->component('Groups/Join')->where('join', null));
     $this->post(route('groups.join.store', $oldToken), ['name' => 'Too Late'])->assertNotFound();
 });
 
 it('F-04: after regenerating, the old link shows "Not found" and the new one works', function () {
-    $this->withoutVite();
     [$group, $owner] = groupWithOwner(locked: false);
     $oldToken = $group->invite_token;
 
@@ -287,14 +289,14 @@ it('F-04: an invited person appears at once with "Invitation pending", which dis
     Mail::fake();
     [$group, $owner] = groupWithOwner();
 
-    $this->actingAs($owner)->post(route('groups.invite', $group), ['name' => 'Jane Invitee', 'email' => 'jane@example.com']);
+    $this->actingAs($owner)->post(route('groups.invite', $group), ['invites' => [['name' => 'Jane Invitee', 'email' => 'jane@example.com']]]);
 
     $this->actingAs($owner)
         ->get(route('groups.show', $group))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('group.members.1.name', 'Jane Invitee')
-            ->where('group.members.1.pivot.accepted_at', null)
-            ->where('group.members.1.pivot.joined_via', 'invite'));
+            ->where('page.members.1.name', 'Jane Invitee')
+            ->where('page.members.1.is_pending', true)
+            ->where('page.members.1.joined_via_link', false));
 
     $invitee = User::query()->where('email', 'jane@example.com')->firstOrFail();
     Auth::login($invitee);
@@ -309,8 +311,8 @@ it('F-04: offers saved friends with name and email for suggestions in the invite
     $this->actingAs($owner)
         ->get(route('groups.show', $group))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('friends.0.name', 'Annika Friend')
-            ->has('friends.0.friend_user.email'));
+            ->where('page.friends.0.name', 'Annika Friend')
+            ->has('page.friends.0.email'));
 });
 
 it('F-04: inviting a friend by email selects that friend and creates no second invitation', function () {
@@ -318,10 +320,10 @@ it('F-04: inviting a friend by email selects that friend and creates no second i
     [$group, $owner] = groupWithOwner();
     $this->actingAs($owner)->post(route('friends.store'), ['name' => 'Bea Friend', 'email' => 'bea@example.com']);
 
-    $this->actingAs($owner)->post(route('groups.invite', $group), ['name' => 'Bea Friend', 'email' => 'bea@example.com']);
+    $this->actingAs($owner)->post(route('groups.invite', $group), ['invites' => [['name' => 'Bea Friend', 'email' => 'bea@example.com']]]);
     $this->actingAs($owner)
-        ->post(route('groups.invite', $group), ['name' => 'Bea Friend', 'email' => 'bea@example.com'])
-        ->assertInvalid('email');
+        ->post(route('groups.invite', $group), ['invites' => [['name' => 'Bea Friend', 'email' => 'bea@example.com']]])
+        ->assertInvalid('invites.0.email');
 
     expect(User::query()->where('email', 'bea@example.com')->count())->toBe(1);
     expect(Friend::query()->where('user_id', $owner->id)->count())->toBe(1);
