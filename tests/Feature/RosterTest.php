@@ -98,7 +98,7 @@ it('allows the owner to update the roster', function () {
 
     $response = $this->actingAs($owner)->patch(route('rosters.update', $roster), ['title' => 'Renamed']);
 
-    $response->assertRedirect(route('rosters.edit', $roster));
+    $response->assertRedirect(route('rosters.show', $roster));
     $response->assertSessionHas('success', 'Roster updated.');
     expect($roster->fresh()->title)->toBe('Renamed');
 });

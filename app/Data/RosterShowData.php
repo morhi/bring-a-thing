@@ -70,7 +70,7 @@ class RosterShowData extends Data
             custom_fields: $roster->customFields->map(fn (CustomField $field) => CustomFieldData::fromField($field))->all(),
             comments: $roster->comments->map(fn (Comment $comment) => CommentData::forUser($comment, $user))->all(),
             claim_targets: $permissions->can_manage_claims ? self::claimTargets($roster)->all() : [],
-            attendance_options: $permissions->can_edit ? AttendanceOptionData::forGroup($roster->group) : [],
+            attendance_options: $permissions->can_add_items || $permissions->can_edit_items ? AttendanceOptionData::forGroup($roster->group, $user) : [],
             is_all_taken: $items->isNotEmpty() && $items->every(fn (RosterItemData $item) => $item->is_fully_claimed),
             permissions: $permissions,
         );

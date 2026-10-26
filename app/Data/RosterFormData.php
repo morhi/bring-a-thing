@@ -25,6 +25,8 @@ class RosterFormData extends Data
         public array $attendance_options,
         public bool $can_delete,
         public bool $can_duplicate,
+        public bool $can_manage_fields,
+        public bool $can_share,
     ) {}
 
     /**
@@ -46,6 +48,8 @@ class RosterFormData extends Data
             attendance_options: [],
             can_delete: false,
             can_duplicate: false,
+            can_manage_fields: false,
+            can_share: false,
         );
     }
 
@@ -53,7 +57,8 @@ class RosterFormData extends Data
      * Build the "New list" page in edit mode (F-14, F-16 to F-19).
      *
      * The placement stays as it is; attendance days come only from the
-     * attendance polls of the list's own group (F-18).
+     * attendance polls of the list's own group that are open to the user
+     * (F-12, F-18). Custom fields belong to the list owner (F-16).
      */
     public static function forEdit(Roster $roster, User $user): self
     {
@@ -66,9 +71,11 @@ class RosterFormData extends Data
             group: $data->group,
             event: $data->event,
             custom_fields: $roster->customFields->map(fn (CustomField $field) => CustomFieldData::fromField($field))->all(),
-            attendance_options: AttendanceOptionData::forGroup($roster->group),
+            attendance_options: AttendanceOptionData::forGroup($roster->group, $user),
             can_delete: $user->can('delete', $roster),
             can_duplicate: $user->can('duplicate', $roster),
+            can_manage_fields: $user->can('create', [CustomField::class, $roster]),
+            can_share: $user->can('update', $roster),
         );
     }
 }

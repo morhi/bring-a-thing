@@ -142,11 +142,21 @@ class Poll extends Model
      *
      * Every member does, except on a follow-up poll (F-12): there only
      * accepted participants of the source event, the poll's organizer and
-     * the event's managers (its organizer, group owner and admins) do.
+     * the event's managers (its organizer, group owner and admins) do. The
+     * organizer role lapses with the membership, so a member who left keeps
+     * no access to their follow-up polls.
      */
     public function includesMember(User $user): bool
     {
-        if ($this->event_id === null || $this->organizer_id === $user->getKey()) {
+        if ($this->event_id === null) {
+            return true;
+        }
+
+        if (! $this->group->hasMember($user)) {
+            return false;
+        }
+
+        if ($this->organizer_id === $user->getKey()) {
             return true;
         }
 
@@ -158,11 +168,14 @@ class Poll extends Model
      *
      * Mirrors includesMember() for lists such as the group page: plain polls
      * for everyone, follow-up polls only for the poll's organizer, the
-     * accepted participants and managers of the source event.
+     * accepted participants and managers of the source event. Every rule
+     * requires current group membership, so organizer_id alone grants nothing.
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
     {
+        $query->whereHas('group.members', fn (Builder $member) => $member->whereKey($user->getKey()));
+
         $query->where(fn (Builder $query) => $query
             ->whereNull('event_id')
             ->orWhere('organizer_id', $user->getKey())

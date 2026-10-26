@@ -36,6 +36,9 @@ class UpdateRosterRequest extends FormRequest
 
     /**
      * Configure the validator instance.
+     *
+     * The attendance day must come from an attendance poll of the list's group
+     * that is open to the user, so follow-up polls stay within their audience (F-12, F-18).
      */
     public function withValidator(Validator $validator): void
     {
@@ -49,7 +52,7 @@ class UpdateRosterRequest extends FormRequest
             $option = PollOption::query()->with('poll')->find($optionId);
             $groupId = $this->route('roster')->group_id;
 
-            if ($option === null || $option->poll->type !== PollType::Attendance || $option->poll->group_id !== $groupId) {
+            if ($option === null || $option->poll->type !== PollType::Attendance || $option->poll->group_id !== $groupId || ! $option->poll->isOpenTo($this->user())) {
                 $validator->errors()->add('attendance_poll_option_id', 'Invalid attendance day.');
             }
         });

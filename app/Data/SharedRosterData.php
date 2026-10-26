@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Actions\Auth\SendMagicLink;
 use App\Models\CustomField;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -14,6 +15,8 @@ class SharedRosterData extends Data
      * @param  array<int, RosterItemData>  $items
      */
     public function __construct(
+        public string $token,
+        public int $link_expires_in_minutes,
         public string $title,
         public ?string $description,
         public ?string $date,
@@ -27,7 +30,8 @@ class SharedRosterData extends Data
     /**
      * Build the shared list for a share link visitor (F-19).
      *
-     * Shows names but no email addresses and no user IDs.
+     * Shows names but no email addresses and no user IDs. The token and
+     * the link lifetime feed the login on the same page (F-01).
      */
     public static function fromRoster(Roster $roster): self
     {
@@ -41,6 +45,8 @@ class SharedRosterData extends Data
         $items = $roster->items->map(fn (RosterItem $item) => RosterItemData::forShareLink($item));
 
         return new self(
+            token: (string) $roster->share_token,
+            link_expires_in_minutes: SendMagicLink::EXPIRES_IN_MINUTES,
             title: $roster->title,
             description: $roster->description,
             date: $roster->date?->format('Y-m-d'),

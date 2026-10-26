@@ -78,13 +78,13 @@ class RosterController extends Controller
     {
         $this->authorize('update', $roster);
 
-        return Inertia::render('Rosters/Edit', [
+        return Inertia::render('Rosters/Create', [
             'form' => RosterFormData::forEdit($roster, $request->user()),
         ]);
     }
 
     /**
-     * Update the roster's settings.
+     * Update the roster's settings and return to the list (section 6, "List edit").
      */
     public function update(UpdateRosterRequest $request, Roster $roster): RedirectResponse
     {
@@ -92,20 +92,27 @@ class RosterController extends Controller
             'title', 'description', 'date', 'members_can_add_items', 'attendance_poll_option_id',
         ]));
 
-        return to_route('rosters.edit', $roster)->with('success', 'Roster updated.');
+        return to_route('rosters.show', $roster)->with('success', 'Roster updated.');
     }
 
     /**
-     * Delete the roster.
+     * Delete the roster and return to its event, its group or the dashboard.
      */
     public function destroy(Roster $roster): RedirectResponse
     {
         $this->authorize('delete', $roster);
 
+        $roster->loadMissing('event', 'group');
         $roster->delete();
 
-        if ($roster->event_id !== null) {
+        if ($roster->event !== null) {
             EventUpdated::dispatch($roster->event_id);
+
+            return to_route('events.show', $roster->event)->with('success', 'Roster deleted.');
+        }
+
+        if ($roster->group !== null) {
+            return to_route('groups.show', $roster->group)->with('success', 'Roster deleted.');
         }
 
         return to_route('dashboard')->with('success', 'Roster deleted.');

@@ -12,6 +12,7 @@ class AttendanceDayData extends Data
 {
     /**
      * @param  array<int, int>  $available_user_ids
+     * @param  array<int, int>  $unavailable_user_ids
      */
     public function __construct(
         public int $option_id,
@@ -21,6 +22,7 @@ class AttendanceDayData extends Data
         public ?string $starts_at,
         public ?string $label,
         public array $available_user_ids,
+        public array $unavailable_user_ids,
     ) {}
 
     /**
@@ -28,7 +30,8 @@ class AttendanceDayData extends Data
      *
      * available_user_ids holds everyone who answered yes or maybe; anyone
      * else answered no or nothing and gets the "Claim anyway" warning,
-     * also when someone claims for them.
+     * also when someone claims for them. unavailable_user_ids holds the
+     * explicit no answers, so the warning can name which of the two it is.
      */
     public static function fromOption(PollOption $option): self
     {
@@ -43,6 +46,11 @@ class AttendanceDayData extends Data
             label: $option->label,
             available_user_ids: $option->responses
                 ->filter(fn (PollResponse $response) => $response->status !== PollResponseStatus::No)
+                ->pluck('user_id')
+                ->values()
+                ->all(),
+            unavailable_user_ids: $option->responses
+                ->filter(fn (PollResponse $response) => $response->status === PollResponseStatus::No)
                 ->pluck('user_id')
                 ->values()
                 ->all(),

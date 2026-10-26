@@ -10,6 +10,7 @@ use Spatie\LaravelData\Data;
 class RosterData extends Data
 {
     public function __construct(
+        public int $id,
         public string $slug,
         public string $title,
         public ?string $description,
@@ -30,13 +31,15 @@ class RosterData extends Data
      * Build the key details of a list (F-13).
      *
      * A list is standalone, belongs to a group or belongs to an event. The
-     * share link only reaches whoever manages the list (F-19).
+     * share link only reaches whoever manages the list (F-19). The id names
+     * the list's broadcast channel (F-21).
      */
     public static function forUser(Roster $roster, User $user): self
     {
         $roster->loadMissing('owner', 'group', 'event', 'attendancePollOption');
 
         return new self(
+            id: $roster->id,
             slug: $roster->slug,
             title: $roster->title,
             description: $roster->description,

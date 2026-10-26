@@ -38,7 +38,6 @@ class SharedRosterController extends Controller
         abort_if($user && $roster->excludesShareLinkVisitor($user), 404);
 
         return Inertia::render('Shared/RosterShow', [
-            'token' => $token,
             'roster' => SharedRosterData::fromRoster($roster),
         ]);
     }

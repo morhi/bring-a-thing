@@ -18,19 +18,19 @@ class RosterItemPolicy
     }
 
     /**
-     * Determine whether the user can update the item.
+     * Determine whether the user can update the item: list owner, group owner and admins (F-14).
      */
     public function update(User $user, RosterItem $item): bool
     {
-        return $item->roster->owner_id === $user->getKey();
+        return $item->roster->isManagedBy($user);
     }
 
     /**
-     * Determine whether the user can delete the item.
+     * Determine whether the user can delete the item: list owner, group owner and admins (F-14).
      */
     public function delete(User $user, RosterItem $item): bool
     {
-        return $item->roster->owner_id === $user->getKey();
+        return $item->roster->isManagedBy($user);
     }
 
     /**

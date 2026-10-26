@@ -207,7 +207,9 @@ it('F-13 lets a group admin edit and delete another member\'s group list', funct
     $this->actingAs($admin)->patch(route('rosters.update', $roster), ['title' => 'Renamed'])->assertRedirect();
     expect($roster->fresh()->title)->toBe('Renamed');
 
-    $this->actingAs($admin)->delete(route('rosters.destroy', $roster))->assertSessionHas('success', 'Roster deleted.');
+    $this->actingAs($admin)->delete(route('rosters.destroy', $roster))
+        ->assertRedirect(route('groups.show', $group))
+        ->assertSessionHas('success', 'Roster deleted.');
     $this->assertModelMissing($roster);
 });
 
@@ -439,7 +441,7 @@ it('F-18 offers only attendance polls of the same group', function () {
 
     $this->actingAs($owner)->get(route('rosters.edit', $roster))
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Rosters/Edit', false)
+            ->component('Rosters/Create', false)
             ->has('form.attendance_options', 1)
             ->where('form.attendance_options.0.id', $option->id));
 });
@@ -535,4 +537,91 @@ it('F-17 duplicates an event list into the same event without claims and without
     expect($copy->event_id)->toBe($event->id);
     expect($copy->date)->toBeNull();
     expect($copy->items()->withCount('claims')->first()->claims_count)->toBe(0);
+});
+
+it('F-14 lets a group admin edit and delete items of another member\'s group list', function () {
+    $owner = User::factory()->create();
+    $admin = User::factory()->create();
+    $member = User::factory()->create();
+    $group = listsGroupWith($owner, [$admin, $member]);
+    $group->members()->updateExistingPivot($admin, ['role' => GroupRole::Admin]);
+    $roster = Roster::factory()->create(['owner_id' => $member->id, 'group_id' => $group->id]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'name' => 'Chairs']);
+
+    $this->actingAs($admin)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page->component('Rosters/Show', false)->where('page.permissions.can_edit_items', true));
+    $this->actingAs($admin)->patch(route('rosters.items.update', [$roster, $item]), ['name' => 'Tables'])->assertSessionHasNoErrors();
+    expect($item->fresh()->name)->toBe('Tables');
+
+    $this->actingAs($admin)->delete(route('rosters.items.destroy', [$roster, $item]))->assertRedirect();
+    $this->assertModelMissing($item);
+});
+
+it('F-14 keeps a plain member from editing or deleting items of another member\'s group list', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $group = listsGroupWith($owner, [$member]);
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'group_id' => $group->id, 'members_can_add_items' => true]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'name' => 'Chairs']);
+
+    $this->actingAs($member)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Rosters/Show', false)
+            ->where('page.permissions.can_add_items', true)
+            ->where('page.permissions.can_edit_items', false));
+    $this->actingAs($member)->patch(route('rosters.items.update', [$roster, $item]), ['name' => 'Tables'])->assertForbidden();
+    $this->actingAs($member)->delete(route('rosters.items.destroy', [$roster, $item]))->assertForbidden();
+});
+
+/**
+ * Create a group list owned by a member who has not accepted an event, and an attendance follow-up poll of that event.
+ *
+ * @return array{0: Roster, 1: PollOption, 2: User}
+ */
+function listsFollowUpAttendance(): array
+{
+    $organizer = User::factory()->create();
+    $editor = User::factory()->create();
+    $group = listsGroupWith($organizer, [$editor]);
+    [$event] = listsEventListIn($group, $organizer, [[$editor, ParticipationStatus::Pending]]);
+    $poll = Poll::factory()->create(['type' => PollType::Attendance, 'group_id' => $group->id, 'organizer_id' => $organizer->id, 'event_id' => $event->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+    $roster = Roster::factory()->create(['owner_id' => $editor->id, 'group_id' => $group->id]);
+
+    return [$roster, $option, $editor];
+}
+
+it('F-12 F-13 hides attendance days of a follow-up poll from a list editor without acceptance', function () {
+    [$roster, , $editor] = listsFollowUpAttendance();
+
+    $this->actingAs($editor)->get(route('rosters.edit', $roster))
+        ->assertInertia(fn (Assert $page) => $page->component('Rosters/Create', false)->has('form.attendance_options', 0));
+    $this->actingAs($editor)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page->component('Rosters/Show', false)->has('page.attendance_options', 0));
+});
+
+it('F-12 F-13 rejects an attendance day of a follow-up poll the list editor may not see', function () {
+    [$roster, $option, $editor] = listsFollowUpAttendance();
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    $this->actingAs($editor)->patch(route('rosters.update', $roster), ['title' => 'Snacks', 'attendance_poll_option_id' => $option->id])
+        ->assertSessionHasErrors('attendance_poll_option_id');
+    $this->actingAs($editor)->post(route('rosters.items.store', $roster), ['name' => 'Cake', 'attendance_poll_option_id' => $option->id])
+        ->assertSessionHasErrors('attendance_poll_option_id');
+    $this->actingAs($editor)->patch(route('rosters.items.update', [$roster, $item]), ['name' => 'Cake', 'attendance_poll_option_id' => $option->id])
+        ->assertSessionHasErrors('attendance_poll_option_id');
+
+    expect($roster->fresh()->attendance_poll_option_id)->toBeNull();
+});
+
+it('F-12 offers the follow-up attendance days once the list editor has accepted', function () {
+    [$roster, $option, $editor] = listsFollowUpAttendance();
+    $option->poll->event->participations()->where('user_id', $editor->id)->update(['status' => ParticipationStatus::Accepted]);
+
+    $this->actingAs($editor)->get(route('rosters.edit', $roster))
+        ->assertInertia(fn (Assert $page) => $page->has('form.attendance_options', 1)->where('form.attendance_options.0.id', $option->id));
+    $this->actingAs($editor)->patch(route('rosters.update', $roster), ['title' => 'Snacks', 'attendance_poll_option_id' => $option->id])
+        ->assertRedirect(route('rosters.show', $roster));
+
+    expect($roster->fresh()->attendance_poll_option_id)->toBe($option->id);
 });
