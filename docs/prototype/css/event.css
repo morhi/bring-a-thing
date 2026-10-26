@@ -124,8 +124,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px 16px;
-  padding: 16px;
-  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  border-radius: var(--box-radius, var(--radius-md));
 }
 
 .participation__question {

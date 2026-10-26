@@ -136,7 +136,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 18px;
+  padding: 16px 22px;
 }
 
 .poll-row__icon {
@@ -223,7 +223,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 14px 22px;
 }
 
 .event-row .date-block {
@@ -298,7 +298,6 @@
 }
 
 .event-row--child {
-  --box-accent: var(--primary);
   margin-left: 24px;
 }
 

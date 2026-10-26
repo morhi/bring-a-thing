@@ -142,9 +142,8 @@
   align-items: flex-start;
   gap: 12px;
   --box-border: color-mix(in oklab, var(--danger) 45%, transparent);
-  --box-accent: var(--danger);
-  padding: 20px;
-  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  border-radius: var(--box-radius, var(--radius-md));
 }
 
 @media (min-width: 720px) {

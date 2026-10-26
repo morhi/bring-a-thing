@@ -276,8 +276,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  border-radius: var(--box-radius, var(--radius-md));
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
@@ -346,16 +346,10 @@
 /* Cards and panels */
 
 .card {
-  border-radius: var(--card-radius);
+  border-radius: var(--box-radius, var(--card-radius));
   padding: var(--card-padding);
   box-shadow: var(--box-shadow);
   min-width: 0;
-}
-
-/* Cards nested in a section are rows of that container: tighter radius */
-
-.section .card {
-  border-radius: var(--radius-md);
 }
 
 .card .section-head {
@@ -385,7 +379,7 @@
 }
 
 .panel {
-  border-radius: var(--card-radius);
+  border-radius: var(--box-radius, var(--card-radius));
   padding: var(--card-padding);
 }
 
@@ -617,7 +611,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 28px;
-  border-radius: var(--card-radius);
+  border-radius: var(--box-radius, var(--card-radius));
   border-style: dashed;
   border-width: max(1.5px, var(--box-edge));
   background-image: repeating-linear-gradient(135deg, var(--texture-hatch-color) 0 1px, transparent 1px 12px);
@@ -627,7 +621,6 @@
 
 .empty:not(:where(.section, .card, .form-page__body, .dialog) .empty) {
   --box-border: var(--border-strong);
-  --box-accent: var(--border-strong);
 }
 
 .empty__icon {
@@ -659,8 +652,8 @@
 .alert {
   display: flex;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  border-radius: var(--box-radius, var(--radius-md));
   font-size: 15px;
 }
 

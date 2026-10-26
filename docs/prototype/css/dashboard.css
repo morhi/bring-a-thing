@@ -329,12 +329,13 @@
 .progress {
   height: 6px;
   border-radius: 3px;
-  background: var(--surface-sunken);
+  background: var(--progress-track);
   overflow: hidden;
   flex: 1;
 }
 
 .progress__bar {
+  display: block; /* a span ignores width while inline */
   height: 100%;
   background: var(--primary);
   border-radius: 3px;

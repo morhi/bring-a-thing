@@ -75,6 +75,7 @@
   --surface-muted: var(--moss-50);
   --surface-raised: #ffffff;
   --surface-sunken: var(--moss-100);
+  --progress-track: #b3c0b8;             /* 1.6:1 or more on every box surface */
   --fg: var(--moss-900);
   --fg-muted: var(--moss-600);
   --fg-soft: #5a6a63;                    /* 4.9:1 on the level 2 box, 5.7:1 on white */
@@ -88,7 +89,6 @@
   --depth-1-border: var(--moss-200);
   --depth-2-bg: #e9efea;
   --depth-2-border: #b7c4bb;
-  --depth-2-accent: #6fb493;             /* muted emerald, a mark without text */
   --depth-3-bg: #ffffff;
   --depth-3-border: #a3b3a9;
 
@@ -151,6 +151,7 @@
     --surface-muted: #141c17;
     --surface-raised: #1a231e;
     --surface-sunken: #0b100d;
+    --progress-track: var(--moss-700);   /* 1.8:1 or more on every box surface */
     --fg: #e9efeb;
     --fg-muted: var(--moss-400);
     --fg-soft: #8c9b95;                  /* 4.8:1 on the level 2 box, 5.6:1 on the raised surface */
@@ -158,10 +159,10 @@
     --border: #2b3630;
     --border-strong: var(--moss-700);
 
+    --depth-1-bg: var(--surface-raised);
     --depth-1-border: #2b3630;
-    --depth-2-bg: #253129;
+    --depth-2-bg: color-mix(in oklab, var(--depth-1-bg) 95%, white 5%);
     --depth-2-border: #404e46;
-    --depth-2-accent: #2f7a5a;
     --depth-3-bg: #111915;
     --depth-3-border: #4f5e56;
 
@@ -207,6 +208,7 @@
   --surface-muted: #141c17;
   --surface-raised: #1a231e;
   --surface-sunken: #0b100d;
+  --progress-track: var(--moss-700);
   --fg: #e9efeb;
   --fg-muted: var(--moss-400);
   --fg-soft: #8c9b95;
@@ -214,10 +216,10 @@
   --border: #2b3630;
   --border-strong: var(--moss-700);
 
+  --depth-1-bg: var(--surface-raised);
   --depth-1-border: #2b3630;
-  --depth-2-bg: #253129;
+  --depth-2-bg: color-mix(in oklab, var(--depth-1-bg) 95%, white 5%);
   --depth-2-border: #404e46;
-  --depth-2-accent: #2f7a5a;
   --depth-3-bg: #111915;
   --depth-3-border: #4f5e56;
 

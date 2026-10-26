@@ -65,10 +65,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  max-width: 420px;
   font-size: 14px;
   color: var(--fg-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.list-progress .progress {
+  flex: 0 1 160px;
+  min-width: 64px;
 }
 
 .list-progress__text {
@@ -137,12 +141,6 @@
   .item {
     padding: 20px 22px;
   }
-}
-
-/* A fully claimed item drops its accent; the title and status already say it is done */
-
-.item--done {
-  --box-accent: var(--box-border);
 }
 
 .item__head {
