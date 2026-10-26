@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.4
+- **Version:** 1.5
 - **Approved:** 25.10.2026
 
 ## 2. Goal
@@ -201,11 +201,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Within the event, participants create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted".
 - The circle follows current participation: whoever accepts later sees the poll and can respond. Whoever declines no longer sees it, and their responses no longer count.
 - Fixing dates follows F-09, and the new events attach to the source event.
+- Child events do not offer follow-up polls. Follow-up polls exist only on events without a parent event.
 
 **Acceptance criteria:**
 - A group member without acceptance sees the follow-up poll neither in the group nor on the dashboard.
 - A person who accepts after the follow-up poll was created can respond to it.
 - An event fixed from a follow-up poll appears in the source event under the child events.
+- A child event shows no "New follow-up poll" action.
 
 #### F-13 Lists (Core)
 
@@ -430,6 +432,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Fixing without a selection:** the confirmation stays disabled.
 - **Event without acceptances:** lists and follow-up polls can be created; the page shows a note that nobody has accepted yet.
 - **Event past:** accepting and declining are disabled, lists stay readable.
+- **Child event:** shows no "New follow-up poll" action; lists can still be created.
 - **Event moved:** acceptances switch to "pending"; claims stay.
 - **Decline without claims:** no confirmation needed.
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
