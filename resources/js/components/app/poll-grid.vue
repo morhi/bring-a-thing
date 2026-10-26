@@ -106,7 +106,7 @@ function cellTint(column: { best: boolean; fixed: boolean }): string {
     <div class="box max-w-full min-w-0 overflow-hidden" data-feature="F-06">
         <!-- The only horizontal scroll area of the app; the name column stays put -->
         <div
-            class="max-w-full min-w-0 overflow-x-auto overscroll-x-contain focus-visible:outline-offset-[-2px]"
+            class="relative max-w-full min-w-0 overflow-x-auto overscroll-x-contain focus-visible:outline-offset-[-2px]"
             tabindex="0"
             role="region"
             :aria-label="t('poll.grid')"

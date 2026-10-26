@@ -73,7 +73,7 @@ function onDelete(id: ThreadComment['id']) {
     <section class="flex flex-col gap-4">
         <h2 id="comment-thread" class="text-xl">CommentThread</h2>
 
-        <div class="box flex flex-col gap-3 p-5">
+        <div class="box flex min-w-0 flex-col gap-3 p-5">
             <p class="text-fg-muted text-sm font-semibold">
                 Interactive (Cmd/Ctrl+Enter sends, over 500 characters returns
                 an error)
@@ -87,24 +87,24 @@ function onDelete(id: ThreadComment['id']) {
             />
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-            <div class="box flex flex-col gap-3 p-5">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="box flex min-w-0 flex-col gap-3 p-5">
                 <p class="text-fg-muted text-sm font-semibold">Empty</p>
                 <CommentThread :comments="[]" />
             </div>
-            <div class="box flex flex-col gap-3 p-5">
+            <div class="box flex min-w-0 flex-col gap-3 p-5">
                 <p class="text-fg-muted text-sm font-semibold">
                     Compact (item), read-only (cannot post)
                 </p>
                 <CommentThread :comments="sample" compact :can-post="false" />
             </div>
-            <div class="box flex flex-col gap-3 p-5">
+            <div class="box flex min-w-0 flex-col gap-3 p-5">
                 <p class="text-fg-muted text-sm font-semibold">
                     Long text and long name
                 </p>
                 <CommentThread :comments="long" :can-post="false" />
             </div>
-            <div class="box flex flex-col gap-3 p-5">
+            <div class="box flex min-w-0 flex-col gap-3 p-5">
                 <p class="text-fg-muted text-sm font-semibold">
                     Error and processing
                 </p>

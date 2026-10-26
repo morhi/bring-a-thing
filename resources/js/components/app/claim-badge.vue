@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { X } from '@lucide/vue';
-import { computed } from 'vue';
-import UserAvatar from '@/components/app/user-avatar.vue';
-import { Button } from '@/components/ui/button';
-import { useI18n } from '@/composables/use-i18n';
+import { X } from "@lucide/vue";
+import { computed } from "vue";
+import UserAvatar from "@/components/app/user-avatar.vue";
+import { Button } from "@/components/ui/button";
+import { useI18n } from "@/composables/use-i18n";
 
 const props = withDefaults(
     defineProps<{
@@ -27,15 +27,15 @@ defineEmits<{ remove: [] }>();
 
 const { t, locale } = useI18n();
 
-const displayName = computed(() => props.name || t('common.noName'));
+const displayName = computed(() => props.name || t("common.noName"));
 
 const amount = computed(() => {
     if (props.quantity === null) {
-        return '';
+        return "";
     }
 
     const number = props.quantity.toLocaleString(
-        locale.value === 'de' ? 'de-CH' : 'en-GB',
+        locale.value === "de" ? "de-CH" : "en-GB",
     );
 
     return props.unit ? `${number} ${props.unit}` : number;
@@ -51,12 +51,12 @@ const amount = computed(() => {
         <span class="min-w-0 flex-1 break-words">
             {{ displayName }}
             <span v-if="isOwn" class="text-fg-soft"
-                >({{ t('group.member.you') }})</span
+                >({{ t("group.member.you") }})</span
             >
         </span>
         <span
             v-if="amount"
-            class="font-semibold whitespace-nowrap tabular-nums"
+            class="max-w-[60%] text-right font-semibold tabular-nums [overflow-wrap:anywhere]"
             >{{ amount }}</span
         >
         <Button

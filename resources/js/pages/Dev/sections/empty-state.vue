@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 <template>
     <section class="flex flex-col gap-4">
-        <h2 class="text-xl">EmptyState</h2>
+        <h2 id="empty-state" class="text-xl">EmptyState</h2>
         <div v-for="mode in ['', 'dark']" :key="mode" :class="mode" class="flex flex-col gap-4 rounded-2xl bg-surface-raised p-5 text-fg">
             <p class="text-sm font-semibold text-fg-muted">{{ mode || 'light' }}</p>
             <EmptyState title="Title only" />

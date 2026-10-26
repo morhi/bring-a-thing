@@ -55,8 +55,8 @@ function createLink(): void {
             address shows the disabled state too.
         </p>
 
-        <div class="box grid gap-8 p-6">
-            <div class="space-y-2">
+        <div class="box grid grid-cols-1 gap-8 p-6">
+            <div class="min-w-0 space-y-2">
                 <h3 class="font-display text-lg">New group (no link yet)</h3>
                 <InviteField
                     id="dev-if-create"
@@ -68,7 +68,7 @@ function createLink(): void {
                 />
             </div>
 
-            <div class="space-y-2">
+            <div class="min-w-0 space-y-2">
                 <h3 class="font-display text-lg">
                     Group page (chips, submit, link created on first click)
                 </h3>
@@ -93,7 +93,7 @@ function createLink(): void {
                 </p>
             </div>
 
-            <div class="space-y-2">
+            <div class="min-w-0 space-y-2">
                 <h3 class="font-display text-lg">
                     Group settings (no link button), error
                 </h3>
@@ -108,7 +108,7 @@ function createLink(): void {
                 />
             </div>
 
-            <div class="space-y-2">
+            <div class="min-w-0 space-y-2">
                 <h3 class="font-display text-lg">Disabled</h3>
                 <InviteField
                     id="dev-if-disabled"

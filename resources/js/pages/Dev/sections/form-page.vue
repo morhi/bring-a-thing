@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 
 <template>
     <section class="flex flex-col gap-4">
-        <h2 class="text-xl">FormPage</h2>
+        <h2 id="form-page" class="text-xl">FormPage</h2>
         <p class="text-fg-muted">Page frame for create and edit pages. The page supplies the h1; here it is shown inside a bordered preview, and the sticky bar sticks to the bottom of the viewport.</p>
         <div v-for="mode in ['', 'dark']" :key="mode" :class="mode" class="flex flex-col gap-8 rounded-2xl bg-ground p-5 text-fg">
             <p class="text-sm font-semibold text-fg-muted">{{ mode || 'light' }} (create)</p>

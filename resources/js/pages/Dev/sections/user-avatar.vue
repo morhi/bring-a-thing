@@ -13,7 +13,7 @@ const people = [
 
 <template>
     <section class="flex flex-col gap-4">
-        <h2 class="text-xl">UserAvatar</h2>
+        <h2 id="user-avatar" class="text-xl">UserAvatar</h2>
         <p class="text-fg-muted">Named accounts get a tone derived from the name; shadow accounts (no name yet) are dashed with email initials.</p>
         <div v-for="mode in ['', 'dark']" :key="mode" :class="mode" class="rounded-2xl bg-surface-raised p-5 text-fg">
             <p class="mb-3 text-sm font-semibold text-fg-muted">{{ mode || 'light' }}</p>
