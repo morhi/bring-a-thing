@@ -23,7 +23,7 @@ class PollOptionController extends Controller
     }
 
     /**
-     * Remove the option and every response on it.
+     * Remove the option and every response on it; fixed options stay (F-08, F-09).
      */
     public function destroy(Poll $poll, PollOption $option): RedirectResponse
     {
@@ -32,6 +32,10 @@ class PollOptionController extends Controller
 
         if ($poll->isClosed()) {
             return back()->with('error', 'This poll is closed.');
+        }
+
+        if ($option->isFixed()) {
+            return back()->with('error', 'A fixed option cannot be removed.');
         }
 
         $option->delete();

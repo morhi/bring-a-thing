@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Polls\CreatePollOptions;
+use App\Actions\Polls\FixPollOptions;
+use App\Actions\Polls\UpdatePoll;
+use App\Data\PollFormData;
+use App\Data\PollShowData;
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
 use App\Http\Requests\Polls\ClosePollRequest;
+use App\Http\Requests\Polls\FixPollRequest;
 use App\Http\Requests\Polls\StorePollRequest;
 use App\Http\Requests\Polls\UpdatePollRequest;
 use App\Models\Group;
 use App\Models\Poll;
-use App\Models\PollOption;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +24,18 @@ use Inertia\Response;
 class PollController extends Controller
 {
     use AuthorizesRequests;
+
+    /**
+     * Show the "New poll" page for the group (F-06, F-07).
+     */
+    public function create(Group $group): Response
+    {
+        $this->authorize('createForGroup', [Poll::class, $group]);
+
+        return Inertia::render('Polls/Create', [
+            'form' => PollFormData::forGroup($group),
+        ]);
+    }
 
     /**
      * Create a new poll on the group, with either explicit option rows or an auto-expanded date range.
@@ -47,60 +63,61 @@ class PollController extends Controller
     }
 
     /**
-     * Show the poll: options and every member's responses.
+     * Show the poll: options with totals and best option, every respondent's answers and the fixed events.
      */
     public function show(Request $request, Poll $poll): Response
     {
         $this->authorize('view', $poll);
 
-        $poll->load('group.members', 'organizer', 'chosenOption');
-        $poll->load(['options.responses.user']);
-
         return Inertia::render('Polls/Show', [
-            'poll' => $poll,
-            'canManage' => $request->user()->can('update', $poll),
-            'bestOptionIds' => $poll->bestOptions()->pluck('id'),
+            'page' => PollShowData::forUser($poll, $request->user()),
         ]);
     }
 
     /**
-     * Show the organizer/admin-only poll settings page: rename, manage options, close/reopen, delete.
+     * Show the "New poll" page in edit mode to organizer, owner and admins (F-08).
      */
     public function edit(Poll $poll): Response
     {
         $this->authorize('update', $poll);
 
-        $poll->load('options.responses', 'group', 'chosenOption');
-
-        return Inertia::render('Polls/Edit', [
-            'poll' => $poll,
+        return Inertia::render('Polls/Create', [
+            'form' => PollFormData::forGroup($poll->group, $poll),
         ]);
     }
 
     /**
-     * Rename the poll.
+     * Rename the poll and, from the edit page, change and add options.
      */
-    public function update(UpdatePollRequest $request, Poll $poll): RedirectResponse
+    public function update(UpdatePollRequest $request, Poll $poll, UpdatePoll $updatePoll): RedirectResponse
     {
-        $poll->update($request->safe()->only(['title']));
+        $updatePoll->handle($poll, $request->string('title')->value(), $request->has('options') ? $request->validated('options') : null);
 
         return to_route('polls.edit', $poll)->with('success', 'Poll updated.');
     }
 
     /**
-     * Close the poll to new votes. A date-finder poll must name the chosen option.
+     * Close the poll without a selection: attendance polls, or date finder polls that already have a fixed option.
      */
     public function close(ClosePollRequest $request, Poll $poll): RedirectResponse
     {
-        $chosenOption = $request->filled('option_id') ? PollOption::findOrFail($request->integer('option_id')) : null;
-
-        $poll->close($chosenOption);
+        $poll->close();
 
         return to_route('polls.edit', $poll)->with('success', 'Poll closed.');
     }
 
     /**
-     * Reopen the poll to new votes.
+     * Fix the selected options as events and close the poll (F-09).
+     */
+    public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions): RedirectResponse
+    {
+        $events = $fixPollOptions->handle($poll, $request->selectedOptions());
+
+        return to_route('polls.show', $poll)->with('success', $events->count() === 1 ? 'Date fixed.' : 'Dates fixed.');
+    }
+
+    /**
+     * Reopen the poll to new responses; events fixed from it stay (F-08).
      */
     public function reopen(Poll $poll): RedirectResponse
     {

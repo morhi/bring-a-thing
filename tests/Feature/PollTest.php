@@ -137,14 +137,14 @@ it('allows a group member to view the poll', function () {
     $response->assertOk();
 });
 
-it('forbids a non-member from viewing the poll', function () {
+it('section 8: shows a non-member "Not found" for the poll', function () {
     [$group, $owner] = createGroupWithMembers();
     $outsider = User::factory()->create();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
 
     $response = $this->actingAs($outsider)->get(route('polls.show', $poll));
 
-    $response->assertForbidden();
+    $response->assertNotFound();
 });
 
 it('lets a member record and update their response to an option', function () {
@@ -162,7 +162,7 @@ it('lets a member record and update their response to an option', function () {
     expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Maybe);
 });
 
-it('forbids a non-member from responding to an option', function () {
+it('section 8: answers a non-member responding to an option with "Not found"', function () {
     [$group, $owner] = createGroupWithMembers();
     $outsider = User::factory()->create();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
@@ -170,7 +170,7 @@ it('forbids a non-member from responding to an option', function () {
 
     $response = $this->actingAs($outsider)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'yes']);
 
-    $response->assertForbidden();
+    $response->assertNotFound();
 });
 
 it('rejects a response to an option that does not belong to the given poll', function () {
@@ -333,42 +333,30 @@ it('reports the option(s) with the most yes votes as best for a date-finder poll
     expect($poll->bestOptions()->pluck('id')->all())->toBe([$winning->id]);
 });
 
-it('closes a date-finder poll with a chosen option', function () {
+it('F-08: a date finder poll closes by fixing dates, not by plain closing', function () {
     [$group, $owner] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'date_finder']);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-
-    $response = $this->actingAs($owner)->post(route('polls.close', $poll), ['option_id' => $option->id]);
-
-    $response->assertRedirect(route('polls.edit', $poll));
-    $response->assertSessionHas('success', 'Poll closed.');
-    $poll->refresh();
-    expect($poll->isClosed())->toBeTrue();
-    expect($poll->chosen_option_id)->toBe($option->id);
-});
-
-it('requires a chosen option when closing a date-finder poll', function () {
-    [$group, $owner] = createGroupWithMembers();
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'date_finder']);
+    PollOption::factory()->create(['poll_id' => $poll->id]);
 
     $response = $this->actingAs($owner)->post(route('polls.close', $poll), []);
 
-    $response->assertSessionHasErrors('option_id');
+    $response->assertSessionHasErrors(['poll' => 'A date finder poll closes by fixing dates.']);
     expect($poll->fresh()->isClosed())->toBeFalse();
 });
 
-it('rejects a chosen option belonging to a different poll', function () {
+it('F-09: rejects fixing an option that belongs to a different poll', function () {
     [$group, $owner] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'date_finder']);
     $otherPoll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $option = PollOption::factory()->create(['poll_id' => $otherPoll->id]);
 
-    $response = $this->actingAs($owner)->post(route('polls.close', $poll), ['option_id' => $option->id]);
+    $response = $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]]);
 
-    $response->assertSessionHasErrors('option_id');
+    $response->assertSessionHasErrors('options');
+    expect($option->fresh()->isFixed())->toBeFalse();
 });
 
-it('closes an attendance poll without a chosen option', function () {
+it('F-08: closes an attendance poll without a selection', function () {
     [$group, $owner] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'attendance']);
 
@@ -377,17 +365,6 @@ it('closes an attendance poll without a chosen option', function () {
     $response->assertRedirect(route('polls.edit', $poll));
     $poll->refresh();
     expect($poll->isClosed())->toBeTrue();
-    expect($poll->chosen_option_id)->toBeNull();
-});
-
-it('rejects an option_id when closing an attendance poll', function () {
-    [$group, $owner] = createGroupWithMembers();
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'attendance']);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-
-    $response = $this->actingAs($owner)->post(route('polls.close', $poll), ['option_id' => $option->id]);
-
-    $response->assertSessionHasErrors('option_id');
 });
 
 it('forbids a plain member from closing the poll', function () {
@@ -412,25 +389,22 @@ it('allows a group admin to close and reopen a poll they did not organize', func
     expect($poll->fresh()->isClosed())->toBeFalse();
 });
 
-it('reopens a poll and clears the chosen option', function () {
+it('F-08: reopens a closed poll', function () {
     [$group, $owner] = createGroupWithMembers();
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'date_finder']);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-    $poll->close($option);
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'type' => 'attendance']);
+    $poll->close();
 
     $response = $this->actingAs($owner)->delete(route('polls.reopen', $poll));
 
     $response->assertSessionHas('success', 'Poll reopened.');
-    $poll->refresh();
-    expect($poll->isClosed())->toBeFalse();
-    expect($poll->chosen_option_id)->toBeNull();
+    expect($poll->fresh()->isClosed())->toBeFalse();
 });
 
 it('rejects a response to a closed poll', function () {
     [$group, $owner] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
-    $poll->close($option);
+    $poll->close();
 
     $response = $this->actingAs($owner)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'yes']);
 

@@ -2,11 +2,10 @@
 
 namespace App\Http\Requests\Polls;
 
-use App\Enums\PollType;
 use App\Models\Poll;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class ClosePollRequest extends FormRequest
 {
@@ -21,22 +20,29 @@ class ClosePollRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * A date-finder poll must be closed with one of its own options chosen
-     * as the result; an attendance poll has no single winner and takes no
-     * option_id.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        /** @var Poll $poll */
-        $poll = $this->route('poll');
-        $isDateFinder = $poll->type === PollType::DateFinder;
+        return [];
+    }
 
-        return [
-            'option_id' => $isDateFinder
-                ? ['required', Rule::exists('poll_options', 'id')->where('poll_id', $poll->getKey())]
-                : ['prohibited'],
-        ];
+    /**
+     * Configure the validator instance.
+     *
+     * A date finder poll closes by fixing dates (F-08), unless it already has a fixed option.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            /** @var Poll $poll */
+            $poll = $this->route('poll');
+
+            if ($poll->canCloseWithoutFixing()) {
+                return;
+            }
+
+            $validator->errors()->add('poll', 'A date finder poll closes by fixing dates.');
+        });
     }
 }
