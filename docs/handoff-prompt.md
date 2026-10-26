@@ -11,11 +11,11 @@ Do not start Stage B before Stage A is reviewed and approved by Maurice. Ask for
 
 ## Sources of truth
 
-- `docs/requirements.md` (v1.3) defines behavior. Where anything else disagrees with it, the requirements win.
+- `docs/requirements.md` (v1.9) defines behavior. Where anything else disagrees with it, the requirements win.
 - `docs/prototype/` shows the approved UI concept and design system. In Stage B it is a reference for layout, content hierarchy, wording and flows, not code to copy.
 - `BRING_A_THING.md` and `IMPLEMENDATION.md` describe the app as it exists today (PrimeVue frontend, backend up to Phase 6). They are history, not targets. `CLAUDE.md` asks to keep them in sync with the app; at the end of Stage B, propose to Maurice how to retire or rewrite them so that `docs/requirements.md` stays the single behavior document.
 
-Open question 1 in the requirements (volume targets) must be answered by Maurice before Stage B starts. Ask once; if he confirms, remove the question and raise the version.
+Open question 1 in the requirements (volume targets) is answered: about 5 groups per account and about 5 polls, events and lists each per group per year (requirements v1.7).
 
 ## Working rules for both stages
 
@@ -24,8 +24,24 @@ Open question 1 in the requirements (volume targets) must be answered by Maurice
 - Commit small, descriptive units on `main`. Commit message in the style of the existing log, for example `docs: add prototype batch 2` or `feat: add events and participation`.
 - Ask before deciding anything the requirements do not define. Propose changes to `docs/requirements.md` with the affected sections before and after, wait for approval, apply, raise the version.
 - Interface language: the prototype and the app are bilingual (English, German). Every new string goes into both dictionaries. Content people write is never translated.
+- Components page first: build every new component on a components page before it goes into a page. The page is a dev-only view that lists all shared components with their variants and states, in light and dark, at 375 px and 1280 px. Look there first and reuse or extend an existing component instead of writing a new one. Wire the component into the page that needs it only after it works in isolation.
 
 ## Stage A: finish the prototype
+
+### Status
+
+Batches 1 to 3 are done and committed (`docs:` prototype commits in `git log`). Open in Stage A: the handoff check and Maurice's approval. The text of the batch sections below describes the original scope; the prototype now also contains what the next section lists.
+
+### Decisions made after batch 1
+
+- Name stays "Bring a Thing". Copy reads "bring or take on", because lists cover any task, not only things to bring (requirements v1.4).
+- Fonts: headlines Familjen Grotesk (`--font-display`), the tilted "Thing" tag and `.tag` Gabarito (`--font-tag`), body Instrument Sans.
+- Depth system in `css/depth.css` and `--depth-*` tokens: three nesting levels with distinct background and border per level, in light and dark.
+- One content width for all app views: max 1120 px, 32 px gutters, 16 px at 375 px; form fields cap at 40rem.
+- Every empty state uses the dashed, hatched `EmptyState`.
+- Poll edit and list edit are the create pages in edit mode, not dialogs. Creating a group has its own page with the shared `InviteField` (email or name, friend suggestions, chips, invite link).
+- Pages added since batch 1: New group, join page for the invite link, notifications panel behind the bell, group settings, friends, settings.
+- Kept for later (requirements section 10): QR codes, automatic deletion, list expiry, Excel export.
 
 ### What exists (batch 1, artifact "Bring a Thing", committed as `a4bb262`)
 
@@ -96,9 +112,9 @@ The build rules below assume a fresh app with a fixture layer. This repository a
 ### Frontend
 
 - Remove PrimeVue, `@primeuix/themes` and `tailwindcss-primeui`. Install shadcn-vue on Tailwind 4 the way the official Laravel Vue starter kit does it for the installed Laravel version; verify against the current Laravel and shadcn-vue docs with Boost before installing anything, and ask before changing dependencies (`CLAUDE.md`).
-- Rebuild every page from the prototype: start page, dashboard, group, poll, event, list, create pages, settings, friends, shared list, group settings, poll settings, list settings. Old pages under `resources/js/pages` are replaced, not patched. Keep the Inertia page names stable where controllers already render them, or rename controller and page together.
+- Rebuild every page from the prototype: start page, dashboard, group, poll, event, list, create and edit pages (poll, event, list, group), settings, friends, shared list, group settings, join page, notifications panel. Old pages under `resources/js/pages` are replaced, not patched. Keep the Inertia page names stable where controllers already render them, or rename controller and page together.
 - Map the prototype components to shadcn-vue primitives (Button, Input, Textarea, Checkbox, RadioGroup, Select, Dialog, Sheet, Popover, Calendar, DatePicker, Badge, Avatar, Toast, Tooltip) and build the project components on top: FormField, ChoiceGroup, DateBlock, Mark, AvatarStack, ProgressBar, EmptyState, FormPage, OptionCalendar, the poll grid, the claim controls. One component set, reused everywhere.
-- Tokens: port `docs/prototype/css/tokens.css` into `resources/css/app.css` in the three layers from the build rules, in OKLCH, with the semantic names listed there and dark mode as a class variant. Markup uses semantic utilities only.
+- Tokens: port `docs/prototype/css/tokens.css` and `css/depth.css` into `resources/css/app.css` in the three layers from the build rules, in OKLCH, with the semantic names listed there (plus `--font-tag` and the depth tokens) and dark mode as a class variant. Markup uses semantic utilities only.
 - Interface language (F-24): English and German with a per-account setting and browser detection on first visit. Choose the i18n approach after checking the docs (Laravel lang files exposed to Vue, or a maintained Inertia-compatible package); ask if two options are equally viable.
 - Keep Laravel Echo and Reverb for live updates (F-21), presence and comments; keep Wayfinder for routes.
 
