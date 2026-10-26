@@ -12,6 +12,7 @@ use App\Http\Requests\Groups\UpdateGroupMemberRoleRequest;
 use App\Http\Requests\Groups\UpdateGroupRequest;
 use App\Models\Group;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,14 +41,16 @@ class GroupController extends Controller
 
     /**
      * Show the group: members, invite form, attached lists and polls.
+     *
+     * Follow-up polls appear only to their audience (F-12).
      */
     public function show(Request $request, Group $group): Response
     {
         $this->authorize('view', $group);
 
-        $group->load('members', 'rosters', 'polls');
-
         $user = $request->user();
+
+        $group->load(['members', 'rosters', 'polls' => fn (HasMany $polls) => $polls->visibleTo($user)]);
 
         return Inertia::render('Groups/Show', [
             'group' => $group,

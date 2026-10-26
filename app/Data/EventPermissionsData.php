@@ -22,7 +22,7 @@ class EventPermissionsData extends Data
      *
      * can_set_status_for_others decides whether "Manage" appears on the
      * participation block. Follow-up polls are for accepted participants
-     * and only on events without a parent event.
+     * and managers, and only on events without a parent event.
      */
     public static function forUser(Event $event, User $user): self
     {
@@ -32,7 +32,7 @@ class EventPermissionsData extends Data
             can_respond: $user->can('respond', $event),
             can_set_status_for_others: $user->can('setStatusForOthers', $event),
             can_remove_participants: $user->can('removeParticipant', $event),
-            can_create_follow_up_poll: $event->parent_event_id === null && $event->hasAccepted($user),
+            can_create_follow_up_poll: $user->can('createFollowUpPoll', $event),
         );
     }
 }

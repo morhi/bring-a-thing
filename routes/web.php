@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DevComponentsController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventFollowUpPollController;
 use App\Http\Controllers\EventParticipationController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
@@ -143,4 +144,22 @@ Route::middleware('auth')->group(function () {
     Route::put('/events/{event}/participation', [EventParticipationController::class, 'update'])->name('events.participation.update');
     Route::put('/events/{event}/participants/{member}', [EventParticipationController::class, 'updateFor'])->name('events.participants.update');
     Route::delete('/events/{event}/participants/{member}', [EventParticipationController::class, 'destroy'])->name('events.participants.destroy');
+});
+
+// Poll create page and fixing dates (F-06, F-09).
+Route::middleware('auth')->group(function () {
+    Route::get('/groups/{group}/polls/create', [PollController::class, 'create'])->name('polls.create');
+    Route::post('/polls/{poll}/fix', [PollController::class, 'fix'])->name('polls.fix');
+});
+
+// Lists: the "New list" page (F-13). Lives outside /rosters/ because
+// /rosters/{roster} would capture a "create" segment.
+Route::middleware('auth')->group(function () {
+    Route::get('/lists/new', [RosterController::class, 'create'])->name('rosters.create');
+});
+
+// Follow-up polls within an event (F-12).
+Route::middleware('auth')->group(function () {
+    Route::get('/events/{event}/polls/create', [EventFollowUpPollController::class, 'create'])->name('events.polls.create');
+    Route::post('/events/{event}/polls', [EventFollowUpPollController::class, 'store'])->name('events.polls.store');
 });

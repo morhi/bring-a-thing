@@ -20,7 +20,8 @@ class CreateEventFromPollOption
      * leaves the person without a participation status. Nobody is accepted
      * automatically, so a poll without responses yields an event without
      * participants (section 8). Events fixed from a follow-up poll attach
-     * to the poll's source event (F-12). Closing the poll and marking the
+     * to the poll's source event, and only its current audience's
+     * responses count there (F-12). Closing the poll and marking the
      * option as fixed stay with the caller.
      */
     public function handle(PollOption $option, ?User $organizer = null): Event
@@ -44,6 +45,7 @@ class CreateEventFromPollOption
             $rows = $option->responses()
                 ->whereIn('status', [PollResponseStatus::Yes, PollResponseStatus::Maybe])
                 ->get()
+                ->filter(fn (PollResponse $response) => $poll->countsResponseFrom($response->user_id))
                 ->map(fn (PollResponse $response) => [
                     'user_id' => $response->user_id,
                     'status' => $response->status === PollResponseStatus::Yes ? ParticipationStatus::Accepted : ParticipationStatus::Pending,

@@ -275,6 +275,11 @@ it('F-09: creating an event from a poll option derives participation from the re
     [$group, $owner, , $members] = eventGroup(3);
     [$yes, $maybe, $no] = $members;
     $source = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+
+    foreach ($members as $member) {
+        EventParticipation::factory()->accepted()->create(['event_id' => $source->id, 'user_id' => $member->id]);
+    }
+
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'event_id' => $source->id, 'title' => 'Rehearsal']);
     $option = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-14', 'starts_at' => '19:00', 'ends_at' => '22:00']);
     $option->responses()->create(['user_id' => $yes->id, 'status' => PollResponseStatus::Yes]);

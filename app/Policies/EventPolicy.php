@@ -48,6 +48,30 @@ class EventPolicy
     }
 
     /**
+     * Determine whether the user can create a follow-up poll within the event (F-12).
+     *
+     * Accepted participants and the event's managers can, so an event
+     * without acceptances still gets follow-up polls (section 8). Child
+     * events never offer them: there is only one level of child events.
+     */
+    public function createFollowUpPoll(User $user, Event $event): Response
+    {
+        if (! $event->group->hasMember($user)) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($event->parent_event_id !== null) {
+            return Response::deny('Child events have no follow-up polls.');
+        }
+
+        if ($event->hasAccepted($user) || $event->isManagedBy($user)) {
+            return Response::allow();
+        }
+
+        return Response::deny();
+    }
+
+    /**
      * Determine whether the user can accept or decline the event for themselves (F-11).
      */
     public function respond(User $user, Event $event): Response

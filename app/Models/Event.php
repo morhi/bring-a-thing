@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * @property int $id
@@ -163,6 +164,39 @@ class Event extends Model
     public function hasAccepted(User $user): bool
     {
         return $this->statusOf($user) === ParticipationStatus::Accepted;
+    }
+
+    /**
+     * The group members who see and answer the event's follow-up polls (F-12).
+     *
+     * @return Collection<int, User>
+     */
+    public function followUpAudience(): Collection
+    {
+        $this->loadMissing('group.members', 'participations');
+
+        return $this->group->members
+            ->filter(fn (User $member) => $this->admitsToFollowUpPolls($member))
+            ->toBase()
+            ->values();
+    }
+
+    /**
+     * Whether a member loaded through group.members sees the follow-up polls: accepted participants and managers (F-11, F-12).
+     *
+     * Reads the role from the membership pivot, so it costs no query per member.
+     */
+    public function admitsToFollowUpPolls(User $member): bool
+    {
+        if (in_array($member->getKey(), [$this->organizer_id, $this->group->owner_id], true)) {
+            return true;
+        }
+
+        if ($member->pivot instanceof GroupMember && $member->pivot->isAtLeastAdmin()) {
+            return true;
+        }
+
+        return $this->hasAccepted($member);
     }
 
     /**

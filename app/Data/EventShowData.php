@@ -30,6 +30,7 @@ class EventShowData extends Data
         public array $own_claims,
         public array $lists,
         public array $follow_up_polls,
+        public int $follow_up_audience_count,
         public array $child_events,
         public EventPermissionsData $permissions,
     ) {}
@@ -40,7 +41,9 @@ class EventShowData extends Data
      * participants lists every group member, with a null status for those
      * without participation, plus former members who keep a status (F-04).
      * Lists are only for participants ("accepted" or "pending"), follow-up
-     * polls only for "accepted"; everyone else gets the key details.
+     * polls only for their audience: "accepted" and managers (F-12);
+     * everyone else gets the key details. follow_up_audience_count feeds
+     * the audience note of "New follow-up poll".
      * own_claims feeds the decline confirmation.
      */
     public static function forUser(Event $event, User $user): self
@@ -56,7 +59,9 @@ class EventShowData extends Data
             ->values();
 
         $isParticipant = $event->hasParticipant($user);
-        $hasAccepted = $event->hasAccepted($user);
+        $followUpPolls = $event->polls
+            ->each(fn (Poll $poll) => $poll->setRelation('event', $event))
+            ->filter(fn (Poll $poll) => $poll->includesMember($user));
 
         return new self(
             event: EventData::fromEvent($event),
@@ -67,7 +72,8 @@ class EventShowData extends Data
             participants: $participants->all(),
             own_claims: $event->claimsOf($user)->map(fn (RosterItemClaim $claim) => EventClaimData::fromClaim($claim))->all(),
             lists: $isParticipant ? $event->rosters->map(fn (Roster $roster) => new EventLinkData($roster->slug, $roster->title))->all() : [],
-            follow_up_polls: $hasAccepted ? $event->polls->map(fn (Poll $poll) => new EventLinkData($poll->slug, $poll->title))->all() : [],
+            follow_up_polls: $followUpPolls->map(fn (Poll $poll) => new EventLinkData($poll->slug, $poll->title))->values()->all(),
+            follow_up_audience_count: $event->followUpAudience()->count(),
             child_events: $event->childEvents->map(fn (Event $child) => EventSummaryData::fromEvent($child))->all(),
             permissions: EventPermissionsData::forUser($event, $user),
         );
