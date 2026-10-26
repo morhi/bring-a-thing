@@ -1,5 +1,6 @@
-import { createApp, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, views } from './core.js';
+import { createApp, computed, watch } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
+import { ui, views, toast } from './core.js';
+import { t } from './i18n.js';
 import { Icon, Avatar, Mark, DateBlock, EmptyState, AvatarStack, AppDialog, LangSwitch, FormField, ChoiceGroup, ProgressBar, FormPage } from './components.js';
 import { Wordmark, AppHeader, Toasts, ReviewBar } from './shell.js';
 import { WelcomeView } from './views/welcome.js';
@@ -23,10 +24,21 @@ const App = {
   setup() {
     const view = computed(() => views[ui.view] || views.dashboard);
 
-    return { ui, view };
+    // F-21: the note stays until the connection is back, then the app confirms it is current again
+    watch(() => ui.offline, (offline) => {
+      if (!offline) {
+        toast(t('conn.restored'));
+      }
+    });
+
+    return { ui, view, t };
   },
   template: `
     <div :class="{ 'show-features': ui.showFeatures }">
+      <div class="alert alert--warning connection-note" v-if="ui.offline" role="status" data-feature="F-21">
+        <Icon name="clock" />
+        <span class="alert__body">{{ t('conn.lost') }}</span>
+      </div>
       <AppHeader v-if="!view.public" />
       <component :is="view.component" :key="ui.view" />
       <Toasts />

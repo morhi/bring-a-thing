@@ -123,6 +123,10 @@ export const ReviewBar = {
           </div>
         </div>
         <label class="check">
+          <input type="checkbox" v-model="ui.offline">
+          <span class="check__text">{{ t('review.offline') }}</span>
+        </label>
+        <label class="check">
           <input type="checkbox" v-model="ui.showFeatures">
           <span class="check__text">{{ t('review.features') }}</span>
         </label>

@@ -36,6 +36,10 @@ export const WelcomeView = {
         email.value = 'maurice@nordlicht';
         error.value = t('welcome.login.invalid');
       }
+
+      if (value === 'expired') {
+        email.value = '';
+      }
     }, { immediate: true });
 
     const valid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value));
@@ -152,6 +156,14 @@ export const WelcomeView = {
 
           <form class="login-card" @submit.prevent="submit" data-feature="F-01" novalidate>
             <h2>{{ t('welcome.login.title') }}</h2>
+
+            <div class="alert alert--warning" v-if="state === 'expired'" role="alert">
+              <Icon name="clock" />
+              <span class="alert__body">
+                {{ t('welcome.login.expired') }}
+                <button type="button" class="btn btn--soft btn--sm" @click="state = 'default'"><Icon name="mail" /> {{ t('welcome.login.requestNew') }}</button>
+              </span>
+            </div>
 
             <template v-if="state !== 'sent'">
               <div class="login-card__steps">

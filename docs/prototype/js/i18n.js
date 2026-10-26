@@ -63,7 +63,7 @@ const en = {
   'dash.waiting.pollMetaNone': 'No answer yet',
   'dash.waiting.event': 'Are you in?',
   'dash.waiting.eventMeta': '{accepted} accepted so far',
-  'dash.waiting.done.title': 'All caught up',
+  'dash.waiting.done.title': 'All caught up.',
   'dash.waiting.done.text': 'Nothing needs your answer right now.',
   'dash.upcoming': 'Upcoming events',
   'dash.upcoming.empty.title': 'No upcoming events',
@@ -163,6 +163,7 @@ const en = {
   'newGroup.invitesHint': 'Optional. You can also invite people later from the group page.',
   'newGroup.create': 'Create group',
   'newGroup.created': 'Group created',
+  'newGroup.createdWith': 'Group created, {n} people invited',
   'newGroup.nameRequired': 'Give the group a name.',
 
   'newList.title': 'New list',
@@ -347,6 +348,12 @@ const en = {
   'review.state.sent': 'Link sent',
   'review.state.password': 'Has password',
   'review.state.error': 'Error',
+  'review.state.expired': 'Expired login link',
+  'review.offline': 'Simulate lost live update connection',
+  'welcome.login.expired': 'This login link has expired. Request a new one to log in.',
+  'welcome.login.requestNew': 'Request new link',
+  'conn.lost': 'Connection lost. Changes from others may be missing until it is back.',
+  'conn.restored': 'Connection is back. Everything is up to date.',
   'review.state.noMembers': 'No other members',
 
   // poll
@@ -746,7 +753,7 @@ const de = {
   'dash.waiting.pollMetaNone': 'Noch keine Antwort',
   'dash.waiting.event': 'Bist du dabei?',
   'dash.waiting.eventMeta': 'Bisher {accepted} Zusagen',
-  'dash.waiting.done.title': 'Alles beantwortet',
+  'dash.waiting.done.title': 'Alles beantwortet.',
   'dash.waiting.done.text': 'Gerade wartet nichts auf dich.',
   'dash.upcoming': 'Anstehende Events',
   'dash.upcoming.empty.title': 'Keine anstehenden Events',
@@ -844,6 +851,7 @@ const de = {
   'newGroup.invitesHint': 'Optional. Du kannst auch später von der Gruppenseite aus einladen.',
   'newGroup.create': 'Gruppe anlegen',
   'newGroup.created': 'Gruppe angelegt',
+  'newGroup.createdWith': 'Gruppe angelegt, {n} Personen eingeladen',
   'newGroup.nameRequired': 'Gib der Gruppe einen Namen.',
 
   'newList.title': 'Neue Liste',
@@ -1025,6 +1033,12 @@ const de = {
   'review.state.sent': 'Link verschickt',
   'review.state.password': 'Mit Passwort',
   'review.state.error': 'Fehler',
+  'review.state.expired': 'Abgelaufener Anmeldelink',
+  'review.offline': 'Verlorene Live-Verbindung simulieren',
+  'welcome.login.expired': 'Dieser Anmeldelink ist abgelaufen. Fordere einen neuen an, um dich anzumelden.',
+  'welcome.login.requestNew': 'Neuen Link anfordern',
+  'conn.lost': 'Verbindung verloren. Änderungen anderer fehlen eventuell, bis sie wieder steht.',
+  'conn.restored': 'Die Verbindung steht wieder. Alles ist aktuell.',
   'review.state.noMembers': 'Keine weiteren Mitglieder',
 
   // poll

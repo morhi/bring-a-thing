@@ -31,6 +31,7 @@ export const ui = reactive({
   formContext: {},
   returnView: 'dashboard',
   toasts: [],
+  offline: false, // F-21: review-bar switch for the lost live update connection
   states: {},
   currentGroupId: 'g1',
   joinToken: null, // invite-link: token the join page was opened with, so a regenerated link can fail
@@ -73,7 +74,7 @@ export const features = {
 };
 
 export const views = {
-  welcome: { component: 'WelcomeView', public: true, states: ['default', 'sent', 'password', 'error'] },
+  welcome: { component: 'WelcomeView', public: true, states: ['default', 'sent', 'password', 'error', 'expired'] },
   dashboard: { component: 'DashboardView', states: ['default', 'caughtUp', 'empty'] },
   group: { component: 'GroupView', states: ['default', 'empty', 'noMembers'] },
   'group-settings': { component: 'GroupSettingsView', states: [] }, // group-settings

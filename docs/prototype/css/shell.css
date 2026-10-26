@@ -249,3 +249,12 @@ body::before {
 .review-panel__features b {
   color: #a21caf;
 }
+
+/* Live update connection lost (F-21): sticks above every view until the connection is back */
+.connection-note {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  justify-content: center;
+  border-radius: 0;
+}
