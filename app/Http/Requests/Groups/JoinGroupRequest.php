@@ -53,8 +53,8 @@ class JoinGroupRequest extends FormRequest
     /**
      * Get the "after" validation callables for the request.
      *
-     * A closed link requires an email login, so a logged-in account without
-     * an email has to add one in the settings first.
+     * A closed link requires a proven email, so a logged-in account without
+     * a verified email has to add or confirm one first (F-01).
      *
      * @return array<int, callable>
      */
@@ -62,7 +62,7 @@ class JoinGroupRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($this->user() === null || $this->user()->email !== null) {
+                if ($this->user() === null || $this->user()->hasVerifiedEmail()) {
                     return;
                 }
 
@@ -70,7 +70,9 @@ class JoinGroupRequest extends FormRequest
                     return;
                 }
 
-                $validator->errors()->add('email', 'Add an email address in your settings to join this group.');
+                $validator->errors()->add('email', $this->user()->email === null
+                    ? 'Add an email address in your settings to join this group.'
+                    : 'Log in through the login link sent to your email to join this group.');
             },
         ];
     }

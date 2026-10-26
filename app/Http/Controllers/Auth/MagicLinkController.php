@@ -92,6 +92,11 @@ class MagicLinkController extends Controller
         CompletePendingSharedClaim $completePendingSharedClaim,
         JoinGroupViaLink $joinGroup,
     ): RedirectResponse {
+        // Following the link proves control of the address (F-01).
+        if ($user->email_verified_at === null) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         Auth::login($user);
 
         if ($redirect = $completePendingSharedClaim->handle($request, $user)) {

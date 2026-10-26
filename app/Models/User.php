@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string|null $name
  * @property string|null $email
+ * @property string|null $pending_email
  * @property string|null $language
  * @property Carbon|null $email_verified_at
  * @property string|null $password
@@ -43,6 +44,17 @@ class User extends Authenticatable implements HasLocalePreference
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Whether the account has an email whose ownership was proven.
+     *
+     * Checks the address too, since a verified timestamp alone says nothing
+     * when the account has no email (F-01).
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email !== null && $this->email_verified_at !== null;
     }
 
     /**

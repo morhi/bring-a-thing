@@ -21,7 +21,7 @@ class GroupJoinData extends Data
      * Build the join page state for an invite link (F-04).
      *
      * needs_email is true when joining requires an email login first: a
-     * guest on a closed link, or a logged-in account that has no email yet.
+     * guest on a closed link, or a logged-in account without a verified email.
      */
     public static function fromGroup(Group $group, ?User $user): self
     {
@@ -31,7 +31,7 @@ class GroupJoinData extends Data
             locked: $group->invite_link_locked,
             member_count: $group->members()->count(),
             is_authenticated: $user !== null,
-            needs_email: $group->invite_link_locked && $user?->email === null,
+            needs_email: $group->invite_link_locked && ! $user?->hasVerifiedEmail(),
         );
     }
 }
