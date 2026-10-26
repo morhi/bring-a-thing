@@ -1,0 +1,92 @@
+/* Depth: nested boxes pick their level from the number of box ancestors.
+   Level 1 is a page container, level 2 a box inside it, level 3 a box inside that; deeper stays at 3.
+   Floating surfaces (dialogs, menus, panels) restart at level 1 above the page.
+   Every box reads --box-* for its background and edge, so a view needs no per-level code. */
+
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url, .dialog, .menu, .notif-panel, .item-menu__panel, .suggestions) {
+  --box-bg: var(--depth-1-bg);
+  --box-border: var(--depth-1-border);
+  --box-accent: var(--depth-1-border);
+  --box-edge: 1px;
+  --box-accent-width: 1px;
+  --box-shadow: var(--shadow-card);
+  background-color: var(--box-bg);
+  border-style: solid;
+  border-width: var(--box-edge) var(--box-edge) var(--box-edge) var(--box-accent-width);
+  border-color: var(--box-border) var(--box-border) var(--box-border) var(--box-accent);
+}
+
+/* Level 2: tinted step plus a wider accent on the leading edge */
+
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url, .dialog, .menu, .notif-panel, .item-menu__panel, .suggestions)
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url) {
+  --box-bg: var(--depth-2-bg);
+  --box-border: var(--depth-2-border);
+  --box-accent: var(--depth-2-accent);
+  --box-edge: 1px;
+  --box-accent-width: 3px;
+  --box-shadow: none;
+}
+
+/* Level 3: back to the light step, held by a 2px edge all round */
+
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url, .dialog, .menu, .notif-panel, .item-menu__panel, .suggestions)
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url)
+:where(.section, .card, .form-page__body, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url) {
+  --box-bg: var(--depth-3-bg);
+  --box-border: var(--depth-3-border);
+  --box-accent: var(--depth-3-border);
+  --box-edge: 2px;
+  --box-accent-width: 2px;
+  --box-shadow: none;
+}
+
+/* Floating surfaces sit above the page wherever they are rendered: level 1 with a firm edge, their own shadow */
+
+.dialog,
+.menu,
+.notif-panel,
+.item-menu__panel,
+.suggestions {
+  --box-bg: var(--depth-1-bg);
+  --box-border: var(--border-strong);
+  --box-accent: var(--border-strong);
+  --box-edge: 1px;
+  --box-accent-width: 1px;
+}
+
+:is(.dialog, .menu, .notif-panel, .item-menu__panel, .suggestions)
+:where(.section, .card, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url) {
+  --box-bg: var(--depth-2-bg);
+  --box-border: var(--depth-2-border);
+  --box-accent: var(--depth-2-accent);
+  --box-edge: 1px;
+  --box-accent-width: 3px;
+  --box-shadow: none;
+}
+
+:is(.dialog, .menu, .notif-panel, .item-menu__panel, .suggestions)
+:where(.section, .card, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url)
+:where(.section, .card, .panel, .empty, .alert, .choice, .participation__own, .option-row, .fix-option, .fix-preview, .fix-event, .gs-danger, .poll-grid-wrap, .invite-chip, .share-link__url) {
+  --box-bg: var(--depth-3-bg);
+  --box-border: var(--depth-3-border);
+  --box-accent: var(--depth-3-border);
+  --box-edge: 2px;
+  --box-accent-width: 2px;
+  --box-shadow: none;
+}
+
+/* Small inline boxes keep a uniform edge; the accent is for blocks */
+
+.invite-chip,
+.share-link__url,
+.option-row {
+  --box-accent: var(--box-border);
+  --box-accent-width: var(--box-edge);
+}
+
+/* Nested boxes use the tighter radius of a row, not the container radius */
+
+:where(.section, .card, .form-page__body, .dialog) :where(.empty, .panel, .poll-grid-wrap) {
+  border-radius: var(--radius-md);
+}

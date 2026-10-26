@@ -1,7 +1,7 @@
 // Dashboard (F-22): waiting for you, upcoming events, claims, groups, standalone lists.
 
 import { computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, openDialog, goCreate, viewState } from '../core.js';
+import { ui, h, data, currentUser, go, goCreate, viewState } from '../core.js';
 import { t, formatDate, formatLongDate, relativeDay, isPast, TODAY } from '../i18n.js';
 
 export const DashboardView = {
@@ -82,7 +82,7 @@ export const DashboardView = {
       go('group', { currentGroupId: id });
     }
 
-    return { ui, state, user, greeting, waiting, upcoming, claims, groups, lists, groupStats, claimLabel, openGroup, go, openDialog, goCreate, h, t, formatDate, formatLongDate, relativeDay };
+    return { ui, state, user, greeting, waiting, upcoming, claims, groups, lists, groupStats, claimLabel, openGroup, go, goCreate, h, t, formatDate, formatLongDate, relativeDay };
   },
   template: `
     <main class="container page" data-feature="F-22">
@@ -155,7 +155,7 @@ export const DashboardView = {
       <section class="section" aria-labelledby="groups-title" data-feature="F-03">
         <div class="section-head">
           <h2 id="groups-title">{{ t('dash.groups') }}<span class="section-head__count" v-if="groups.length">{{ groups.length }}</span></h2>
-          <button type="button" class="btn btn--secondary btn--sm" @click="openDialog('newGroup')"><Icon name="plus" /> {{ t('dash.groups.new') }}</button>
+          <button type="button" class="btn btn--secondary btn--sm" @click="goCreate('new-group')"><Icon name="plus" /> {{ t('dash.groups.new') }}</button>
         </div>
         <div class="grid grid--3" v-if="groups.length">
           <button type="button" class="card card--interactive group-card" v-for="group in groups" :key="group.id" @click="openGroup(group.id)">
@@ -172,7 +172,7 @@ export const DashboardView = {
           </button>
         </div>
         <EmptyState v-else :title="state === 'empty' ? t('dash.empty.title') : t('dash.groups.empty.title')" :text="state === 'empty' ? t('dash.empty.text') : t('dash.groups.empty.text')">
-          <button type="button" class="btn btn--primary" @click="openDialog('newGroup')"><Icon name="plus" /> {{ t('dash.groups.new') }}</button>
+          <button type="button" class="btn btn--primary" @click="goCreate('new-group')"><Icon name="plus" /> {{ t('dash.groups.new') }}</button>
           <button type="button" class="btn btn--secondary" v-if="state === 'empty'" @click="goCreate('new-list')">{{ t('dash.lists.new') }}</button>
         </EmptyState>
       </section>

@@ -26,21 +26,53 @@
   width: 100%;
 }
 
+/* poll-rules: every row carries date, optional label and remove; slot rows add start and end */
+
 .option-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
   gap: 8px;
   align-items: center;
   padding: 8px;
   border-radius: var(--radius-md);
-  background: var(--surface-muted);
 }
 
 .option-row--slot {
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr) auto;
 }
 
+/* poll-rules: the apply link sits on its own line under the inputs, so the columns stay aligned */
+
+.option-row__all {
+  grid-column: 1 / -1;
+  justify-self: start;
+  border: 0;
+  background: none;
+  padding: 0 2px;
+  min-height: 28px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.option-row__all:hover {
+  color: var(--primary-hover);
+}
+
 @media (max-width: 560px) {
+  .option-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  /* Day rows: date and remove share the first line, the label takes the second */
+  .option-row:not(.option-row--slot) .input--label {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+
   .option-row--slot {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
@@ -67,7 +99,7 @@
 /* edit-mode: existing options show their answer count next to the remove button */
 
 .option-row--meta {
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto auto;
 }
 
 .option-row--slot.option-row--meta {
@@ -85,6 +117,10 @@
 }
 
 @media (max-width: 560px) {
+  .option-row--meta {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
   .option-row--slot.option-row--meta {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
@@ -92,6 +128,10 @@
   .option-row--slot .option-row__meta {
     grid-column: 1 / -1;
     order: 1;
+  }
+
+  .option-row__all {
+    order: 2;
   }
 }
 
@@ -129,7 +169,6 @@
 /* Create pages: one form column, sticky action bar at the bottom */
 
 .form-page {
-  max-width: 820px;
   gap: 32px;
   padding-bottom: 0;
 }
@@ -149,16 +188,22 @@
   flex-direction: column;
   gap: var(--space-stack);
   padding: 18px 16px 20px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--container-radius);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--box-shadow);
 }
 
 @media (min-width: 720px) {
   .form-page__body {
     padding: 28px 32px 32px;
   }
+}
+
+/* Single-line fields stay readable on the shared wide container; the frame itself never narrows */
+
+.form-page__body .field > .input,
+.form-page__body .field > .select,
+.form-page__body .field > .textarea {
+  max-width: 40rem;
 }
 
 /* The action bar floats above the ground as its own raised bar, separate from the form body */
@@ -237,7 +282,6 @@
   min-width: 0;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  background: var(--surface-muted);
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -11,8 +11,6 @@
   width: min(400px, calc(100vw - 32px));
   max-height: min(70vh, 560px);
   overflow: auto;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   display: flex;

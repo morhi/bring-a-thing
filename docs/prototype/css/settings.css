@@ -1,9 +1,5 @@
 /* Settings page: head, then one section per topic with an intro column and a card */
 
-.settings-page {
-  max-width: 960px;
-}
-
 .settings-head {
   display: flex;
   flex-direction: column;

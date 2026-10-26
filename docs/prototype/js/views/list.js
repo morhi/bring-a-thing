@@ -79,17 +79,29 @@ const ConfirmDialog = {
     </AppDialog>`
 };
 
-// Comment thread for a list or one item (F-20). Cmd/Ctrl+Enter sends.
-const CommentThread = {
-  props: { listId: { type: String, required: true }, itemId: String, canPost: Boolean, canModerate: Boolean, compact: Boolean },
+// Comment thread for a list, one item or an event (F-20). Cmd/Ctrl+Enter sends.
+// poll-rules: the event page reuses it with eventId instead of listId.
+export const CommentThread = {
+  props: { listId: String, itemId: String, eventId: String, canPost: Boolean, canModerate: Boolean, compact: Boolean },
   setup(props) {
     const user = currentUser;
     const text = ref('');
-    const controlId = `comment-${props.itemId || props.listId}`;
+    const controlId = `comment-${props.itemId || props.eventId || props.listId}`;
     const modifierKey = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl';
-    const comments = computed(() => data.comments
-      .filter((comment) => (props.itemId ? comment.itemId === props.itemId : comment.listId === props.listId && !comment.itemId))
-      .sort((a, b) => a.at.localeCompare(b.at)));
+
+    function belongs(comment) {
+      if (props.eventId) {
+        return comment.eventId === props.eventId;
+      }
+
+      if (props.itemId) {
+        return comment.itemId === props.itemId;
+      }
+
+      return comment.listId === props.listId && !comment.itemId;
+    }
+
+    const comments = computed(() => data.comments.filter(belongs).sort((a, b) => a.at.localeCompare(b.at)));
 
     function send() {
       const body = text.value.trim();
@@ -98,7 +110,15 @@ const CommentThread = {
         return;
       }
 
-      data.comments.push({ id: nextId('c'), listId: props.listId, itemId: props.itemId || null, authorId: user.value.id, text: body, at: now() });
+      data.comments.push({
+        id: nextId('c'),
+        listId: props.listId || null,
+        itemId: props.itemId || null,
+        eventId: props.eventId || null,
+        authorId: user.value.id,
+        text: body,
+        at: now()
+      });
       text.value = '';
     }
 

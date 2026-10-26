@@ -2,10 +2,10 @@
 // Owner and admin reach it from the group page; the admin sees no role change, no rename, no options and no delete action.
 
 import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, toast, nextId, createInviteLink, inviteUrl, copyText } from '../core.js';
+import { ui, h, data, currentUser, go, toast, createInviteLink, inviteUrl, copyText } from '../core.js';
 import { t } from '../i18n.js';
+import { InviteField, inviteToGroup, invitedToast } from '../invite-field.js'; // new-group
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roleOrder = { owner: 0, admin: 1, member: 2 };
 
 function personName(id) {
@@ -67,7 +67,7 @@ const DeleteGroupDialog = {
 };
 
 export const GroupSettingsView = {
-  components: { DeleteGroupDialog },
+  components: { DeleteGroupDialog, InviteField },
   setup() {
     const user = currentUser;
     const group = computed(() => h.group(ui.currentGroupId));
@@ -175,70 +175,25 @@ export const GroupSettingsView = {
       toast(t('groupSettings.options.saved'));
     }
 
-    // Invite form with friend suggestions, same behavior as on the group page (F-04, F-05)
-    const inviteEmail = ref('');
-    const inviteError = ref('');
-    const suggestionsOpen = ref(false);
-
-    const suggestions = computed(() => {
-      const query = inviteEmail.value.trim().toLowerCase();
-
-      if (!query || !group.value) {
-        return [];
-      }
-
-      const memberIds = h.membersOf(group.value.id);
-
-      return h.friendsOf(user.value.id)
-        .filter((friend) => friend && !memberIds.includes(friend.id))
-        .filter((friend) => friend.email.toLowerCase().includes(query) || (friend.name || '').toLowerCase().includes(query))
-        .slice(0, 4);
-    });
-
-    function pickSuggestion(friend) {
-      inviteEmail.value = friend.email;
-      suggestionsOpen.value = false;
-    }
+    // new-group: the shared invitation component, same behavior as on the group page (F-04, F-05)
+    const invites = ref([]);
 
     function invite() {
-      const email = inviteEmail.value.trim().toLowerCase();
+      const invited = inviteToGroup(group.value, invites.value, user.value.id);
+      invites.value = [];
 
-      if (!emailPattern.test(email)) {
-        inviteError.value = t('group.invite.invalid');
-
+      if (!invited.length) {
         return;
       }
 
-      let account = data.accounts.find((entry) => entry.email.toLowerCase() === email);
-
-      if (account && h.membersOf(group.value.id).includes(account.id)) {
-        inviteError.value = t('group.invite.exists', { name: account.name || account.email });
-
-        return;
-      }
-
-      if (!account) {
-        account = { id: nextId('u'), name: '', email, language: ui.lang, tone: 5 };
-        data.accounts.push(account);
-      }
-
-      data.memberships.push({ groupId: group.value.id, accountId: account.id, role: 'member', acceptedAt: null });
-
-      if (!data.friends.some((entry) => entry.accountId === user.value.id && entry.friendId === account.id)) {
-        data.friends.push({ accountId: user.value.id, friendId: account.id });
-      }
-
-      inviteError.value = '';
-      inviteEmail.value = '';
-      suggestionsOpen.value = false;
-      toast(t('group.invite.sent', { email }));
+      toast(invitedToast(invited));
     }
 
     return {
       user, group, isOwner, canManage, members, counts, name, nameError, removing, deleting,
       saveName, setRole, remove, confirmDelete,
       linkUrl, lockOptions, createLink, copyLink, setLock, revokeLink, regenerateLink, previewJoin, setOption,
-      inviteEmail, inviteError, suggestions, suggestionsOpen, pickSuggestion, invite,
+      invites, invite,
       personName, go, h, t
     };
   },
@@ -359,21 +314,7 @@ export const GroupSettingsView = {
           </ul>
           <p class="notice">{{ t('groupSettings.ownerNote') }}</p>
 
-          <form class="invite" @submit.prevent="invite" novalidate data-feature="F-04">
-            <FormField :label="t('group.invite.title')" control="gs-invite-email" :error="inviteError" :hint="t('group.invite.hint')">
-              <div class="invite__row">
-                <input class="input" id="gs-invite-email" type="email" v-model="inviteEmail" :placeholder="t('group.invite.placeholder')" autocomplete="off" @focus="suggestionsOpen = true" @input="suggestionsOpen = true" :aria-invalid="inviteError ? 'true' : null" aria-autocomplete="list" aria-controls="gs-invite-suggestions" :aria-expanded="suggestionsOpen && suggestions.length > 0">
-                <button type="submit" class="btn btn--primary"><Icon name="plus" /> <span class="visually-hidden">{{ t('group.invite.button') }}</span></button>
-              </div>
-              <div class="suggestions" id="gs-invite-suggestions" role="listbox" v-if="suggestionsOpen && suggestions.length" data-feature="F-05">
-                <button type="button" class="suggestion" role="option" v-for="friend in suggestions" :key="friend.id" @click="pickSuggestion(friend)">
-                  <Avatar :id="friend.id" size="sm" />
-                  <span>{{ friend.name || t('common.noName') }}</span>
-                  <span class="suggestion__email">{{ friend.email }}</span>
-                </button>
-              </div>
-            </FormField>
-          </form>
+          <InviteField v-model="invites" :group-id="group.id" :label="t('group.invite.title')" :hint="t('group.invite.hint')" :submit-label="t('group.invite.button')" :link="false" id="gs-invite" @submit="invite" />
         </div>
       </section>
 

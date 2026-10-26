@@ -5,6 +5,7 @@
 import { ref, reactive, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
 import { ui, h, data, currentUser, go, goCreate, viewState, toast } from '../core.js';
 import { t, formatDate, relativeDay, isPast } from '../i18n.js';
+import { CommentThread } from './list.js'; // poll-rules
 
 function personName(id) {
   return h.displayName(id) || h.account(id).email;
@@ -60,6 +61,7 @@ function deleteEvent(eventId) {
   h.listsOfEvent(eventId).forEach((list) => deleteList(list.id));
   data.polls.filter((poll) => poll.eventId === eventId).forEach((poll) => deletePoll(poll.id));
   data.participations = data.participations.filter((entry) => entry.eventId !== eventId);
+  data.comments = data.comments.filter((comment) => comment.eventId !== eventId); // poll-rules
   data.events = data.events.filter((event) => event.id !== eventId);
 }
 
@@ -171,7 +173,7 @@ const DeleteEventDialog = {
 };
 
 export const EventView = {
-  components: { EventEditDialog, DeclineDialog, DeleteEventDialog },
+  components: { EventEditDialog, DeclineDialog, DeleteEventDialog, CommentThread },
   setup() {
     const state = viewState('event');
     const user = currentUser;
@@ -187,6 +189,8 @@ export const EventView = {
     const canManage = computed(() => !!event.value && (isOrganizer.value || h.canManage(event.value.groupId, user.value.id)));
     // Members set the status for others only when the group option allows it; managers always can (F-11, F-03).
     const canSetStatus = computed(() => canManage.value || (!!group.value && !!group.value.membersCanSetStatus));
+    // new-group: the per-person controls appear only after "Manage", so the default card stays read-only (F-11).
+    const managing = ref(false);
     // Child events have no follow-up polls and no children of their own (F-12, one level only).
     const isChild = computed(() => !!event.value && !!event.value.parentEventId);
 
@@ -277,6 +281,11 @@ export const EventView = {
       return data.events.filter((item) => item.parentEventId === event.value.id).sort((a, b) => a.start.localeCompare(b.start));
     });
     const deleteCounts = computed(() => ({ lists: lists.value.length, polls: followUps.value.length, children: children.value.length }));
+
+    // poll-rules: one collapsed thread per event (F-20); group owner and admins moderate
+    const commentsOpen = ref(false);
+    const commentCount = computed(() => (event.value ? data.comments.filter((comment) => comment.eventId === event.value.id).length : 0));
+    const canModerateComments = computed(() => !!event.value && h.canManage(event.value.groupId, user.value.id));
 
     function pollMeta(poll) {
       const audience = h.audience(poll);
@@ -398,9 +407,10 @@ export const EventView = {
     }
 
     return {
-      ui, state, user, dialog, pendingClaims, event, group, visible, past, canManage, canSetStatus, isChild, columns, acceptedCount, myStatus, isParticipant, myBadge,
+      ui, state, user, dialog, pendingClaims, event, group, visible, past, canManage, canSetStatus, managing, isChild, columns, acceptedCount, myStatus, isParticipant, myBadge,
       parent, originPoll, timeLabel, lists, followUps, children, deleteCounts, pollMeta, pollStatus, childStatus, personName,
-      accept, decline, confirmDecline, changeStatus, removeParticipant, saveEdit, confirmDelete, go, goCreate, h, t, formatDate, relativeDay
+      accept, decline, confirmDecline, changeStatus, removeParticipant, saveEdit, confirmDelete, go, goCreate, h, t, formatDate, relativeDay,
+      commentsOpen, commentCount, canModerateComments // poll-rules
     };
   },
   template: `
@@ -436,7 +446,10 @@ export const EventView = {
       <section class="card participation" aria-labelledby="participation-title" data-feature="F-11">
         <div class="section-head">
           <h2 id="participation-title">{{ t('event.participation') }}</h2>
-          <span :class="['badge', myBadge.cls]">{{ myBadge.label }}</span>
+          <span class="participation__head-aside">
+            <span :class="['badge', myBadge.cls]">{{ myBadge.label }}</span>
+            <button type="button" class="btn btn--ghost btn--sm" v-if="canSetStatus" :aria-pressed="managing" @click="managing = !managing" :data-feature="canManage ? null : 'F-03'">{{ managing ? t('event.manageDone') : t('event.manage') }}</button>
+          </span>
         </div>
 
         <div class="participation__own">
@@ -459,8 +472,8 @@ export const EventView = {
               <li class="participant" v-for="id in column.ids" :key="id">
                 <Avatar :id="id" size="sm" />
                 <span class="participant__name">{{ personName(id) }} <span class="soft small" v-if="id === user.id">({{ t('group.member.you') }})</span></span>
-                <span class="participant__controls" v-if="id !== user.id">
-                  <select class="select input--sm participant__status" v-if="canSetStatus" :value="column.status" :aria-label="t('event.setStatus', { name: personName(id) })" @change="changeStatus(id, $event.target.value)" :data-feature="canManage ? null : 'F-03'">
+                <span class="participant__controls" v-if="managing && id !== user.id">
+                  <select class="select input--sm participant__status" :value="column.status" :aria-label="t('event.setStatus', { name: personName(id) })" @change="changeStatus(id, $event.target.value)" :data-feature="canManage ? null : 'F-03'">
                     <option value="accepted">{{ t('event.accepted') }}</option>
                     <option value="pending">{{ t('event.pending') }}</option>
                     <option value="declined">{{ t('event.declined') }}</option>
@@ -555,6 +568,20 @@ export const EventView = {
           <EmptyState v-else :title="t('event.children.empty.title')" :text="t('event.children.empty.text')" />
         </section>
       </template>
+
+      <!-- poll-rules: everyone who sees the key details sees the thread; collapsed until opened -->
+      <section class="card event-comments" aria-labelledby="event-comments-title" data-feature="F-20">
+        <h2 id="event-comments-title" class="event-comments__title">
+          <button type="button" class="event-comments__toggle" :aria-expanded="commentsOpen" aria-controls="event-comments-body" @click="commentsOpen = !commentsOpen">
+            <Icon name="comment" class="icon-md" />
+            <span class="event-comments__label">{{ t('event.comments.toggle', { n: commentCount }) }}</span>
+            <Icon name="chevron" class="icon-sm icon-soft event-comments__chevron" />
+          </button>
+        </h2>
+        <div class="event-comments__body" id="event-comments-body" v-if="commentsOpen">
+          <CommentThread :event-id="event.id" :can-post="true" :can-moderate="canModerateComments" />
+        </div>
+      </section>
 
       <EventEditDialog v-if="dialog === 'edit'" :event="event" @close="dialog = null" @save="saveEdit" />
       <DeclineDialog v-if="dialog === 'decline'" :claims="pendingClaims" @close="dialog = null" @confirm="confirmDecline" />

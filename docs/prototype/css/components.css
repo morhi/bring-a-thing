@@ -278,14 +278,12 @@
   gap: 4px;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-raised);
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
 
 .choice:hover {
-  border-color: var(--border-strong);
+  --box-border: var(--fg-soft);
 }
 
 .choice input {
@@ -348,19 +346,16 @@
 /* Cards and panels */
 
 .card {
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--card-radius);
   padding: var(--card-padding);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--box-shadow);
   min-width: 0;
 }
 
-/* Cards nested in a section are rows of that container: tighter radius, no second shadow */
+/* Cards nested in a section are rows of that container: tighter radius */
 
 .section .card {
   border-radius: var(--radius-md);
-  box-shadow: none;
 }
 
 .card .section-head {
@@ -384,13 +379,12 @@
 }
 
 .card--interactive:hover {
-  border-color: var(--border-strong);
+  --box-border: var(--fg-soft);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .panel {
-  background: var(--surface-muted);
   border-radius: var(--card-radius);
   padding: var(--card-padding);
 }
@@ -624,8 +618,16 @@
   gap: 10px;
   padding: 28px;
   border-radius: var(--card-radius);
-  border: 1.5px dashed var(--border-strong);
+  border-style: dashed;
+  border-width: max(1.5px, var(--box-edge));
   background-image: repeating-linear-gradient(135deg, var(--texture-hatch-color) 0 1px, transparent 1px 12px);
+}
+
+/* A page-level empty state has no container edge to lean on, so its dashed edge takes the stronger tone */
+
+.empty:not(:where(.section, .card, .form-page__body, .dialog) .empty) {
+  --box-border: var(--border-strong);
+  --box-accent: var(--border-strong);
 }
 
 .empty__icon {
@@ -659,8 +661,6 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-muted);
   font-size: 15px;
 }
 
@@ -725,7 +725,6 @@
   max-width: 560px;
   max-height: calc(100dvh - env(safe-area-inset-top, 0px));
   overflow: auto;
-  background: var(--surface-raised);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: var(--shadow-lg);
   display: flex;

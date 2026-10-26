@@ -77,9 +77,7 @@
   overscroll-behavior-x: contain;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  background: var(--surface-raised);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -114,7 +112,7 @@
   left: 0;
   z-index: 2;
   text-align: left;
-  background: var(--surface-raised);
+  background: var(--box-bg);
   min-width: 150px;
   max-width: 220px;
   padding-left: 16px;
@@ -156,7 +154,7 @@
   min-width: 84px;
   padding-top: 12px;
   vertical-align: bottom;
-  background: var(--surface-raised);
+  background: var(--box-bg);
 }
 
 .poll-col > span {
@@ -245,12 +243,14 @@
   margin-inline: auto;
 }
 
+/* The own row steps off the level 2 tint of the grid so it stays the one highlighted row */
+
 .poll-grid__row--me {
-  background: var(--surface-muted);
+  background: var(--surface-raised);
 }
 
 .poll-grid__row--me .poll-grid__who {
-  background: var(--surface-muted);
+  background: var(--surface-raised);
 }
 
 /* Three-state answer control: native radios keep arrow keys and form semantics */
@@ -329,7 +329,8 @@
   color: var(--fg);
 }
 
-.poll-total__maybe {
+.poll-total__maybe,
+.poll-total__no {
   margin-left: 8px;
   font-size: 13px;
   color: var(--fg-muted);
@@ -379,14 +380,12 @@
   gap: 12px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-raised);
   cursor: pointer;
   flex-wrap: wrap;
 }
 
 .fix-option:hover {
-  border-color: var(--border-strong);
+  --box-border: var(--fg-soft);
 }
 
 .fix-option:has(input:checked) {
@@ -437,7 +436,6 @@
   gap: 12px;
   padding: 16px;
   border-radius: var(--radius-md);
-  background: var(--surface-muted);
   font-size: 14px;
 }
 
@@ -456,8 +454,6 @@
   gap: 14px;
   padding: 12px 14px;
   border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
 }
 
 .fix-event .date-block {

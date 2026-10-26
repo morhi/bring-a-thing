@@ -1,0 +1,153 @@
+/* new-group: invitation component, used on the New group page, the group page and group settings */
+
+.invite-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-inner);
+  min-width: 0;
+}
+
+.invite-field__box {
+  position: relative;
+}
+
+/* The list floats over whatever follows, so the sticky action bar on the create page stays below it */
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  min-height: var(--control-height);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.suggestion--active {
+  background: var(--surface-muted);
+}
+
+.suggestion--disabled {
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
+
+.suggestion__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+  flex: none;
+}
+
+.suggestion__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.suggestion__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion__email {
+  color: var(--fg-soft);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chips */
+
+.invite-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 4px 3px 4px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.invite-chip__icon {
+  margin-left: 6px;
+  color: var(--fg-soft);
+}
+
+.invite-chip__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invite-chip__remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-muted);
+  flex: none;
+}
+
+.invite-chip__remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+.invite-chip__remove:hover,
+.invite-chip__remove:focus-visible {
+  background: var(--surface-sunken);
+  color: var(--fg);
+}
+
+.invite-field__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.invite-field__actions .btn {
+  flex: 1 1 auto;
+}
+
+@media (min-width: 720px) {
+  .invite-field__actions .btn {
+    flex: 0 1 auto;
+  }
+}

@@ -109,8 +109,6 @@ body::before {
   right: 0;
   top: calc(100% + 8px);
   min-width: 220px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: 6px;

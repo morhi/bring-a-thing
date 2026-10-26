@@ -1,9 +1,5 @@
 /* Join page: public bar, intro with lock badge and member stack, one card for the form or the result */
 
-.join-page {
-  max-width: 960px;
-}
-
 .join-body {
   display: grid;
   gap: 32px;

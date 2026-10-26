@@ -1,8 +1,9 @@
 // Group page (F-03, F-04): members with invite, polls, events, group lists, create actions.
 
 import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, openDialog, goCreate, viewState, toast, nextId, createInviteLink, inviteUrl, copyText } from '../core.js';
+import { ui, h, currentUser, go, goCreate, viewState, toast } from '../core.js';
 import { t, formatDate, relativeDay, isPast } from '../i18n.js';
+import { InviteField, inviteToGroup, invitedToast } from '../invite-field.js'; // new-group
 
 // One poll row; closed and fixed polls render the same row inside the collapsed section.
 const PollRow = {
@@ -51,7 +52,7 @@ const PollRow = {
 };
 
 export const GroupView = {
-  components: { PollRow },
+  components: { PollRow, InviteField },
   setup() {
     const state = viewState('group');
     const user = currentUser;
@@ -94,85 +95,20 @@ export const GroupView = {
       upcoming: upcomingEvents.value.length
     }));
 
-    // Invite form with friend suggestions (F-04, F-05)
-    const inviteEmail = ref('');
-    const inviteError = ref('');
-    const suggestionsOpen = ref(false);
-
-    const suggestions = computed(() => {
-      const query = inviteEmail.value.trim().toLowerCase();
-
-      if (!query) {
-        return [];
-      }
-
-      const memberIds = h.membersOf(group.value.id);
-
-      return h.friendsOf(user.value.id)
-        .filter((friend) => friend && !memberIds.includes(friend.id))
-        .filter((friend) => friend.email.toLowerCase().includes(query) || (friend.name || '').toLowerCase().includes(query))
-        .slice(0, 4);
-    });
-
-    function pickSuggestion(friend) {
-      inviteEmail.value = friend.email;
-      suggestionsOpen.value = false;
-    }
+    // new-group: the shared invitation component collects chips, "Invite" applies them (F-04, F-05)
+    const invites = ref([]);
 
     function invite() {
-      const email = inviteEmail.value.trim().toLowerCase();
+      const invited = inviteToGroup(group.value, invites.value, user.value.id);
+      invites.value = [];
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        inviteError.value = t('group.invite.invalid');
-
+      if (!invited.length) {
         return;
       }
 
-      let account = data.accounts.find((entry) => entry.email.toLowerCase() === email);
-
-      if (account && h.membersOf(group.value.id).includes(account.id)) {
-        inviteError.value = t('group.invite.exists', { name: account.name || account.email });
-
-        return;
-      }
-
-      if (!account) {
-        account = { id: nextId('u'), name: '', email, language: ui.lang, tone: 5 };
-        data.accounts.push(account);
-      }
-
-      data.memberships.push({ groupId: group.value.id, accountId: account.id, role: 'member', acceptedAt: null });
-
-      if (!data.friends.some((entry) => entry.accountId === user.value.id && entry.friendId === account.id)) {
-        data.friends.push({ accountId: user.value.id, friendId: account.id });
-      }
-
-      inviteError.value = '';
-      inviteEmail.value = '';
-      suggestionsOpen.value = false;
-      toast(t('group.invite.sent', { email }));
-    }
-
-    // invite-link: the button creates the link on first use, then copies it (F-04)
-    const canShare = typeof navigator.share === 'function';
-
-    async function copyLink() {
-      const created = !group.value.inviteLink;
-
-      if (created) {
-        createInviteLink(group.value);
-      }
-
-      await copyText(inviteUrl(group.value));
-      toast(t(created ? 'group.link.created' : 'group.link.copied'));
-    }
-
-    function shareLink() {
-      if (!group.value.inviteLink) {
-        createInviteLink(group.value);
-      }
-
-      navigator.share({ title: group.value.name, url: inviteUrl(group.value) }).catch(() => {});
+      // The simulated "no other members" state would hide the new member, so a real invite leaves it.
+      state.value = 'default';
+      toast(invitedToast(invited));
     }
 
     function myStatus(eventId) {
@@ -191,9 +127,8 @@ export const GroupView = {
 
     return {
       ui, state, user, group, canManage, isOwner, members, polls, openPolls, closedPolls, closedOpen, upcomingEvents, pastEvents, lists, stats,
-      inviteEmail, inviteError, suggestions, suggestionsOpen, pickSuggestion, invite,
-      canShare, copyLink, shareLink,
-      myStatus, go, openDialog, goCreate, h, t, formatDate, relativeDay
+      invites, invite,
+      myStatus, go, goCreate, h, t, formatDate, relativeDay
     };
   },
   template: `
@@ -329,27 +264,7 @@ export const GroupView = {
               </li>
             </ul>
 
-            <template v-if="canManage">
-            <form class="invite" @submit.prevent="invite" novalidate>
-              <FormField :label="t('group.invite.title')" control="invite-email" :error="inviteError" :hint="t('group.invite.hint')">
-              <div class="invite__row">
-                <input class="input" id="invite-email" type="email" v-model="inviteEmail" :placeholder="t('group.invite.placeholder')" autocomplete="off" @focus="suggestionsOpen = true" @input="suggestionsOpen = true" :aria-invalid="inviteError ? 'true' : null" aria-autocomplete="list" aria-controls="invite-suggestions" :aria-expanded="suggestionsOpen && suggestions.length > 0">
-                <button type="submit" class="btn btn--primary"><Icon name="plus" /> <span class="visually-hidden">{{ t('group.invite.button') }}</span></button>
-              </div>
-              <div class="suggestions" id="invite-suggestions" role="listbox" v-if="suggestionsOpen && suggestions.length" data-feature="F-05">
-                <button type="button" class="suggestion" role="option" v-for="friend in suggestions" :key="friend.id" @click="pickSuggestion(friend)">
-                  <Avatar :id="friend.id" size="sm" />
-                  <span>{{ friend.name || t('common.noName') }}</span>
-                  <span class="suggestion__email">{{ friend.email }}</span>
-                </button>
-              </div>
-              </FormField>
-            </form>
-            <div class="invite-link" data-feature="F-04">
-              <button type="button" class="btn btn--secondary" @click="copyLink"><Icon name="link" /> {{ t('group.link.copy') }}</button>
-              <button type="button" class="btn btn--ghost btn--icon" v-if="canShare" :aria-label="t('group.link.share')" @click="shareLink"><Icon name="share" /></button>
-            </div>
-            </template>
+            <InviteField v-if="canManage" v-model="invites" :group-id="group.id" :label="t('group.invite.title')" :hint="t('group.invite.hint')" :submit-label="t('group.invite.button')" id="group-invite" @submit="invite" />
             <p class="notice" v-else>{{ t('group.memberNotice') }}</p>
           </section>
         </aside>

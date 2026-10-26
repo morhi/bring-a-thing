@@ -80,7 +80,7 @@ export const CreatePollView = {
         const seen = new Set();
         form.options = form.options
           .filter((option) => option.date && !seen.has(option.date) && seen.add(option.date))
-          .map((option) => ({ date: option.date, start: null, end: null, label: '' }));
+          .map((option) => ({ date: option.date, start: null, end: null, label: option.label || '' }));
 
         return;
       }
@@ -182,6 +182,22 @@ export const CreatePollView = {
       applyOptions(form.options.filter((_, position) => position !== index));
     }
 
+    // poll-rules: "Use this time for all" (F-06). Locked options keep their time, like every other edit.
+    function canApplyToAll(option) {
+      return form.mode === 'slots' && !closed.value && form.options.length > 1 && !!option.start && !!option.end;
+    }
+
+    function applyTimeToAll(source) {
+      form.options.forEach((option) => {
+        if (option === source || locked(option)) {
+          return;
+        }
+
+        option.start = source.start;
+        option.end = source.end;
+      });
+    }
+
     function optionValues(option) {
       const slots = form.mode === 'slots';
 
@@ -189,7 +205,7 @@ export const CreatePollView = {
         date: option.date,
         start: slots ? option.start : null,
         end: slots ? option.end : null,
-        label: slots ? (option.label || '').trim() : ''
+        label: (option.label || '').trim()
       };
     }
 
@@ -304,7 +320,7 @@ export const CreatePollView = {
     return {
       poll, editing, allowed, form, errors, group, event, audienceCount, validOptions, typeOptions, modeOptions, pageTitle, optionsHint,
       closed, status, removing, removingOption, deleting, totalResponses, answers, locked, removable,
-      applyOptions, confirmRemove, addOption, removeOption, save, closePoll, reopenPoll, deletePoll, cancel, t
+      applyOptions, confirmRemove, addOption, removeOption, canApplyToAll, applyTimeToAll, save, closePoll, reopenPoll, deletePoll, cancel, t
     };
   },
   template: `
@@ -360,13 +376,14 @@ export const CreatePollView = {
                 <template v-if="form.mode === 'slots'">
                   <input class="input" type="time" v-model="option.start" :disabled="locked(option)" :aria-label="t('newPoll.start')">
                   <input class="input" type="time" v-model="option.end" :disabled="locked(option)" :aria-label="t('newPoll.end')">
-                  <input class="input input--label" type="text" v-model="option.label" :disabled="closed" :placeholder="t('newPoll.slotLabelPlaceholder')" :aria-label="t('newPoll.slotLabel')">
                 </template>
+                <input class="input input--label" type="text" v-model="option.label" :disabled="closed" :placeholder="t('newPoll.slotLabelPlaceholder')" :aria-label="t('newPoll.slotLabel') + ' ' + (index + 1)" :data-feature="form.type === 'attendance' ? 'F-07' : 'F-06'">
                 <span class="option-row__meta" v-if="editing">
                   <template v-if="option.id">{{ t('poll.settings.answers', { n: answers(option) }) }}</template>
                   <span class="badge badge--success" v-if="option.fixed">{{ t('group.polls.fixed') }}</span>
                 </span>
                 <button type="button" class="btn btn--ghost btn--icon btn--sm" :disabled="!removable(option)" @click="removeOption(index)" :aria-label="t('newPoll.removeOption')"><Icon name="minus" /></button>
+                <button type="button" class="option-row__all" v-if="canApplyToAll(option)" @click="applyTimeToAll(option)" data-feature="F-06">{{ t('newPoll.applyTimeToAll') }}</button>
               </div>
             </div>
             <p class="field__hint" v-else>{{ t('newPoll.noOptions') }}</p>

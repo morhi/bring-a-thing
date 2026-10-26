@@ -77,10 +77,20 @@
   --surface-sunken: var(--moss-100);
   --fg: var(--moss-900);
   --fg-muted: var(--moss-600);
-  --fg-soft: #62726b;                    /* 4.7:1 on moss-50, 5.1:1 on white */
+  --fg-soft: #5a6a63;                    /* 4.9:1 on the level 2 box, 5.7:1 on white */
   --fg-inverted: #ffffff;
   --border: var(--moss-200);
   --border-strong: var(--moss-300);
+
+  /* Depth: level 0 is the ground, 1 the page containers, 2 boxes inside them, 3 boxes inside those.
+     Backgrounds alternate and edges grow per level so nested boxes never share one tone with their parent. */
+  --depth-1-bg: var(--surface-raised);
+  --depth-1-border: var(--moss-200);
+  --depth-2-bg: #e9efea;
+  --depth-2-border: #b7c4bb;
+  --depth-2-accent: #6fb493;             /* muted emerald, a mark without text */
+  --depth-3-bg: #ffffff;
+  --depth-3-border: #a3b3a9;
 
   --primary: var(--green-700);           /* 5.5:1 on white */
   --primary-hover: var(--green-800);
@@ -92,7 +102,7 @@
 
   --success: var(--green-700);
   --success-soft: var(--green-50);
-  --warning: var(--sun-700);
+  --warning: #a54c05;                    /* 5.0:1 on the level 2 box, 5.2:1 on sun-100 */
   --warning-soft: var(--sun-100);
   --danger: var(--rose-700);
   --danger-soft: var(--rose-100);
@@ -124,7 +134,7 @@
   --control-height-sm: 36px;
   --control-radius: var(--radius-sm);
   --control-bg: #ffffff;
-  --control-border: #82928a;             /* 3.3:1 on white, 3.0:1 on moss-50: the input edge inside containers */
+  --control-border: #6e7f76;             /* 4.2:1 on white, 3.6:1 on the level 2 box: the input edge inside containers */
   --card-radius: var(--radius-lg);
   --card-padding: 24px;
   --container-radius: 26px;
@@ -143,10 +153,17 @@
     --surface-sunken: #0b100d;
     --fg: #e9efeb;
     --fg-muted: var(--moss-400);
-    --fg-soft: #869590;                  /* 5.1:1 on the raised surface */
+    --fg-soft: #8c9b95;                  /* 4.8:1 on the level 2 box, 5.6:1 on the raised surface */
     --fg-inverted: var(--moss-950);
     --border: #2b3630;
     --border-strong: var(--moss-700);
+
+    --depth-1-border: #2b3630;
+    --depth-2-bg: #253129;
+    --depth-2-border: #404e46;
+    --depth-2-accent: #2f7a5a;
+    --depth-3-bg: #111915;
+    --depth-3-border: #4f5e56;
 
     --primary: var(--green-400);         /* 10.3:1 on moss-950 */
     --primary-hover: var(--green-300);
@@ -173,7 +190,7 @@
     --shadow-card: inset 0 1px 0 rgb(233 239 235 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.6);
     --shadow-header: inset 0 -1px 0 rgb(233 239 235 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.7);
     --control-bg: #111814;
-    --control-border: #5f6f67;           /* 3.0:1 on the raised surface */
+    --control-border: #727f78;           /* 3.4:1 on the level 2 box, 3.9:1 on the raised surface */
 
     --texture-dot-color: rgb(233 239 235 / 0.06);
     --texture-hatch-color: rgb(233 239 235 / 0.05);
@@ -192,10 +209,17 @@
   --surface-sunken: #0b100d;
   --fg: #e9efeb;
   --fg-muted: var(--moss-400);
-  --fg-soft: #869590;
+  --fg-soft: #8c9b95;
   --fg-inverted: var(--moss-950);
   --border: #2b3630;
   --border-strong: var(--moss-700);
+
+  --depth-1-border: #2b3630;
+  --depth-2-bg: #253129;
+  --depth-2-border: #404e46;
+  --depth-2-accent: #2f7a5a;
+  --depth-3-bg: #111915;
+  --depth-3-border: #4f5e56;
 
   --primary: var(--green-400);
   --primary-hover: var(--green-300);
@@ -221,7 +245,7 @@
   --shadow-card: inset 0 1px 0 rgb(233 239 235 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.6);
   --shadow-header: inset 0 -1px 0 rgb(233 239 235 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.7);
   --control-bg: #111814;
-  --control-border: #5f6f67;
+  --control-border: #727f78;
 
   --texture-dot-color: rgb(233 239 235 / 0.06);
   --texture-hatch-color: rgb(233 239 235 / 0.05);

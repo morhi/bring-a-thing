@@ -123,70 +123,11 @@
   color: var(--fg-muted);
 }
 
-.invite {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+/* new-group: the invite component sits under the member list and separates with a rule */
 
-.invite__row {
-  display: flex;
-  gap: 8px;
-}
-
-.invite__row .input {
-  flex: 1;
-}
-
-/* Invite link next to the email invite */
-
-.invite-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 4px;
+.members .invite-field {
+  padding-top: 12px;
   border-top: 1px solid var(--border);
-  margin-top: 4px;
-}
-
-.invite-link .btn--secondary {
-  flex: 1 1 auto;
-  justify-content: center;
-}
-
-.suggestions {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-}
-
-.suggestion {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  width: 100%;
-  font-size: 14px;
-}
-
-.suggestion:hover,
-.suggestion:focus-visible {
-  background: var(--surface-muted);
-  outline: none;
-}
-
-.suggestion__email {
-  color: var(--fg-soft);
-  margin-left: auto;
-  font-size: 13px;
 }
 
 /* Poll rows */
@@ -357,8 +298,8 @@
 }
 
 .event-row--child {
+  --box-accent: var(--primary);
   margin-left: 24px;
-  border-left: 3px solid var(--primary-soft);
 }
 
 /* Role notice */

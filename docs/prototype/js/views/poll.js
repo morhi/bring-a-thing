@@ -9,7 +9,7 @@ const TODAY_ISO = '2026-10-25';
 const ANSWERS = ['yes', 'maybe', 'no'];
 
 // Review bar states that need a specific poll from the mock data; default follows navigation.
-const statePolls = { closed: 'p7', noResponses: 'p8', notInAudience: 'p9', fixed: 'p4', followUp: 'p2' };
+const statePolls = { closed: 'p7', noResponses: 'p8', notInAudience: 'p9', fixed: 'p4', followUp: 'p2', tie: 'p11' }; // poll-rules: tie
 
 function findPoll(id) {
   return data.polls.find((poll) => poll.id === id);
@@ -115,7 +115,7 @@ const PollFixDialog = {
             <input type="checkbox" :value="option.id" v-model="selected" :disabled="option.fixed">
             <span class="fix-option__main">
               <span class="fix-option__date">{{ formatDate(option.date, 'weekday') }}<template v-if="option.start">, {{ optionTime(option) }}</template><template v-if="option.label"> · {{ option.label }}</template></span>
-              <span class="fix-option__counts">{{ t('poll.totals.yes', { n: totals[option.id].yes }) }}, {{ t('poll.totals.maybe', { n: totals[option.id].maybe }) }}</span>
+              <span class="fix-option__counts">{{ t('poll.totals.yes', { n: totals[option.id].yes }) }}, {{ t('poll.totals.maybe', { n: totals[option.id].maybe }) }}, {{ t('poll.totals.no', { n: totals[option.id].no }) }}</span>
             </span>
             <span class="badge badge--success" v-if="best.includes(option.id)">{{ t('poll.best') }}</span>
             <span class="badge" v-if="option.fixed">{{ t('poll.fix.alreadyFixed') }}</span>
@@ -180,19 +180,26 @@ export const PollView = {
     const missing = computed(() => audience.value.filter((id) => !respondents.value.includes(id)));
     const totals = computed(() => Object.fromEntries(options.value.map((option) => [option.id, tally(option.id, audience.value)])));
 
-    const bestIds = computed(() => {
+    // poll-rules: most yes answers win; a tie on yes is broken by the fewest no answers (F-06)
+    const ranking = computed(() => {
       if (!isDateFinder.value || !isOpen.value) {
-        return [];
+        return { ids: [], tieBroken: false };
       }
 
-      const max = Math.max(0, ...options.value.map((option) => totals.value[option.id].yes));
+      const maxYes = Math.max(0, ...options.value.map((option) => totals.value[option.id].yes));
 
-      if (max === 0) {
-        return [];
+      if (maxYes === 0) {
+        return { ids: [], tieBroken: false };
       }
 
-      return options.value.filter((option) => totals.value[option.id].yes === max).map((option) => option.id);
+      const tied = options.value.filter((option) => totals.value[option.id].yes === maxYes);
+      const minNo = Math.min(...tied.map((option) => totals.value[option.id].no));
+      const best = tied.filter((option) => totals.value[option.id].no === minNo);
+
+      return { ids: best.map((option) => option.id), tieBroken: best.length < tied.length };
     });
+    const bestIds = computed(() => ranking.value.ids);
+    const tieBroken = computed(() => ranking.value.tieBroken);
 
     const fixedEvents = computed(() => {
       const ids = options.value.map((option) => option.id);
@@ -264,7 +271,7 @@ export const PollView = {
     }
 
     return {
-      ui, user, poll, group, event, audience, visible, canEdit, isOpen, isDateFinder, options, respondents, rows, missing, totals, bestIds,
+      ui, user, poll, group, event, audience, visible, canEdit, isOpen, isDateFinder, options, respondents, rows, missing, totals, bestIds, tieBroken,
       fixedEvents, status, featureId, fixOpen, ANSWERS,
       answer, answerOf, closePoll, reopenPoll, back, edit, nameOf, optionTime,
       go, h, t, formatDate, weekdayShort, dayNumber, monthShort
@@ -327,7 +334,7 @@ export const PollView = {
                   <span class="poll-col__day">{{ dayNumber(option.date) }}</span>
                   <span class="poll-col__month">{{ monthShort(option.date) }}</span>
                   <span class="poll-col__time" v-if="option.start">{{ optionTime(option) }}</span>
-                  <span class="poll-col__label" v-if="option.label">{{ option.label }}</span>
+                  <span class="poll-col__label" v-if="option.label" :title="option.label" :data-feature="isDateFinder ? 'F-06' : 'F-07'">{{ option.label }}</span>
                 </th>
               </tr>
             </thead>
@@ -340,7 +347,7 @@ export const PollView = {
                   </span>
                 </th>
                 <td v-for="option in options" :key="option.id" :class="['poll-cell', bestIds.includes(option.id) ? 'poll-cell--best' : '', option.fixed ? 'poll-cell--fixed' : '']">
-                  <div class="answer" v-if="id === user.id && isOpen" role="radiogroup" :aria-label="t('poll.answerLabel', { option: formatDate(option.date, 'weekday') + (option.start ? ' ' + optionTime(option) : '') })">
+                  <div class="answer" v-if="id === user.id && isOpen" role="radiogroup" :aria-label="t('poll.answerLabel', { option: formatDate(option.date, 'weekday') + (option.start ? ' ' + optionTime(option) : '') + (option.label ? ', ' + option.label : '') })">
                     <label class="answer__opt" v-for="value in ANSWERS" :key="value">
                       <input type="radio" :name="'answer-' + option.id" :value="value" :checked="answerOf(option.id, id) === value" @change="answer(option.id, value)">
                       <Mark :answer="value" />
@@ -360,6 +367,7 @@ export const PollView = {
                 <td v-for="option in options" :key="option.id" :class="['poll-total', bestIds.includes(option.id) ? 'poll-cell--best' : '', option.fixed ? 'poll-cell--fixed' : '']">
                   <span class="poll-total__yes"><Mark answer="yes" /> {{ totals[option.id].yes }}</span>
                   <span class="poll-total__maybe" v-if="totals[option.id].maybe"><Mark answer="maybe" /> {{ totals[option.id].maybe }}</span>
+                  <span class="poll-total__no" v-if="tieBroken" data-feature="F-06"><Mark answer="no" /> {{ totals[option.id].no }}</span>
                 </td>
               </tr>
             </tfoot>

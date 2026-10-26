@@ -97,13 +97,15 @@ export const OptionCalendar = {
       for (let index = 0; index < 42; index += 1) {
         const date = addDays(start, index);
         const value = iso(date);
+        const option = props.modelValue.find((entry) => entry.date === value);
         cells.push({
           value,
           day: date.getDate(),
           outside: date.getMonth() !== first.getMonth(),
           past: value < todayIso,
           today: value === todayIso,
-          selected: props.modelValue.some((option) => option.date === value)
+          selected: !!option,
+          label: option && option.label ? option.label : '' // poll-rules
         });
       }
 
@@ -394,7 +396,8 @@ export const OptionCalendar = {
             :data-day="cell.value"
             :disabled="cell.past"
             :aria-pressed="cell.selected"
-            :aria-label="cell.value"
+            :aria-label="cell.label ? cell.value + ', ' + cell.label : cell.value"
+            :title="cell.label || null"
             @pointerdown.prevent="dayPointerDown(cell, $event)"
             @keydown="dayKey(cell, $event)">
             <span>{{ cell.day }}</span>

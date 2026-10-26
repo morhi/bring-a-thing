@@ -139,8 +139,10 @@
   }
 }
 
+/* A fully claimed item drops its accent; the title and status already say it is done */
+
 .item--done {
-  background: var(--surface-muted);
+  --box-accent: var(--box-border);
 }
 
 .item__head {
@@ -418,8 +420,6 @@
   max-height: 60vh;
   overflow-y: auto;
   padding: 4px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
 }

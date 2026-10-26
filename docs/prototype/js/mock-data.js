@@ -13,7 +13,12 @@ export default {
     { id: 'u7', name: 'Dario Meier', email: 'dario@tv-seebach.ch', language: 'de', tone: 3 },
     { id: 'u8', name: 'Mia Steiner', email: 'mia.steiner@hispeed.ch', language: 'de', tone: 4 },
     // invite-link: name-only joiner through the open link, shadow account without email (F-01)
-    { id: 'u9', name: 'Pascal Hug', email: '', language: 'de', tone: 1 }
+    { id: 'u9', name: 'Pascal Hug', email: '', language: 'de', tone: 1 },
+    // new-group: friends outside g1 so the invite field has prefixes to search; Nina's email does not carry her name
+    { id: 'u10', name: 'Lena Baumann', email: 'lena.baumann@posteo.ch', language: 'de', tone: 2 },
+    { id: 'u11', name: 'Tobias Brunner', email: 'tobias.brunner@gmx.ch', language: 'de', tone: 3 },
+    { id: 'u12', name: 'Sandro Keller', email: 'keller.sandro@bluewin.ch', language: 'de', tone: 4 },
+    { id: 'u13', name: 'Nina Rothenbühler', email: 'drums@ninaplays.ch', language: 'de', tone: 5 }
   ],
 
   friends: [
@@ -24,6 +29,12 @@ export default {
     { accountId: 'u1', friendId: 'u6' },
     { accountId: 'u1', friendId: 'u7' },
     { accountId: 'u1', friendId: 'u8' },
+    // new-group
+    { accountId: 'u1', friendId: 'u10' },
+    { accountId: 'u1', friendId: 'u11' },
+    { accountId: 'u1', friendId: 'u12' },
+    { accountId: 'u1', friendId: 'u13' },
+    { accountId: 'u2', friendId: 'u10' },
     // friends: Lena and Tobias have their own circles, so the admin and member roles see a list too
     { accountId: 'u2', friendId: 'u1' },
     { accountId: 'u2', friendId: 'u3' },
@@ -64,13 +75,15 @@ export default {
     { id: 'p8', groupId: 'g1', organizerId: 'u2', title: 'Christmas dinner', type: 'date_finder', mode: 'day', closedAt: null, eventId: null, createdAt: '2026-10-25' },
     { id: 'p9', groupId: 'g1', organizerId: 'u3', title: 'Warm-up jam before the rehearsal', type: 'date_finder', mode: 'slots', closedAt: null, eventId: 'e2', createdAt: '2026-10-24' },
     // list: attendance poll that the group list l6 and its items link to (F-18)
-    { id: 'p10', groupId: 'g1', organizerId: 'u1', title: 'Weihnachtsmarkt: who is at the stand?', type: 'attendance', mode: 'day', closedAt: null, eventId: null, createdAt: '2026-10-24' }
+    { id: 'p10', groupId: 'g1', organizerId: 'u1', title: 'Weihnachtsmarkt: who is at the stand?', type: 'attendance', mode: 'day', closedAt: null, eventId: null, createdAt: '2026-10-24' },
+    // poll-rules: two options tied on yes and no, so both carry "Best option" (F-06)
+    { id: 'p11', groupId: 'g1', organizerId: 'u3', title: 'Neujahrsapéro', type: 'date_finder', mode: 'day', closedAt: null, eventId: null, createdAt: '2026-10-25' }
   ],
 
   pollOptions: [
     { id: 'o1', pollId: 'p1', date: '2026-11-20', start: null, end: null, label: '', fixed: false },
     { id: 'o2', pollId: 'p1', date: '2026-11-21', start: null, end: null, label: '', fixed: false },
-    { id: 'o3', pollId: 'p1', date: '2026-11-27', start: null, end: null, label: '', fixed: false },
+    { id: 'o3', pollId: 'p1', date: '2026-11-27', start: null, end: null, label: 'Room free until 22:00', fixed: false }, // poll-rules: day label
     { id: 'o4', pollId: 'p1', date: '2026-11-28', start: null, end: null, label: '', fixed: false },
 
     { id: 'o5', pollId: 'p2', date: '2026-11-03', start: '19:30', end: '22:00', label: '', fixed: false },
@@ -83,7 +96,7 @@ export default {
     { id: 'o11', pollId: 'p3', date: '2026-11-24', start: null, end: null, label: '', fixed: false },
     { id: 'o12', pollId: 'p3', date: '2026-11-25', start: null, end: null, label: '', fixed: false },
     { id: 'o13', pollId: 'p3', date: '2026-11-26', start: null, end: null, label: '', fixed: false },
-    { id: 'o14', pollId: 'p3', date: '2026-11-27', start: null, end: null, label: '', fixed: false },
+    { id: 'o14', pollId: 'p3', date: '2026-11-27', start: null, end: null, label: 'Departure', fixed: false }, // poll-rules: attendance label
 
     { id: 'o15', pollId: 'p4', date: '2026-11-07', start: null, end: null, label: '', fixed: false },
     { id: 'o16', pollId: 'p4', date: '2026-11-14', start: null, end: null, label: '', fixed: true },
@@ -112,7 +125,12 @@ export default {
     // list
     { id: 'o61', pollId: 'p10', date: '2026-12-11', start: null, end: null, label: '', fixed: false },
     { id: 'o62', pollId: 'p10', date: '2026-12-12', start: null, end: null, label: '', fixed: false },
-    { id: 'o63', pollId: 'p10', date: '2026-12-13', start: null, end: null, label: '', fixed: false }
+    { id: 'o63', pollId: 'p10', date: '2026-12-13', start: null, end: null, label: '', fixed: false },
+
+    // poll-rules
+    { id: 'o71', pollId: 'p11', date: '2027-01-08', start: null, end: null, label: '', fixed: false },
+    { id: 'o72', pollId: 'p11', date: '2027-01-09', start: null, end: null, label: 'Lunch', fixed: false },
+    { id: 'o73', pollId: 'p11', date: '2027-01-15', start: null, end: null, label: '', fixed: false }
   ],
 
   responses: [
@@ -141,6 +159,12 @@ export default {
     { optionId: 'o7', accountId: 'u3', answer: 'yes' },
     { optionId: 'o8', accountId: 'u3', answer: 'yes' },
     { optionId: 'o9', accountId: 'u3', answer: 'no' },
+    // poll-rules: o6, o7 and o8 tie on two yes answers; o8 alone has no no answer and keeps "Best option"
+    { optionId: 'o5', accountId: 'u4', answer: 'maybe' },
+    { optionId: 'o6', accountId: 'u4', answer: 'no' },
+    { optionId: 'o7', accountId: 'u4', answer: 'yes' },
+    { optionId: 'o8', accountId: 'u4', answer: 'maybe' },
+    { optionId: 'o9', accountId: 'u4', answer: 'no' },
 
     { optionId: 'o15', accountId: 'u1', answer: 'yes' },
     { optionId: 'o16', accountId: 'u1', answer: 'yes' },
@@ -190,6 +214,20 @@ export default {
     { optionId: 'o45', accountId: 'u4', answer: 'yes' },
     { optionId: 'o49', accountId: 'u3', answer: 'yes' },
     { optionId: 'o50', accountId: 'u3', answer: 'maybe' },
+
+    // poll-rules: o71 and o72 both have three yes and one no, o73 trails
+    { optionId: 'o71', accountId: 'u1', answer: 'yes' },
+    { optionId: 'o72', accountId: 'u1', answer: 'yes' },
+    { optionId: 'o73', accountId: 'u1', answer: 'no' },
+    { optionId: 'o71', accountId: 'u2', answer: 'yes' },
+    { optionId: 'o72', accountId: 'u2', answer: 'yes' },
+    { optionId: 'o73', accountId: 'u2', answer: 'maybe' },
+    { optionId: 'o71', accountId: 'u3', answer: 'yes' },
+    { optionId: 'o72', accountId: 'u3', answer: 'no' },
+    { optionId: 'o73', accountId: 'u3', answer: 'yes' },
+    { optionId: 'o71', accountId: 'u4', answer: 'no' },
+    { optionId: 'o72', accountId: 'u4', answer: 'yes' },
+    { optionId: 'o73', accountId: 'u4', answer: 'yes' },
 
     // list: u1 said no for 12.12. and nothing for 13.12., so claiming those days shows the attendance warning
     { optionId: 'o61', accountId: 'u1', answer: 'yes' },
@@ -330,6 +368,9 @@ export default {
     { id: 'c1', listId: 'l1', itemId: null, authorId: 'u3', text: 'Soundcheck is at 16:00, so everything needs to be at the venue by 15:30.', at: '2026-10-24T21:05' },
     { id: 'c2', listId: 'l1', itemId: 'i4', authorId: 'u2', text: 'Is one crate of water enough for two sets?', at: '2026-10-24T18:30' },
     { id: 'c3', listId: 'l1', itemId: 'i4', authorId: 'u3', text: 'I bring a second one if nobody else does.', at: '2026-10-24T19:10' },
-    { id: 'c4', listId: 'l2', itemId: null, authorId: 'u4', text: 'Can I bring a vegan cheese alternative as well?', at: '2026-10-23T12:40' }
+    { id: 'c4', listId: 'l2', itemId: null, authorId: 'u4', text: 'Can I bring a vegan cheese alternative as well?', at: '2026-10-23T12:40' },
+    // poll-rules: event comments carry eventId and no listId (F-20)
+    { id: 'c5', listId: null, itemId: null, eventId: 'e1', authorId: 'u4', text: 'Parking is behind the barn, not at the main entrance.', at: '2026-10-24T22:15' },
+    { id: 'c6', listId: null, itemId: null, eventId: 'e1', authorId: 'u2', text: 'Thanks, I will put it in the description.', at: '2026-10-25T07:40' }
   ]
 };

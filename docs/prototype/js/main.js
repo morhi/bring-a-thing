@@ -5,9 +5,11 @@ import { Wordmark, AppHeader, Toasts, ReviewBar } from './shell.js';
 import { WelcomeView } from './views/welcome.js';
 import { DashboardView } from './views/dashboard.js';
 import { GroupView } from './views/group.js';
-import { NewGroupDialog, StubView } from './dialogs.js';
+import { StubView } from './dialogs.js';
 import { CreatePollView, CreateEventView, CreateListView } from './views/create.js';
 import { OptionCalendar } from './option-calendar.js';
+import { NewGroupView } from './views/new-group.js'; // new-group
+import { InviteField } from './invite-field.js'; // new-group
 import { EventView } from './views/event.js'; // event
 import { PollView } from './views/poll.js'; // poll
 import { ListView } from './views/list.js'; // list
@@ -17,22 +19,16 @@ import { NotificationsBell } from './notifications.js'; // notifications
 import { GroupSettingsView } from './views/group-settings.js'; // group-settings
 import { JoinView } from './views/join.js'; // invite-link
 
-const dialogs = {
-  newGroup: 'NewGroupDialog'
-};
-
 const App = {
   setup() {
     const view = computed(() => views[ui.view] || views.dashboard);
-    const dialogComponent = computed(() => (ui.dialog ? dialogs[ui.dialog.name] : null));
 
-    return { ui, view, dialogComponent };
+    return { ui, view };
   },
   template: `
     <div :class="{ 'show-features': ui.showFeatures }">
       <AppHeader v-if="!view.public" />
       <component :is="view.component" :key="ui.view" />
-      <component v-if="dialogComponent" :is="dialogComponent" v-bind="ui.dialog.props" />
       <Toasts />
       <ReviewBar />
     </div>`
@@ -44,7 +40,8 @@ Object.entries({
   Icon, Avatar, Mark, DateBlock, EmptyState, AvatarStack, AppDialog, LangSwitch, FormField, ChoiceGroup, ProgressBar, FormPage,
   Wordmark, AppHeader, Toasts, ReviewBar,
   WelcomeView, DashboardView, GroupView, StubView, CreatePollView, CreateEventView, CreateListView,
-  NewGroupDialog, OptionCalendar,
+  OptionCalendar,
+  NewGroupView, InviteField, // new-group
   EventView, // event
   PollView, // poll
   ListView, // list

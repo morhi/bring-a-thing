@@ -99,12 +99,19 @@ const en = {
   'group.member.pending': 'Invitation pending',
   'group.member.you': 'you',
   'group.invite.title': 'Invite someone',
-  'group.invite.placeholder': 'name@example.com',
   'group.invite.button': 'Invite',
   'group.invite.hint': 'They get a login link by email and appear here right away.',
-  'group.invite.sent': 'Invited {email}',
-  'group.invite.invalid': 'Enter a valid email address.',
-  'group.invite.exists': '{name} is already a member.',
+  // new-group: invitation component
+  'invite.placeholder': 'Name or email address',
+  'invite.suggestions': 'Suggestions',
+  'invite.addEmail': 'Invite {email}',
+  'invite.alreadyMember': 'Already a member',
+  'invite.noMatch': 'No friend with this name. Enter an email address to invite someone new.',
+  'invite.selected': 'Selected people',
+  'invite.remove': 'Remove {name}',
+  'invite.sentOne': 'Invited {name}',
+  'invite.sent': 'Invited {n} people',
+  'invite.linkLater': 'The invite link is available once the group is created.',
   'group.settings': 'Group settings',
   'group.new.poll': 'New poll',
   'group.new.event': 'New event',
@@ -153,7 +160,7 @@ const en = {
   'newGroup.name': 'Group name',
   'newGroup.namePlaceholder': 'Nordlicht, Turnverein Seebach, Klasse 4b',
   'newGroup.invites': 'Invite people now',
-  'newGroup.invitesHint': 'Optional. One email per line. Everyone gets a login link.',
+  'newGroup.invitesHint': 'Optional. You can also invite people later from the group page.',
   'newGroup.create': 'Create group',
   'newGroup.created': 'Group created',
   'newGroup.nameRequired': 'Give the group a name.',
@@ -217,6 +224,7 @@ const en = {
   'newPoll.titleRequired': 'Give the poll a title.',
   'newPoll.optionsRequired': 'Add at least one option with a date.',
   'newPoll.modeLocked': 'Type and granularity cannot change after creation.',
+  'newPoll.applyTimeToAll': 'Use this time for all', // poll-rules
 
   'newEvent.title': 'New event',
   'newEvent.sub': 'A fixed date. Everyone in the group is asked to accept or decline.',
@@ -282,6 +290,8 @@ const en = {
   'event.keyDetailsNote': 'Lists and follow-up polls of this event are visible to participants only.',
   'event.setStatus': 'Set status for {name}',
   'event.remove': 'Remove {name}',
+  'event.manage': 'Manage', // new-group
+  'event.manageDone': 'Done', // new-group
   'event.acceptedToast': 'You are in',
   'event.declinedToast': 'You declined',
   'event.statusChanged': 'Status of {name} updated',
@@ -299,6 +309,7 @@ const en = {
   'event.children': 'Child events',
   'event.children.empty.title': 'No child events',
   'event.children.empty.text': 'Dates fixed from a follow-up poll appear here.',
+  'event.comments.toggle': 'Comments ({n})', // poll-rules
   'event.decline.title': 'Decline and release your claims?',
   'event.decline.text': 'You claimed these items in the lists of this event. Declining frees them for others.',
   'event.decline.confirm': 'Decline and release',
@@ -348,6 +359,7 @@ const en = {
   'poll.totals': 'Total',
   'poll.totals.yes': '{n} yes',
   'poll.totals.maybe': '{n} maybe',
+  'poll.totals.no': '{n} no', // poll-rules
   'poll.answer.yes': 'Yes',
   'poll.answer.maybe': 'Maybe',
   'poll.answer.no': 'No',
@@ -398,6 +410,7 @@ const en = {
   'review.state.notInAudience': 'Not in audience',
   'review.state.fixed': 'Fixed',
   'review.state.followUp': 'Follow-up poll',
+  'review.state.tie': 'Tied best options', // poll-rules
 
   // list
   'list.notFound': 'Not found',
@@ -628,7 +641,6 @@ const en = {
   'group.link.copy': 'Copy invite link',
   'group.link.copied': 'Invite link copied',
   'group.link.created': 'Invite link created and copied',
-  'group.link.share': 'Share invite link',
   'group.member.viaLink': 'Joined via link',
   'groupSettings.link.title': 'Invite link',
   'groupSettings.link.hint': 'One link per group, shared through any messenger. Revoking or regenerating makes the old link show "Not found".',
@@ -769,12 +781,19 @@ const de = {
   'group.member.pending': 'Einladung offen',
   'group.member.you': 'du',
   'group.invite.title': 'Jemanden einladen',
-  'group.invite.placeholder': 'name@beispiel.ch',
   'group.invite.button': 'Einladen',
   'group.invite.hint': 'Die Person erhält einen Anmeldelink per E-Mail und erscheint sofort hier.',
-  'group.invite.sent': '{email} eingeladen',
-  'group.invite.invalid': 'Gib eine gültige E-Mail-Adresse ein.',
-  'group.invite.exists': '{name} ist schon Mitglied.',
+  // new-group: invitation component
+  'invite.placeholder': 'Name oder E-Mail-Adresse',
+  'invite.suggestions': 'Vorschläge',
+  'invite.addEmail': '{email} einladen',
+  'invite.alreadyMember': 'Schon Mitglied',
+  'invite.noMatch': 'Kein Freund mit diesem Namen. Gib eine E-Mail-Adresse ein, um jemand Neues einzuladen.',
+  'invite.selected': 'Ausgewählte Personen',
+  'invite.remove': '{name} entfernen',
+  'invite.sentOne': '{name} eingeladen',
+  'invite.sent': '{n} Personen eingeladen',
+  'invite.linkLater': 'Der Einladungslink ist verfügbar, sobald die Gruppe angelegt ist.',
   'group.settings': 'Gruppeneinstellungen',
   'group.new.poll': 'Neue Umfrage',
   'group.new.event': 'Neues Event',
@@ -822,7 +841,7 @@ const de = {
   'newGroup.name': 'Gruppenname',
   'newGroup.namePlaceholder': 'Nordlicht, Turnverein Seebach, Klasse 4b',
   'newGroup.invites': 'Jetzt Leute einladen',
-  'newGroup.invitesHint': 'Optional. Eine E-Mail pro Zeile. Alle erhalten einen Anmeldelink.',
+  'newGroup.invitesHint': 'Optional. Du kannst auch später von der Gruppenseite aus einladen.',
   'newGroup.create': 'Gruppe anlegen',
   'newGroup.created': 'Gruppe angelegt',
   'newGroup.nameRequired': 'Gib der Gruppe einen Namen.',
@@ -886,6 +905,7 @@ const de = {
   'newPoll.titleRequired': 'Gib der Umfrage einen Titel.',
   'newPoll.optionsRequired': 'Füge mindestens eine Option mit Datum hinzu.',
   'newPoll.modeLocked': 'Art und Raster lassen sich nach dem Anlegen nicht mehr ändern.',
+  'newPoll.applyTimeToAll': 'Diese Zeit für alle übernehmen', // poll-rules
 
   'newEvent.title': 'Neues Event',
   'newEvent.sub': 'Ein fester Termin. Alle in der Gruppe werden um Zu- oder Absage gebeten.',
@@ -949,6 +969,8 @@ const de = {
   'event.keyDetailsNote': 'Listen und Folgeumfragen dieses Events sehen nur Teilnehmende.',
   'event.setStatus': 'Status für {name} setzen',
   'event.remove': '{name} entfernen',
+  'event.manage': 'Verwalten', // new-group
+  'event.manageDone': 'Fertig', // new-group
   'event.acceptedToast': 'Du bist dabei',
   'event.declinedToast': 'Du hast abgesagt',
   'event.statusChanged': 'Status von {name} geändert',
@@ -966,6 +988,7 @@ const de = {
   'event.children': 'Untertermine',
   'event.children.empty.title': 'Keine Untertermine',
   'event.children.empty.text': 'Aus einer Folgeumfrage festgelegte Termine erscheinen hier.',
+  'event.comments.toggle': 'Kommentare ({n})', // poll-rules
   'event.decline.title': 'Absagen und Übernahmen freigeben?',
   'event.decline.text': 'Du hast diese Einträge in den Listen des Events übernommen. Mit der Absage werden sie für andere frei.',
   'event.decline.confirm': 'Absagen und freigeben',
@@ -1014,6 +1037,7 @@ const de = {
   'poll.totals': 'Total',
   'poll.totals.yes': '{n} Ja',
   'poll.totals.maybe': '{n} Vielleicht',
+  'poll.totals.no': '{n} Nein', // poll-rules
   'poll.answer.yes': 'Ja',
   'poll.answer.maybe': 'Vielleicht',
   'poll.answer.no': 'Nein',
@@ -1064,6 +1088,7 @@ const de = {
   'review.state.notInAudience': 'Nicht im Kreis',
   'review.state.fixed': 'Festgelegt',
   'review.state.followUp': 'Folgeumfrage',
+  'review.state.tie': 'Gleichstand beste Option', // poll-rules
 
   // list
   'list.notFound': 'Nicht gefunden',
@@ -1294,7 +1319,6 @@ const de = {
   'group.link.copy': 'Einladungslink kopieren',
   'group.link.copied': 'Einladungslink kopiert',
   'group.link.created': 'Einladungslink erstellt und kopiert',
-  'group.link.share': 'Einladungslink teilen',
   'group.member.viaLink': 'Über Link beigetreten',
   'groupSettings.link.title': 'Einladungslink',
   'groupSettings.link.hint': 'Ein Link pro Gruppe, geteilt über einen beliebigen Messenger. Widerrufen oder neu erzeugen lässt den alten Link "Nicht gefunden" zeigen.',

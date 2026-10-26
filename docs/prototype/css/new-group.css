@@ -1,0 +1,6 @@
+/* new-group: New group page. The form page frame and the invite component carry the layout;
+   the page only keeps the form narrow so the name field and the chips read as one column. */
+
+.new-group {
+  max-width: 560px;
+}

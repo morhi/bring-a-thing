@@ -80,11 +80,12 @@ export const views = {
   'new-poll': { component: 'CreatePollView', states: [] },
   'new-event': { component: 'CreateEventView', states: [] },
   'new-list': { component: 'CreateListView', states: [] },
+  'new-group': { component: 'NewGroupView', states: [] }, // new-group
   settings: { component: 'SettingsView', states: ['default', 'noPassword', 'noEmail'] }, // settings, invite-link
   // invite-link: the join page is public like the start page; the states override the real link state
   join: { component: 'JoinView', public: true, states: ['default', 'linkOpen', 'linkClosed', 'linkRevoked'] },
   friends: { component: 'FriendsView', states: ['default', 'empty'] }, // friends
-  poll: { component: 'PollView', states: ['default', 'closed', 'noResponses', 'notInAudience', 'fixed', 'followUp'] }, // poll
+  poll: { component: 'PollView', states: ['default', 'closed', 'noResponses', 'notInAudience', 'fixed', 'followUp', 'tie'] }, // poll, poll-rules: tie
   event: { component: 'EventView', states: ['default', 'past', 'noAcceptances', 'declined'] }, // event
   // list: the guest and invalid-link states hide the app header like a public page
   list: {
