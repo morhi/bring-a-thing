@@ -8,6 +8,9 @@ import { GroupView } from './views/group.js';
 import { NewGroupDialog, StubView } from './dialogs.js';
 import { CreatePollView, CreateEventView, CreateListView } from './views/create.js';
 import { OptionCalendar } from './option-calendar.js';
+import { EventView } from './views/event.js'; // event
+import { PollView } from './views/poll.js'; // poll
+import { ListView } from './views/list.js'; // list
 
 const dialogs = {
   newGroup: 'NewGroupDialog'
@@ -36,7 +39,10 @@ Object.entries({
   Icon, Avatar, Mark, DateBlock, EmptyState, AvatarStack, AppDialog, LangSwitch, FormField, ChoiceGroup, ProgressBar, FormPage,
   Wordmark, AppHeader, Toasts, ReviewBar,
   WelcomeView, DashboardView, GroupView, StubView, CreatePollView, CreateEventView, CreateListView,
-  NewGroupDialog, OptionCalendar
+  NewGroupDialog, OptionCalendar,
+  EventView, // event
+  PollView, // poll
+  ListView // list
 }).forEach(([name, component]) => app.component(name, component));
 
 app.mount('#app');

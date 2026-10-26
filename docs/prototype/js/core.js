@@ -59,7 +59,12 @@ export const features = {
   'F-13': 'Lists',
   'F-14': 'Items',
   'F-15': 'Claiming',
+  // list
+  'F-16': 'Custom fields',
+  'F-17': 'Duplicating lists',
+  'F-18': 'Attendance link',
   'F-19': 'Share link',
+  'F-20': 'Comments', // list
   'F-22': 'Dashboard',
   'F-23': 'Notifications',
   'F-24': 'Interface language'
@@ -74,9 +79,16 @@ export const views = {
   'new-list': { component: 'CreateListView', states: [] },
   settings: { component: 'StubView', states: [] },
   friends: { component: 'StubView', states: [] },
-  poll: { component: 'StubView', states: [] },
-  event: { component: 'StubView', states: [] },
-  list: { component: 'StubView', states: [] }
+  poll: { component: 'PollView', states: ['default', 'closed', 'noResponses', 'notInAudience', 'fixed', 'followUp'] }, // poll
+  event: { component: 'EventView', states: ['default', 'past', 'noAcceptances', 'declined'] }, // event
+  // list: the guest and invalid-link states hide the app header like a public page
+  list: {
+    component: 'ListView',
+    states: ['default', 'empty', 'allTaken', 'guest', 'linkInvalid'],
+    get public() {
+      return ['guest', 'linkInvalid'].includes(ui.states.list);
+    }
+  }
 };
 
 export function go(view, ids = {}) {

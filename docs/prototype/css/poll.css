@@ -1,0 +1,556 @@
+/* Poll page: head, response grid, totals, fix dialog, settings dialog */
+
+.poll-head {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.poll-head__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.poll-head__title {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.poll-head__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  color: var(--fg-muted);
+  font-size: 14px;
+}
+
+.poll-head__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.poll-head__link:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.poll-head__by {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poll-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.poll-head .audience {
+  gap: 12px 14px;
+  flex-wrap: wrap;
+}
+
+.poll-head .audience .btn {
+  margin-left: auto;
+}
+
+/* Response grid: the only place that may scroll horizontally. The name column
+   stays put so a row keeps its owner while the options scroll. */
+
+.poll-grid-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  background: var(--surface-raised);
+  -webkit-overflow-scrolling: touch;
+}
+
+.poll-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 14px;
+}
+
+.poll-grid th,
+.poll-grid td {
+  /* Positioned cells keep the visually hidden labels inside the scroll container,
+     otherwise they escape it and widen the page on small screens. */
+  position: relative;
+  padding: 10px 8px;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+}
+
+.poll-grid tfoot th,
+.poll-grid tfoot td {
+  border-bottom: 0;
+  border-top: 1px solid var(--border-strong);
+  background: var(--surface-muted);
+}
+
+.poll-grid__who {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  text-align: left;
+  background: var(--surface-raised);
+  min-width: 150px;
+  max-width: 220px;
+  padding-left: 16px;
+  font-weight: 600;
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.poll-grid__person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.poll-grid__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.poll-grid__totals-label {
+  background: var(--surface-muted);
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 560px) {
+  .poll-grid__who {
+    min-width: 120px;
+    max-width: 140px;
+    padding-left: 12px;
+  }
+}
+
+/* Column heads: weekday, day, month, time and label per option */
+
+.poll-col {
+  min-width: 84px;
+  padding-top: 12px;
+  vertical-align: bottom;
+  background: var(--surface-raised);
+}
+
+.poll-col > span {
+  display: block;
+  line-height: 1.2;
+}
+
+.poll-col__flag {
+  min-height: 22px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.02em;
+}
+
+.poll-col__flag .tag {
+  font-size: 12px;
+  padding: 1px 8px 2px;
+}
+
+.poll-col__weekday {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.poll-col__day {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 720;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  margin-top: 2px;
+}
+
+.poll-col__month {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.poll-col__time {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.poll-col__label {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-inline: auto;
+}
+
+.poll-col--best,
+.poll-cell--best {
+  background: var(--primary-soft);
+}
+
+.poll-col--best .poll-col__day {
+  color: var(--primary-soft-fg);
+}
+
+.poll-col--fixed,
+.poll-cell--fixed {
+  background: var(--success-soft);
+  box-shadow: inset 2px 0 0 var(--primary), inset -2px 0 0 var(--primary);
+}
+
+.poll-grid tfoot .poll-cell--best,
+.poll-grid tfoot .poll-cell--fixed {
+  background: color-mix(in oklab, var(--primary-soft) 70%, var(--surface-muted));
+}
+
+.poll-cell .mark {
+  margin-inline: auto;
+}
+
+.poll-grid__row--me {
+  background: var(--surface-muted);
+}
+
+.poll-grid__row--me .poll-grid__who {
+  background: var(--surface-muted);
+}
+
+/* Three-state answer control: native radios keep arrow keys and form semantics */
+
+.answer {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+}
+
+.answer__opt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.answer__opt input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.answer__opt .mark {
+  width: 24px;
+  height: 24px;
+  transition: transform var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+
+.answer__opt:not(:has(input:checked)) .mark {
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  color: var(--fg-soft);
+}
+
+.answer__opt:hover:not(:has(input:checked)) .mark {
+  border-color: var(--fg-soft);
+  color: var(--fg-muted);
+}
+
+.answer__opt:has(input:checked) {
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+}
+
+.answer__opt:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Totals */
+
+.poll-total {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.poll-total > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.poll-total__yes {
+  font-size: 15px;
+  color: var(--fg);
+}
+
+.poll-total__maybe {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.poll-total .mark {
+  width: 16px;
+  height: 16px;
+}
+
+.poll-total .mark svg {
+  width: 10px;
+  height: 10px;
+}
+
+.poll-total .mark--maybe {
+  border-width: 1.5px;
+}
+
+/* People who have not answered yet */
+
+.poll-missing {
+  display: flex;
+  align-items: center;
+  gap: 10px 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--fg-muted);
+}
+
+.poll-missing__label {
+  font-weight: 600;
+  color: var(--fg-soft);
+}
+
+/* Fix dialog: option selection and the preview of the events it creates */
+
+.fix-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-inner);
+}
+
+.fix-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.fix-option:hover {
+  border-color: var(--border-strong);
+}
+
+.fix-option:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.fix-option:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.fix-option--fixed {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.fix-option input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary);
+  flex: none;
+}
+
+.fix-option__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.fix-option__date {
+  font-weight: 600;
+}
+
+.fix-option__counts {
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fix-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  font-size: 14px;
+}
+
+.fix-preview__lead {
+  color: var(--fg-muted);
+}
+
+.fix-preview__lead b {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.fix-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+}
+
+.fix-event .date-block {
+  width: 48px;
+}
+
+.fix-event .date-block__day {
+  font-size: 20px;
+}
+
+.fix-event__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.fix-event__title {
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: 16px;
+}
+
+.fix-event__meta {
+  color: var(--fg-muted);
+}
+
+.fix-event__people {
+  display: flex;
+  align-items: center;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.fix-event__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+}
+
+/* Settings dialog: option rows with inline removal, danger zone */
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  flex-wrap: wrap;
+}
+
+.settings-option__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.settings-option__date {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.settings-option__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.settings-option__confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--danger);
+}
+
+.settings-danger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-danger p {
+  color: var(--fg-muted);
+}
