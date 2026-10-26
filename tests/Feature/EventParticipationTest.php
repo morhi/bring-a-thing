@@ -10,8 +10,6 @@ use App\Models\RosterItemClaim;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Give the user claims on two items of a list attached to the event.
  *
@@ -48,7 +46,7 @@ it('F-11: a decline with two claimed items shows both items in the confirmation,
     claimTwoEventItems($event, $member);
 
     $this->actingAs($member)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->has('page.own_claims', 2)
         ->where('page.own_claims.0.item_name', 'Extension reel')
         ->where('page.own_claims.1.item_name', 'Drinks'));
@@ -65,7 +63,7 @@ it('F-11: a decline with two claimed items shows both items in the confirmation,
         ->from(route('events.show', $event))
         ->put(route('events.participation.update', $event), ['status' => 'declined', 'confirm_release' => true])
         ->assertRedirect(route('events.show', $event))
-        ->assertSessionHas('success', 'You declined the event.');
+        ->assertSessionHas('success', 'You declined');
 
     expect(RosterItemClaim::query()->count())->toBe(0)
         ->and($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Declined);
@@ -77,7 +75,7 @@ it('F-11: a decline without claims needs no confirmation', function () {
     $this->actingAs($member)
         ->put(route('events.participation.update', $event), ['status' => 'declined'])
         ->assertSessionHasNoErrors()
-        ->assertSessionHas('success', 'You declined the event.');
+        ->assertSessionHas('success', 'You declined');
 
     expect($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Declined);
 });
@@ -89,7 +87,7 @@ it('F-11: when an admin sets a member to "declined", the member\'s claims stay',
     $this->actingAs($admin)
         ->put(route('events.participants.update', [$event, $member]), ['status' => 'declined'])
         ->assertSessionHasNoErrors()
-        ->assertSessionHas('success', 'Participation updated.');
+        ->assertSessionHas('success', __('ui.event.statusChanged', ['name' => $member->name]));
 
     expect($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Declined)
         ->and(RosterItemClaim::query()->where('user_id', $member->id)->count())->toBe(2);
@@ -101,7 +99,7 @@ it('F-11: removing a participant keeps their claims', function () {
 
     $this->actingAs($owner)
         ->delete(route('events.participants.destroy', [$event, $member]))
-        ->assertSessionHas('success', 'Participant removed.');
+        ->assertSessionHas('success', __('ui.event.removed', ['name' => $member->name]));
 
     expect($event->fresh()->statusOf($member))->toBeNull()
         ->and(RosterItemClaim::query()->where('user_id', $member->id)->count())->toBe(2);
@@ -112,13 +110,13 @@ it('F-11: a member who declined does not see the event\'s lists', function () {
     Roster::factory()->create(['owner_id' => $event->organizer_id, 'event_id' => $event->id]);
 
     $this->actingAs($member)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->has('page.lists', 1));
 
     $this->actingAs($member)->put(route('events.participation.update', $event), ['status' => 'declined']);
 
     $this->actingAs($member)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->where('page.own_status', 'declined')
         ->has('page.lists', 0));
 });
@@ -128,7 +126,7 @@ it('F-11: a past event allows no accepting or declining', function () {
     $event = Event::factory()->past()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
 
     $this->actingAs($members[0])->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->where('page.event.is_past', true)
         ->where('page.permissions.can_respond', false)
         ->where('page.permissions.can_set_status_for_others', false));
@@ -146,7 +144,7 @@ it('F-11: every group member accepts, also without a previous participation stat
 
     $this->actingAs($members[0])
         ->put(route('events.participation.update', $event), ['status' => 'accepted'])
-        ->assertSessionHas('success', 'You accepted the event.');
+        ->assertSessionHas('success', 'You are in');
 
     expect($event->fresh()->statusOf($members[0]))->toBe(ParticipationStatus::Accepted);
 
@@ -165,7 +163,7 @@ it('F-11: members set the status for others only when the group option allows it
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
 
     $this->actingAs($member)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->where('page.permissions.can_set_status_for_others', false)
         ->where('page.permissions.can_remove_participants', false));
 
@@ -175,7 +173,7 @@ it('F-11: members set the status for others only when the group option allows it
     $group->update(['members_can_set_status' => true]);
 
     $this->actingAs($member)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->where('page.permissions.can_set_status_for_others', true)
         ->where('page.permissions.can_remove_participants', false));
 

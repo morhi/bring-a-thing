@@ -30,7 +30,7 @@ class EventParticipationController extends Controller
 
         ParticipationChanged::dispatch($event->id, $request->user()->id);
 
-        $message = $status === ParticipationStatus::Accepted ? 'You accepted the event.' : 'You declined the event.';
+        $message = $status === ParticipationStatus::Accepted ? __('ui.event.acceptedToast') : __('ui.event.declinedToast');
 
         return back()->with('success', $message);
     }
@@ -44,7 +44,7 @@ class EventParticipationController extends Controller
 
         ParticipationChanged::dispatch($event->id, $member->id);
 
-        return back()->with('success', 'Participation updated.');
+        return back()->with('success', __('ui.event.statusChanged', ['name' => $member->name ?? $member->email]));
     }
 
     /**
@@ -58,6 +58,6 @@ class EventParticipationController extends Controller
 
         ParticipationChanged::dispatch($event->id, $member->id);
 
-        return back()->with('success', 'Participant removed.');
+        return back()->with('success', __('ui.event.removed', ['name' => $member->name ?? $member->email]));
     }
 }

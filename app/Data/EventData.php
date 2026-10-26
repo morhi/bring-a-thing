@@ -8,6 +8,7 @@ use Spatie\LaravelData\Data;
 class EventData extends Data
 {
     public function __construct(
+        public int $id,
         public string $slug,
         public string $title,
         public ?string $description,
@@ -29,10 +30,12 @@ class EventData extends Data
      * Build the key details of an event (F-10).
      *
      * Dates are Y-m-d and times H:i; is_past is the event's only status.
+     * id names the private broadcast channel event.{id} (F-21).
      */
     public static function fromEvent(Event $event): self
     {
         return new self(
+            id: $event->id,
             slug: $event->slug,
             title: $event->title,
             description: $event->description,

@@ -25,7 +25,7 @@ class EventCommentController extends Controller
 
         CommentAdded::dispatch($comment);
 
-        return back()->with('success', 'Comment posted.');
+        return back()->with('success', __('ui.event.comments.posted'));
     }
 
     /**
@@ -44,6 +44,6 @@ class EventCommentController extends Controller
 
         CommentDeleted::dispatch($comment);
 
-        return back()->with('success', 'Comment removed.');
+        return back()->with('success', __('ui.event.comments.removed'));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Events\CreateEvent;
 use App\Actions\Events\DeleteEvent;
 use App\Actions\Events\UpdateEvent;
+use App\Actions\Notifications\SendInAppNotification;
 use App\Data\EventFormData;
 use App\Data\EventShowData;
 use App\Events\EventUpdated;
@@ -12,6 +13,8 @@ use App\Http\Requests\Events\StoreEventRequest;
 use App\Http\Requests\Events\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\Group;
+use App\Notifications\EventCreated;
+use App\Notifications\EventMoved;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,11 +40,13 @@ class EventController extends Controller
     /**
      * Create an event directly and ask every group member to accept or decline.
      */
-    public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent): RedirectResponse
+    public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
         $event = $createEvent->handle($group, $request->user(), $request->eventAttributes());
 
-        return to_route('events.show', $event)->with('success', 'Event created.');
+        $sendNotification->handle(new EventCreated($event, $request->user()));
+
+        return to_route('events.show', $event)->with('success', __('ui.newEvent.created'));
     }
 
     /**
@@ -69,15 +74,21 @@ class EventController extends Controller
     }
 
     /**
-     * Update the event; moving its start resets acceptances to "pending".
+     * Update the event; moving its start resets acceptances to "pending" and notifies the participants (F-23).
      */
-    public function update(UpdateEventRequest $request, Event $event, UpdateEvent $updateEvent): RedirectResponse
+    public function update(UpdateEventRequest $request, Event $event, UpdateEvent $updateEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
         $updateEvent->handle($event, $request->eventAttributes());
 
         EventUpdated::dispatch($event->id);
 
-        return to_route('events.show', $event)->with('success', 'Event updated.');
+        if ($event->wasChanged(['date', 'starts_at'])) {
+            $sendNotification->handle(new EventMoved($event, $request->user()));
+
+            return to_route('events.show', $event)->with('success', __('ui.event.edit.reset'));
+        }
+
+        return to_route('events.show', $event)->with('success', __('ui.event.edit.saved'));
     }
 
     /**
@@ -96,6 +107,6 @@ class EventController extends Controller
             EventUpdated::dispatch($event->parent_event_id);
         }
 
-        return to_route('groups.show', $group)->with('success', 'Event deleted.');
+        return to_route('groups.show', $group)->with('success', __('ui.event.deleted'));
     }
 }

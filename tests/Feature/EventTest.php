@@ -15,8 +15,6 @@ use App\Models\RosterItemClaim;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Create a group with an owner, an admin and the given number of plain members.
  *
@@ -64,7 +62,7 @@ it('F-10: a directly created event in a group with five members shows one accept
     $this->actingAs($organizer)
         ->post(route('events.store', $group), eventInput())
         ->assertRedirect()
-        ->assertSessionHas('success', 'Event created.');
+        ->assertSessionHas('success', 'Event created');
 
     $event = Event::query()->sole();
 
@@ -74,7 +72,7 @@ it('F-10: a directly created event in a group with five members shows one accept
         ->get(route('events.show', $event))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Events/Show', false)
+            ->component('Events/Show')
             ->where('page.accepted_count', 1)
             ->where('page.pending_count', 4)
             ->where('page.declined_count', 0)
@@ -95,7 +93,7 @@ it('F-10: after moving the event from 12.03. to 19.03., all acceptances are pend
     $this->actingAs($owner)
         ->patch(route('events.update', $event), eventInput(['title' => $event->title, 'date' => '2027-03-19', 'starts_at' => null]))
         ->assertRedirect(route('events.show', $event))
-        ->assertSessionHas('success', 'Event updated.');
+        ->assertSessionHas('success', 'Event moved. All acceptances are pending again.');
 
     expect($event->fresh()->date->format('Y-m-d'))->toBe('2027-03-19')
         ->and($event->participations()->where('status', ParticipationStatus::Accepted)->count())->toBe(0)
@@ -126,7 +124,7 @@ it('F-10: deleting an event with a list also removes the list', function () {
     $this->actingAs($owner)
         ->delete(route('events.destroy', $event))
         ->assertRedirect(route('groups.show', $group))
-        ->assertSessionHas('success', 'Event deleted.');
+        ->assertSessionHas('success', 'Event deleted');
 
     expect(Event::query()->count())->toBe(0)
         ->and(Roster::query()->count())->toBe(0)
@@ -164,7 +162,7 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
     $this->actingAs($member)
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Events/Show', false)
+            ->component('Events/Show')
             ->where('page.permissions.can_edit', false)
             ->where('page.permissions.can_delete', false));
 
@@ -174,7 +172,7 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
             ->get(route('events.edit', $event))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Events/Create', false)
+                ->component('Events/Create')
                 ->where('form.event.title', 'Renamed')
                 ->where('form.member_count', 4));
     }
@@ -223,7 +221,7 @@ it('F-10: shows the "New event" page to group members with the audience size', f
         ->get(route('events.create', $group))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('Events/Create', false)
+            ->component('Events/Create')
             ->where('form.group_slug', $group->slug)
             ->where('form.member_count', 4)
             ->where('form.event', null));
@@ -278,20 +276,20 @@ it('F-10: shows lists to participants and follow-up polls to accepted participan
     Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'parent_event_id' => $event->id]);
 
     $this->actingAs($owner)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->has('page.lists', 1)
         ->has('page.follow_up_polls', 1)
         ->has('page.child_events', 1)
         ->where('page.permissions.can_create_follow_up_poll', true));
 
     $this->actingAs($pending)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->has('page.lists', 1)
         ->has('page.follow_up_polls', 0)
         ->where('page.permissions.can_create_follow_up_poll', false));
 
     $this->actingAs($declined)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
-        ->component('Events/Show', false)
+        ->component('Events/Show')
         ->has('page.lists', 0)
         ->has('page.follow_up_polls', 0));
 });

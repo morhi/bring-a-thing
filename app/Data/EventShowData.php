@@ -17,9 +17,9 @@ class EventShowData extends Data
     /**
      * @param  array<int, ParticipationData>  $participants
      * @param  array<int, EventClaimData>  $own_claims
-     * @param  array<int, EventLinkData>  $lists
-     * @param  array<int, EventLinkData>  $follow_up_polls
-     * @param  array<int, EventSummaryData>  $child_events
+     * @param  array<int, GroupListData>  $lists
+     * @param  array<int, GroupPollData>  $follow_up_polls
+     * @param  array<int, GroupEventData>  $child_events
      * @param  array<int, CommentData>  $comments
      */
     public function __construct(
@@ -35,6 +35,7 @@ class EventShowData extends Data
         public int $follow_up_audience_count,
         public array $child_events,
         public array $comments,
+        public ?EventDeleteCountsData $delete_counts,
         public EventPermissionsData $permissions,
     ) {}
 
@@ -48,11 +49,12 @@ class EventShowData extends Data
      * everyone else gets the key details. follow_up_audience_count feeds
      * the audience note of "New follow-up poll".
      * own_claims feeds the decline confirmation. comments is the event's
-     * own thread, only for those who may comment (F-20).
+     * own thread, only for those who may comment (F-20). delete_counts
+     * feeds the delete confirmation, only for those who may delete.
      */
     public static function forUser(Event $event, User $user): self
     {
-        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents', 'rosters', 'polls', 'comments.user');
+        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents.participations', 'rosters.items.claims', 'polls.options.responses', 'comments.user');
 
         $statuses = $event->participations->keyBy('user_id');
         $participants = $event->group->members
@@ -64,7 +66,7 @@ class EventShowData extends Data
 
         $isParticipant = $event->hasParticipant($user);
         $followUpPolls = $event->polls
-            ->each(fn (Poll $poll) => $poll->setRelation('event', $event))
+            ->each(fn (Poll $poll) => $poll->setRelation('event', $event)->setRelation('group', $event->group))
             ->filter(fn (Poll $poll) => $poll->includesMember($user));
 
         $permissions = EventPermissionsData::forUser($event, $user);
@@ -77,11 +79,12 @@ class EventShowData extends Data
             declined_count: $event->participations->where('status', ParticipationStatus::Declined)->count(),
             participants: $participants->all(),
             own_claims: $event->claimsOf($user)->map(fn (RosterItemClaim $claim) => EventClaimData::fromClaim($claim))->all(),
-            lists: $isParticipant ? $event->rosters->map(fn (Roster $roster) => new EventLinkData($roster->slug, $roster->title))->all() : [],
-            follow_up_polls: $followUpPolls->map(fn (Poll $poll) => new EventLinkData($poll->slug, $poll->title))->values()->all(),
+            lists: $isParticipant ? $event->rosters->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all() : [],
+            follow_up_polls: $followUpPolls->sortBy(fn (Poll $poll) => $poll->isClosed() ? 1 : 0)->map(fn (Poll $poll) => GroupPollData::fromPoll($poll))->values()->all(),
             follow_up_audience_count: $event->followUpAudience()->count(),
-            child_events: $event->childEvents->map(fn (Event $child) => EventSummaryData::fromEvent($child))->all(),
+            child_events: $event->childEvents->sortBy(fn (Event $child) => $child->date->format('Y-m-d').' '.($child->starts_at ?? '00:00'))->map(fn (Event $child) => GroupEventData::forUser($child, $user))->values()->all(),
             comments: $permissions->can_comment ? $event->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $event), $user))->all() : [],
+            delete_counts: $permissions->can_delete ? EventDeleteCountsData::fromEvent($event) : null,
             permissions: $permissions,
         );
     }

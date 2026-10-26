@@ -15,8 +15,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Inertia\Testing\AssertableInertia as Assert;
 
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Create an event whose organizer is a plain member, in a group with an owner, an admin and two more plain members.
  *
@@ -69,7 +67,7 @@ it('F-20: a comment on an event appears only on that event', function () {
 
     $this->actingAs($author)
         ->post(route('events.comments.store', $event), ['body' => 'Who brings the PA?'])
-        ->assertSessionHas('success', 'Comment posted.');
+        ->assertSessionHas('success', 'Comment posted');
 
     $this->assertDatabaseHas('comments', ['commentable_type' => 'event', 'commentable_id' => $event->id, 'user_id' => $author->id]);
     $this->actingAs($author)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page
@@ -102,7 +100,7 @@ it('lets the author, the group owner and admins delete an event comment and broa
 
         $this->actingAs($deleter)
             ->delete(route('events.comments.destroy', [$event, $comment]))
-            ->assertSessionHas('success', 'Comment removed.');
+            ->assertSessionHas('success', 'Comment removed');
 
         $this->assertModelMissing($comment);
     }

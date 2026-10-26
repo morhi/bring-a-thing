@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Notifications\SendInAppNotification;
 use App\Actions\Polls\CreateFollowUpPoll;
 use App\Data\PollFormData;
 use App\Enums\PollGranularity;
@@ -9,6 +10,7 @@ use App\Enums\PollType;
 use App\Events\EventUpdated;
 use App\Http\Requests\Polls\StoreFollowUpPollRequest;
 use App\Models\Event;
+use App\Notifications\PollCreated;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -33,7 +35,7 @@ class EventFollowUpPollController extends Controller
     /**
      * Create a follow-up poll whose audience is the event's accepted participants and managers.
      */
-    public function store(StoreFollowUpPollRequest $request, Event $event, CreateFollowUpPoll $createFollowUpPoll): RedirectResponse
+    public function store(StoreFollowUpPollRequest $request, Event $event, CreateFollowUpPoll $createFollowUpPoll, SendInAppNotification $sendNotification): RedirectResponse
     {
         $poll = $createFollowUpPoll->handle(
             $event,
@@ -50,6 +52,8 @@ class EventFollowUpPollController extends Controller
         );
 
         EventUpdated::dispatch($event->id);
+
+        $sendNotification->handle(new PollCreated($poll, $request->user()));
 
         return to_route('polls.show', $poll)->with('success', 'Poll created.');
     }
