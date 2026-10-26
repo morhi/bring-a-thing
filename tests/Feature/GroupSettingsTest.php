@@ -89,3 +89,13 @@ it('F-03: makes the group lists unreachable after deleting the group', function 
     $this->assertModelMissing($roster);
     $this->actingAs($owner)->get(route('rosters.show', $roster->slug))->assertNotFound();
 });
+
+it('F-03: shows a clear error when the owner saves an empty group name', function () {
+    [$group, $owner] = groupWithRoles();
+
+    $this->actingAs($owner)
+        ->patch(route('groups.update', $group), ['name' => ''])
+        ->assertInvalid(['name' => 'Give the group a name.']);
+
+    expect($group->fresh()->name)->toBe($group->name);
+});

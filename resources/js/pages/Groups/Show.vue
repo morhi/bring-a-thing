@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
+    ArrowLeft,
     CalendarDays,
     ChevronRight,
     Grid3x3,
@@ -39,6 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 defineOptions({ layout: AppLayout });
 
@@ -199,6 +201,10 @@ const rowClass =
 
     <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-[18px]" data-feature="F-03">
+            <Link :href="dashboard().url" class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline">
+                <ArrowLeft class="size-4" aria-hidden="true" />
+                {{ t('nav.backToDashboard') }}
+            </Link>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex min-w-0 flex-col gap-2">
                     <h1

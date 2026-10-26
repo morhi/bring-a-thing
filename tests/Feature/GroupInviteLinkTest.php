@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Auth\SendMagicLink;
 use App\Enums\GroupJoinMethod;
 use App\Enums\GroupRole;
 use App\Mail\MagicLinkMail;
@@ -141,6 +142,7 @@ it('F-04: shows the join page for a valid link', function () {
             ->component('Groups/Join', false)
             ->where('join.group_name', $group->name)
             ->where('join.locked', true)
+            ->where('join.link_expires_in_minutes', SendMagicLink::EXPIRES_IN_MINUTES)
             ->where('join.needs_email', true)
             ->where('join.is_authenticated', false)
             ->has('join.members', 1)

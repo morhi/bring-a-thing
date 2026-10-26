@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Actions\Auth\SendMagicLink;
 use App\Models\Group;
 use App\Models\User;
 use Spatie\LaravelData\Data;
@@ -20,6 +21,7 @@ class GroupJoinData extends Data
         public bool $is_authenticated,
         public bool $needs_email,
         public bool $has_email,
+        public int $link_expires_in_minutes,
     ) {}
 
     /**
@@ -44,6 +46,7 @@ class GroupJoinData extends Data
             is_authenticated: $user !== null,
             needs_email: $group->invite_link_locked && ! $user?->hasVerifiedEmail(),
             has_email: $user?->email !== null,
+            link_expires_in_minutes: SendMagicLink::EXPIRES_IN_MINUTES,
         );
     }
 }

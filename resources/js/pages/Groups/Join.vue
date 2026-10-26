@@ -122,7 +122,7 @@ const buttonClass = 'h-(--control-height) w-full px-4';
             <div v-else-if="sentTo" class="flex flex-col gap-(--space-stack)">
                 <div class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-(--radius-md) p-4" role="status">
                     <strong class="font-display text-[17px]">{{ t('welcome.login.sentTitle') }}</strong>
-                    <span>{{ t('welcome.login.sentText', { email: sentTo }) }}</span>
+                    <span>{{ t('welcome.login.sentText', { email: sentTo, minutes: join.link_expires_in_minutes }) }}</span>
                     <span>{{ t('join.sentNote', { group: join.group_name }) }}</span>
                 </div>
                 <Button type="button" variant="ghost" size="lg" :class="buttonClass" @click="useOtherEmail">

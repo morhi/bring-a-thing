@@ -8,6 +8,7 @@ date: string,
 starts_at: string | null,
 label: string | null,
 available_user_ids: number[],
+unavailable_user_ids: number[],
 };
 export type AttendanceOptionData = {
 id: number,
@@ -212,6 +213,7 @@ members: App.Data.GroupJoinMemberData[],
 is_authenticated: boolean,
 needs_email: boolean,
 has_email: boolean,
+link_expires_in_minutes: number,
 };
 export type GroupJoinMemberData = {
 id: number,
