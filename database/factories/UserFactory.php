@@ -27,10 +27,21 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'language' => null,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Set the account's interface language.
+     */
+    public function language(string $language): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'language' => $language,
+        ]);
     }
 
     /**

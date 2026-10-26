@@ -28,7 +28,7 @@ class MagicLinkMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your magic link',
+            subject: __('Your magic link'),
         );
     }
 

@@ -1,14 +1,14 @@
 <x-mail::message>
-# Log in to {{ config('app.name') }}
+# {{ __('Log in to :app', ['app' => config('app.name')]) }}
 
-Click the button below to log in. This link expires in {{ $expiresInMinutes }} minutes.
+{{ __('Click the button below to log in. This link expires in :minutes minutes.', ['minutes' => $expiresInMinutes]) }}
 
 <x-mail::button :url="$url">
-Log in
+{{ __('Log in') }}
 </x-mail::button>
 
-If you did not request this, you can safely ignore this email.
+{{ __('If you did not request this, you can safely ignore this email.') }}
 
-Thanks,<br>
+{{ __('Thanks,') }}<br>
 {{ config('app.name') }}
 </x-mail::message>

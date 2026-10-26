@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Data\SharedPropsData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,14 +38,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
-            'auth' => [
-                'user' => $request->user(),
-            ],
-            'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
-            ],
+            ...SharedPropsData::fromRequest($request)->toArray(),
         ];
     }
 }

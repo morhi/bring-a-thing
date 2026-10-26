@@ -29,6 +29,7 @@ class FindOrCreateUserByEmail
         return User::query()->create([
             'name' => $name,
             'email' => $email,
+            'language' => app()->getLocale(),
             'password' => null,
         ]);
     }

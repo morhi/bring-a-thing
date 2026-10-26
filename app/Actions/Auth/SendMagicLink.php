@@ -33,6 +33,6 @@ class SendMagicLink
             ]),
         );
 
-        Mail::to($user)->queue(new MagicLinkMail($url, self::EXPIRES_IN_MINUTES));
+        Mail::to($user)->locale($user->language ?? app()->getLocale())->queue(new MagicLinkMail($url, self::EXPIRES_IN_MINUTES));
     }
 }

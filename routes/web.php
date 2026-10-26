@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollOptionController;
 use App\Http\Controllers\PollResponseController;
@@ -29,6 +30,9 @@ Route::get('/', WelcomeController::class)->name('welcome');
 // bounces guests to route('login') by convention; GET-only so it doesn't
 // shadow the POST /login endpoints below.
 Route::get('/login', fn () => redirect()->route('welcome'))->name('login');
+
+// Language switch is open to guests (start page); logged-in accounts persist it.
+Route::patch('/language', [LanguageController::class, 'update'])->name('language.update');
 
 Route::middleware('guest')->group(function () {
     Route::post('/login', [MagicLinkController::class, 'store'])->name('magic-link.store');
