@@ -91,8 +91,8 @@ export const DashboardView = {
         <span class="greeting__date">{{ formatLongDate() }}</span>
       </div>
 
-      <section class="waiting" aria-labelledby="waiting-title">
-        <div class="waiting__head">
+      <section :class="waiting.length ? 'waiting' : 'section'" aria-labelledby="waiting-title">
+        <div :class="waiting.length ? 'waiting__head' : 'section-head'">
           <h2 id="waiting-title">{{ t('dash.waiting') }} <span class="waiting__count" v-if="waiting.length">{{ waiting.length }}</span></h2>
         </div>
         <div class="waiting__list" v-if="waiting.length">
@@ -106,10 +106,7 @@ export const DashboardView = {
             <span class="waiting-item__cta">{{ item.kind === 'poll' ? t('dash.waiting.poll') : t('dash.waiting.event') }}</span>
           </button>
         </div>
-        <div class="waiting__done" v-else>
-          <Mark answer="yes" />
-          <span>{{ t('dash.waiting.done') }}</span>
-        </div>
+        <EmptyState v-else icon="check" :title="t('dash.waiting.done.title')" :text="t('dash.waiting.done.text')" />
       </section>
 
       <div class="dash-split">
@@ -151,7 +148,7 @@ export const DashboardView = {
               <Icon name="chevron" class="icon-md icon-soft" />
             </button>
           </div>
-          <p class="muted" v-else>{{ t('dash.claims.empty') }}</p>
+          <EmptyState v-else :title="t('dash.claims.empty.title')" :text="t('dash.claims.empty.text')" />
         </section>
       </div>
 
@@ -200,7 +197,7 @@ export const DashboardView = {
             </span>
           </button>
         </div>
-        <EmptyState v-else-if="state !== 'empty'" :title="t('dash.lists.empty.title')" :text="t('dash.lists.empty.text')">
+        <EmptyState v-else :title="t('dash.lists.empty.title')" :text="t('dash.lists.empty.text')">
           <button type="button" class="btn btn--secondary" @click="goCreate('new-list')"><Icon name="plus" /> {{ t('dash.lists.new') }}</button>
         </EmptyState>
       </section>

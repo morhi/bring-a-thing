@@ -17,12 +17,31 @@ body {
   font-size: 16px;
   line-height: 1.5;
   color: var(--fg);
-  background-color: var(--surface);
-  background-image: radial-gradient(var(--texture-dot-color) 1px, transparent 1.2px);
-  background-size: var(--texture-dot-size) var(--texture-dot-size);
-  background-position: 0 0;
+  position: relative;
+  background-color: var(--ground);
+  /* The two glows stay fixed so long pages keep the same soft shapes in view */
+  background-image:
+    radial-gradient(70% 55% at 6% -10%, var(--ground-glow-a), transparent 70%),
+    radial-gradient(55% 45% at 102% 85%, var(--ground-glow-b), transparent 70%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Dots only in the top band behind the header and page title, so they never sit under running text in the containers */
+
+body::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 520px;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(var(--texture-dot-color) 1px, transparent 1.2px);
+  background-size: var(--texture-dot-size) var(--texture-dot-size);
+  mask-image: linear-gradient(to bottom, #000 0, #000 200px, transparent 100%);
 }
 
 h1,
@@ -174,10 +193,24 @@ svg {
   max-width: 56ch;
 }
 
+/* Sections are raised containers: one white block per content group with a divided head */
+
 .section {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  padding: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--container-radius);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+@media (min-width: 720px) {
+  .section {
+    padding: 24px 26px 26px;
+  }
 }
 
 .section-head {
@@ -186,6 +219,8 @@ svg {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .section-head__count {

@@ -4,9 +4,10 @@
   position: sticky;
   top: env(safe-area-inset-top, 0px);
   z-index: 20;
-  background: color-mix(in oklab, var(--surface) 86%, transparent);
+  background: color-mix(in oklab, var(--surface-raised) 90%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-header);
 }
 
 body::before {

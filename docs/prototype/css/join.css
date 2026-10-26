@@ -1,0 +1,96 @@
+/* Join page: public bar, intro with lock badge and member stack, one card for the form or the result */
+
+.join-page {
+  max-width: 960px;
+}
+
+.join-body {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+  padding-block: 8px;
+}
+
+@media (min-width: 800px) {
+  .join-body {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 56px;
+    padding-block: 24px;
+  }
+}
+
+.join-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.join-intro h1 {
+  overflow-wrap: anywhere;
+}
+
+.join-lock svg {
+  flex: none;
+}
+
+.join-members {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fg-muted);
+  font-size: 15px;
+}
+
+.join-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+  min-width: 0;
+}
+
+.join-card--done {
+  grid-column: 1 / -1;
+  max-width: 560px;
+  align-items: flex-start;
+}
+
+.join-card--done h1 {
+  overflow-wrap: anywhere;
+}
+
+.join-card__check {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+}
+
+.join-card__check svg {
+  width: 22px;
+  height: 22px;
+}
+
+.join-card__sent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-soft-fg);
+}
+
+.join-card__sent strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+}

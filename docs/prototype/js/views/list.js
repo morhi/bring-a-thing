@@ -1,12 +1,13 @@
-// List page (F-13 to F-20): items with claims, comments, attendance day, settings and the share-link guest view.
+// List page (F-13 to F-20): items with claims, comments, attendance day and the share-link guest view.
+// Editing happens on the list edit page (views/create.js), which shares the helpers exported here.
 
 import { ref, reactive, computed, nextTick, watch } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, viewState, toast, nextId } from '../core.js';
+import { ui, h, data, currentUser, go, goCreate, viewState, toast, nextId } from '../core.js';
 import { t, formatDate, relativeDay, isPast, TODAY } from '../i18n.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function listGroupId(list) {
+export function listGroupId(list) {
   if (list.groupId) {
     return list.groupId;
   }
@@ -38,7 +39,7 @@ function answerFor(optionId, accountId) {
   return response ? response.answer : null;
 }
 
-function optionLabel(option) {
+export function optionLabel(option) {
   const date = formatDate(option.date, 'weekday');
 
   if (!option.start) {
@@ -49,7 +50,7 @@ function optionLabel(option) {
 }
 
 // Only attendance polls of the same group can be linked (F-18).
-function attendancePollsOf(groupId) {
+export function attendancePollsOf(groupId) {
   return h.pollsOf(groupId)
     .filter((poll) => poll.type === 'attendance')
     .map((poll) => ({ poll, options: h.options(poll.id) }));
@@ -139,7 +140,7 @@ const CommentThread = {
           </div>
         </li>
       </ul>
-      <p class="muted small" v-else>{{ t('list.comments.none') }}</p>
+      <EmptyState v-else :title="t('list.comments.none')" />
       <form class="composer" v-if="canPost" @submit.prevent="send">
         <FormField :label="t('list.comments.write')" :control="controlId" :hint="t('list.comments.hint', { key: modifierKey })">
           <textarea class="textarea composer__input" :id="controlId" v-model="text" rows="2" :placeholder="t('list.comments.placeholder')" @keydown="onKeydown"></textarea>
@@ -242,199 +243,8 @@ const ItemDialog = {
     </AppDialog>`
 };
 
-// List settings (F-13, F-14, F-16 to F-19): details are saved together, fields and the share link apply at once.
-const ListSettingsDialog = {
-  props: { list: { type: Object, required: true }, isOwner: Boolean },
-  emits: ['close', 'delete', 'duplicate', 'preview'],
-  setup(props, { emit }) {
-    const list = props.list;
-    const form = reactive({
-      title: list.title,
-      description: list.description || '',
-      date: list.date || '',
-      membersCanAddItems: list.membersCanAddItems,
-      attendanceOptionId: list.attendanceOptionId || ''
-    });
-    const error = ref('');
-    const fields = computed(() => data.customFields.filter((field) => field.listId === list.id));
-    const newField = ref('');
-    const fieldToDelete = ref(null);
-    const attendancePolls = computed(() => (list.groupId ? attendancePollsOf(list.groupId) : []));
-    const shareUrl = computed(() => (list.shareToken ? `/shared/${list.shareToken}` : ''));
-
-    function save() {
-      if (!form.title.trim()) {
-        error.value = t('newList.titleRequired');
-
-        return;
-      }
-
-      Object.assign(list, {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        date: form.date || null,
-        membersCanAddItems: form.membersCanAddItems,
-        attendanceOptionId: form.attendanceOptionId || null
-      });
-      toast(t('list.settings.saved'));
-      emit('close');
-    }
-
-    function addField() {
-      const name = newField.value.trim();
-
-      if (!name) {
-        return;
-      }
-
-      data.customFields.push({ id: nextId('cf'), listId: list.id, name });
-      newField.value = '';
-    }
-
-    function valueCount(field) {
-      return h.items(list.id).filter((item) => (item.fieldValues || {})[field.id]).length;
-    }
-
-    function deleteField() {
-      const field = fieldToDelete.value;
-      h.items(list.id).forEach((item) => {
-        if (!item.fieldValues) {
-          return;
-        }
-
-        delete item.fieldValues[field.id];
-      });
-      data.customFields.splice(data.customFields.indexOf(field), 1);
-      fieldToDelete.value = null;
-    }
-
-    function newToken() {
-      return Math.random().toString(36).slice(2, 8);
-    }
-
-    function enableLink() {
-      list.shareToken = newToken();
-      toast(t('list.share.enabled'));
-    }
-
-    function regenerateLink() {
-      list.shareToken = newToken();
-      toast(t('list.share.regenerated'));
-    }
-
-    function disableLink() {
-      list.shareToken = null;
-      toast(t('list.share.disabled'));
-    }
-
-    async function copyLink() {
-      try {
-        await navigator.clipboard.writeText(`${location.origin}${shareUrl.value}`);
-      } catch {
-        /* clipboard access is a convenience only */
-      }
-
-      toast(t('list.share.copied'));
-    }
-
-    return { form, error, fields, newField, fieldToDelete, attendancePolls, shareUrl, save, addField, valueCount, deleteField, enableLink, regenerateLink, disableLink, copyLink, optionLabel, t };
-  },
-  template: `
-    <AppDialog :title="t('list.settings.title')" :subtitle="list.title" @close="$emit('close')">
-      <form id="list-settings-form" class="form-grid" @submit.prevent="save" novalidate data-feature="F-13">
-        <FormField :label="t('newList.name')" control="settings-title" required :error="error">
-          <input class="input" id="settings-title" v-model="form.title" :aria-invalid="error ? 'true' : null">
-        </FormField>
-        <FormField :label="t('newList.description')" control="settings-description">
-          <textarea class="textarea" id="settings-description" v-model="form.description" rows="2"></textarea>
-        </FormField>
-        <FormField :label="t('newList.date')" control="settings-date" :hint="t('newList.dateHint')">
-          <input class="input input--date" id="settings-date" type="date" v-model="form.date">
-        </FormField>
-        <label class="check" data-feature="F-14">
-          <input type="checkbox" v-model="form.membersCanAddItems">
-          <span class="check__text">
-            <span>{{ t('newList.membersCanAdd') }}</span>
-            <span class="check__hint">{{ t('newList.membersCanAddHint') }}</span>
-          </span>
-        </label>
-        <FormField v-if="attendancePolls.length" :label="t('list.attendance.listLabel')" control="settings-attendance" :hint="t('list.attendance.listHint')" data-feature="F-18">
-          <select class="select" id="settings-attendance" v-model="form.attendanceOptionId">
-            <option value="">{{ t('list.attendance.none') }}</option>
-            <optgroup v-for="entry in attendancePolls" :key="entry.poll.id" :label="entry.poll.title">
-              <option v-for="option in entry.options" :key="option.id" :value="option.id">{{ optionLabel(option) }}</option>
-            </optgroup>
-          </select>
-        </FormField>
-      </form>
-
-      <template v-if="isOwner">
-        <hr class="divider">
-        <section class="settings-block" data-feature="F-16">
-          <h3>{{ t('list.fields.title') }}</h3>
-          <p>{{ t('list.fields.hint') }}</p>
-          <ul class="field-rows" v-if="fields.length">
-            <li class="field-row" v-for="field in fields" :key="field.id">
-              <input class="input input--sm" v-model="field.name" :aria-label="t('list.fields.name')">
-              <button type="button" class="btn btn--ghost btn--icon btn--sm" :aria-label="t('list.fields.remove')" @click="fieldToDelete = field"><Icon name="x" /></button>
-            </li>
-          </ul>
-          <div class="alert alert--warning" v-if="fieldToDelete" role="alert">
-            <Icon name="question" />
-            <span class="alert__body">
-              {{ t('list.fields.confirm', { name: fieldToDelete.name, n: valueCount(fieldToDelete) }) }}
-              <button type="button" class="btn btn--danger btn--sm" @click="deleteField">{{ t('list.fields.confirmButton') }}</button>
-              <button type="button" class="btn btn--ghost btn--sm" @click="fieldToDelete = null">{{ t('dialog.cancel') }}</button>
-            </span>
-          </div>
-          <div class="field-add">
-            <input class="input input--sm" v-model="newField" :placeholder="t('list.fields.placeholder')" :aria-label="t('list.fields.add')" @keydown.enter.prevent="addField">
-            <button type="button" class="btn btn--secondary btn--sm" @click="addField"><Icon name="plus" /> {{ t('list.fields.add') }}</button>
-          </div>
-        </section>
-
-        <hr class="divider">
-        <section class="settings-block" data-feature="F-19">
-          <h3>{{ t('list.share.title') }}</h3>
-          <p>{{ t('list.share.hint') }}</p>
-          <template v-if="list.shareToken">
-            <div class="share-link">
-              <code class="share-link__url">{{ shareUrl }}</code>
-              <button type="button" class="btn btn--secondary btn--sm" @click="copyLink"><Icon name="link" /> {{ t('list.share.copy') }}</button>
-            </div>
-            <div class="row">
-              <button type="button" class="btn btn--ghost btn--sm" @click="regenerateLink">{{ t('list.share.regenerate') }}</button>
-              <button type="button" class="btn btn--ghost btn--sm" @click="disableLink">{{ t('list.share.disable') }}</button>
-              <button type="button" class="btn btn--ghost btn--sm" @click="$emit('preview')">{{ t('list.share.preview') }}</button>
-            </div>
-          </template>
-          <button type="button" class="btn btn--secondary btn--sm" v-else @click="enableLink"><Icon name="link" /> {{ t('list.share.enable') }}</button>
-        </section>
-
-        <hr class="divider">
-        <section class="settings-block" data-feature="F-17">
-          <h3>{{ t('list.settings.duplicate') }}</h3>
-          <p>{{ t('list.settings.duplicateHint') }}</p>
-          <button type="button" class="btn btn--secondary btn--sm" @click="$emit('duplicate')">{{ t('list.settings.duplicate') }}</button>
-        </section>
-      </template>
-
-      <hr class="divider">
-      <section class="settings-block" data-feature="F-13">
-        <h3>{{ t('list.settings.delete') }}</h3>
-        <p>{{ t('list.settings.deleteHint') }}</p>
-        <button type="button" class="btn btn--danger btn--sm" @click="$emit('delete')">{{ t('list.settings.delete') }}</button>
-      </section>
-
-      <template #foot>
-        <button type="button" class="btn btn--secondary" @click="$emit('close')">{{ t('dialog.cancel') }}</button>
-        <button type="submit" form="list-settings-form" class="btn btn--primary">{{ t('list.settings.save') }}</button>
-      </template>
-    </AppDialog>`
-};
-
 export const ListView = {
-  components: { ConfirmDialog, CommentThread, ItemDialog, ListSettingsDialog },
+  components: { ConfirmDialog, CommentThread, ItemDialog },
   setup() {
     const state = viewState('list');
     const user = currentUser;
@@ -759,9 +569,8 @@ export const ListView = {
 
     const listCommentCount = computed(() => data.comments.filter((comment) => comment.listId === list.value.id && !comment.itemId).length);
 
-    // Items and settings dialogs
+    // Item dialog
     const itemDialog = ref(null);
-    const settingsOpen = ref(false);
 
     function openItemDialog(item = null) {
       if (guest.value) {
@@ -807,52 +616,9 @@ export const ListView = {
       go(backTarget.value.view, backTarget.value.ids);
     }
 
-    function askDeleteList() {
-      settingsOpen.value = false;
-      confirm.value = {
-        title: t('list.settings.deleteTitle'),
-        text: t('list.settings.deleteText', { title: list.value.title }),
-        confirmLabel: t('list.settings.delete'),
-        danger: true,
-        action: deleteList
-      };
-    }
-
-    function deleteList() {
-      const target = list.value;
-      const destination = backTarget.value;
-      const itemIds = h.items(target.id).map((item) => item.id);
-      data.claims = data.claims.filter((claim) => !itemIds.includes(claim.itemId));
-      data.comments = data.comments.filter((comment) => comment.listId !== target.id);
-      data.customFields = data.customFields.filter((field) => field.listId !== target.id);
-      data.items = data.items.filter((item) => item.listId !== target.id);
-      data.lists.splice(data.lists.indexOf(target), 1);
-      toast(t('list.settings.deleted'));
-      go(destination.view, destination.ids);
-    }
-
-    // Duplicate (F-17): title, description, items and custom fields; no claims, comments or date.
-    function duplicate() {
-      const source = list.value;
-      const copy = { ...source, id: nextId('l'), ownerId: user.value.id, date: null, shareToken: null };
-      const fieldIds = {};
-      data.lists.push(copy);
-      fields.value.forEach((field) => {
-        fieldIds[field.id] = nextId('cf');
-        data.customFields.push({ id: fieldIds[field.id], listId: copy.id, name: field.name });
-      });
-      h.items(source.id).forEach((item) => {
-        const values = Object.fromEntries(Object.entries(item.fieldValues || {}).map(([id, value]) => [fieldIds[id], value]));
-        data.items.push({ ...item, id: nextId('i'), listId: copy.id, fieldValues: values });
-      });
-      settingsOpen.value = false;
-      toast(t('list.settings.duplicated'));
-      go('list', { currentListId: copy.id });
-    }
-
-    function previewAsGuest() {
-      settingsOpen.value = false;
-      state.value = 'guest';
+    // edit-mode: the list edit page returns here on save and cancel (section 6, "List edit")
+    function edit() {
+      goCreate('new-list', { editListId: list.value.id });
     }
 
     // In-place login for guests (F-19, F-01). The pending action completes after the login.
@@ -937,7 +703,7 @@ export const ListView = {
       claimsOf, ownClaim, remainingOf, statusLabel, fieldEntries, optionFor, warnFor, candidatesFor,
       claimForm, startClaim, cancelClaim, submitClaim, requestClaim, removeClaim, canRemoveClaim, claimFor,
       confirm, runConfirm, openThreads, toggleThread, commentCount, listCommentCount,
-      itemDialog, settingsOpen, openItemDialog, askDeleteItem, askDeleteList, duplicate, previewAsGuest, backTarget, back,
+      itemDialog, openItemDialog, askDeleteItem, backTarget, back, edit,
       login, pendingLabel, openLogin, sendLink, completeLogin,
       go, h, t, formatDate, relativeDay, formatQuantity, nameOf
     };
@@ -985,7 +751,7 @@ export const ListView = {
             </div>
           </div>
           <div class="list-head__actions">
-            <button type="button" class="btn btn--secondary" v-if="canEdit" @click="settingsOpen = true"><Icon name="settings" /> {{ t('list.settings.open') }}</button>
+            <button type="button" class="btn btn--secondary" v-if="canEdit" @click="edit"><Icon name="settings" /> {{ t('list.edit.title') }}</button>
             <button type="button" class="btn btn--primary" v-if="canAdd && items.length" @click="openItemDialog()" data-feature="F-14"><Icon name="plus" /> {{ t('list.item.add') }}</button>
           </div>
         </div>
@@ -1108,7 +874,6 @@ export const ListView = {
       </section>
 
       <ItemDialog v-if="itemDialog" :list="list" :item="itemDialog.item" :can-delete="canEdit" @close="itemDialog = null" @delete="askDeleteItem" />
-      <ListSettingsDialog v-if="settingsOpen" :list="list" :is-owner="isOwner" @close="settingsOpen = false" @delete="askDeleteList" @duplicate="duplicate" @preview="previewAsGuest" />
       <ConfirmDialog v-if="confirm" :title="confirm.title" :text="confirm.text" :confirm-label="confirm.confirmLabel" :danger="confirm.danger" @confirm="runConfirm" @cancel="confirm = null" />
     </main>
 

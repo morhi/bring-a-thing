@@ -138,6 +138,23 @@
   flex: 1;
 }
 
+/* Invite link next to the email invite: lock icon shows the link's lock setting */
+
+.invite-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.invite-link .btn--secondary {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
 .suggestions {
   display: flex;
   flex-direction: column;
@@ -313,6 +330,26 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Narrow screens: the aside drops under the text so titles keep their width inside the section container */
+
+@media (max-width: 560px) {
+  .poll-row,
+  .event-row {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .poll-row__aside,
+  .event-row__aside {
+    flex-basis: 100%;
+    padding-left: 58px;
+  }
+
+  .event-row__aside {
+    padding-left: 68px;
+  }
 }
 
 .event-row--past {

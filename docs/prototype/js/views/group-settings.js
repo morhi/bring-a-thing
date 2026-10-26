@@ -1,8 +1,8 @@
-// Group settings page (F-03, F-04): name, members with roles, invite and remove, delete group.
-// Owner and admin reach it from the group page; the admin sees no role change and no delete action.
+// Group settings page (F-03, F-04): name, invite link, options, members with roles, invite and remove, delete group.
+// Owner and admin reach it from the group page; the admin sees no role change, no rename, no options and no delete action.
 
 import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, toast, nextId } from '../core.js';
+import { ui, h, data, currentUser, go, toast, nextId, createInviteLink, inviteUrl, copyText } from '../core.js';
 import { t } from '../i18n.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -118,6 +118,7 @@ export const GroupSettingsView = {
       toast(t(`groupSettings.roleChanged.${value}`, { name: personName(membership.accountId) }));
     }
 
+    // Removing ends the membership only; participations, claims and responses stay (F-04).
     function remove(membership) {
       data.memberships = data.memberships.filter((entry) => !(entry.groupId === membership.groupId && entry.accountId === membership.accountId));
       removing.value = null;
@@ -129,6 +130,49 @@ export const GroupSettingsView = {
       deleting.value = false;
       toast(t('groupSettings.deleted'));
       go('dashboard');
+    }
+
+    // invite-link: one link per group with a lock setting; revoke and regenerate invalidate the old link (F-04)
+    const linkUrl = computed(() => (group.value && group.value.inviteLink ? inviteUrl(group.value) : ''));
+    const lockOptions = computed(() => [
+      { value: 'open', title: t('groupSettings.link.openTitle'), hint: t('groupSettings.link.openHint') },
+      { value: 'closed', title: t('groupSettings.link.closedTitle'), hint: t('groupSettings.link.closedHint') }
+    ]);
+
+    function createLink() {
+      createInviteLink(group.value);
+      toast(t('groupSettings.link.created'));
+    }
+
+    async function copyLink() {
+      await copyText(linkUrl.value);
+      toast(t('group.link.copied'));
+    }
+
+    function setLock(value) {
+      group.value.inviteLink.open = value === 'open';
+      toast(t(value === 'open' ? 'groupSettings.link.nowOpen' : 'groupSettings.link.nowClosed'));
+    }
+
+    function revokeLink() {
+      group.value.inviteLink = null;
+      toast(t('groupSettings.link.revoked'));
+    }
+
+    function regenerateLink() {
+      const open = group.value.inviteLink.open;
+      createInviteLink(group.value);
+      group.value.inviteLink.open = open;
+      toast(t('groupSettings.link.regenerated'));
+    }
+
+    function previewJoin() {
+      go('join', { currentGroupId: group.value.id, joinToken: group.value.inviteLink ? group.value.inviteLink.token : null });
+    }
+
+    function setOption(checked) {
+      group.value.membersCanSetStatus = checked;
+      toast(t('groupSettings.options.saved'));
     }
 
     // Invite form with friend suggestions, same behavior as on the group page (F-04, F-05)
@@ -193,6 +237,7 @@ export const GroupSettingsView = {
     return {
       user, group, isOwner, canManage, members, counts, name, nameError, removing, deleting,
       saveName, setRole, remove, confirmDelete,
+      linkUrl, lockOptions, createLink, copyLink, setLock, revokeLink, regenerateLink, previewJoin, setOption,
       inviteEmail, inviteError, suggestions, suggestionsOpen, pickSuggestion, invite,
       personName, go, h, t
     };
@@ -223,6 +268,53 @@ export const GroupSettingsView = {
         </template>
       </section>
 
+      <section class="section" aria-labelledby="gs-link-title" data-feature="F-04">
+        <div class="section-head">
+          <h2 id="gs-link-title">{{ t('groupSettings.link.title') }}</h2>
+          <span class="notice">{{ t('groupSettings.link.hint') }}</span>
+        </div>
+        <div class="card gs-link" v-if="group.inviteLink">
+          <FormField :label="t('groupSettings.link.url')" control="gs-link-url">
+            <div class="gs-link__row">
+              <input class="input" id="gs-link-url" :value="linkUrl" readonly>
+              <button type="button" class="btn btn--secondary" @click="copyLink"><Icon name="link" /> {{ t('groupSettings.link.copy') }}</button>
+            </div>
+          </FormField>
+          <FormField :label="t('groupSettings.link.lock')" group>
+            <ChoiceGroup :modelValue="group.inviteLink.open ? 'open' : 'closed'" name="gs-link-lock" :options="lockOptions" @update:modelValue="setLock" />
+          </FormField>
+          <div class="gs-link__actions">
+            <span class="gs-link__state"><Icon :name="group.inviteLink.open ? 'unlock' : 'lock'" class="icon-sm" /> {{ group.inviteLink.open ? t('groupSettings.link.nowOpen') : t('groupSettings.link.nowClosed') }}</span>
+            <button type="button" class="btn btn--secondary btn--sm" @click="regenerateLink">{{ t('groupSettings.link.regenerate') }}</button>
+            <button type="button" class="btn btn--danger btn--sm" @click="revokeLink">{{ t('groupSettings.link.revoke') }}</button>
+            <button type="button" class="btn btn--ghost btn--sm" @click="previewJoin">{{ t('groupSettings.link.preview') }}</button>
+          </div>
+        </div>
+        <div class="card gs-link" v-else>
+          <p class="muted">{{ t('groupSettings.link.none') }}</p>
+          <div class="gs-link__actions">
+            <button type="button" class="btn btn--primary" @click="createLink"><Icon name="link" /> {{ t('groupSettings.link.create') }}</button>
+            <button type="button" class="btn btn--ghost btn--sm" @click="previewJoin">{{ t('groupSettings.link.preview') }}</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="gs-options-title" data-feature="F-03">
+        <div class="section-head">
+          <h2 id="gs-options-title">{{ t('groupSettings.options') }}</h2>
+          <span class="notice" v-if="!isOwner">{{ t('groupSettings.options.ownerOnly') }}</span>
+        </div>
+        <div class="card gs-options">
+          <label class="check" data-feature="F-11">
+            <input type="checkbox" :checked="!!group.membersCanSetStatus" :disabled="!isOwner" @change="setOption($event.target.checked)">
+            <span class="check__text">
+              {{ t('groupSettings.options.setStatus') }}
+              <span class="check__hint">{{ t('groupSettings.options.setStatusHint') }}</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
       <section class="section" aria-labelledby="gs-members-title" data-feature="F-03">
         <div class="section-head">
           <h2 id="gs-members-title">{{ t('group.members') }}<span class="section-head__count">{{ members.length }}</span></h2>
@@ -238,8 +330,9 @@ export const GroupSettingsView = {
                   <span class="soft" v-else>{{ t('common.noName') }}</span>
                   <span class="soft small" v-if="membership.accountId === user.id">({{ t('group.member.you') }})</span>
                   <span class="badge badge--warning" v-if="!membership.acceptedAt">{{ t('group.member.pending') }}</span>
+                  <span class="badge badge--info" v-if="membership.joinedViaLink" data-feature="F-04">{{ t('group.member.viaLink') }}</span>
                 </span>
-                <span class="gs-member__email">{{ h.account(membership.accountId).email }}</span>
+                <span class="gs-member__email" v-if="h.account(membership.accountId).email">{{ h.account(membership.accountId).email }}</span>
               </span>
               <span class="gs-member__controls">
                 <span class="gs-member__role" v-if="membership.role === 'owner'">{{ t('group.member.owner') }}</span>

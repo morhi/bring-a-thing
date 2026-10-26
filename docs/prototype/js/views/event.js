@@ -185,6 +185,10 @@ export const EventView = {
     const past = computed(() => !!event.value && (state.value === 'past' || isPast(event.value.start)));
     const isOrganizer = computed(() => !!event.value && event.value.organizerId === user.value.id);
     const canManage = computed(() => !!event.value && (isOrganizer.value || h.canManage(event.value.groupId, user.value.id)));
+    // Members set the status for others only when the group option allows it; managers always can (F-11, F-03).
+    const canSetStatus = computed(() => canManage.value || (!!group.value && !!group.value.membersCanSetStatus));
+    // Child events have no follow-up polls and no children of their own (F-12, one level only).
+    const isChild = computed(() => !!event.value && !!event.value.parentEventId);
 
     const participations = computed(() => {
       if (!event.value) {
@@ -394,7 +398,7 @@ export const EventView = {
     }
 
     return {
-      ui, state, user, dialog, pendingClaims, event, group, visible, past, canManage, columns, acceptedCount, myStatus, isParticipant, myBadge,
+      ui, state, user, dialog, pendingClaims, event, group, visible, past, canManage, canSetStatus, isChild, columns, acceptedCount, myStatus, isParticipant, myBadge,
       parent, originPoll, timeLabel, lists, followUps, children, deleteCounts, pollMeta, pollStatus, childStatus, personName,
       accept, decline, confirmDecline, changeStatus, removeParticipant, saveEdit, confirmDelete, go, goCreate, h, t, formatDate, relativeDay
     };
@@ -455,13 +459,13 @@ export const EventView = {
               <li class="participant" v-for="id in column.ids" :key="id">
                 <Avatar :id="id" size="sm" />
                 <span class="participant__name">{{ personName(id) }} <span class="soft small" v-if="id === user.id">({{ t('group.member.you') }})</span></span>
-                <template v-if="canManage && id !== user.id">
-                  <select class="select input--sm participant__status" :value="column.status" :aria-label="t('event.setStatus', { name: personName(id) })" @change="changeStatus(id, $event.target.value)">
+                <template v-if="id !== user.id">
+                  <select class="select input--sm participant__status" v-if="canSetStatus" :value="column.status" :aria-label="t('event.setStatus', { name: personName(id) })" @change="changeStatus(id, $event.target.value)" :data-feature="canManage ? null : 'F-03'">
                     <option value="accepted">{{ t('event.accepted') }}</option>
                     <option value="pending">{{ t('event.pending') }}</option>
                     <option value="declined">{{ t('event.declined') }}</option>
                   </select>
-                  <button type="button" class="btn btn--ghost btn--icon btn--sm" :aria-label="t('event.remove', { name: personName(id) })" @click="removeParticipant(id)"><Icon name="x" /></button>
+                  <button type="button" class="btn btn--ghost btn--icon btn--sm" v-if="canManage" :aria-label="t('event.remove', { name: personName(id) })" @click="removeParticipant(id)"><Icon name="x" /></button>
                 </template>
               </li>
             </ul>
@@ -476,7 +480,7 @@ export const EventView = {
         <section class="section" aria-labelledby="event-lists-title" data-feature="F-13">
           <div class="section-head">
             <h2 id="event-lists-title">{{ t('event.lists') }}<span class="section-head__count" v-if="lists.length">{{ lists.length }}</span></h2>
-            <button type="button" class="btn btn--secondary btn--sm" v-if="!past" @click="goCreate('new-list', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('group.new.list') }}</button>
+            <button type="button" class="btn btn--secondary btn--sm" @click="goCreate('new-list', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('group.new.list') }}</button>
           </div>
           <div class="grid grid--2" v-if="lists.length">
             <button type="button" class="card card--interactive list-card" v-for="list in lists" :key="list.id" @click="go('list', { currentListId: list.id })">
@@ -491,14 +495,14 @@ export const EventView = {
             </button>
           </div>
           <EmptyState v-else :title="t('event.lists.empty.title')" :text="t('event.lists.empty.text')">
-            <button type="button" class="btn btn--secondary" v-if="!past" @click="goCreate('new-list', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('group.new.list') }}</button>
+            <button type="button" class="btn btn--secondary" @click="goCreate('new-list', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('group.new.list') }}</button>
           </EmptyState>
         </section>
 
-        <section class="section" aria-labelledby="followups-title" data-feature="F-12">
+        <section class="section" aria-labelledby="followups-title" v-if="!isChild" data-feature="F-12">
           <div class="section-head">
             <h2 id="followups-title">{{ t('event.followUps') }}<span class="section-head__count" v-if="followUps.length && myStatus === 'accepted'">{{ followUps.length }}</span></h2>
-            <button type="button" class="btn btn--primary btn--sm" v-if="!past" @click="goCreate('new-poll', { groupId: group.id, eventId: event.id })"><Icon name="poll" /> {{ t('event.followUps.new') }}</button>
+            <button type="button" class="btn btn--primary btn--sm" @click="goCreate('new-poll', { groupId: group.id, eventId: event.id })"><Icon name="poll" /> {{ t('event.followUps.new') }}</button>
           </div>
           <p class="notice" v-if="myStatus !== 'accepted'">{{ t('event.followUps.acceptFirst') }}</p>
           <div class="stack" v-else-if="followUps.length">
@@ -521,11 +525,11 @@ export const EventView = {
             </button>
           </div>
           <EmptyState v-else :title="t('event.followUps.empty.title')" :text="t('event.followUps.empty.text')">
-            <button type="button" class="btn btn--primary" v-if="!past" @click="goCreate('new-poll', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('event.followUps.new') }}</button>
+            <button type="button" class="btn btn--primary" @click="goCreate('new-poll', { groupId: group.id, eventId: event.id })"><Icon name="plus" /> {{ t('event.followUps.new') }}</button>
           </EmptyState>
         </section>
 
-        <section class="section" aria-labelledby="children-title" data-feature="F-12">
+        <section class="section" aria-labelledby="children-title" v-if="!isChild" data-feature="F-12">
           <div class="section-head">
             <h2 id="children-title">{{ t('event.children') }}<span class="section-head__count" v-if="children.length">{{ children.length }}</span></h2>
           </div>

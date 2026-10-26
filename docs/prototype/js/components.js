@@ -27,7 +27,11 @@ const paths = {
   heart: '<path d="M12 20s-7-4.4-7-9.6A4 4 0 0112 8a4 4 0 017 2.4C19 15.6 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
   sparkle: '<path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
   globe: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" fill="none" stroke="currentColor" stroke-width="2"/>',
-  dots: '<circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/>'
+  dots: '<circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/>',
+  // invite-link
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  unlock: '<rect x="5" y="11" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 017.6-1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  share: '<path d="M4 13v6a2 2 0 002 2h12a2 2 0 002-2v-6M16 7l-4-4-4 4M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 
 export const Icon = {
@@ -86,9 +90,10 @@ export const DateBlock = {
 };
 
 export const EmptyState = {
-  props: { title: String, text: String },
+  props: { title: String, text: String, icon: String },
   template: `
     <div class="empty">
+      <Icon v-if="icon" :name="icon" class="empty__icon" />
       <div class="empty__title">{{ title }}</div>
       <p class="empty__text" v-if="text">{{ text }}</p>
       <div class="empty__actions" v-if="$slots.default"><slot /></div>
@@ -195,22 +200,23 @@ export const ChoiceGroup = {
   props: {
     modelValue: { type: String, required: true },
     name: { type: String, required: true },
-    options: { type: Array, required: true }
+    options: { type: Array, required: true },
+    disabled: Boolean // edit-mode
   },
   emits: ['update:modelValue'],
   template: `
     <div class="choice-group">
       <label class="choice" v-for="option in options" :key="option.value" :data-feature="option.feature || null">
-        <input type="radio" :name="name" :value="option.value" :checked="option.value === modelValue" @change="$emit('update:modelValue', option.value)">
+        <input type="radio" :name="name" :value="option.value" :checked="option.value === modelValue" :disabled="disabled" @change="$emit('update:modelValue', option.value)">
         <span class="choice__title">{{ option.title }}</span>
         <span class="choice__hint" v-if="option.hint">{{ option.hint }}</span>
       </label>
     </div>`
 };
 
-// Page frame for the create pages: back link, title, one form column, sticky action bar.
+// Page frame for the create and edit pages: back link, title, one form column, sticky action bar.
 export const FormPage = {
-  props: { title: { type: String, required: true }, subtitle: String },
+  props: { title: { type: String, required: true }, subtitle: String, backLabel: String }, // edit-mode: backLabel
   emits: ['cancel'],
   setup() {
     return { t };
@@ -218,7 +224,7 @@ export const FormPage = {
   template: `
     <main class="container page form-page">
       <div class="form-page__head">
-        <button type="button" class="back" @click="$emit('cancel')"><Icon name="back" /> {{ t('nav.back') }}</button>
+        <button type="button" class="back" @click="$emit('cancel')"><Icon name="back" /> {{ backLabel || t('nav.back') }}</button>
         <h1>{{ title }}</h1>
         <p class="lede" v-if="subtitle">{{ subtitle }}</p>
       </div>

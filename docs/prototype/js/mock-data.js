@@ -11,7 +11,9 @@ export default {
     { id: 'u5', name: '', email: 'jonas.buehler@gmx.ch', language: 'de', tone: 5 },
     { id: 'u6', name: 'Nina Roth', email: 'nina.roth@sunrise.ch', language: 'de', tone: 2 },
     { id: 'u7', name: 'Dario Meier', email: 'dario@tv-seebach.ch', language: 'de', tone: 3 },
-    { id: 'u8', name: 'Mia Steiner', email: 'mia.steiner@hispeed.ch', language: 'de', tone: 4 }
+    { id: 'u8', name: 'Mia Steiner', email: 'mia.steiner@hispeed.ch', language: 'de', tone: 4 },
+    // invite-link: name-only joiner through the open link, shadow account without email (F-01)
+    { id: 'u9', name: 'Pascal Hug', email: '', language: 'de', tone: 1 }
   ],
 
   friends: [
@@ -31,8 +33,9 @@ export default {
   ],
 
   groups: [
-    { id: 'g1', name: 'Nordlicht', ownerId: 'u1' },
-    { id: 'g2', name: 'Turnverein Seebach', ownerId: 'u7' }
+    // invite-link: inviteLink is null until "Copy invite link" creates it; open is the lock setting (F-03, F-04)
+    { id: 'g1', name: 'Nordlicht', ownerId: 'u1', membersCanSetStatus: false, inviteLink: { token: 'nl-7q2m', open: true } },
+    { id: 'g2', name: 'Turnverein Seebach', ownerId: 'u7', membersCanSetStatus: false, inviteLink: null }
   ],
 
   memberships: [
@@ -42,6 +45,7 @@ export default {
     { groupId: 'g1', accountId: 'u4', role: 'member', acceptedAt: '2026-03-09' },
     { groupId: 'g1', accountId: 'u6', role: 'member', acceptedAt: '2026-05-21' },
     { groupId: 'g1', accountId: 'u5', role: 'member', acceptedAt: null },
+    { groupId: 'g1', accountId: 'u9', role: 'member', acceptedAt: '2026-10-21', joinedViaLink: true }, // invite-link
     { groupId: 'g2', accountId: 'u7', role: 'owner', acceptedAt: '2026-01-15' },
     { groupId: 'g2', accountId: 'u1', role: 'member', acceptedAt: '2026-01-20' },
     { groupId: 'g2', accountId: 'u4', role: 'member', acceptedAt: '2026-02-01' }

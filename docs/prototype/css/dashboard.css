@@ -129,23 +129,6 @@
   white-space: nowrap;
 }
 
-.waiting__done {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 16px;
-}
-
-.waiting__done .mark {
-  width: 28px;
-  height: 28px;
-}
-
-.waiting__done .mark svg {
-  width: 16px;
-  height: 16px;
-}
-
 /* Upcoming events as a date rail */
 
 .events {

@@ -1,7 +1,7 @@
 // Group page (F-03, F-04): members with invite, polls, events, group lists, create actions.
 
 import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, openDialog, goCreate, viewState, toast, nextId } from '../core.js';
+import { ui, h, data, currentUser, go, openDialog, goCreate, viewState, toast, nextId, createInviteLink, inviteUrl, copyText } from '../core.js';
 import { t, formatDate, relativeDay, isPast } from '../i18n.js';
 
 export const GroupView = {
@@ -102,6 +102,29 @@ export const GroupView = {
       toast(t('group.invite.sent', { email }));
     }
 
+    // invite-link: the button creates the link on first use, then copies it (F-04)
+    const linkOpen = computed(() => !group.value.inviteLink || group.value.inviteLink.open);
+    const canShare = typeof navigator.share === 'function';
+
+    async function copyLink() {
+      const created = !group.value.inviteLink;
+
+      if (created) {
+        createInviteLink(group.value);
+      }
+
+      await copyText(inviteUrl(group.value));
+      toast(t(created ? 'group.link.created' : 'group.link.copied'));
+    }
+
+    function shareLink() {
+      if (!group.value.inviteLink) {
+        createInviteLink(group.value);
+      }
+
+      navigator.share({ title: group.value.name, url: inviteUrl(group.value) }).catch(() => {});
+    }
+
     function pollMeta(poll) {
       const total = h.audience(poll).length;
       const answered = Array.from(h.respondents(poll.id)).filter((id) => h.audience(poll).includes(id)).length;
@@ -138,6 +161,7 @@ export const GroupView = {
     return {
       ui, state, user, group, canManage, isOwner, members, polls, upcomingEvents, pastEvents, lists, stats,
       inviteEmail, inviteError, suggestions, suggestionsOpen, pickSuggestion, invite,
+      linkOpen, canShare, copyLink, shareLink,
       pollMeta, pollStatus, myStatus, go, openDialog, goCreate, h, t, formatDate, relativeDay
     };
   },
@@ -275,14 +299,16 @@ export const GroupView = {
                     <span class="soft" v-else>{{ t('common.noName') }}</span>
                     <span class="soft small" v-if="membership.accountId === user.id">({{ t('group.member.you') }})</span>
                     <span class="badge badge--warning" v-if="!membership.acceptedAt">{{ t('group.member.pending') }}</span>
+                    <span class="badge badge--info" v-if="membership.joinedViaLink" data-feature="F-04">{{ t('group.member.viaLink') }}</span>
                   </span>
-                  <span class="member__email">{{ h.account(membership.accountId).email }}</span>
+                  <span class="member__email" v-if="h.account(membership.accountId).email">{{ h.account(membership.accountId).email }}</span>
                 </span>
                 <span class="member__role" v-if="membership.role !== 'member'">{{ t('group.member.' + membership.role) }}</span>
               </li>
             </ul>
 
-            <form class="invite" v-if="canManage" @submit.prevent="invite" novalidate>
+            <template v-if="canManage">
+            <form class="invite" @submit.prevent="invite" novalidate>
               <FormField :label="t('group.invite.title')" control="invite-email" :error="inviteError" :hint="t('group.invite.hint')">
               <div class="invite__row">
                 <input class="input" id="invite-email" type="email" v-model="inviteEmail" :placeholder="t('group.invite.placeholder')" autocomplete="off" @focus="suggestionsOpen = true" @input="suggestionsOpen = true" :aria-invalid="inviteError ? 'true' : null" aria-autocomplete="list" aria-controls="invite-suggestions" :aria-expanded="suggestionsOpen && suggestions.length > 0">
@@ -297,6 +323,14 @@ export const GroupView = {
               </div>
               </FormField>
             </form>
+            <div class="invite-link" data-feature="F-04">
+              <button type="button" class="btn btn--secondary" :title="linkOpen ? t('group.link.lockOpen') : t('group.link.lockClosed')" @click="copyLink">
+                <Icon :name="linkOpen ? 'unlock' : 'lock'" /> {{ t('group.link.copy') }}
+                <span class="visually-hidden">({{ linkOpen ? t('group.link.lockOpen') : t('group.link.lockClosed') }})</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--icon" v-if="canShare" :aria-label="t('group.link.share')" @click="shareLink"><Icon name="share" /></button>
+            </div>
+            </template>
             <p class="notice" v-else>{{ t('group.memberNotice') }}</p>
           </section>
         </aside>

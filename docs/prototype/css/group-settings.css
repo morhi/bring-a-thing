@@ -30,6 +30,49 @@
   font-size: 20px;
 }
 
+/* Invite link and options */
+
+.gs-link,
+.gs-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.gs-link__row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gs-link__row .input {
+  flex: 1 1 220px;
+  min-width: 0;
+  background: var(--surface-muted);
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+}
+
+.gs-link__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gs-link__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--fg-muted);
+  margin-right: auto;
+}
+
+.gs-options .check input:disabled {
+  cursor: not-allowed;
+}
+
 /* Members */
 
 .gs-members {

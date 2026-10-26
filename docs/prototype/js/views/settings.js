@@ -5,13 +5,17 @@ import { ui, currentUser, go, viewState, toast } from '../core.js';
 import { t } from '../i18n.js';
 
 const MIN_PASSWORD_LENGTH = 8;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const SettingsView = {
   setup() {
     const state = viewState('settings');
     const user = currentUser;
-    const profile = reactive({ name: user.value.name });
+    const profile = reactive({ name: user.value.name, email: '' });
     const profileError = ref('');
+    const emailError = ref('');
+    // invite-link: a name-only joiner has no email yet; adding one turns the account into a normal one (F-01).
+    const noEmail = computed(() => state.value === 'noEmail' || !user.value.email);
     const password = reactive({ current: '', next: '', repeat: '' });
     const passwordErrors = reactive({ current: '', next: '', repeat: '' });
 
@@ -26,22 +30,38 @@ export const SettingsView = {
     // The role switcher swaps the account under the form, so the form follows it.
     watch(() => user.value.id, () => {
       profile.name = user.value.name;
+      profile.email = '';
       profileError.value = '';
+      emailError.value = '';
     });
 
     function saveProfile() {
       const name = profile.name.trim();
+      const email = profile.email.trim().toLowerCase();
+      profileError.value = name ? '' : t('settings.nameRequired');
+      emailError.value = noEmail.value && !emailPattern.test(email) ? t('welcome.login.invalid') : '';
 
-      if (!name) {
-        profileError.value = t('settings.nameRequired');
-
+      if (profileError.value || emailError.value) {
         return;
       }
 
       user.value.name = name;
       profile.name = name;
-      profileError.value = '';
-      toast(t('settings.saved'));
+
+      if (!noEmail.value) {
+        toast(t('settings.saved'));
+
+        return;
+      }
+
+      // The review state only simulates the missing email, so the demo account keeps its own address.
+      if (!user.value.email) {
+        user.value.email = email;
+      }
+
+      state.value = 'default';
+      profile.email = '';
+      toast(t('settings.email.added', { email }));
     }
 
     function savePassword() {
@@ -66,7 +86,7 @@ export const SettingsView = {
       user.value.language = lang;
     }
 
-    return { ui, user, profile, profileError, password, passwordErrors, hasPassword, languageOptions, saveProfile, savePassword, setLanguage, go, t };
+    return { ui, user, profile, profileError, emailError, noEmail, password, passwordErrors, hasPassword, languageOptions, saveProfile, savePassword, setLanguage, go, t };
   },
   template: `
     <main class="container page settings-page">
@@ -86,13 +106,20 @@ export const SettingsView = {
             <Avatar :id="user.id" size="lg" />
             <span class="settings-identity__text">
               <span class="settings-identity__name">{{ user.name || t('common.noName') }}</span>
-              <span class="settings-identity__email">{{ user.email }}</span>
+              <span class="settings-identity__email">{{ noEmail ? t('settings.email.none') : user.email }}</span>
             </span>
+          </div>
+          <div class="alert" v-if="noEmail" data-feature="F-01">
+            <Icon name="mail" />
+            <span><b>{{ t('settings.email.addHint') }}</b><br>{{ t('settings.email.addText') }}</span>
           </div>
           <FormField :label="t('settings.name')" control="settings-name" required :error="profileError">
             <input class="input" id="settings-name" v-model="profile.name" autocomplete="name" :aria-invalid="profileError ? 'true' : null">
           </FormField>
-          <FormField :label="t('settings.email')" control="settings-email" :hint="t('settings.emailHint')">
+          <FormField v-if="noEmail" :label="t('settings.email')" control="settings-email" required :hint="t('settings.email.addHint')" :error="emailError" data-feature="F-01">
+            <input class="input" id="settings-email" type="email" v-model="profile.email" autocomplete="email" placeholder="name@example.com" :aria-invalid="emailError ? 'true' : null">
+          </FormField>
+          <FormField v-else :label="t('settings.email')" control="settings-email" :hint="t('settings.emailHint')">
             <input class="input" id="settings-email" type="email" :value="user.email" readonly>
           </FormField>
           <div class="settings-actions">

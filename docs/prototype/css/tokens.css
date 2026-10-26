@@ -66,13 +66,17 @@
 
   /* Layer 2: semantic, light values */
   color-scheme: light;
+  /* Page ground: a tinted emerald-leaning neutral with two large soft glows; containers sit on it as raised white surfaces */
+  --ground: #edf3ee;
+  --ground-glow-a: rgb(52 211 153 / 0.14);
+  --ground-glow-b: rgb(167 243 208 / 0.4);
   --surface: var(--moss-0);
   --surface-muted: var(--moss-50);
   --surface-raised: #ffffff;
   --surface-sunken: var(--moss-100);
   --fg: var(--moss-900);
   --fg-muted: var(--moss-600);
-  --fg-soft: var(--moss-500);
+  --fg-soft: #62726b;                    /* 4.7:1 on moss-50, 5.1:1 on white */
   --fg-inverted: #ffffff;
   --border: var(--moss-200);
   --border-strong: var(--moss-300);
@@ -99,6 +103,9 @@
   --shadow-sm: 0 1px 2px rgb(var(--shadow-color) / 0.06);
   --shadow-md: 0 6px 24px -8px rgb(var(--shadow-color) / 0.16), 0 1px 2px rgb(var(--shadow-color) / 0.06);
   --shadow-lg: 0 24px 60px -20px rgb(var(--shadow-color) / 0.28), 0 2px 6px rgb(var(--shadow-color) / 0.08);
+  /* Containers: a soft layered shadow that lifts white off the tinted ground without a hard edge */
+  --shadow-card: 0 1px 2px rgb(var(--shadow-color) / 0.05), 0 10px 28px -14px rgb(var(--shadow-color) / 0.16);
+  --shadow-header: 0 1px 0 rgb(var(--shadow-color) / 0.04), 0 8px 24px -16px rgb(var(--shadow-color) / 0.2);
 
   /* Textures: low-alpha, never behind running text */
   --texture-dot-color: rgb(20 40 30 / 0.07);
@@ -115,23 +122,29 @@
   --control-height: 44px;
   --control-height-sm: 36px;
   --control-radius: var(--radius-sm);
+  --control-bg: #ffffff;
+  --control-border: #82928a;             /* 3.3:1 on white, 3.0:1 on moss-50: the input edge inside containers */
   --card-radius: var(--radius-lg);
   --card-padding: 24px;
+  --container-radius: 26px;
   --tag-tilt: -3deg;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
+    --ground: #0a100d;
+    --ground-glow-a: rgb(52 211 153 / 0.09);
+    --ground-glow-b: rgb(6 78 59 / 0.4);
     --surface: var(--moss-950);
-    --surface-muted: #131a16;
-    --surface-raised: var(--moss-900);
+    --surface-muted: #141c17;
+    --surface-raised: #1a231e;
     --surface-sunken: #0b100d;
     --fg: #e9efeb;
     --fg-muted: var(--moss-400);
-    --fg-soft: #7d8c85;
+    --fg-soft: #869590;                  /* 5.1:1 on the raised surface */
     --fg-inverted: var(--moss-950);
-    --border: var(--moss-800);
+    --border: #2b3630;
     --border-strong: var(--moss-700);
 
     --primary: var(--green-400);         /* 10.3:1 on moss-950 */
@@ -155,8 +168,13 @@
     --shadow-color: 0 0 0;
     --shadow-md: 0 6px 24px -8px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
+    /* Dark containers get depth from an inner top highlight plus a soft drop, since shadows alone vanish on a dark ground */
+    --shadow-card: inset 0 1px 0 rgb(233 239 235 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    --shadow-header: inset 0 -1px 0 rgb(233 239 235 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.7);
+    --control-bg: #111814;
+    --control-border: #5f6f67;           /* 3.0:1 on the raised surface */
 
-    --texture-dot-color: rgb(233 239 235 / 0.07);
+    --texture-dot-color: rgb(233 239 235 / 0.06);
     --texture-hatch-color: rgb(233 239 235 / 0.05);
     --texture-grain-opacity: 0.1;
   }
@@ -164,15 +182,18 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --ground: #0a100d;
+  --ground-glow-a: rgb(52 211 153 / 0.09);
+  --ground-glow-b: rgb(6 78 59 / 0.4);
   --surface: var(--moss-950);
-  --surface-muted: #131a16;
-  --surface-raised: var(--moss-900);
+  --surface-muted: #141c17;
+  --surface-raised: #1a231e;
   --surface-sunken: #0b100d;
   --fg: #e9efeb;
   --fg-muted: var(--moss-400);
-  --fg-soft: #7d8c85;
+  --fg-soft: #869590;
   --fg-inverted: var(--moss-950);
-  --border: var(--moss-800);
+  --border: #2b3630;
   --border-strong: var(--moss-700);
 
   --primary: var(--green-400);
@@ -196,8 +217,12 @@
   --shadow-color: 0 0 0;
   --shadow-md: 0 6px 24px -8px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-card: inset 0 1px 0 rgb(233 239 235 / 0.05), 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  --shadow-header: inset 0 -1px 0 rgb(233 239 235 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.7);
+  --control-bg: #111814;
+  --control-border: #5f6f67;
 
-  --texture-dot-color: rgb(233 239 235 / 0.07);
+  --texture-dot-color: rgb(233 239 235 / 0.06);
   --texture-hatch-color: rgb(233 239 235 / 0.05);
   --texture-grain-opacity: 0.1;
 }

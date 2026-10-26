@@ -61,9 +61,12 @@ export const OptionCalendar = {
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
-    const monthCursor = ref(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
-    // The window starts today: past days cannot take options, so a Monday start would waste columns.
-    const weekCursor = ref(new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()));
+    // edit-mode: prefilled options open the calendar where they are, otherwise it starts today.
+    const firstUpcoming = props.modelValue.map((option) => option.date).filter((date) => date && date >= todayIso).sort()[0];
+    const anchor = firstUpcoming ? fromIso(firstUpcoming) : TODAY;
+    const monthCursor = ref(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+    // The window starts on the anchor day: past days cannot take options, so a Monday start would waste columns.
+    const weekCursor = ref(new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate()));
     const narrow = ref(false);
     const media = window.matchMedia('(max-width: 719px)');
     const onMedia = () => { narrow.value = media.matches; };

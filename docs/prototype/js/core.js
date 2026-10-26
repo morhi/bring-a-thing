@@ -33,6 +33,7 @@ export const ui = reactive({
   toasts: [],
   states: {},
   currentGroupId: 'g1',
+  joinToken: null, // invite-link: token the join page was opened with, so a regenerated link can fail
   currentEventId: null,
   currentPollId: null,
   currentListId: null
@@ -79,7 +80,9 @@ export const views = {
   'new-poll': { component: 'CreatePollView', states: [] },
   'new-event': { component: 'CreateEventView', states: [] },
   'new-list': { component: 'CreateListView', states: [] },
-  settings: { component: 'SettingsView', states: ['default', 'noPassword'] }, // settings
+  settings: { component: 'SettingsView', states: ['default', 'noPassword', 'noEmail'] }, // settings, invite-link
+  // invite-link: the join page is public like the start page; the states override the real link state
+  join: { component: 'JoinView', public: true, states: ['default', 'linkOpen', 'linkClosed', 'linkRevoked'] },
   friends: { component: 'FriendsView', states: ['default', 'empty'] }, // friends
   poll: { component: 'PollView', states: ['default', 'closed', 'noResponses', 'notInAudience', 'fixed', 'followUp'] }, // poll
   event: { component: 'EventView', states: ['default', 'past', 'noAcceptances', 'declined'] }, // event
@@ -167,6 +170,24 @@ export function nextId(prefix) {
   idCounter += 1;
 
   return `${prefix}${idCounter}`;
+}
+
+// invite-link: one link per group (F-04). The URL is a stand-in; the join view reads the token from ui.joinToken.
+export function createInviteLink(group) {
+  group.inviteLink = { token: nextId('inv-'), open: true };
+}
+
+export function inviteUrl(group) {
+  return `${location.origin}${location.pathname}#join/${group.inviteLink.token}`;
+}
+
+export function copyText(text) {
+  if (!navigator.clipboard) {
+    return Promise.resolve();
+  }
+
+  // Clipboard access can be denied (headless, no focus); the toast still confirms the prototype action.
+  return navigator.clipboard.writeText(text).catch(() => {});
 }
 
 // Query helpers over the mock data. Names follow requirements.md section 7.

@@ -1,8 +1,8 @@
 // Poll page (F-06 to F-09, F-12): header, response grid with best options and totals,
-// fixing dates, closing and reopening, settings.
+// fixing dates, closing and reopening. Editing happens on the poll edit page (views/create.js).
 
-import { ref, reactive, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
-import { ui, h, data, currentUser, go, viewState, toast, nextId } from '../core.js';
+import { ref, computed } from 'https://unpkg.com/vue@3.5.13/dist/vue.esm-browser.prod.js';
+import { ui, h, data, currentUser, go, goCreate, viewState, toast, nextId } from '../core.js';
 import { t, formatDate, weekdayShort, dayNumber, monthShort } from '../i18n.js';
 
 const TODAY_ISO = '2026-10-25';
@@ -41,10 +41,6 @@ function tally(optionId, accountIds) {
     .forEach((entry) => { counts[entry.answer] += 1; });
 
   return counts;
-}
-
-function responseCount(optionId) {
-  return data.responses.filter((entry) => entry.optionId === optionId).length;
 }
 
 function nameOf(accountId) {
@@ -155,147 +151,12 @@ const PollFixDialog = {
     </AppDialog>`
 };
 
-const PollSettingsDialog = {
-  props: { poll: { type: Object, required: true } },
-  emits: ['close', 'deleted'],
-  setup(props, { emit }) {
-    const title = ref(props.poll.title);
-    const titleError = ref('');
-    const optionError = ref('');
-    const removing = ref(null);
-    const deleting = ref(false);
-    const isSlots = props.poll.mode === 'slots';
-    const newOption = reactive({ date: '', start: isSlots ? '19:30' : null, end: isSlots ? '22:00' : null, label: '' });
-
-    const options = computed(() => sortOptions(h.options(props.poll.id)));
-    const locked = computed(() => !!props.poll.closedAt);
-    const totalResponses = computed(() => options.value.reduce((sum, option) => sum + responseCount(option.id), 0));
-
-    function save() {
-      if (!title.value.trim()) {
-        titleError.value = t('newPoll.titleRequired');
-
-        return;
-      }
-
-      props.poll.title = title.value.trim();
-      toast(t('poll.settings.saved'));
-      emit('close');
-    }
-
-    function addOption() {
-      if (!newOption.date) {
-        optionError.value = t('poll.settings.dateRequired');
-
-        return;
-      }
-
-      if (isSlots && (!newOption.start || !newOption.end)) {
-        optionError.value = t('poll.settings.timeRequired');
-
-        return;
-      }
-
-      data.pollOptions.push({
-        id: nextId('o'),
-        pollId: props.poll.id,
-        date: newOption.date,
-        start: isSlots ? newOption.start : null,
-        end: isSlots ? newOption.end : null,
-        label: isSlots ? newOption.label.trim() : '',
-        fixed: false
-      });
-      optionError.value = '';
-      newOption.date = '';
-      newOption.label = '';
-      toast(t('poll.settings.added'));
-    }
-
-    function removeOption(option) {
-      data.responses = data.responses.filter((entry) => entry.optionId !== option.id);
-      data.pollOptions = data.pollOptions.filter((entry) => entry.id !== option.id);
-      removing.value = null;
-      toast(t('poll.settings.removed'));
-    }
-
-    function deletePoll() {
-      const ids = options.value.map((option) => option.id);
-      data.responses = data.responses.filter((entry) => !ids.includes(entry.optionId));
-      data.pollOptions = data.pollOptions.filter((entry) => entry.pollId !== props.poll.id);
-      data.polls = data.polls.filter((entry) => entry.id !== props.poll.id);
-      toast(t('poll.settings.deleted'));
-      emit('deleted');
-    }
-
-    return {
-      title, titleError, optionError, removing, deleting, isSlots, newOption, options, locked, totalResponses,
-      save, addOption, removeOption, deletePoll, responseCount, optionTime, t, formatDate
-    };
-  },
-  template: `
-    <AppDialog :title="t('poll.settings.title')" :subtitle="poll.title" @close="$emit('close')">
-      <form id="poll-settings-form" class="form-grid" @submit.prevent="save" novalidate>
-        <FormField :label="t('poll.settings.name')" control="poll-settings-title" required :error="titleError">
-          <input class="input" id="poll-settings-title" v-model="title" :aria-invalid="titleError ? 'true' : null">
-        </FormField>
-      </form>
-
-      <FormField :label="t('poll.settings.options')" group :hint="locked ? t('poll.settings.optionsLocked') : ''" :error="optionError">
-        <div class="options">
-          <ul class="options__rows">
-            <li class="settings-option" v-for="option in options" :key="option.id">
-              <span class="settings-option__main">
-                <span class="settings-option__date">{{ formatDate(option.date, 'weekday') }}<template v-if="option.start">, {{ optionTime(option) }}</template><template v-if="option.label"> · {{ option.label }}</template></span>
-                <span class="settings-option__meta">
-                  <span>{{ t('poll.settings.answers', { n: responseCount(option.id) }) }}</span>
-                  <span class="badge badge--success" v-if="option.fixed">{{ t('group.polls.fixed') }}</span>
-                </span>
-              </span>
-              <span class="settings-option__confirm" v-if="removing === option.id">
-                <span class="small">{{ t('poll.settings.removeConfirm', { n: responseCount(option.id) }) }}</span>
-                <button type="button" class="btn btn--danger btn--sm" @click="removeOption(option)">{{ t('poll.settings.remove') }}</button>
-                <button type="button" class="btn btn--ghost btn--sm" @click="removing = null">{{ t('poll.settings.keep') }}</button>
-              </span>
-              <button v-else type="button" class="btn btn--ghost btn--icon btn--sm" :disabled="locked || option.fixed" :aria-label="t('newPoll.removeOption')" @click="removing = option.id"><Icon name="minus" /></button>
-            </li>
-          </ul>
-          <div :class="['option-row', isSlots ? 'option-row--slot' : '']" v-if="!locked">
-            <input class="input" type="date" v-model="newOption.date" :aria-label="t('newEvent.date')" :aria-invalid="optionError ? 'true' : null">
-            <template v-if="isSlots">
-              <input class="input" type="time" v-model="newOption.start" :aria-label="t('newPoll.start')">
-              <input class="input" type="time" v-model="newOption.end" :aria-label="t('newPoll.end')">
-              <input class="input input--label" type="text" v-model="newOption.label" :placeholder="t('newPoll.slotLabelPlaceholder')" :aria-label="t('newPoll.slotLabel')">
-            </template>
-            <button type="button" class="btn btn--soft btn--icon btn--sm" :aria-label="t('newPoll.addOption')" @click="addOption"><Icon name="plus" /></button>
-          </div>
-        </div>
-      </FormField>
-
-      <div class="settings-danger">
-        <template v-if="deleting">
-          <p class="small">{{ t('poll.settings.deleteConfirm', { title: poll.title, n: totalResponses }) }}</p>
-          <div class="row">
-            <button type="button" class="btn btn--danger btn--sm" @click="deletePoll">{{ t('poll.settings.delete') }}</button>
-            <button type="button" class="btn btn--ghost btn--sm" @click="deleting = false">{{ t('dialog.cancel') }}</button>
-          </div>
-        </template>
-        <button v-else type="button" class="btn btn--danger btn--sm" @click="deleting = true">{{ t('poll.settings.delete') }}</button>
-      </div>
-
-      <template #foot>
-        <button type="button" class="btn btn--secondary" @click="$emit('close')">{{ t('dialog.cancel') }}</button>
-        <button type="submit" form="poll-settings-form" class="btn btn--primary">{{ t('poll.settings.save') }}</button>
-      </template>
-    </AppDialog>`
-};
-
 export const PollView = {
-  components: { PollFixDialog, PollSettingsDialog },
+  components: { PollFixDialog },
   setup() {
     const state = viewState('poll');
     const user = currentUser;
     const fixOpen = ref(false);
-    const settingsOpen = ref(false);
 
     const poll = computed(() => findPoll(statePolls[state.value] || ui.currentPollId));
     const group = computed(() => (poll.value ? h.group(poll.value.groupId) : null));
@@ -397,15 +258,15 @@ export const PollView = {
       go('group', { currentGroupId: group.value.id });
     }
 
-    function afterDelete() {
-      settingsOpen.value = false;
-      go('group', { currentGroupId: group.value ? group.value.id : ui.currentGroupId });
+    // edit-mode: the poll edit page returns here on save and cancel (section 6, "Poll edit")
+    function edit() {
+      goCreate('new-poll', { editPollId: poll.value.id });
     }
 
     return {
       ui, user, poll, group, event, audience, visible, canEdit, isOpen, isDateFinder, options, respondents, rows, missing, totals, bestIds,
-      fixedEvents, status, featureId, fixOpen, settingsOpen, ANSWERS,
-      answer, answerOf, closePoll, reopenPoll, back, afterDelete, nameOf, optionTime,
+      fixedEvents, status, featureId, fixOpen, ANSWERS,
+      answer, answerOf, closePoll, reopenPoll, back, edit, nameOf, optionTime,
       go, h, t, formatDate, weekdayShort, dayNumber, monthShort
     };
   },
@@ -428,7 +289,7 @@ export const PollView = {
             <button type="button" class="btn btn--primary" v-if="isDateFinder && isOpen" @click="fixOpen = true" data-feature="F-09"><Icon name="sparkle" /> {{ t('poll.actions.fix') }}</button>
             <button type="button" class="btn btn--secondary" v-if="!isDateFinder && isOpen" @click="closePoll">{{ t('poll.actions.close') }}</button>
             <button type="button" class="btn btn--secondary" v-if="!isOpen" @click="reopenPoll">{{ t('poll.actions.reopen') }}</button>
-            <button type="button" class="btn btn--ghost" @click="settingsOpen = true"><Icon name="settings" /> {{ t('poll.actions.settings') }}</button>
+            <button type="button" class="btn btn--ghost" @click="edit"><Icon name="settings" /> {{ t('poll.edit.title') }}</button>
           </div>
         </div>
 
@@ -534,7 +395,6 @@ export const PollView = {
       </section>
 
       <PollFixDialog v-if="fixOpen" :poll="poll" :options="options" :audience="audience" :totals="totals" :best="bestIds" @close="fixOpen = false" />
-      <PollSettingsDialog v-if="settingsOpen" :poll="poll" @close="settingsOpen = false" @deleted="afterDelete" />
     </main>
     <main class="container page" v-else>
       <div class="stack">

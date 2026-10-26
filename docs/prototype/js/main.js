@@ -15,6 +15,7 @@ import { SettingsView } from './views/settings.js'; // settings
 import { FriendsView } from './views/friends.js'; // friends
 import { NotificationsBell } from './notifications.js'; // notifications
 import { GroupSettingsView } from './views/group-settings.js'; // group-settings
+import { JoinView } from './views/join.js'; // invite-link
 
 const dialogs = {
   newGroup: 'NewGroupDialog'
@@ -50,7 +51,8 @@ Object.entries({
   SettingsView, // settings
   FriendsView, // friends
   NotificationsBell, // notifications
-  GroupSettingsView // group-settings
+  GroupSettingsView, // group-settings
+  JoinView // invite-link
 }).forEach(([name, component]) => app.component(name, component));
 
 app.mount('#app');

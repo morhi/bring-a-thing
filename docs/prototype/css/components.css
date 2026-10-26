@@ -176,8 +176,8 @@
   min-height: var(--control-height);
   padding: 10px 14px;
   border-radius: var(--control-radius);
-  border: 1px solid var(--border-strong);
-  background: var(--surface-raised);
+  border: 1px solid var(--control-border);
+  background: var(--control-bg);
   color: var(--fg);
   transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
@@ -204,6 +204,16 @@
 .input[aria-invalid="true"],
 .textarea[aria-invalid="true"] {
   border-color: var(--danger);
+}
+
+/* edit-mode: locked controls keep their value readable but step back */
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  background: var(--surface-muted);
+  color: var(--fg-muted);
+  border-color: var(--border);
+  cursor: not-allowed;
 }
 
 .textarea {
@@ -299,6 +309,21 @@
   outline-offset: 2px;
 }
 
+/* edit-mode: type and granularity are read-only after creation */
+.choice:has(input:disabled) {
+  cursor: default;
+  border-color: var(--border);
+}
+
+.choice:has(input:disabled) input {
+  cursor: default;
+}
+
+.choice:has(input:disabled):not(:has(input:checked)) {
+  background: var(--surface-muted);
+  color: var(--fg-muted);
+}
+
 .choice__title {
   font-weight: 600;
   font-size: 15px;
@@ -342,6 +367,20 @@
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
   padding: var(--card-padding);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+/* Cards nested in a section are rows of that container: tighter radius, no second shadow */
+
+.section .card {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.card .section-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .card--flush {
@@ -602,6 +641,12 @@
   border-radius: var(--card-radius);
   border: 1.5px dashed var(--border-strong);
   background-image: repeating-linear-gradient(135deg, var(--texture-hatch-color) 0 1px, transparent 1px 12px);
+}
+
+.empty__icon {
+  width: 28px;
+  height: 28px;
+  color: var(--primary);
 }
 
 .empty__title {
