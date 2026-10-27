@@ -7,6 +7,20 @@
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <meta name="theme-color" content="#047857">
+
+        @php($description = __('Find a date, fix it and share who brings what. Polls, events and lists for bands, clubs and friends in one place.'))
+        <meta name="description" content="{{ $description }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name') }}">
+        <meta property="og:title" content="{{ config('app.name') }}">
+        <meta property="og:description" content="{{ $description }}">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="{{ asset('og-image.png') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="{{ config('app.name') }}">
+        <meta name="twitter:card" content="summary_large_image">
 
         {{-- Apply the system color scheme before first paint so dark mode does not flash --}}
         <script>

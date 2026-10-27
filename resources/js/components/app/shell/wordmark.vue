@@ -23,6 +23,19 @@ withDefaults(
             )
         "
     >
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 64 64"
+            :class="cn('flex-none self-center', large ? 'size-9' : 'size-7')"
+        >
+            <rect width="64" height="64" rx="14" class="fill-primary" />
+            <path
+                class="fill-primary-fg"
+                fill-rule="evenodd"
+                transform="translate(32 32) scale(1.3) rotate(-12) translate(-32 -32)"
+                d="M14 32 24 21H44a4 4 0 0 1 4 4V39a4 4 0 0 1-4 4H24Z M24.7 32a2.8 2.8 0 1 0 5.6 0 2.8 2.8 0 1 0-5.6 0Z"
+            />
+        </svg>
         <span aria-hidden="true">Bring a</span>
         <span
             aria-hidden="true"
