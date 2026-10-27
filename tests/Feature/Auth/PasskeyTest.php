@@ -1,9 +1,12 @@
 <?php
 
+use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Middleware\EnsureRecentLogin;
 use App\Http\Responses\PasskeyLoginResponse;
 use App\Models\User;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Passkeys\Passkey;
 
@@ -114,4 +117,26 @@ it('F-02: records the login time when a session logs in', function () {
     $this->post(route('login.password'), ['email' => $user->email, 'password' => 'correct-password']);
 
     expect(session(EnsureRecentLogin::SESSION_KEY))->toBeGreaterThanOrEqual(now()->subMinute()->timestamp);
+});
+
+it('F-02: does not record a login time when the remember cookie restores the session', function () {
+    $user = User::factory()->create();
+    $guard = Auth::guard('web');
+    (new ReflectionProperty($guard, 'viaRemember'))->setValue($guard, true);
+
+    event(new Login('web', $user, true));
+
+    expect(session()->has(EnsureRecentLogin::SESSION_KEY))->toBeFalse();
+});
+
+it('F-19: ignores an invalid pending claim on a passkey login', function () {
+    $user = User::factory()->create();
+    $request = Request::create(route('passkey.login'), 'POST', ['pending_claim_roster_token' => 'x', 'pending_claim_item_id' => 1, 'pending_claim_quantity' => -3]);
+    $request->setUserResolver(fn () => $user);
+    $request->setLaravelSession(app('session.store'));
+
+    $response = app(PasskeyLoginResponse::class)->toResponse($request);
+
+    expect($response->getData(true))->toBe(['redirect' => route('dashboard')])
+        ->and(session()->has(StorePendingSharedClaim::ACTIONS_KEY))->toBeFalse();
 });
