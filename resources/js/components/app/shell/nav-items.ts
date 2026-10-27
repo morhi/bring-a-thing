@@ -1,6 +1,5 @@
-import { HeartIcon, LayoutDashboardIcon, SettingsIcon } from '@lucide/vue';
+import { HeartIcon, SettingsIcon } from '@lucide/vue';
 import type { Component } from 'vue';
-import { dashboard } from '@/routes';
 import { index as friendsIndex } from '@/routes/friends';
 import { edit as settingsEdit } from '@/routes/settings';
 
@@ -11,17 +10,13 @@ export type NavItem = {
 };
 
 /**
- * List the main navigation targets of the signed-in app.
+ * List the account menu targets of the signed-in app.
  */
 export function navItems(): NavItem[] {
+    // The logo leads to the dashboard, so the menu holds no dashboard entry (requirements section 6)
     return [
-        {
-            key: 'nav.dashboard',
-            href: dashboard().url,
-            icon: LayoutDashboardIcon,
-        },
-        { key: 'nav.friends', href: friendsIndex().url, icon: HeartIcon },
         { key: 'nav.settings', href: settingsEdit().url, icon: SettingsIcon },
+        { key: 'nav.friends', href: friendsIndex().url, icon: HeartIcon },
     ];
 }
 
