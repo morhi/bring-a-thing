@@ -11,7 +11,7 @@ Do not start Stage B before Stage A is reviewed and approved by Maurice. Ask for
 
 ## Sources of truth
 
-- `docs/requirements.md` (v1.11) defines behavior. Where anything else disagrees with it, the requirements win.
+- `docs/requirements.md` (v1.12) defines behavior. Where anything else disagrees with it, the requirements win.
 - `docs/prototype/` shows the approved UI concept and design system. In Stage B it is a reference for layout, content hierarchy, wording and flows, not code to copy.
 - `BRING_A_THING.md` and `IMPLEMENDATION.md` describe the app as it exists today (PrimeVue frontend, backend up to Phase 6). They are history, not targets. `CLAUDE.md` asks to keep them in sync with the app; at the end of Stage B, propose to Maurice how to retire or rewrite them so that `docs/requirements.md` stays the single behavior document.
 
