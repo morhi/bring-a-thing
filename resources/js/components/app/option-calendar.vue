@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Lock, Plus, X } from '@lucide/vue';
 import { useMediaQuery } from '@vueuse/core';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import {
     addDays,
     dateLocale,
@@ -12,6 +12,14 @@ import {
     toMinutes,
     toTime,
 } from '@/components/app/poll/dates';
+import {
+    HOUR_END,
+    HOUR_HEIGHT,
+    HOUR_START,
+    HOURS_COLUMN,
+    hourLabel,
+    slotStyle,
+} from '@/components/app/poll/calendar';
 import type {
     OptionCalendarMode,
     OptionDraft,
@@ -39,13 +47,8 @@ const emit = defineEmits<{ 'update:modelValue': [options: OptionDraft[]] }>();
 
 const { t, locale } = useI18n();
 
-// Visible window of the week grid; a drawing surface, not a domain limit
-const HOUR_START = 7;
-const HOUR_END = 23;
-const HOUR_HEIGHT = 44;
 const STEP = 15;
 const MIN_SLOT = 30;
-const HOURS_COLUMN = 52;
 
 const localeTag = computed(() => dateLocale(locale.value));
 
@@ -407,43 +410,8 @@ const hours = Array.from(
 );
 const gridHeight = (HOUR_END - HOUR_START) * HOUR_HEIGHT;
 
-const slotScroller = ref<HTMLElement | null>(null);
-
-// The grid shows only a few hours on small screens, so open it where the slots are rather than at 07:00
-watch(slotScroller, (element) => {
-    if (!element) {
-        return;
-    }
-
-    const starts = props.modelValue
-        .map((option) => option.start)
-        .filter((start): start is string => !!start)
-        .map(toMinutes);
-    const target = starts.length
-        ? Math.min(...starts)
-        : props.defaultSlot
-          ? toMinutes(props.defaultSlot.start)
-          : null;
-
-    if (target === null) {
-        return;
-    }
-
-    element.scrollTop = Math.max(
-        0,
-        (Math.floor(target / 60) - HOUR_START) * HOUR_HEIGHT,
-    );
-});
-
 function shiftWeek(delta: number): void {
     weekCursor.value = addDays(weekCursor.value, delta * visibleDayCount.value);
-}
-
-function slotStyle(start: string, end: string): Record<string, string> {
-    const top = ((toMinutes(start) - HOUR_START * 60) / 60) * HOUR_HEIGHT;
-    const height = ((toMinutes(end) - toMinutes(start)) / 60) * HOUR_HEIGHT;
-
-    return { top: `${top}px`, height: `${Math.max(height, 18)}px` };
 }
 
 function slotsFor(day: string): { option: OptionDraft; index: number }[] {
@@ -735,10 +703,6 @@ function gridPointerUp(): void {
 
     gesture = null;
 }
-
-function hourLabel(hour: number): string {
-    return `${String(hour).padStart(2, '0')}:00`;
-}
 </script>
 
 <template>
@@ -746,7 +710,7 @@ function hourLabel(hour: number): string {
         <div class="flex items-center justify-between gap-2">
             <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 :aria-label="t('cal.prev')"
                 @click="mode === 'day' ? shiftMonth(-1) : shiftWeek(-1)"
@@ -794,7 +758,7 @@ function hourLabel(hour: number): string {
             >
             <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 :aria-label="t('cal.next')"
                 @click="mode === 'day' ? shiftMonth(1) : shiftWeek(1)"
@@ -847,10 +811,10 @@ function hourLabel(hour: number): string {
                         :title="cell.label || undefined"
                         :class="
                             cn(
-                                'bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 w-full place-items-center rounded-lg border border-transparent p-0 font-semibold tabular-nums',
-                                'enabled:hover:border-border-strong disabled:text-fg-soft transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-60',
+                                'border-border bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 w-full place-items-center rounded-lg border p-0 font-semibold tabular-nums',
+                                'enabled:hover:border-border-strong disabled:text-fg-soft disabled:bg-surface-muted/40 transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:opacity-60',
                                 cell.outside &&
-                                    'text-fg-soft bg-transparent font-medium',
+                                    'text-fg-soft bg-surface-muted/40 border-transparent font-medium',
                                 cell.today &&
                                     'shadow-[inset_0_0_0_1.5px_var(--border-strong)]',
                                 cell.selected &&
@@ -924,10 +888,7 @@ function hourLabel(hour: number): string {
                     </Button>
                 </span>
             </div>
-            <div
-                ref="slotScroller"
-                class="max-h-[360px] overflow-y-auto overscroll-contain"
-            >
+            <div>
                 <div
                     class="relative grid touch-none grid-cols-[52px_repeat(var(--days),minmax(0,1fr))]"
                     :style="{ height: `${gridHeight}px` }"

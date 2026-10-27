@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { RadioGroupItem, RadioGroupRoot } from 'reka-ui';
+import { computed, ref, watch } from 'vue';
 import Mark from '@/components/app/mark.vue';
 import type { PollAnswer } from '@/components/app/poll/types';
 import { useI18n } from '@/composables/use-i18n';
@@ -17,6 +18,9 @@ const props = withDefaults(
         participantName?: string;
         // Answer choices in display order; the poll defines them
         choices?: PollAnswer[];
+        size?: 'md' | 'sm';
+        // Stacks the choices for narrow calendar days
+        stacked?: boolean;
     }>(),
     {
         answer: null,
@@ -24,6 +28,8 @@ const props = withDefaults(
         disabled: false,
         participantName: '',
         choices: () => ['yes', 'maybe', 'no'],
+        size: 'md',
+        stacked: false,
     },
 );
 
@@ -31,63 +37,118 @@ const emit = defineEmits<{ 'update:answer': [answer: PollAnswer] }>();
 
 const { t } = useI18n();
 
+// Shows the picked answer right away, until the saved answer arrives or the request ends
+const pending = ref<PollAnswer | null>(null);
+const shown = computed(() => pending.value ?? props.answer);
+
+watch(
+    () => props.answer,
+    () => {
+        pending.value = null;
+    },
+);
+
+watch(
+    () => props.disabled,
+    (disabled) => {
+        if (!disabled) {
+            pending.value = null;
+        }
+    },
+);
+
 const readOnlyLabel = computed(() => {
     const word = t(`poll.answer.${props.answer ?? 'none'}`);
 
     return props.participantName ? `${props.participantName}: ${word}` : word;
 });
 
-function choose(value: PollAnswer): void {
-    if (props.disabled || value === props.answer) {
+function choose(value: unknown): void {
+    const next = value as PollAnswer;
+
+    // Busy keeps the radios focusable instead of disabling them, so arrow keys never drop focus
+    if (props.disabled || next === shown.value) {
         return;
     }
 
-    emit('update:answer', value);
+    pending.value = next;
+    emit('update:answer', next);
+}
+
+const steps: Record<string, number> = {
+    ArrowRight: 1,
+    ArrowDown: 1,
+    ArrowLeft: -1,
+    ArrowUp: -1,
+};
+
+// Reka only checks on arrow focus while the key is still held, so a quick press would just move focus
+function arrowSelect(event: KeyboardEvent): void {
+    const step = steps[event.key];
+    const current = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+        '[data-answer]',
+    )?.dataset.answer as PollAnswer | undefined;
+
+    if (!step || !current) {
+        return;
+    }
+
+    const index = props.choices.indexOf(current);
+    const length = props.choices.length;
+
+    choose(props.choices[(index + step + length) % length]);
 }
 </script>
 
 <template>
-    <div
+    <!-- One tab stop per option; arrow keys move between and pick the answers (roving radio group) -->
+    <RadioGroupRoot
         v-if="editable"
-        role="radiogroup"
+        :model-value="shown"
+        :name="name"
         :aria-label="t('poll.answerLabel', { option: optionLabel })"
         :aria-disabled="disabled || undefined"
-        class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]"
+        :class="
+            cn(
+                'bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]',
+                stacked && 'flex-col',
+            )
+        "
+        @update:model-value="choose"
+        @keydown="arrowSelect"
     >
-        <label
+        <RadioGroupItem
             v-for="value in choices"
             :key="value"
+            :value="value"
+            :data-answer="value"
+            :aria-label="t(`poll.answer.${value}`)"
             :class="
                 cn(
-                    'relative grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full',
-                    'has-[input:focus-visible]:outline-focus-ring has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-1',
-                    answer === value && 'bg-surface-raised shadow-sm',
-                    disabled && 'cursor-not-allowed opacity-60',
+                    'relative grid shrink-0 cursor-pointer place-items-center rounded-full p-0',
+                    'focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-1',
+                    size === 'sm' ? 'size-6' : 'size-[30px]',
+                    shown === value && 'bg-surface-raised shadow-sm',
+                    disabled && 'cursor-progress opacity-60',
                 )
             "
         >
-            <!-- Native radios keep arrow-key navigation and form semantics -->
-            <input
-                type="radio"
-                class="absolute inset-0 m-0 size-full cursor-[inherit] opacity-0"
-                :name="name"
-                :value="value"
-                :checked="answer === value"
-                :disabled="disabled"
-                @change="choose(value)"
-            />
             <Mark
                 :answer="value"
+                aria-hidden="true"
                 :class="
                     cn(
-                        'size-6! transition-[transform,opacity] duration-(--duration-fast)',
-                        answer !== value &&
+                        'transition-[transform,opacity] duration-(--duration-fast)',
+                        size === 'sm'
+                            ? 'size-[18px]! [&_svg]:size-3'
+                            : 'size-6!',
+                        shown !== value &&
                             'border-border-strong! text-fg-soft! border-[1.5px]! border-solid! bg-transparent!',
                     )
                 "
             />
-        </label>
-    </div>
+        </RadioGroupItem>
+    </RadioGroupRoot>
     <Mark
         v-else
         :answer="answer ?? 'none'"

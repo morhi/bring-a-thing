@@ -207,7 +207,7 @@ function acceptedPeople(
                     <Plus aria-hidden="true" /> {{ t('dash.groups.new') }}
                 </Link>
             </Button>
-            <Button as-child size="lg" variant="secondary">
+            <Button as-child size="lg" variant="outline">
                 <Link :href="createList().url" class="no-underline">{{
                     t('dash.lists.new')
                 }}</Link>
@@ -452,7 +452,7 @@ function acceptedPeople(
                 data-feature="F-03"
             >
                 <template #action>
-                    <Button as-child variant="secondary" size="sm">
+                    <Button as-child variant="outline" size="sm">
                         <Link :href="createGroup().url" class="no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.groups.new') }}</Link
@@ -533,7 +533,7 @@ function acceptedPeople(
                 data-feature="F-13"
             >
                 <template #action>
-                    <Button as-child variant="secondary" size="sm">
+                    <Button as-child variant="outline" size="sm">
                         <Link :href="createList().url" class="no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.lists.new') }}</Link
@@ -600,7 +600,7 @@ function acceptedPeople(
                     :title="t('dash.lists.empty.title')"
                     :text="t('dash.lists.empty.text')"
                 >
-                    <Button as-child variant="secondary">
+                    <Button as-child variant="outline">
                         <Link :href="createList().url" class="no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.lists.new') }}</Link

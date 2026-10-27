@@ -446,3 +446,34 @@ it('F-12: an accepted participant sees and answers a follow-up poll', function (
 
     expect($option->responses()->count())->toBe(1);
 });
+
+it('F-06: an answer chosen with the arrow keys is saved right away and shown after a reload', function () {
+    // The grid saves each arrow key choice through the regular response endpoint; this covers the server half
+    [, , [$member], $poll] = pollGroup(1);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+
+    $this->actingAs($member)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'maybe'])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($member)->get(route('polls.show', $poll))
+        ->assertInertia(fn (Assert $page) => $page->where("page.own_answers.{$option->slug}", 'maybe'));
+});
+
+it('F-06: the calendar view gets the poll mode and the options in chronological order', function (string $granularity, bool $usesTimeSlots) {
+    // Week or month grid follows the mode; the option order drives the chronological tab order
+    [, $owner, , $poll] = pollGroup(pollAttributes: ['granularity' => $granularity]);
+    $times = $usesTimeSlots ? ['starts_at' => '18:00', 'ends_at' => '19:00'] : [];
+    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-20', ...$times]);
+    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-05', ...$times]);
+    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-12', ...$times]);
+
+    $this->actingAs($owner)->get(route('polls.show', $poll))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('page.poll.uses_time_slots', $usesTimeSlots)
+            ->where('page.poll.options.0.date', '2027-03-05')
+            ->where('page.poll.options.1.date', '2027-03-12')
+            ->where('page.poll.options.2.date', '2027-03-20'));
+})->with([
+    'whole days: month grid' => ['day', false],
+    'time slots: week grid' => ['hour', true],
+]);

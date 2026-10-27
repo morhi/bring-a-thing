@@ -48,7 +48,7 @@ const backClasses =
         </div>
         <div
             v-if="$slots.actions"
-            class="border-border bg-surface-raised/90 sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] -mt-2 mb-6 flex flex-wrap justify-end gap-2.5 rounded-md border px-3.5 py-3 shadow-md backdrop-blur-sm"
+            class="border-border bg-surface-raised/80 sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] mx-2.5 -mt-2 mb-6 flex flex-wrap justify-end gap-2.5 rounded-md border px-3.5 py-3 shadow-md backdrop-blur-xl dark:bg-white/[0.07]"
         >
             <slot name="actions" />
         </div>

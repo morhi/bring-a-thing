@@ -349,7 +349,7 @@ const inputClass =
     >
         <form
             id="poll-form"
-            class="flex flex-col gap-(--space-stack)"
+            class="flex flex-col gap-8"
             novalidate
             :data-feature="editing ? 'F-08' : 'F-06'"
             @submit.prevent="save"

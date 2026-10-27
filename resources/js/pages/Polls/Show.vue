@@ -3,10 +3,12 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useEcho, usePresenceChannel } from '@laravel/echo-vue';
 import {
     ArrowLeft,
+    CalendarDays,
     Check,
     ChevronRight,
     Settings,
     Sparkles,
+    Table2,
     Users,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
@@ -23,6 +25,7 @@ import { store as storeResponse } from '@/actions/App/Http/Controllers/PollRespo
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
+import PollCalendar from '@/components/app/poll-calendar.vue';
 import PollGrid from '@/components/app/poll-grid.vue';
 import { describeOption, formatDate } from '@/components/app/poll/dates';
 import type {
@@ -151,6 +154,20 @@ const rows = computed<PollGridParticipant[]>(() => {
         name: respondent.name,
     }));
 });
+
+const isRespondent = computed(() =>
+    props.page.respondents.some(
+        (respondent) => respondent.user_id === currentUserId.value,
+    ),
+);
+
+// The calendar sits next to the table so people can hold the options against their own calendar
+type GridView = 'table' | 'calendar';
+const views: { value: GridView; icon: typeof Table2 }[] = [
+    { value: 'table', icon: Table2 },
+    { value: 'calendar', icon: CalendarDays },
+];
+const view = ref<GridView>('table');
 
 const saving = ref(false);
 
@@ -497,15 +514,52 @@ const buttonClass = 'h-(--control-height) px-4';
             :data-feature="isDateFinder ? 'F-06' : 'F-07'"
         >
             <template #action>
-                <span class="text-fg-soft text-sm">{{
+                <span class="text-fg-soft self-center text-sm">{{
                     t('group.polls.responses', {
                         n: answered.length,
                         total: page.audience_count,
                     })
                 }}</span>
+                <div
+                    class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]"
+                    role="group"
+                    :aria-label="t('poll.view')"
+                >
+                    <button
+                        v-for="option in views"
+                        :key="option.value"
+                        type="button"
+                        :aria-pressed="view === option.value"
+                        class="text-fg-muted hover:text-fg aria-pressed:bg-surface-raised aria-pressed:text-fg focus-visible:outline-focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold aria-pressed:shadow-sm"
+                        @click="view = option.value"
+                    >
+                        <component
+                            :is="option.icon"
+                            class="size-4"
+                            aria-hidden="true"
+                        />
+                        {{ t(`poll.view.${option.value}`) }}
+                    </button>
+                </div>
             </template>
 
+            <PollCalendar
+                v-if="view === 'calendar'"
+                :id-prefix="`poll-${poll.slug}`"
+                :mode="poll.uses_time_slots ? 'slots' : 'day'"
+                :options="gridOptions"
+                :answers="page.own_answers"
+                :totals="totals"
+                :best-option-ids="
+                    isDateFinder && isOpen ? page.best_option_slugs : []
+                "
+                :show-answers="isRespondent"
+                :closed="!permissions.can_respond"
+                :busy="saving"
+                @answer="answer"
+            />
             <PollGrid
+                v-else
                 :id-prefix="`poll-${poll.slug}`"
                 :options="gridOptions"
                 :participants="rows"
