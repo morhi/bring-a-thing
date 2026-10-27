@@ -2,6 +2,7 @@
 
 use App\Enums\GroupRole;
 use App\Events\ClaimChanged;
+use App\Events\DashboardChanged;
 use App\Events\EventUpdated;
 use App\Events\ItemChanged;
 use App\Events\OptionFixed;
@@ -17,6 +18,7 @@ use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\RosterItemClaim;
 use App\Models\User;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Support\Facades\Event as EventFacade;
 
 /**
@@ -87,6 +89,13 @@ describe('channel authorization', function () {
             ->and(authorizeChannel($member, 'presence-presence.poll.'.$poll->id))->toBe(200)
             ->and(authorizeChannel($outsider, 'private-poll.'.$poll->id))->toBe(403)
             ->and(authorizeChannel($outsider, 'presence-presence.poll.'.$poll->id))->toBe(403);
+    });
+
+    it('F-21: only the account itself may listen on its private channel for dashboard refreshes', function () {
+        $user = User::factory()->create();
+
+        expect(authorizeChannel($user, 'private-App.Models.User.'.$user->id))->toBe(200)
+            ->and(authorizeChannel(User::factory()->create(), 'private-App.Models.User.'.$user->id))->toBe(403);
     });
 
     it('F-21: lists and polls show who is currently viewing them', function () {
@@ -184,4 +193,42 @@ it('broadcasts fixed options on the poll channel and poll changes such as closin
     EventFacade::assertDispatched(OptionFixed::class, fn (OptionFixed $broadcast) => $broadcast->broadcastOn()->name === 'private-poll.'.$poll->id
         && $broadcast->broadcastWith() === ['poll_id' => $poll->id, 'option_ids' => [$option->id], 'event_ids' => [$fixedEventId]]);
     EventFacade::assertDispatched(PollChanged::class, fn (PollChanged $broadcast) => $broadcast->pollId === $poll->id && ! $broadcast->deleted);
+});
+
+it('F-21: the dashboards of the group members refresh after new events, fixed dates, poll and participation changes', function () {
+    EventFacade::fake([DashboardChanged::class]);
+    ['group' => $group, 'owner' => $owner, 'accepted' => $accepted, 'declined' => $declined, 'event' => $event] = liveEventSetup();
+    $outsider = User::factory()->create();
+    $members = collect([$owner, $accepted, $declined])->map(fn (User $user) => 'private-App.Models.User.'.$user->id)->sort()->values()->all();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+
+    $this->actingAs($owner)->post(route('events.store', $group), [
+        'title' => 'Rehearsal',
+        'date' => now()->addMonth()->format('Y-m-d'),
+    ])->assertSessionHasNoErrors();
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success');
+    $this->actingAs($accepted)->put(route('events.participation.update', $event), ['status' => 'declined', 'confirm_release' => true])->assertRedirect();
+
+    EventFacade::assertDispatchedTimes(DashboardChanged::class, 3);
+    EventFacade::assertDispatched(DashboardChanged::class, function (DashboardChanged $broadcast) use ($group, $members, $outsider) {
+        $channels = collect($broadcast->broadcastOn())->map(fn ($channel) => $channel->name)->sort()->values()->all();
+
+        return $broadcast instanceof ShouldDispatchAfterCommit
+            && $broadcast->broadcastAs() === 'dashboard.changed'
+            && $broadcast->broadcastWith() === ['group_id' => $group->id]
+            && $channels === $members
+            && ! in_array('private-App.Models.User.'.$outsider->id, $channels, true);
+    });
+});
+
+it('F-21: a poll answer refreshes only the dashboard of the person who answered', function () {
+    EventFacade::fake([DashboardChanged::class]);
+    ['group' => $group, 'owner' => $owner, 'accepted' => $member] = liveEventSetup();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+
+    $this->actingAs($member)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'yes'])->assertRedirect();
+
+    EventFacade::assertDispatched(DashboardChanged::class, fn (DashboardChanged $broadcast) => $broadcast->userIds === [$member->id]);
 });

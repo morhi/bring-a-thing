@@ -478,6 +478,10 @@ error: string | null,
 export type SharedNotificationsData = {
 unread: number,
 };
+export type SharedPendingActionData = {
+kind: string,
+name: string,
+};
 export type SharedPropsData = {
 name: string,
 auth: App.Data.SharedAuthData,
@@ -496,6 +500,7 @@ can_add_items: boolean,
 is_all_taken: boolean,
 custom_fields: App.Data.CustomFieldData[],
 items: App.Data.RosterItemData[],
+pending_actions: App.Data.SharedPendingActionData[],
 };
 export type SharedUserData = {
 id: number,

@@ -7,6 +7,7 @@ use App\Actions\Polls\CreateFollowUpPoll;
 use App\Data\PollFormData;
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Events\DashboardChanged;
 use App\Events\EventUpdated;
 use App\Http\Requests\Polls\StoreFollowUpPollRequest;
 use App\Models\Event;
@@ -52,6 +53,7 @@ class EventFollowUpPollController extends Controller
         );
 
         EventUpdated::dispatch($event->id);
+        DashboardChanged::forGroup($event->group_id);
 
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 

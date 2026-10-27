@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PollResponseStatus;
+use App\Events\DashboardChanged;
 use App\Events\PollResponseUpdated;
 use App\Http\Requests\Polls\StorePollResponseRequest;
 use App\Models\Poll;
@@ -27,6 +28,7 @@ class PollResponseController extends Controller
         );
 
         PollResponseUpdated::dispatch($poll->id, $option->id, $request->user()->id);
+        DashboardChanged::dispatch($poll->group_id, [$request->user()->id]);
 
         return back()->with('success', __('ui.poll.answer.saved'));
     }

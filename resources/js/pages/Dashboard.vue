@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { useEcho, useEchoNotification } from '@laravel/echo-vue';
 import {
     CalendarCheck,
     Check,
@@ -10,7 +11,7 @@ import {
     Plus,
     Vote,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount } from 'vue';
 import { show as showEvent } from '@/actions/App/Http/Controllers/EventController';
 import {
     create as createGroup,
@@ -47,8 +48,51 @@ const props = defineProps<{
     counts: App.Data.DashboardCountsData;
 }>();
 
-const { t, locale } = useI18n();
+const { t, tc, locale } = useI18n();
 const user = computed(() => usePage().props.auth.user);
+
+// Live updates (F-21): broadcasts only say that something changed, so the page reloads its own props.
+// A short delay folds a burst of broadcasts (a fix creating several events) into one request.
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleReload(): void {
+    if (reloadTimer !== null) {
+        return;
+    }
+
+    reloadTimer = setTimeout(() => {
+        reloadTimer = null;
+        router.reload({
+            only: [
+                'waiting',
+                'upcoming',
+                'claims',
+                'groups',
+                'lists',
+                'counts',
+            ],
+        });
+    }, 300);
+}
+
+if (user.value) {
+    useEcho(
+        `App.Models.User.${user.value.id}`,
+        '.dashboard.changed',
+        scheduleReload,
+    );
+    useEchoNotification(
+        `App.Models.User.${user.value.id}`,
+        scheduleReload,
+        'notification.created',
+    );
+}
+
+onBeforeUnmount(() => {
+    if (reloadTimer !== null) {
+        clearTimeout(reloadTimer);
+    }
+});
 
 const greeting = computed(() => {
     const hour = new Date().getHours();
@@ -111,7 +155,11 @@ function waitingMeta(item: App.Data.DashboardWaitingData): string {
           })
         : '';
 
-    return `${item.group_name} · ${day}${item.starts_at ? `, ${item.starts_at}` : ''}`;
+    const accepted = tc('dash.waiting.eventMeta', item.accepted_count ?? 0, {
+        accepted: item.accepted_count ?? 0,
+    });
+
+    return `${item.group_name} · ${day}${item.starts_at ? `, ${item.starts_at}` : ''} · ${accepted}`;
 }
 
 function waitingFeature(item: App.Data.DashboardWaitingData): string {

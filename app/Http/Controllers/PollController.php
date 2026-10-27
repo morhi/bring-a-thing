@@ -10,6 +10,7 @@ use App\Data\PollFormData;
 use App\Data\PollShowData;
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Events\DashboardChanged;
 use App\Events\EventUpdated;
 use App\Events\OptionFixed;
 use App\Events\PollChanged;
@@ -66,6 +67,8 @@ class PollController extends Controller
             $request->input('ends_on'),
         );
 
+        DashboardChanged::forGroup($group);
+
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 
         return to_route('polls.show', $poll)->with('success', __('ui.newPoll.created'));
@@ -108,6 +111,7 @@ class PollController extends Controller
         );
 
         PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
 
         return to_route('polls.show', $poll)->with('success', __('ui.poll.settings.saved'));
     }
@@ -120,6 +124,7 @@ class PollController extends Controller
         $poll->close();
 
         PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.closed.toast'));
     }
@@ -132,6 +137,7 @@ class PollController extends Controller
         $events = $fixPollOptions->handle($poll, $request->selectedOptions());
 
         OptionFixed::dispatch($poll->id, $events->pluck('origin_poll_option_id')->all(), $events->pluck('id')->all());
+        DashboardChanged::forGroup($poll->group_id);
 
         if ($poll->event_id !== null) {
             EventUpdated::dispatch($poll->event_id);
@@ -152,6 +158,7 @@ class PollController extends Controller
         $poll->reopen();
 
         PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.reopened.toast'));
     }
@@ -168,6 +175,7 @@ class PollController extends Controller
         $poll->delete();
 
         PollChanged::dispatch($poll->id, deleted: true);
+        DashboardChanged::forGroup($group);
 
         if ($event !== null) {
             EventUpdated::dispatch($event->id);

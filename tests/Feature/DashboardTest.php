@@ -99,6 +99,18 @@ it('F-22: an upcoming event with the status "pending" is waiting, a past one is 
         ->has('upcoming', 0));
 });
 
+it('F-22: a pending event under "Waiting for you" carries how many accepted so far', function () {
+    [$group, $owner, $member] = dashboardGroup();
+    $event = dashboardEvent($group, $owner, $member, ParticipationStatus::Pending);
+    EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $owner->id]);
+    EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => User::factory()->create()->id]);
+    EventParticipation::factory()->declined()->create(['event_id' => $event->id, 'user_id' => User::factory()->create()->id]);
+
+    $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+        ->where('waiting.0.slug', $event->slug)
+        ->where('waiting.0.accepted_count', 2));
+});
+
 it('F-22: after accepting, the event leaves "Waiting for you" and appears under the upcoming events', function () {
     [$group, $owner, $member] = dashboardGroup();
     $event = dashboardEvent($group, $owner, $member, ParticipationStatus::Pending);

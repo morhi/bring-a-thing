@@ -8,6 +8,7 @@ use App\Actions\Events\UpdateEvent;
 use App\Actions\Notifications\SendInAppNotification;
 use App\Data\EventFormData;
 use App\Data\EventShowData;
+use App\Events\DashboardChanged;
 use App\Events\EventUpdated;
 use App\Http\Requests\Events\StoreEventRequest;
 use App\Http\Requests\Events\UpdateEventRequest;
@@ -43,6 +44,8 @@ class EventController extends Controller
     public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
         $event = $createEvent->handle($group, $request->user(), $request->eventAttributes());
+
+        DashboardChanged::forGroup($group);
 
         $sendNotification->handle(new EventCreated($event, $request->user()));
 
@@ -81,6 +84,7 @@ class EventController extends Controller
         $updateEvent->handle($event, $request->eventAttributes());
 
         EventUpdated::dispatch($event->id);
+        DashboardChanged::forGroup($event->group_id);
 
         if ($event->wasChanged(['date', 'starts_at'])) {
             $sendNotification->handle(new EventMoved($event, $request->user()));
@@ -102,6 +106,7 @@ class EventController extends Controller
         $deleteEvent->handle($event);
 
         EventUpdated::dispatch($event->id, deleted: true);
+        DashboardChanged::forGroup($group);
 
         if ($event->parent_event_id !== null) {
             EventUpdated::dispatch($event->parent_event_id);

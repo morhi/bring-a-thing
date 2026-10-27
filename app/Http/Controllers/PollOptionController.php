@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\DashboardChanged;
 use App\Events\PollChanged;
 use App\Http\Requests\Polls\StorePollOptionRequest;
 use App\Models\Poll;
@@ -21,6 +22,7 @@ class PollOptionController extends Controller
         $poll->options()->create($request->safe()->only(['date', 'starts_at', 'ends_at', 'label']));
 
         PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
 
         return back()->with('success', __('ui.poll.option.added'));
     }
@@ -44,6 +46,7 @@ class PollOptionController extends Controller
         $option->delete();
 
         PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
 
         return back()->with('success', __('ui.poll.option.removed'));
     }
