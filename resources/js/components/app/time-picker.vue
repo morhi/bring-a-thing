@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { XIcon } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 
 /**
  * Pick a 24-hour time from an hour and a minute segment; the model is "HH:MM" or null.
  *
- * Both segments are selects, so arrow keys and typing ("1", "4" for 14) work. Choosing
+ * Both segments are native selects, so touch devices show their own wheel picker and
+ * keyboards keep typing ("1", "4" for 14). Choosing
  * an hour first fills the minutes with 00. Optional fields get a clear button. The group
  * is named by the FormField label (`${id}-label`) or by `ariaLabel`.
  */
@@ -112,9 +107,10 @@ function clear(): void {
     document.getElementById(props.id)?.focus();
 }
 
-const triggerClass =
-    'bg-control border-control-border text-fg hover:border-fg-soft focus-visible:border-primary-ring aria-invalid:border-danger data-placeholder:text-fg-soft ' +
-    'h-(--control-height)! w-[4.75rem] rounded-(--control-radius) px-3 text-sm tabular-nums focus-visible:ring-(--primary-ring)/25 disabled:opacity-100 disabled:bg-surface-muted disabled:text-fg-muted disabled:border-border';
+const selectClass =
+    'w-[5.25rem] [&_select]:bg-control [&_select]:border-control-border [&_select]:text-fg [&_select]:hover:border-fg-soft [&_select]:focus-visible:border-primary-ring ' +
+    '[&_select]:aria-invalid:border-danger [&_select]:h-11 [&_select]:rounded-(--control-radius) [&_select]:pl-3 [&_select]:text-base [&_select]:tabular-nums ' +
+    '[&_select]:disabled:bg-surface-muted [&_select]:disabled:text-fg-muted [&_select]:disabled:border-border md:[&_select]:h-(--control-height) md:[&_select]:text-sm';
 </script>
 
 <template>
@@ -125,62 +121,44 @@ const triggerClass =
         :aria-labelledby="ariaLabel ? undefined : `${id}-label`"
         :aria-describedby="describedBy || undefined"
     >
-        <Select
+        <NativeSelect
+            :id="id"
             :model-value="hour"
             :disabled="disabled"
-            @update:model-value="setHour"
+            :class="selectClass"
+            :aria-label="t('timePicker.hours')"
+            :aria-invalid="invalid || undefined"
+            :aria-required="required || undefined"
+            @update:model-value="setHour($event)"
         >
-            <SelectTrigger
-                :id="id"
-                :class="triggerClass"
-                :aria-label="t('timePicker.hours')"
-                :aria-invalid="invalid || undefined"
-                :aria-required="required || undefined"
-            >
-                <SelectValue placeholder="--" />
-            </SelectTrigger>
-            <SelectContent class="max-h-64">
-                <SelectItem
-                    v-for="option in hours"
-                    :key="option"
-                    :value="option"
-                    class="tabular-nums"
-                    >{{ option }}</SelectItem
-                >
-            </SelectContent>
-        </Select>
+            <option value="" disabled>--</option>
+            <option v-for="option in hours" :key="option" :value="option">
+                {{ option }}
+            </option>
+        </NativeSelect>
 
         <span class="text-fg-muted font-semibold" aria-hidden="true">:</span>
 
-        <Select
+        <NativeSelect
             :model-value="minute"
             :disabled="disabled"
-            @update:model-value="setMinute"
+            :class="selectClass"
+            :aria-label="t('timePicker.minutes')"
+            :aria-invalid="invalid || undefined"
+            :aria-required="required || undefined"
+            @update:model-value="setMinute($event)"
         >
-            <SelectTrigger
-                :class="triggerClass"
-                :aria-label="t('timePicker.minutes')"
-                :aria-invalid="invalid || undefined"
-                :aria-required="required || undefined"
-            >
-                <SelectValue placeholder="--" />
-            </SelectTrigger>
-            <SelectContent class="max-h-64">
-                <SelectItem
-                    v-for="option in minutes"
-                    :key="option"
-                    :value="option"
-                    class="tabular-nums"
-                    >{{ option }}</SelectItem
-                >
-            </SelectContent>
-        </Select>
+            <option value="" disabled>--</option>
+            <option v-for="option in minutes" :key="option" :value="option">
+                {{ option }}
+            </option>
+        </NativeSelect>
 
         <button
             v-if="!required && (hour || minute) && !disabled"
             type="button"
             :aria-label="t('timePicker.clear')"
-            class="text-fg-muted hover:bg-surface-sunken hover:text-fg grid size-9 shrink-0 place-items-center rounded-full"
+            class="text-fg-muted hover:bg-surface-sunken hover:text-fg grid size-11 shrink-0 place-items-center rounded-full md:size-9"
             @click="clear"
         >
             <XIcon class="size-4" aria-hidden="true" />

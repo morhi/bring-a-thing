@@ -18,6 +18,7 @@ import type {
     SlotTime,
 } from '@/components/app/poll/types';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
 
@@ -145,6 +146,36 @@ const weeks = computed(() =>
         monthCells.value.slice(row * 7, row * 7 + 7),
     ),
 );
+
+const monthOptions = computed(() =>
+    Array.from({ length: 12 }, (_, index) => ({
+        value: index,
+        label: new Date(2026, index, 1).toLocaleDateString(localeTag.value, {
+            month: 'long',
+        }),
+    })),
+);
+
+// Years run from the current one to a few past the visible one, so the list never caps the planning range
+const yearOptions = computed(() => {
+    const first = fromIso(props.today).getFullYear();
+    const last = Math.max(monthCursor.value.getFullYear(), first) + 5;
+
+    return Array.from(
+        { length: last - first + 1 },
+        (_, index) => first + index,
+    );
+});
+
+function setMonthPart(part: 'month' | 'year', value: unknown): void {
+    const cursor = monthCursor.value;
+    const next = Number(value);
+
+    monthCursor.value =
+        part === 'month'
+            ? new Date(cursor.getFullYear(), next, 1)
+            : new Date(next, cursor.getMonth(), 1);
+}
 
 function shiftMonth(delta: number): void {
     monthCursor.value = new Date(
@@ -722,10 +753,44 @@ function hourLabel(hour: number): string {
             >
                 <ChevronLeft />
             </Button>
+            <div
+                v-if="mode === 'day'"
+                class="flex flex-1 items-center justify-center gap-2"
+            >
+                <NativeSelect
+                    :model-value="monthCursor.getMonth()"
+                    :aria-label="t('cal.month')"
+                    class="w-auto [&_select]:h-10 [&_select]:text-base"
+                    @update:model-value="setMonthPart('month', $event)"
+                >
+                    <option
+                        v-for="month in monthOptions"
+                        :key="month.value"
+                        :value="month.value"
+                    >
+                        {{ month.label }}
+                    </option>
+                </NativeSelect>
+                <NativeSelect
+                    :model-value="monthCursor.getFullYear()"
+                    :aria-label="t('cal.year')"
+                    class="w-auto [&_select]:h-10 [&_select]:text-base"
+                    @update:model-value="setMonthPart('year', $event)"
+                >
+                    <option
+                        v-for="year in yearOptions"
+                        :key="year"
+                        :value="year"
+                    >
+                        {{ year }}
+                    </option>
+                </NativeSelect>
+            </div>
             <span
+                v-else
                 class="font-display flex-1 text-center text-base font-[640]"
                 aria-live="polite"
-                >{{ mode === 'day' ? monthLabel : weekLabel }}</span
+                >{{ weekLabel }}</span
             >
             <Button
                 type="button"
