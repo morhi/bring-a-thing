@@ -488,6 +488,13 @@ auth: App.Data.SharedAuthData,
 locale: App.Enums.Locale,
 flash: App.Data.SharedFlashData,
 notifications: App.Data.SharedNotificationsData,
+reverb: App.Data.SharedReverbData | null,
+};
+export type SharedReverbData = {
+key: string,
+host: string,
+port: number,
+scheme: string,
 };
 export type SharedRosterData = {
 token: string,

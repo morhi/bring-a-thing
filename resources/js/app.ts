@@ -6,10 +6,6 @@ import { createApp, h, watchEffect } from 'vue';
 import { configureEcho } from '@laravel/echo-vue';
 import { locale, t, tc } from '@/lib/i18n';
 
-configureEcho({
-    broadcaster: 'reverb',
-});
-
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 void createInertiaApp({
@@ -18,6 +14,24 @@ void createInertiaApp({
         if (!el) {
             return;
         }
+
+        // The server shares the Reverb connection per request, because the build gets no environment variables.
+        const reverb = props.initialPage.props
+            .reverb as App.Data.SharedReverbData | null;
+
+        configureEcho(
+            reverb
+                ? {
+                      broadcaster: 'reverb',
+                      key: reverb.key,
+                      wsHost: reverb.host,
+                      wsPort: reverb.port,
+                      wssPort: reverb.port,
+                      forceTLS: reverb.scheme === 'https',
+                      enabledTransports: ['ws', 'wss'],
+                  }
+                : { broadcaster: 'reverb' },
+        );
 
         const app = createApp({ render: () => h(App, props) }).use(plugin);
 

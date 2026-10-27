@@ -99,4 +99,23 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Browser Connection
+    |--------------------------------------------------------------------------
+    |
+    | The values the browser connects with, shared with every page at runtime so
+    | the frontend build needs none of them. They default to the server values,
+    | which differ on a host where Reverb is only reachable internally (set the
+    | REVERB_CLIENT_* variables there to the public host, port and scheme).
+    |
+    */
+
+    'client' => [
+        'key' => env('REVERB_APP_KEY'),
+        'host' => env('REVERB_CLIENT_HOST', env('REVERB_HOST')),
+        'port' => (int) env('REVERB_CLIENT_PORT', env('REVERB_PORT', 443)),
+        'scheme' => env('REVERB_CLIENT_SCHEME', env('REVERB_SCHEME', 'https')),
+    ],
+
 ];

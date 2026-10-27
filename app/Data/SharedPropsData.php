@@ -14,6 +14,7 @@ class SharedPropsData extends Data
         public Locale $locale,
         public SharedFlashData $flash,
         public SharedNotificationsData $notifications,
+        public ?SharedReverbData $reverb,
     ) {}
 
     /**
@@ -32,6 +33,7 @@ class SharedPropsData extends Data
                 error: $request->session()->get('error'),
             ),
             notifications: SharedNotificationsData::forUser($user),
+            reverb: SharedReverbData::fromConfig(),
         );
     }
 }
