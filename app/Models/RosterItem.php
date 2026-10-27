@@ -123,7 +123,7 @@ class RosterItem extends Model
      * Whether the item's effective date (its own, or its roster's) has passed.
      *
      * "Past" vs. "upcoming" has no explicit status field; it is always derived
-     * from whichever date applies, per BRING_A_THING.md §3.
+     * from whichever date applies, per docs/requirements.md.
      */
     protected function isPast(): Attribute
     {

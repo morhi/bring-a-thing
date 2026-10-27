@@ -13,7 +13,7 @@ Do not start Stage B before Stage A is reviewed and approved by Maurice. Ask for
 
 - `docs/requirements.md` (v1.12) defines behavior. Where anything else disagrees with it, the requirements win.
 - `docs/prototype/` shows the approved UI concept and design system. In Stage B it is a reference for layout, content hierarchy, wording and flows, not code to copy.
-- `BRING_A_THING.md` and `IMPLEMENDATION.md` describe the app as it exists today (PrimeVue frontend, backend up to Phase 6). They are history, not targets. `CLAUDE.md` asks to keep them in sync with the app; at the end of Stage B, propose to Maurice how to retire or rewrite them so that `docs/requirements.md` stays the single behavior document.
+- `BRING_A_THING.md` and `IMPLEMENDATION.md` described the PrimeVue app up to Phase 6. They are retired; `docs/requirements.md` is the single behavior document.
 
 Open question 1 in the requirements (volume targets) is answered: about 5 groups per account and about 5 polls, events and lists each per group per year (requirements v1.7).
 
@@ -138,7 +138,7 @@ Write migrations, models, factories, policies, Form Requests and actions in the 
 2. Backend delta with tests.
 3. Pages in the order of the main flows in requirements section 6: group and polls, fixing and events, participation, lists and claims, dashboard, start page and account pages, notifications.
 4. Full suite (`ddev artisan test --compact`, `npm run check`, `npm run types:check`), browser walkthrough of all six main flows in both languages and both themes.
-5. Propose the retirement of `BRING_A_THING.md` and `IMPLEMENDATION.md`.
+5. Retire `BRING_A_THING.md` and `IMPLEMENDATION.md` (done, see backlog item b28e).
 
 ## Claude Code build rules: apps
 

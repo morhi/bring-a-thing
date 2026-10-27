@@ -77,15 +77,15 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Artisan
 
-- Run Artisan commands directly via the command line (e.g., `php artisan route:list`). Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
-- Inspect routes with `php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
-- Read configuration values using dot notation: `php artisan config:show app.name`, `php artisan config:show database.default`. Or read config files directly from the `config/` directory.
+- Run Artisan commands directly via the command line (e.g., `ddev php artisan route:list`). Use `ddev php artisan list` to discover available commands and `ddev php artisan [command] --help` to check parameters.
+- Inspect routes with `ddev php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
+- Read configuration values using dot notation: `ddev php artisan config:show app.name`, `ddev php artisan config:show database.default`. Or read config files directly from the `config/` directory.
 
 ## Tinker
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
-- Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+- Always use single quotes to prevent shell expansion: `ddev php artisan tinker --execute 'Your::code();'`
+  - Double quotes for PHP strings inside: `ddev php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 
@@ -104,6 +104,16 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
 - Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
+
+=== tests rules ===
+
+# Test Enforcement
+
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
 
 === inertia-laravel/core rules ===
 
@@ -132,13 +142,13 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Do Things the Laravel Way
 
-- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
-- If you're creating a generic PHP class, use `php artisan make:class`.
+- Use `ddev php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `ddev php artisan list` and check their parameters with `ddev php artisan [command] --help`.
+- If you're creating a generic PHP class, use `ddev php artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
 ### Model Creation
 
-- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
+- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `ddev php artisan make:model --help` to check the available options.
 
 ## APIs & Eloquent Resources
 
@@ -152,7 +162,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
-- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
+- When creating tests, make use of `ddev php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
 ## Vite Error
 
@@ -175,17 +185,17 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 
 # Pest
 
-- This project uses Pest. Create tests with `php artisan make:test --pest {name}`.
+- This project uses Pest. Create tests with `ddev php artisan make:test --pest {name}`.
 - Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
 - Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
 - Do not delete tests or test files without approval. They are part of the application.
 
 ## Running Tests
 
-- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `php artisan test --compact`.
+- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `ddev php artisan test --compact`.
 - Rerun a test after each change to it.
 - Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
-- After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
+- After the feature tests pass, ask the user to run the complete suite with `ddev php artisan test --compact`.
 
 === inertia-vue/core rules ===
 
@@ -209,10 +219,10 @@ Vue components must have a single root element.
 
 ## Keeping Feature Docs in Sync
 
-- `BRING_A_THING.md` (the spec) and `IMPLEMENDATION.md` (the phased implementation plan/log) must stay in sync with what the app actually does. Update them as part of the same piece of work that adds/changes a feature, not as an afterthought — a feature isn't done until its docs reflect it.
-- Before starting non-trivial work, skim `git log --oneline -20` against both files to check nothing recent (yours or someone else's) is undocumented; catch up the docs first if something is missing.
-- When a feature changes behavior described in `BRING_A_THING.md`, edit that section directly rather than appending a contradiction elsewhere in the file.
-- When a feature goes beyond what a phase in `IMPLEMENDATION.md` originally scoped (common for user-requested additions), add it as new checklist items and a note under **Deviations** in the relevant phase, add the commit hash(es) to that phase's `Commit(s)` line and to the Progress log table row, matching the existing style (see Phase 2–4 for examples of "added on request, beyond original phase scope").
+- `docs/requirements.md` is the single document for what the app does. Update it in the same piece of work that adds or changes a feature, not afterwards.
+- A change to a requirement needs the user's approval, a before/after of the affected sections, and a version bump in the header.
+- Every acceptance criterion has a feature test whose name starts with its feature ID (for example `F-14: ...`).
+- Before starting non-trivial work, skim `git log --oneline -20` against `docs/requirements.md` to check nothing recent is undocumented.
 ## Backlog
 
 - Open work lives in `.backlog/` (local, untracked), not in a `TODOS.md`. When you need to pick up work, load the `backlog` skill and continue with its `queued` or `ready` items. Record deferred or off-scope work there as a new item instead of in a file or a comment.
