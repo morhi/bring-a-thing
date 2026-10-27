@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import { dashboard, login, welcome } from '@/routes';
 import AccountMenu from './account-menu.vue';
+import CommandPalette from './command-palette.vue';
 import LanguageSwitch from './language-switch.vue';
 import MobileMenu from './mobile-menu.vue';
 import { navItems } from './nav-items';
@@ -54,11 +55,16 @@ defineExpose({ focusBell: () => bell.value?.focus() });
                 variant === 'website' ? 'min-h-[72px]' : 'min-h-16',
             ]"
         >
-            <Wordmark :href="homeHref" class="shrink-0" />
+            <div class="sm:flex-1">
+                <Wordmark :href="homeHref" class="shrink-0" />
+            </div>
 
-            <span class="flex-1" />
+            <!-- Search field centered on the viewport from sm (equal-width side columns), an icon next to the bell below -->
+            <div class="flex flex-1 justify-end sm:flex-none sm:justify-center">
+                <CommandPalette v-if="isApp" />
+            </div>
 
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 sm:flex-1 sm:justify-end">
                 <!-- Signed in, language and theme live in the account menu; guests get them inline, or in the menu button below lg -->
                 <div v-if="!isApp" class="hidden items-center gap-1.5 lg:flex">
                     <LanguageSwitch />

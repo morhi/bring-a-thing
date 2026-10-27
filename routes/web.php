@@ -24,6 +24,7 @@ use App\Http\Controllers\RosterItemClaimController;
 use App\Http\Controllers\RosterItemCommentController;
 use App\Http\Controllers\RosterItemController;
 use App\Http\Controllers\RosterSharingController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SharedRosterClaimController;
 use App\Http\Controllers\SharedRosterController;
@@ -181,4 +182,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
     Route::post('/notifications/read', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+});
+
+// Command palette search (F-25): JSON for the header palette, scoped to what the account may see.
+Route::middleware('auth')->group(function () {
+    Route::get('/search', SearchController::class)->name('search');
 });

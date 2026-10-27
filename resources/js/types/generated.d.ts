@@ -466,6 +466,21 @@ attendance_options: App.Data.AttendanceOptionData[],
 is_all_taken: boolean,
 permissions: App.Data.RosterPermissionsData,
 };
+export type SearchData = {
+query: string,
+sections: App.Data.SearchSectionData[],
+};
+export type SearchResultData = {
+id: string,
+title: string,
+context: string | null,
+url: string,
+};
+export type SearchSectionData = {
+type: string,
+label: string,
+results: App.Data.SearchResultData[],
+};
 export type SettingsData = {
 name: string | null,
 email: string | null,

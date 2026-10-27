@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.13
+- **Version:** 1.14
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -134,8 +134,10 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The poll works by day or with time slots. Each option consists of a date. With time slots it also has start and end. Every option can carry an optional label (for example "Lunch" or "Room free until 22:00"), and the grid header shows it on one line. Several slots on the same day are possible.
 - With two or more slots, "Use this time for all" applies one slot's start and end to all other slots. Locked options (F-08) keep their time.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
+- Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
+- A "Table / Calendar" toggle switches the view. The calendar shows a week grid for a time-slot poll and a month grid for a by-day poll. Options can be answered in both views, and the tab order follows the options chronologically.
 
 **Acceptance criteria:**
 - A poll with three time slots on the same date shows three separate columns.
@@ -144,6 +146,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
 - An option with a label shows it in the grid header.
 - In an edited poll, "Use this time for all" leaves options with answers unchanged.
+- An answer chosen with the arrow keys is saved right away and shown after a reload.
+- The calendar view of a time-slot poll shows a week grid and of a by-day poll a month grid; options can be answered there, and tabbing moves through them in chronological order.
 
 #### F-07 Attendance poll (Secondary)
 
@@ -404,9 +408,28 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - After switching to German in the settings, a login on another device shows German.
 - The login email for an account set to German is in German.
 
+#### F-25 Search and quick actions (Secondary)
+
+**User goal:** Jump to a group, poll, event or list, or start a common action, without clicking through pages.
+
+**Rules:**
+- The header carries a search field in the middle; on narrow screens it shows as a search icon. Cmd+K on Mac and Ctrl+K elsewhere opens and closes the palette, Esc closes it.
+- Without input, the palette shows the quick actions "New group", "New list", "Dashboard", "Settings" and "Friends". Typing filters them.
+- From two letters on, the palette also searches the titles of groups, polls, events and lists, grouped by type with a heading. Each type shows at most five results.
+- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, and the lists by the rules of F-13.
+- The arrow keys move through the entries and Enter opens the selected one. While searching, the palette shows a loading state; without results it says so.
+
+**Acceptance criteria:**
+- Searching requires a login.
+- An empty query or a single letter returns no records, only the quick actions.
+- "gig" finds the group, poll, event and list with "gig" in their title, each with its heading and link.
+- A poll, event or list of a group the person is not a member of never appears.
+- An event list or follow-up poll appears only once the person takes part in the event.
+- With seven matching polls, the palette shows five.
+
 ## 6. Structure
 
-**Navigation:** header with logo (leads to the dashboard), notifications (F-23) and user menu (settings, friends, logout). There is no permanent sidebar; groups, events and lists link to each other on their pages.
+**Navigation:** header with logo (leads to the dashboard), search and quick actions (F-25), notifications (F-23) and user menu (settings, friends, logout). There is no permanent sidebar; groups, events and lists link to each other on their pages.
 
 **Pages:**
 - **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
