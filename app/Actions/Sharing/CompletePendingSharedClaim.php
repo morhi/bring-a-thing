@@ -16,64 +16,99 @@ class CompletePendingSharedClaim
     public function __construct(
         private readonly ClaimRosterItem $claimItem,
         private readonly AddSharedRosterItem $addItem,
+        private readonly StorePendingSharedClaim $pendingActions,
     ) {}
 
     /**
      * Return a guest to the shared list they were on before logging in,
-     * completing a claim they started there if one is pending.
+     * completing every claim and item add they started there (F-19).
      *
-     * The session key is set by StorePendingSharedClaim, either from
-     * SharedRosterClaimController::store (claiming a specific item) or from
-     * a plain "log in to gain access" dialog with no item attached; this
-     * runs right after login so the one extra step (log in or sign up) is
-     * all it takes. An item draft a guest submitted on that list
-     * (SharedRosterItemController::store) is added the same way (F-19).
+     * StorePendingSharedClaim keeps the actions in the order the guest took
+     * them; this runs right after login so the one extra step (log in or
+     * sign up) is all it takes. Each action stands on its own: a claim that
+     * fails because the amount is gone meanwhile does not drop an item add,
+     * and the flash lists what completed and what did not.
      */
     public function handle(Request $request, User $user): ?RedirectResponse
     {
-        $draft = $request->session()->pull('pending_shared_item');
-        $intent = $request->session()->pull('pending_shared_claim');
+        ['actions' => $actions, 'roster_token' => $returnToken] = $this->pendingActions->pull($request);
 
-        if (is_array($draft) && ($redirect = $this->completeAdd($draft, $user))) {
-            return $redirect;
+        $completed = [];
+        $errors = [];
+        $lastRoster = null;
+
+        foreach ($actions as $action) {
+            $roster = Roster::query()->where('share_token', $action['roster_token'] ?? null)->first();
+
+            if (! $roster) {
+                continue;
+            }
+
+            $lastRoster = $roster;
+            $result = ($action['kind'] ?? null) === 'add'
+                ? $this->completeAdd($roster, $action, $user)
+                : $this->completeClaim($roster, $action, $user);
+
+            if (isset($result['success'])) {
+                $completed[] = $result['success'];
+            }
+
+            if (isset($result['error'])) {
+                $errors[] = $result['error'];
+            }
         }
 
-        if (! is_array($intent)) {
-            return null;
-        }
-
-        $roster = Roster::query()->where('share_token', $intent['roster_token'] ?? null)->first();
+        $roster = ($returnToken !== null ? Roster::query()->where('share_token', $returnToken)->first() : null) ?? $lastRoster;
 
         if (! $roster) {
             return null;
         }
 
-        $itemId = $intent['item_id'] ?? null;
-        $item = $itemId !== null ? RosterItem::query()->where('roster_id', $roster->getKey())->find($itemId) : null;
+        $redirect = redirect()->route('shared-rosters.show', $roster->share_token);
 
-        if ($itemId !== null && ! $item) {
-            return null;
+        if ($completed !== []) {
+            $redirect->with('success', __('ui.list.guest.done', ['actions' => implode(', ', $completed)]));
         }
 
+        if ($errors !== []) {
+            $redirect->with('error', implode(' ', $errors));
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Complete a claim a guest started before logging in.
+     *
+     * @param  array<string, mixed>  $intent
+     * @return array{success?: string, error?: string}
+     */
+    private function completeClaim(Roster $roster, array $intent, User $user): array
+    {
+        $item = RosterItem::query()->where('roster_id', $roster->getKey())->find($intent['item_id'] ?? null);
+
         if (! $item) {
-            return redirect()->route('shared-rosters.show', $roster->share_token);
+            return ['error' => __('ui.list.guest.claimGone')];
         }
 
         if (! $roster->acceptsShareLinkClaimFrom($user) || $roster->excludesShareLinkVisitor($user)) {
-            return redirect()->route('shared-rosters.show', $roster->share_token)
-                ->with('error', __('ui.list.claim.acceptFirst'));
+            return ['error' => __('ui.list.claim.acceptFirst')];
         }
 
+        $quantity = $intent['quantity'] ?? null;
+
         try {
-            $this->claimItem->handle($item, $user, $intent['quantity'] ?? null);
+            $this->claimItem->handle($item, $user, is_numeric($quantity) ? (float) $quantity : null);
         } catch (ValidationException $exception) {
-            return redirect()->route('shared-rosters.show', $roster->share_token)
-                ->with('error', $exception->validator->errors()->first());
+            return ['error' => __('ui.list.guest.claimFailed', [
+                'item' => $item->name,
+                'reason' => $exception->validator->errors()->first(),
+            ])];
         }
 
         ClaimChanged::dispatch($roster->id, $item->id, $user->id);
 
-        return redirect()->route('shared-rosters.show', $roster->share_token)->with('success', __('ui.list.claim.saved'));
+        return ['success' => __('ui.list.guest.doneClaim', ['item' => $item->name])];
     }
 
     /**
@@ -81,22 +116,20 @@ class CompletePendingSharedClaim
      * list stopped accepting additions or hides itself from this person.
      *
      * @param  array<string, mixed>  $draft
+     * @return array{success?: string, error?: string}
      */
-    private function completeAdd(array $draft, User $user): ?RedirectResponse
+    private function completeAdd(Roster $roster, array $draft, User $user): array
     {
-        $roster = Roster::query()->where('share_token', $draft['roster_token'] ?? null)->first();
-
-        if (! $roster || ! is_string($draft['name'] ?? null)) {
-            return null;
+        if (! is_string($draft['name'] ?? null)) {
+            return [];
         }
 
         if (! $roster->canBeAddedToByShareLinkVisitor() || $roster->excludesShareLinkVisitor($user)) {
-            return redirect()->route('shared-rosters.show', $roster->share_token)
-                ->with('error', __('ui.list.guest.addClosed'));
+            return ['error' => __('ui.list.guest.addClosed')];
         }
 
         $this->addItem->handle($roster, $draft);
 
-        return redirect()->route('shared-rosters.show', $roster->share_token)->with('success', __('ui.list.item.added'));
+        return ['success' => __('ui.list.guest.doneAdd', ['item' => $draft['name']])];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\RosterItems\ClaimRosterItem;
+use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Events\ClaimChanged;
 use App\Http\Requests\SharedRosters\ClaimSharedRosterItemRequest;
 use App\Models\Roster;
@@ -16,12 +17,12 @@ class SharedRosterClaimController extends Controller
      * Claim an item from a shared list link.
      *
      * A visitor who is already logged in claims immediately. A guest's
-     * intended claim is stashed in the session and resumed automatically
-     * after they log in or sign up (see CompletePendingSharedClaim), so
+     * intended claim joins the pending actions in the session and completes
+     * automatically after they log in or sign up (see CompletePendingSharedClaim), so
      * claiming from a shared link never requires joining the list's group.
      * Members of an event's group stay bound to the participation rules (F-13, F-15).
      */
-    public function store(ClaimSharedRosterItemRequest $request, string $token, RosterItem $item, ClaimRosterItem $claimItem): RedirectResponse
+    public function store(ClaimSharedRosterItemRequest $request, string $token, RosterItem $item, ClaimRosterItem $claimItem, StorePendingSharedClaim $pendingActions): RedirectResponse
     {
         $roster = Roster::query()->where('share_token', $token)->firstOrFail();
         abort_unless($item->roster_id === $roster->getKey(), 404);
@@ -41,14 +42,10 @@ class SharedRosterClaimController extends Controller
             return back()->with('success', __('ui.list.claim.saved'));
         }
 
-        $request->session()->put('pending_shared_claim', [
-            'roster_token' => $token,
-            'item_id' => $item->getKey(),
-            'quantity' => $quantity,
-        ]);
+        $pendingActions->queueClaim($request, $roster, $item, $quantity);
 
-        return redirect()->route('welcome')
-            ->with('success', __('ui.list.guest.pendingClaim', ['item' => $item->name]));
+        // The page opens the login listing the pending actions itself, so no flash here
+        return back();
     }
 
     /**

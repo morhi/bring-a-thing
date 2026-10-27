@@ -14,6 +14,7 @@ class SharedRosterData extends Data
     /**
      * @param  array<int, CustomFieldData>  $custom_fields
      * @param  array<int, RosterItemData>  $items
+     * @param  array<int, SharedPendingActionData>  $pending_actions
      */
     public function __construct(
         public string $token,
@@ -26,6 +27,7 @@ class SharedRosterData extends Data
         public bool $is_all_taken,
         public array $custom_fields,
         public array $items,
+        public array $pending_actions,
     ) {}
 
     /**
@@ -33,9 +35,12 @@ class SharedRosterData extends Data
      *
      * Shows names but no email addresses and no user IDs. The token and
      * the link lifetime feed the login on the same page (F-01). A
-     * logged-in viewer's own claims are marked so they can change them.
+     * logged-in viewer's own claims are marked so they can change them. A
+     * guest's pending claims and adds on this list feed the login panel.
+     *
+     * @param  list<array<string, mixed>>  $pendingActions  see StorePendingSharedClaim
      */
-    public static function fromRoster(Roster $roster, ?User $viewer = null): self
+    public static function fromRoster(Roster $roster, ?User $viewer = null, array $pendingActions = []): self
     {
         $roster->load([
             'customFields',
@@ -57,6 +62,40 @@ class SharedRosterData extends Data
             is_all_taken: $items->isNotEmpty() && $items->every(fn (RosterItemData $item) => $item->is_fully_claimed),
             custom_fields: $roster->customFields->map(fn (CustomField $field) => CustomFieldData::fromField($field))->all(),
             items: $items->all(),
+            pending_actions: self::pendingActionsOn($roster, $pendingActions),
         );
+    }
+
+    /**
+     * Name the pending actions that belong to this list, in order.
+     *
+     * A claim on an item deleted meanwhile is left out, since it cannot complete.
+     *
+     * @param  list<array<string, mixed>>  $pendingActions
+     * @return array<int, SharedPendingActionData>
+     */
+    private static function pendingActionsOn(Roster $roster, array $pendingActions): array
+    {
+        $names = [];
+
+        foreach ($pendingActions as $action) {
+            if (($action['roster_token'] ?? null) !== $roster->share_token) {
+                continue;
+            }
+
+            if (($action['kind'] ?? null) === 'add') {
+                $names[] = new SharedPendingActionData(kind: 'add', name: (string) ($action['name'] ?? ''));
+
+                continue;
+            }
+
+            $item = $roster->items->firstWhere('id', $action['item_id'] ?? null);
+
+            if ($item) {
+                $names[] = new SharedPendingActionData(kind: 'claim', name: $item->name);
+            }
+        }
+
+        return $names;
     }
 }

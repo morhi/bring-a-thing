@@ -80,7 +80,8 @@ it('F-19: stashes an unauthenticated visitor\'s item draft and their return to t
         ]);
 
     $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
-    $response->assertSessionHas('pending_shared_item.name', 'Napkins');
-    $response->assertSessionHas('pending_shared_claim.roster_token', $roster->share_token);
+    $response->assertSessionHas('pending_shared_actions.0.kind', 'add');
+    $response->assertSessionHas('pending_shared_actions.0.name', 'Napkins');
+    $response->assertSessionHas('pending_shared_roster', $roster->share_token);
     $this->assertDatabaseMissing('roster_items', ['roster_id' => $roster->id, 'name' => 'Napkins']);
 });

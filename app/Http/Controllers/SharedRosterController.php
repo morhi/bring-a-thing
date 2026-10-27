@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Data\SharedRosterData;
 use App\Models\Roster;
 use Illuminate\Http\RedirectResponse;
@@ -19,9 +20,10 @@ class SharedRosterController extends Controller
      * member of an event's group who is no participant gets "Not found",
      * so the link is no way around the participation rules (F-13). An
      * unknown, regenerated or disabled token shows the note that the link
-     * is no longer valid, still with a 404 status.
+     * is no longer valid, still with a 404 status. A guest sees the claims
+     * and adds that wait for their login.
      */
-    public function show(Request $request, string $token): Response|RedirectResponse|SymfonyResponse
+    public function show(Request $request, string $token, StorePendingSharedClaim $pendingActions): Response|RedirectResponse|SymfonyResponse
     {
         $roster = Roster::query()->where('share_token', $token)->first();
 
@@ -38,7 +40,7 @@ class SharedRosterController extends Controller
         abort_if($user && $roster->excludesShareLinkVisitor($user), 404);
 
         return Inertia::render('Shared/RosterShow', [
-            'roster' => SharedRosterData::fromRoster($roster, $user),
+            'roster' => SharedRosterData::fromRoster($roster, $user, $user ? [] : $pendingActions->actions($request)),
         ]);
     }
 }

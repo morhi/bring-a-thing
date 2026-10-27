@@ -8,6 +8,7 @@ use App\Models\RosterItem;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(fn () => $this->withoutVite());
 
@@ -90,21 +91,28 @@ it('lets an already authenticated guest claim an item directly', function () {
     Event::assertDispatched(ClaimChanged::class);
 });
 
-it('stashes a guest claim intent and sends an unauthenticated visitor to log in', function () {
+it('stashes a guest claim intent and keeps an unauthenticated visitor on the shared list to log in', function () {
     $owner = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id]);
     $roster->enableSharing();
-    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 10]);
+    $item = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 10, 'name' => 'Chairs']);
 
-    $response = $this->post(route('shared-rosters.items.claim.store', [$roster->share_token, $item]), ['quantity' => 4]);
+    $response = $this->from(route('shared-rosters.show', $roster->share_token))
+        ->post(route('shared-rosters.items.claim.store', [$roster->share_token, $item]), ['quantity' => 4]);
 
-    $response->assertRedirect(route('welcome'));
-    $response->assertSessionHas('pending_shared_claim', [
+    $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
+    $response->assertSessionHas('pending_shared_actions', [[
+        'kind' => 'claim',
         'roster_token' => $roster->share_token,
         'item_id' => $item->id,
         'quantity' => 4.0,
-    ]);
+    ]]);
     $this->assertDatabaseMissing('roster_item_claims', ['roster_item_id' => $item->id]);
+
+    $this->get(route('shared-rosters.show', $roster->share_token))
+        ->assertInertia(fn ($page) => $page
+            ->where('roster.pending_actions', [['kind' => 'claim', 'name' => 'Chairs']])
+        );
 });
 
 it('returns not found when the item does not belong to the shared roster', function () {
@@ -212,4 +220,109 @@ it('F-19: does not let a guest remove claims through a share link', function () 
 
     $this->delete(route('shared-rosters.items.claim.destroy', [$roster->share_token, $item]))->assertNotFound();
     $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $item->id]);
+});
+
+/**
+ * Log the given guest in through a magic link, as if they followed it in the same browser.
+ */
+function followMagicLink(User $guest): TestResponse
+{
+    return test()->get(URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $guest->id]));
+}
+
+it('F-19: completes a guest claim and a later item add after the login', function () {
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
+    $roster->enableSharing();
+    $tent = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null, 'name' => 'Tent']);
+    $from = route('shared-rosters.show', $roster->share_token);
+
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $tent]));
+    $this->from($from)->post(route('shared-rosters.items.store', $roster->share_token), ['name' => 'Salad']);
+
+    $this->get($from)->assertInertia(fn ($page) => $page->where('roster.pending_actions', [
+        ['kind' => 'claim', 'name' => 'Tent'],
+        ['kind' => 'add', 'name' => 'Salad'],
+    ]));
+
+    $guest = User::factory()->create();
+
+    followMagicLink($guest)
+        ->assertRedirect($from)
+        ->assertSessionHas('success', 'Done after the login: Tent claimed, Salad added');
+
+    $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $tent->id, 'user_id' => $guest->id]);
+    $this->assertDatabaseHas('roster_items', ['roster_id' => $roster->id, 'name' => 'Salad']);
+});
+
+it('F-19: completes a guest item add and a later claim after the password login', function () {
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
+    $roster->enableSharing();
+    $chairs = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 6, 'name' => 'Chairs']);
+    $from = route('shared-rosters.show', $roster->share_token);
+
+    $this->from($from)->post(route('shared-rosters.items.store', $roster->share_token), ['name' => 'Salad']);
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $chairs]), ['quantity' => 2]);
+
+    $guest = User::factory()->create(['password' => 'secret-password']);
+
+    $this->post(route('login.password'), [
+        'email' => $guest->email,
+        'password' => 'secret-password',
+        'pending_claim_roster_token' => $roster->share_token,
+    ])
+        ->assertRedirect($from)
+        ->assertSessionHas('success', 'Done after the login: Salad added, Chairs claimed');
+
+    $this->assertDatabaseHas('roster_items', ['roster_id' => $roster->id, 'name' => 'Salad']);
+    expect((float) $chairs->claims()->where('user_id', $guest->id)->value('quantity'))->toBe(2.0);
+});
+
+it('F-19: completes two guest claims after the login and merges a repeated claim of the same item', function () {
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id]);
+    $roster->enableSharing();
+    $chairs = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 6, 'name' => 'Chairs']);
+    $tent = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => null, 'name' => 'Tent']);
+    $from = route('shared-rosters.show', $roster->share_token);
+
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $chairs]), ['quantity' => 2]);
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $tent]));
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $chairs]), ['quantity' => 3]);
+
+    expect(session('pending_shared_actions'))->toHaveCount(2);
+
+    $guest = User::factory()->create();
+
+    followMagicLink($guest)
+        ->assertRedirect($from)
+        ->assertSessionHas('success', 'Done after the login: Chairs claimed, Tent claimed');
+
+    expect((float) $chairs->claims()->where('user_id', $guest->id)->value('quantity'))->toBe(3.0);
+    $this->assertDatabaseHas('roster_item_claims', ['roster_item_id' => $tent->id, 'user_id' => $guest->id]);
+});
+
+it('F-19: still adds the guest item when the pending claim fails because the amount is gone', function () {
+    $owner = User::factory()->create();
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
+    $roster->enableSharing();
+    $chairs = RosterItem::factory()->create(['roster_id' => $roster->id, 'quantity' => 2, 'name' => 'Chairs']);
+    $from = route('shared-rosters.show', $roster->share_token);
+
+    $this->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $chairs]), ['quantity' => 2]);
+    $this->from($from)->post(route('shared-rosters.items.store', $roster->share_token), ['name' => 'Salad']);
+
+    // Someone else takes the whole amount before the guest follows the link
+    $chairs->claims()->create(['user_id' => $owner->id, 'quantity' => 2]);
+    $guest = User::factory()->create();
+
+    followMagicLink($guest)
+        ->assertRedirect($from)
+        ->assertSessionHas('success', 'Done after the login: Salad added')
+        ->assertSessionHas('error', 'Your claim of Chairs did not go through: Nothing is left to claim.');
+
+    $this->assertDatabaseMissing('roster_item_claims', ['roster_item_id' => $chairs->id, 'user_id' => $guest->id]);
+    $this->assertDatabaseHas('roster_items', ['roster_id' => $roster->id, 'name' => 'Salad']);
+    expect(session('pending_shared_actions'))->toBeNull();
 });

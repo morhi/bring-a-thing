@@ -51,7 +51,7 @@ defineOptions({ layout: WebsiteLayout });
  * Shared list for people with the share link (F-19).
  *
  * Guests see the list without other people's email addresses; claiming or adding
- * opens the login on the same page, and the pending claim or item draft completes after it.
+ * opens the login on the same page, and all pending claims and item drafts complete after it.
  */
 const props = defineProps<{ roster: App.Data.SharedRosterData }>();
 
@@ -89,37 +89,26 @@ function claimsOf(item: App.Data.RosterItemData): ClaimEntry[] {
     }));
 }
 
-// In-place login (F-01, F-19): the pending action rides along and completes after the login
+// In-place login (F-01, F-19): claims and adds wait in the session and complete in order after the login
 
-type Pending =
-    | { kind: 'claim'; item: App.Data.RosterItemData; quantity: number | null }
-    | { kind: 'add'; name: string }
-    | null;
-const loginOpen = ref(false);
-const pending = ref<Pending>(null);
+const pendingActions = computed(() => props.roster.pending_actions);
+const loginOpen = ref(pendingActions.value.length > 0);
 const loginPanel = useTemplateRef<HTMLElement>('loginPanel');
 
+// The actions already wait in the session, so the login only carries the way back to this list
 const pendingClaim = computed<LoginPendingClaim>(() => ({
     rosterToken: props.roster.token,
-    itemId: pending.value?.kind === 'claim' ? pending.value.item.id : null,
-    quantity: pending.value?.kind === 'claim' ? pending.value.quantity : null,
+    itemId: null,
+    quantity: null,
 }));
 
-// The login form reads the pending claim once, so a new pending action needs a fresh form
-const loginKey = computed(() => JSON.stringify(pendingClaim.value));
+function pendingLabel(action: App.Data.SharedPendingActionData): string {
+    return action.kind === 'add'
+        ? t('list.guest.pendingAdd', { item: action.name })
+        : t('list.guest.pendingClaim', { item: action.name });
+}
 
-const pendingLabel = computed(() => {
-    if (pending.value?.kind === 'claim') {
-        return t('list.guest.pendingClaim', { item: pending.value.item.name });
-    }
-
-    return pending.value?.kind === 'add'
-        ? t('list.guest.pendingAdd', { item: pending.value.name })
-        : '';
-});
-
-function openLogin(next: Pending = null): void {
-    pending.value = next;
+function openLogin(): void {
     loginOpen.value = true;
     nextTick(() => {
         loginPanel.value?.scrollIntoView({
@@ -136,12 +125,6 @@ const claimingItem = ref<number | null>(null);
 const claimErrors = ref<Record<number, string>>({});
 
 function claim(item: App.Data.RosterItemData, request: ClaimRequest): void {
-    if (!loggedIn.value) {
-        openLogin({ kind: 'claim', item, quantity: request.quantity });
-
-        return;
-    }
-
     claimingItem.value = item.id;
     claimErrors.value = { ...claimErrors.value, [item.id]: '' };
 
@@ -150,6 +133,11 @@ function claim(item: App.Data.RosterItemData, request: ClaimRequest): void {
         request.quantity === null ? {} : { quantity: request.quantity },
         {
             preserveScroll: true,
+            onSuccess: () => {
+                if (!loggedIn.value) {
+                    openLogin();
+                }
+            },
             onError: (errors) => {
                 const message = Object.values(errors)[0] ?? '';
 
@@ -212,7 +200,7 @@ function saveItem(): void {
                 addOpen.value = false;
 
                 if (!loggedIn.value) {
-                    openLogin({ kind: 'add', name: addForm.name });
+                    openLogin();
                 }
             },
         });
@@ -331,7 +319,7 @@ const inputClass =
             <div class="flex items-start justify-between gap-3">
                 <h2 id="guest-login-title" class="text-h2">
                     {{
-                        pending
+                        pendingActions.length
                             ? t('list.guest.loginToContinue')
                             : t('welcome.login.title')
                     }}
@@ -346,9 +334,18 @@ const inputClass =
                     <X />
                 </Button>
             </div>
-            <p v-if="pendingLabel" class="text-fg-muted">{{ pendingLabel }}</p>
+            <div
+                v-if="pendingActions.length"
+                class="text-fg-muted flex flex-col gap-1.5"
+            >
+                <p>{{ t('list.guest.pendingTitle') }}</p>
+                <ol class="list-decimal pl-5">
+                    <li v-for="(action, index) in pendingActions" :key="index">
+                        {{ pendingLabel(action) }}
+                    </li>
+                </ol>
+            </div>
             <LoginForm
-                :key="loginKey"
                 :expires-in-minutes="roster.link_expires_in_minutes"
                 :pending-claim="pendingClaim"
                 id-prefix="guest-login"
