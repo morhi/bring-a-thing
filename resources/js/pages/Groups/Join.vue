@@ -68,12 +68,27 @@ const buttonClass = 'h-(--control-height) w-full px-4';
 </script>
 
 <template>
-    <Head :title="join ? t('join.title', { group: join.group_name }) : t('group.notFound')" />
+    <Head
+        :title="
+            join
+                ? t('join.title', { group: join.group_name })
+                : t('group.notFound')
+        "
+    />
 
-    <div v-if="!join" class="flex max-w-[60ch] flex-col gap-4 py-2 md:py-6" data-feature="F-04">
+    <div
+        v-if="!join"
+        class="flex max-w-[60ch] flex-col gap-4 py-2 md:py-6"
+        data-feature="F-04"
+    >
         <h1 class="text-3xl">{{ t('group.notFound') }}</h1>
         <p class="text-fg-muted text-lg">{{ t('join.notFoundText') }}</p>
-        <Button as-child variant="secondary" size="lg" class="h-(--control-height) w-fit px-4">
+        <Button
+            as-child
+            variant="secondary"
+            size="lg"
+            class="h-(--control-height) w-fit px-4"
+        >
             <Link :href="loggedIn ? dashboard().url : welcome().url">{{
                 loggedIn ? t('nav.backToDashboard') : t('join.toStart')
             }}</Link>
@@ -84,12 +99,19 @@ const buttonClass = 'h-(--control-height) w-full px-4';
         v-else
         class="grid items-start gap-8 py-2 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-14 md:py-6"
     >
-        <div class="flex min-w-0 flex-col items-start gap-3.5" data-feature="F-04">
+        <div
+            class="flex min-w-0 flex-col items-start gap-3.5"
+            data-feature="F-04"
+        >
             <h1 class="text-3xl [overflow-wrap:anywhere] md:text-4xl">
                 {{ t('join.title', { group: join.group_name }) }}
             </h1>
             <p class="text-fg-muted max-w-[52ch] text-lg">
-                {{ t(join.locked ? 'join.lede.closed' : 'join.lede.open', { group: join.group_name }) }}
+                {{
+                    t(join.locked ? 'join.lede.closed' : 'join.lede.open', {
+                        group: join.group_name,
+                    })
+                }}
             </p>
             <div class="text-fg-muted flex items-center gap-2.5 text-[15px]">
                 <AvatarStack :people="join.members" :max="5" />
@@ -97,40 +119,90 @@ const buttonClass = 'h-(--control-height) w-full px-4';
             </div>
         </div>
 
-        <div class="box-float flex min-w-0 flex-col gap-(--space-stack) p-6 sm:p-7" data-feature="F-01">
+        <div
+            class="box-float flex min-w-0 flex-col gap-(--space-stack) p-6 sm:p-7"
+            data-feature="F-01"
+        >
             <template v-if="join.is_authenticated && join.needs_email">
                 <p class="text-fg-muted">
-                    {{ join.has_email ? t('join.loginFirst') : t('join.addEmailFirst') }}
+                    {{
+                        join.has_email
+                            ? t('join.loginFirst')
+                            : t('join.addEmailFirst')
+                    }}
                 </p>
                 <Button as-child size="lg" :class="buttonClass">
-                    <Link :href="editSettings().url">{{ t('join.toSettings') }}</Link>
+                    <Link :href="editSettings().url">{{
+                        t('join.toSettings')
+                    }}</Link>
                 </Button>
             </template>
 
-            <form v-else-if="join.is_authenticated" novalidate class="flex flex-col gap-(--space-stack)" @submit.prevent="submit">
+            <form
+                v-else-if="join.is_authenticated"
+                novalidate
+                class="flex flex-col gap-(--space-stack)"
+                @submit.prevent="submit"
+            >
                 <p class="text-fg-muted">
-                    {{ userName ? t('join.joinAs', { name: userName }) : t('join.joinOneClick') }}
+                    {{
+                        userName
+                            ? t('join.joinAs', { name: userName })
+                            : t('join.joinOneClick')
+                    }}
                 </p>
-                <p v-if="form.errors.email" class="text-danger text-sm font-medium" role="alert">
+                <p
+                    v-if="form.errors.email"
+                    class="text-danger text-sm font-medium"
+                    role="alert"
+                >
                     {{ form.errors.email }}
                 </p>
-                <Button type="submit" size="lg" :class="buttonClass" :disabled="form.processing">
+                <Button
+                    type="submit"
+                    size="lg"
+                    :class="buttonClass"
+                    :disabled="form.processing"
+                >
                     <Check aria-hidden="true" /> {{ t('join.button') }}
                 </Button>
             </form>
 
             <div v-else-if="sentTo" class="flex flex-col gap-(--space-stack)">
-                <div class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-(--radius-md) p-4" role="status">
-                    <strong class="font-display text-[17px]">{{ t('welcome.login.sentTitle') }}</strong>
-                    <span>{{ t('welcome.login.sentText', { email: sentTo, minutes: join.link_expires_in_minutes }) }}</span>
-                    <span>{{ t('join.sentNote', { group: join.group_name }) }}</span>
+                <div
+                    class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-(--radius-md) p-4"
+                    role="status"
+                >
+                    <strong class="font-display text-[17px]">{{
+                        t('welcome.login.sentTitle')
+                    }}</strong>
+                    <span>{{
+                        t('welcome.login.sentText', {
+                            email: sentTo,
+                            minutes: join.link_expires_in_minutes,
+                        })
+                    }}</span>
+                    <span>{{
+                        t('join.sentNote', { group: join.group_name })
+                    }}</span>
                 </div>
-                <Button type="button" variant="ghost" size="lg" :class="buttonClass" @click="useOtherEmail">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    :class="buttonClass"
+                    @click="useOtherEmail"
+                >
                     {{ t('welcome.login.again') }}
                 </Button>
             </div>
 
-            <form v-else novalidate class="flex flex-col gap-(--space-stack)" @submit.prevent="submit">
+            <form
+                v-else
+                novalidate
+                class="flex flex-col gap-(--space-stack)"
+                @submit.prevent="submit"
+            >
                 <FormField
                     v-if="join.locked"
                     :label="t('welcome.login.email')"
@@ -174,9 +246,15 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                         />
                     </template>
                 </FormField>
-                <Button type="submit" size="lg" :class="buttonClass" :disabled="form.processing">
+                <Button
+                    type="submit"
+                    size="lg"
+                    :class="buttonClass"
+                    :disabled="form.processing"
+                >
                     <template v-if="join.locked">
-                        <Mail aria-hidden="true" /> {{ t('welcome.login.sendLink') }}
+                        <Mail aria-hidden="true" />
+                        {{ t('welcome.login.sendLink') }}
                     </template>
                     <template v-else>
                         <Check aria-hidden="true" /> {{ t('join.button') }}

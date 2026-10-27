@@ -186,7 +186,9 @@ function applyTimeToAll(source: OptionDraft): void {
                     :class="
                         cn(
                             'text-fg-muted flex items-center gap-1.5 text-xs whitespace-nowrap',
-                            mode === 'slots' ? 'max-md:hidden' : 'max-sm:hidden',
+                            mode === 'slots'
+                                ? 'max-md:hidden'
+                                : 'max-sm:hidden',
                         )
                     "
                 >
@@ -199,14 +201,21 @@ function applyTimeToAll(source: OptionDraft): void {
                 </span>
                 <span
                     v-else
-                    :class="mode === 'slots' ? 'max-md:hidden' : 'max-sm:hidden'"
+                    :class="
+                        mode === 'slots' ? 'max-md:hidden' : 'max-sm:hidden'
+                    "
                     aria-hidden="true"
                 />
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    :class="cn('justify-self-end', mode === 'slots' && 'max-md:order-1')"
+                    :class="
+                        cn(
+                            'justify-self-end',
+                            mode === 'slots' && 'max-md:order-1',
+                        )
+                    "
                     :disabled="disabled || !!option.fixed"
                     :aria-label="`${t('newPoll.removeOption')}: ${describeOption(option, locale)}`"
                     @click="remove(index)"

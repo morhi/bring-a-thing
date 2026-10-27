@@ -22,7 +22,12 @@ const parsed = computed(() => {
 });
 
 const day = computed(() => parsed.value.getUTCDate());
-const month = computed(() => parsed.value.toLocaleDateString(locale.value, { month: 'short', timeZone: 'UTC' }));
+const month = computed(() =>
+    parsed.value.toLocaleDateString(locale.value, {
+        month: 'short',
+        timeZone: 'UTC',
+    }),
+);
 </script>
 
 <template>
@@ -32,11 +37,29 @@ const month = computed(() => parsed.value.toLocaleDateString(locale.value, { mon
             cn(
                 'font-display flex flex-none flex-col items-center justify-center rounded-sm leading-none',
                 size === 'lg' ? 'w-16 px-1 py-2.5' : 'w-14 px-1 py-2',
-                fixed ? 'bg-primary text-primary-fg' : 'bg-surface-muted text-fg',
+                fixed
+                    ? 'bg-primary text-primary-fg'
+                    : 'bg-surface-muted text-fg',
             )
         "
     >
-        <span :class="cn('font-[720] tabular-nums', size === 'lg' ? 'text-[28px]' : 'text-2xl')">{{ day }}</span>
-        <span :class="cn('mt-1 text-xs font-semibold', fixed ? 'opacity-85' : 'text-fg-muted')">{{ month }}</span>
+        <span
+            :class="
+                cn(
+                    'font-[720] tabular-nums',
+                    size === 'lg' ? 'text-[28px]' : 'text-2xl',
+                )
+            "
+            >{{ day }}</span
+        >
+        <span
+            :class="
+                cn(
+                    'mt-1 text-xs font-semibold',
+                    fixed ? 'opacity-85' : 'text-fg-muted',
+                )
+            "
+            >{{ month }}</span
+        >
     </div>
 </template>

@@ -67,6 +67,8 @@ export default defineConfig({
             'resources/views/mail/*',
             '.ddev/config.yaml',
             '**/*.md',
+            'docs/**',
+            'resources/js/types/generated.d.ts',
         ],
         sortTailwindcss: {
             functions: ['clsx', 'cn', 'cva'],

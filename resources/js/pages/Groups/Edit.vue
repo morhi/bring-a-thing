@@ -45,7 +45,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 
@@ -67,7 +70,9 @@ function personName(member: App.Data.GroupMemberData): string {
 }
 
 function showRequestError(errors: Record<string, string>): void {
-    toast.error(Object.values(errors)[0] ?? t('group.requestFailed'), { duration: 6000 });
+    toast.error(Object.values(errors)[0] ?? t('group.requestFailed'), {
+        duration: 6000,
+    });
 }
 
 const visitOptions = { preserveScroll: true, onError: showRequestError };
@@ -119,7 +124,10 @@ async function copyLink(): Promise<void> {
     try {
         await navigator.clipboard.writeText(url);
     } catch {
-        toast.error(t('group.link.copyFailed'), { description: url, duration: 10000 });
+        toast.error(t('group.link.copyFailed'), {
+            description: url,
+            duration: 10000,
+        });
 
         return;
     }
@@ -309,13 +317,18 @@ const buttonClass = 'h-(--control-height) px-4';
                                 autocomplete="off"
                                 :aria-describedby="describedBy"
                                 :aria-invalid="invalid || undefined"
-                                :class="[inputClass, 'min-w-0 flex-[1_1_220px]']"
+                                :class="[
+                                    inputClass,
+                                    'min-w-0 flex-[1_1_220px]',
+                                ]"
                             />
                             <Button
                                 type="submit"
                                 size="lg"
                                 :class="buttonClass"
-                                :disabled="nameForm.processing || !nameForm.isDirty"
+                                :disabled="
+                                    nameForm.processing || !nameForm.isDirty
+                                "
                             >
                                 {{ t('groupSettings.saveName') }}
                             </Button>
@@ -350,7 +363,10 @@ const buttonClass = 'h-(--control-height) px-4';
                 v-if="page.invite_link.url"
                 class="box flex flex-col gap-(--space-stack) p-5 sm:p-6"
             >
-                <FormField :label="t('groupSettings.link.url')" control="gs-link-url">
+                <FormField
+                    :label="t('groupSettings.link.url')"
+                    control="gs-link-url"
+                >
                     <div class="flex flex-wrap gap-2">
                         <Input
                             id="gs-link-url"
@@ -360,7 +376,9 @@ const buttonClass = 'h-(--control-height) px-4';
                                 inputClass,
                                 'bg-surface-muted text-fg-muted min-w-0 flex-[1_1_220px] text-ellipsis',
                             ]"
-                            @focus="($event.target as HTMLInputElement).select()"
+                            @focus="
+                                ($event.target as HTMLInputElement).select()
+                            "
                         />
                         <Button
                             type="button"
@@ -479,9 +497,13 @@ const buttonClass = 'h-(--control-height) px-4';
                         <label for="gs-set-status" class="font-semibold">{{
                             t('groupSettings.options.setStatus')
                         }}</label>
-                        <span id="gs-set-status-hint" class="text-fg-muted text-sm">{{
-                            t('groupSettings.options.setStatusHint')
-                        }}</span>
+                        <span
+                            id="gs-set-status-hint"
+                            class="text-fg-muted text-sm"
+                            >{{
+                                t('groupSettings.options.setStatusHint')
+                            }}</span
+                        >
                     </span>
                 </div>
             </div>
@@ -493,7 +515,10 @@ const buttonClass = 'h-(--control-height) px-4';
             data-feature="F-03"
         >
             <div class="flex flex-col gap-1">
-                <h2 id="gs-members-title" class="flex items-center gap-2.5 text-xl">
+                <h2
+                    id="gs-members-title"
+                    class="flex items-center gap-2.5 text-xl"
+                >
                     {{ t('group.members') }}
                     <span
                         class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
@@ -573,7 +598,8 @@ const buttonClass = 'h-(--control-height) px-4';
                                     @change="
                                         setRole(
                                             member,
-                                            ($event.target as HTMLSelectElement).value,
+                                            ($event.target as HTMLSelectElement)
+                                                .value,
                                         )
                                     "
                                 >
@@ -643,7 +669,7 @@ const buttonClass = 'h-(--control-height) px-4';
                 {{ t('groupSettings.danger') }}
             </h2>
             <div
-                class="box flex flex-col items-start gap-3 border-danger/45! p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:gap-6"
+                class="box border-danger/45! flex flex-col items-start gap-3 p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:gap-6"
             >
                 <p class="text-fg-muted max-w-md">
                     {{ t('groupSettings.deleteHint') }}
@@ -663,7 +689,9 @@ const buttonClass = 'h-(--control-height) px-4';
         <AlertDialog v-model:open="confirmOpen">
             <AlertDialogContent v-if="confirmation">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{{ confirmation.title }}</AlertDialogTitle>
+                    <AlertDialogTitle>{{
+                        confirmation.title
+                    }}</AlertDialogTitle>
                     <AlertDialogDescription>{{
                         confirmation.text
                     }}</AlertDialogDescription>
@@ -678,7 +706,9 @@ const buttonClass = 'h-(--control-height) px-4';
                     </li>
                 </ul>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{{ t('dialog.cancel') }}</AlertDialogCancel>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
                     <AlertDialogAction
                         variant="destructive"
                         @click="confirmation.run()"

@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref } from 'vue';
 import type {
     ClaimEntry,
     ClaimId,
     ClaimRequest,
-} from "@/components/app/claim-controls.vue";
-import CommentThread from "@/components/app/comment-thread.vue";
-import type { ThreadComment } from "@/components/app/comment-thread.vue";
-import ItemRow from "@/components/app/item-row.vue";
-import { useI18n } from "@/composables/use-i18n";
+} from '@/components/app/claim-controls.vue';
+import CommentThread from '@/components/app/comment-thread.vue';
+import type { ThreadComment } from '@/components/app/comment-thread.vue';
+import ItemRow from '@/components/app/item-row.vue';
+import { useI18n } from '@/composables/use-i18n';
 
 const { t, locale } = useI18n();
 
 const attendanceDate = computed(() =>
-    new Intl.DateTimeFormat(locale.value === "de" ? "de-CH" : "en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
+    new Intl.DateTimeFormat(locale.value === 'de' ? 'de-CH' : 'en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
     }).format(new Date(2026, 10, 14)),
 );
 
@@ -24,7 +24,7 @@ const others: ClaimEntry[] = [
     {
         id: 1,
         accountId: 11,
-        name: "Anna Berger",
+        name: 'Anna Berger',
         quantity: 6,
         isOwn: false,
         canRemove: true,
@@ -32,7 +32,7 @@ const others: ClaimEntry[] = [
     {
         id: 2,
         accountId: 12,
-        name: "Ben Carter",
+        name: 'Ben Carter',
         quantity: 4,
         isOwn: false,
         canRemove: true,
@@ -42,9 +42,9 @@ const others: ClaimEntry[] = [
 const comments: ThreadComment[] = [
     {
         id: 1,
-        authorName: "Anna Berger",
-        createdAt: "2026-10-24T18:05:00+02:00",
-        body: "Vegan, please.",
+        authorName: 'Anna Berger',
+        createdAt: '2026-10-24T18:05:00+02:00',
+        body: 'Vegan, please.',
         canDelete: true,
     },
 ];
@@ -53,14 +53,14 @@ const liveClaims = ref<ClaimEntry[]>([
     {
         id: 10,
         accountId: 11,
-        name: "Anna Berger",
+        name: 'Anna Berger',
         quantity: 1,
         isOwn: false,
         canRemove: false,
     },
 ]);
 const commentsOpen = ref(true);
-const draft = ref("");
+const draft = ref('');
 let nextId = 100;
 
 function onClaim(request: ClaimRequest) {
@@ -69,7 +69,7 @@ function onClaim(request: ClaimRequest) {
         {
             id: nextId++,
             accountId: 10,
-            name: "Maurice Hildebrandt",
+            name: 'Maurice Hildebrandt',
             quantity: request.quantity,
             isOwn: true,
             canRemove: true,

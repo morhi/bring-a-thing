@@ -7,13 +7,29 @@ import { Button } from '@/components/ui/button';
 <template>
     <section class="flex flex-col gap-4">
         <h2 id="empty-state" class="text-xl">EmptyState</h2>
-        <div v-for="mode in ['', 'dark']" :key="mode" :class="mode" class="flex flex-col gap-4 rounded-2xl bg-surface-raised p-5 text-fg">
-            <p class="text-sm font-semibold text-fg-muted">{{ mode || 'light' }}</p>
+        <div
+            v-for="mode in ['', 'dark']"
+            :key="mode"
+            :class="mode"
+            class="bg-surface-raised text-fg flex flex-col gap-4 rounded-2xl p-5"
+        >
+            <p class="text-fg-muted text-sm font-semibold">
+                {{ mode || 'light' }}
+            </p>
             <EmptyState title="Title only" />
-            <EmptyState title="No polls yet" text="Propose a few dates and let the group answer." />
-            <EmptyState :icon="CalendarDays" title="With icon and action" text="An event is a fixed date. Create one directly or fix it from a poll.">
+            <EmptyState
+                title="No polls yet"
+                text="Propose a few dates and let the group answer."
+            />
+            <EmptyState
+                :icon="CalendarDays"
+                title="With icon and action"
+                text="An event is a fixed date. Create one directly or fix it from a poll."
+            >
                 <Button type="button">Create event</Button>
-                <Button type="button" variant="outline">Secondary action</Button>
+                <Button type="button" variant="outline"
+                    >Secondary action</Button
+                >
             </EmptyState>
             <EmptyState
                 :icon="Users"

@@ -23,10 +23,21 @@ const cases = [
 <template>
     <section class="flex flex-col gap-4">
         <h2 id="avatar-stack" class="text-xl">AvatarStack</h2>
-        <div v-for="mode in ['', 'dark']" :key="mode" :class="mode" class="rounded-2xl bg-surface-raised p-5 text-fg">
-            <p class="mb-3 text-sm font-semibold text-fg-muted">{{ mode || 'light' }}</p>
-            <div v-for="item in cases" :key="item.label" class="mb-3 flex flex-wrap items-center gap-3">
-                <span class="w-48 text-sm text-fg-muted">{{ item.label }}</span>
+        <div
+            v-for="mode in ['', 'dark']"
+            :key="mode"
+            :class="mode"
+            class="bg-surface-raised text-fg rounded-2xl p-5"
+        >
+            <p class="text-fg-muted mb-3 text-sm font-semibold">
+                {{ mode || 'light' }}
+            </p>
+            <div
+                v-for="item in cases"
+                :key="item.label"
+                class="mb-3 flex flex-wrap items-center gap-3"
+            >
+                <span class="text-fg-muted w-48 text-sm">{{ item.label }}</span>
                 <AvatarStack :people="item.people" :max="item.max" />
             </div>
         </div>

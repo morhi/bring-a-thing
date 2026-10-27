@@ -325,9 +325,13 @@ const rowClass =
             class="border-border flex flex-wrap items-center gap-2 border-t px-4 py-3 text-sm"
         >
             <span class="text-fg-muted">{{ t('notif.loadFailed') }}</span>
-            <Button type="button" variant="ghost" size="sm" @click="emit('retry')">{{
-                t('notif.retry')
-            }}</Button>
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                @click="emit('retry')"
+                >{{ t('notif.retry') }}</Button
+            >
         </div>
 
         <div

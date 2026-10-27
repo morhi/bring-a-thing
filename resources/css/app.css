@@ -363,7 +363,10 @@
     );
 
     @media (min-width: 720px) {
-        padding-left: max(var(--content-gutter), env(safe-area-inset-left, 0px));
+        padding-left: max(
+            var(--content-gutter),
+            env(safe-area-inset-left, 0px)
+        );
         padding-right: max(
             var(--content-gutter),
             env(safe-area-inset-right, 0px)

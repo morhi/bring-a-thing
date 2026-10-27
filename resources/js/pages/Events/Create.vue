@@ -110,7 +110,9 @@ const buttonClass = 'h-(--control-height) px-4';
                 </template>
             </FormField>
 
-            <div class="grid gap-(--space-stack) sm:grid-cols-2 sm:max-w-(--field-max-width)">
+            <div
+                class="grid gap-(--space-stack) sm:max-w-(--field-max-width) sm:grid-cols-2"
+            >
                 <FormField
                     :label="t('newEvent.date')"
                     control="event-date"
@@ -157,7 +159,9 @@ const buttonClass = 'h-(--control-height) px-4';
                             :min="eventForm.date"
                             :described-by="describedBy"
                             :invalid="invalid"
-                            @update:model-value="eventForm.clearErrors('end_date')"
+                            @update:model-value="
+                                eventForm.clearErrors('end_date')
+                            "
                         />
                     </template>
                 </FormField>
@@ -209,7 +213,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         :placeholder="t('newEvent.descriptionPlaceholder')"
                         :aria-describedby="describedBy"
                         :aria-invalid="invalid || undefined"
-                        class="bg-control border-control-border hover:border-fg-soft focus-visible:border-primary-ring placeholder:text-fg-soft max-w-(--field-max-width) min-h-24 rounded-(--control-radius) px-3.5 py-2.5 text-[15px]"
+                        class="bg-control border-control-border hover:border-fg-soft focus-visible:border-primary-ring placeholder:text-fg-soft min-h-24 max-w-(--field-max-width) rounded-(--control-radius) px-3.5 py-2.5 text-[15px]"
                     />
                 </template>
             </FormField>
@@ -230,7 +234,9 @@ const buttonClass = 'h-(--control-height) px-4';
             >
                 <Users class="size-6 flex-none" aria-hidden="true" />
                 <b class="font-semibold">{{
-                    t('newEvent.audience', { n: Math.max(form.member_count - 1, 0) })
+                    t('newEvent.audience', {
+                        n: Math.max(form.member_count - 1, 0),
+                    })
                 }}</b>
             </div>
         </form>

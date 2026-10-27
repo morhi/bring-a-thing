@@ -59,7 +59,12 @@ const closedOpen = ref(false);
 // Closed and fixed polls collapse behind one toggle below the open ones
 const pollSections = computed(() => [
     { id: 'open-polls', closed: false, visible: true, polls: openPolls.value },
-    { id: 'closed-polls', closed: true, visible: closedOpen.value, polls: closedPolls.value },
+    {
+        id: 'closed-polls',
+        closed: true,
+        visible: closedOpen.value,
+        polls: closedPolls.value,
+    },
 ]);
 const upcomingEvents = computed(() =>
     props.page.events.filter((event) => !event.is_past),
@@ -144,9 +149,7 @@ const inviteError = computed(() => {
         name.startsWith('invites'),
     );
 
-    return key
-        ? (inviteForm.errors as Record<string, string>)[key]
-        : null;
+    return key ? (inviteForm.errors as Record<string, string>)[key] : null;
 });
 const inviteField = ref<InstanceType<typeof InviteField> | null>(null);
 
@@ -181,14 +184,19 @@ function createLink(): void {
                 );
             },
             onError: (errors) => {
-                toast.error(Object.values(errors)[0] ?? t('group.link.copyFailed'));
+                toast.error(
+                    Object.values(errors)[0] ?? t('group.link.copyFailed'),
+                );
             },
         },
     );
 }
 
 function copyFailed(url: string): void {
-    toast.error(t('group.link.copyFailed'), { description: url, duration: 10000 });
+    toast.error(t('group.link.copyFailed'), {
+        description: url,
+        duration: 10000,
+    });
 }
 
 const buttonClass = 'h-(--control-height) px-4';
@@ -201,7 +209,10 @@ const rowClass =
 
     <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-[18px]" data-feature="F-03">
-            <Link :href="dashboard().url" class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline">
+            <Link
+                :href="dashboard().url"
+                class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline"
+            >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('nav.backToDashboard') }}
             </Link>
@@ -254,7 +265,12 @@ const rowClass =
                 </Button>
             </div>
             <div class="flex flex-wrap gap-2.5">
-                <Button as-child size="lg" :class="buttonClass" data-feature="F-06">
+                <Button
+                    as-child
+                    size="lg"
+                    :class="buttonClass"
+                    data-feature="F-06"
+                >
                     <Link :href="createPoll(page.slug).url">
                         <Vote aria-hidden="true" /> {{ t('group.new.poll') }}
                     </Link>
@@ -278,7 +294,9 @@ const rowClass =
                     :class="buttonClass"
                     data-feature="F-13"
                 >
-                    <Link :href="createList({ query: { group: page.slug } }).url">
+                    <Link
+                        :href="createList({ query: { group: page.slug } }).url"
+                    >
                         <ListChecks aria-hidden="true" />
                         {{ t('group.new.list') }}
                     </Link>
@@ -329,7 +347,10 @@ const rowClass =
                     aria-labelledby="polls-title"
                     data-feature="F-06"
                 >
-                    <h2 id="polls-title" class="flex items-center gap-2.5 text-xl">
+                    <h2
+                        id="polls-title"
+                        class="flex items-center gap-2.5 text-xl"
+                    >
                         {{ t('group.polls') }}
                         <span
                             v-if="page.polls.length"
@@ -367,7 +388,10 @@ const rowClass =
                                 :id="section.id"
                                 class="flex flex-col gap-2.5"
                             >
-                                <li v-for="poll in section.polls" :key="poll.slug">
+                                <li
+                                    v-for="poll in section.polls"
+                                    :key="poll.slug"
+                                >
                                     <Link
                                         :href="showPoll(poll.slug).url"
                                         :class="rowClass"
@@ -388,7 +412,9 @@ const rowClass =
                                             "
                                         >
                                             <Grid3x3
-                                                v-if="poll.type === 'attendance'"
+                                                v-if="
+                                                    poll.type === 'attendance'
+                                                "
                                                 class="size-[22px]"
                                                 aria-hidden="true"
                                             />
@@ -410,8 +436,12 @@ const rowClass =
                                             >
                                                 <span>{{
                                                     poll.type === 'attendance'
-                                                        ? t('group.polls.attendance')
-                                                        : t('group.polls.dateFinder')
+                                                        ? t(
+                                                              'group.polls.attendance',
+                                                          )
+                                                        : t(
+                                                              'group.polls.dateFinder',
+                                                          )
                                                 }}</span>
                                                 <span>{{
                                                     t('group.polls.options', {
@@ -419,12 +449,17 @@ const rowClass =
                                                     })
                                                 }}</span>
                                                 <Badge
-                                                    v-if="poll.follow_up_event_title"
+                                                    v-if="
+                                                        poll.follow_up_event_title
+                                                    "
                                                     class="bg-primary-soft text-primary-soft-fg h-auto font-normal whitespace-normal"
                                                     >{{
-                                                        t('group.polls.followUp', {
-                                                            event: poll.follow_up_event_title,
-                                                        })
+                                                        t(
+                                                            'group.polls.followUp',
+                                                            {
+                                                                event: poll.follow_up_event_title,
+                                                            },
+                                                        )
                                                     }}</Badge
                                                 >
                                             </span>
@@ -441,19 +476,25 @@ const rowClass =
                                                     :done="poll.answered_count"
                                                     :total="poll.audience_count"
                                                     :label="
-                                                        t('group.polls.responses', {
-                                                            n: poll.answered_count,
-                                                            total: poll.audience_count,
-                                                        })
+                                                        t(
+                                                            'group.polls.responses',
+                                                            {
+                                                                n: poll.answered_count,
+                                                                total: poll.audience_count,
+                                                            },
+                                                        )
                                                     "
                                                 />
                                                 {{ poll.answered_count }}/{{
                                                     poll.audience_count
                                                 }}
                                             </span>
-                                            <Badge :class="pollStatus(poll).class">{{
-                                                pollStatus(poll).label
-                                            }}</Badge>
+                                            <Badge
+                                                :class="pollStatus(poll).class"
+                                                >{{
+                                                    pollStatus(poll).label
+                                                }}</Badge
+                                            >
                                         </span>
                                     </Link>
                                 </li>
@@ -479,7 +520,10 @@ const rowClass =
                     aria-labelledby="events-title"
                     data-feature="F-10"
                 >
-                    <h2 id="events-title" class="flex items-center gap-2.5 text-xl">
+                    <h2
+                        id="events-title"
+                        class="flex items-center gap-2.5 text-xl"
+                    >
                         {{ t('group.events') }}
                         <span
                             v-if="page.events.length"
@@ -514,7 +558,10 @@ const rowClass =
                                 class="flex flex-col gap-2.5"
                                 :aria-labelledby="`events-${block.key}`"
                             >
-                                <li v-for="event in block.events" :key="event.slug">
+                                <li
+                                    v-for="event in block.events"
+                                    :key="event.slug"
+                                >
                                     <Link
                                         :href="showEvent(event.slug).url"
                                         :class="[
@@ -524,7 +571,10 @@ const rowClass =
                                     >
                                         <DateBlock
                                             :date="event.date"
-                                            :fixed="event.is_from_poll && !event.is_past"
+                                            :fixed="
+                                                event.is_from_poll &&
+                                                !event.is_past
+                                            "
                                         />
                                         <span
                                             class="flex min-w-0 flex-1 flex-col gap-1"
@@ -538,13 +588,19 @@ const rowClass =
                                                     variant="outline"
                                                     class="font-sans"
                                                     data-feature="F-09"
-                                                    >{{ t('group.events.fromPoll') }}</Badge
+                                                    >{{
+                                                        t(
+                                                            'group.events.fromPoll',
+                                                        )
+                                                    }}</Badge
                                                 >
                                             </span>
                                             <span
                                                 class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"
                                             >
-                                                <span>{{ eventWhen(event) }}</span>
+                                                <span>{{
+                                                    eventWhen(event)
+                                                }}</span>
                                                 <span v-if="event.location">{{
                                                     event.location
                                                 }}</span>
@@ -563,22 +619,35 @@ const rowClass =
                                                         !event.is_past
                                                     "
                                                     >{{
-                                                        t('group.events.pending', {
-                                                            n: event.pending_count,
-                                                        })
+                                                        t(
+                                                            'group.events.pending',
+                                                            {
+                                                                n: event.pending_count,
+                                                            },
+                                                        )
                                                     }}</span
                                                 >
                                             </span>
                                         </span>
                                         <span
-                                            v-if="event.own_status && !event.is_past"
+                                            v-if="
+                                                event.own_status &&
+                                                !event.is_past
+                                            "
                                             class="flex flex-none items-center max-[560px]:basis-full max-[560px]:pl-[68px]"
                                             data-feature="F-11"
                                         >
                                             <Badge
-                                                :class="ownStatus[event.own_status].class"
+                                                :class="
+                                                    ownStatus[event.own_status]
+                                                        .class
+                                                "
                                                 >{{
-                                                    t(ownStatus[event.own_status].label)
+                                                    t(
+                                                        ownStatus[
+                                                            event.own_status
+                                                        ].label,
+                                                    )
                                                 }}</Badge
                                             >
                                         </span>
@@ -611,7 +680,9 @@ const rowClass =
                     aria-labelledby="lists-title"
                     data-feature="F-13"
                 >
-                    <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <div
+                        class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
+                    >
                         <h2
                             id="lists-title"
                             class="flex items-center gap-2.5 text-xl"
@@ -639,9 +710,14 @@ const rowClass =
                                 <span
                                     class="bg-primary-soft text-primary-soft-fg grid size-10 flex-none place-items-center rounded-xl"
                                 >
-                                    <ListChecks class="size-5" aria-hidden="true" />
+                                    <ListChecks
+                                        class="size-5"
+                                        aria-hidden="true"
+                                    />
                                 </span>
-                                <span class="flex min-w-0 flex-1 flex-col gap-1">
+                                <span
+                                    class="flex min-w-0 flex-1 flex-col gap-1"
+                                >
                                     <span
                                         class="font-display text-[17px] leading-tight font-[640] break-words"
                                         >{{ list.title }}</span
@@ -691,7 +767,10 @@ const rowClass =
                             :class="buttonClass"
                         >
                             <Link
-                                :href="createList({ query: { group: page.slug } }).url"
+                                :href="
+                                    createList({ query: { group: page.slug } })
+                                        .url
+                                "
                             >
                                 <Plus aria-hidden="true" />
                                 {{ t('group.new.list') }}
@@ -709,7 +788,10 @@ const rowClass =
                     class="box flex flex-col gap-4 p-5"
                     data-feature="F-04"
                 >
-                    <h2 id="members-title" class="flex items-center gap-2.5 text-xl">
+                    <h2
+                        id="members-title"
+                        class="flex items-center gap-2.5 text-xl"
+                    >
                         {{ t('group.members') }}
                         <span
                             class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
@@ -722,17 +804,24 @@ const rowClass =
                             :key="member.id"
                             class="flex items-center gap-3 py-2"
                         >
-                            <UserAvatar :name="member.name" :email="member.email" />
+                            <UserAvatar
+                                :name="member.name"
+                                :email="member.email"
+                            />
                             <span class="flex min-w-0 flex-1 flex-col">
                                 <span
                                     class="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold"
                                 >
-                                    <span v-if="member.name" class="break-words">{{
-                                        member.name
-                                    }}</span>
-                                    <span v-else class="text-fg-soft font-normal">{{
-                                        t('common.noName')
-                                    }}</span>
+                                    <span
+                                        v-if="member.name"
+                                        class="break-words"
+                                        >{{ member.name }}</span
+                                    >
+                                    <span
+                                        v-else
+                                        class="text-fg-soft font-normal"
+                                        >{{ t('common.noName') }}</span
+                                    >
                                     <span
                                         v-if="member.id === currentUserId"
                                         class="text-fg-soft text-sm font-normal"

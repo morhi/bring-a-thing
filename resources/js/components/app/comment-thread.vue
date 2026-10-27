@@ -10,10 +10,10 @@ export type ThreadComment = {
 </script>
 
 <script setup lang="ts">
-import { MessageSquare, X } from "@lucide/vue";
-import { computed, onMounted, ref, useId } from "vue";
-import EmptyState from "@/components/app/empty-state.vue";
-import UserAvatar from "@/components/app/user-avatar.vue";
+import { MessageSquare, X } from '@lucide/vue';
+import { computed, onMounted, ref, useId } from 'vue';
+import EmptyState from '@/components/app/empty-state.vue';
+import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,12 +23,12 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useI18n } from "@/composables/use-i18n";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/composables/use-i18n';
+import { cn } from '@/lib/utils';
 
 const props = withDefaults(
     defineProps<{
@@ -43,11 +43,11 @@ const props = withDefaults(
 
 const emit = defineEmits<{
     submit: [body: string];
-    delete: [id: ThreadComment["id"]];
+    delete: [id: ThreadComment['id']];
 }>();
 
 // The draft lives with the parent, so it can clear it after a successful post.
-const draft = defineModel<string>({ default: "" });
+const draft = defineModel<string>({ default: '' });
 
 const { t, locale } = useI18n();
 
@@ -56,20 +56,20 @@ const hintId = useId();
 const errorId = useId();
 
 // Resolved after mount so server and client render the same hint.
-const modifierKey = ref("Ctrl");
+const modifierKey = ref('Ctrl');
 
 onMounted(() => {
     if (!/Mac|iPhone|iPad/.test(navigator.userAgent)) {
         return;
     }
 
-    modifierKey.value = "Cmd";
+    modifierKey.value = 'Cmd';
 });
 
 const sorted = computed(() =>
     [...props.comments].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
 );
-const canSend = computed(() => draft.value.trim() !== "" && !props.processing);
+const canSend = computed(() => draft.value.trim() !== '' && !props.processing);
 
 function formatWhen(iso: string): string {
     const date = new Date(iso);
@@ -78,17 +78,17 @@ function formatWhen(iso: string): string {
         return iso;
     }
 
-    const isGerman = locale.value === "de";
+    const isGerman = locale.value === 'de';
     const day = date.toLocaleDateString(
-        isGerman ? "de-CH" : "en-GB",
+        isGerman ? 'de-CH' : 'en-GB',
         isGerman
-            ? { day: "2-digit", month: "2-digit", year: "numeric" }
-            : { day: "numeric", month: "short", year: "numeric" },
+            ? { day: '2-digit', month: '2-digit', year: 'numeric' }
+            : { day: 'numeric', month: 'short', year: 'numeric' },
     );
-    const time = date.toLocaleTimeString(isGerman ? "de-CH" : "en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
+    const time = date.toLocaleTimeString(isGerman ? 'de-CH' : 'en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
     });
 
     return `${day}, ${time}`;
@@ -99,11 +99,11 @@ function send() {
         return;
     }
 
-    emit("submit", draft.value.trim());
+    emit('submit', draft.value.trim());
 }
 
 function onKeydown(event: KeyboardEvent) {
-    if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey)) {
+    if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) {
         return;
     }
 
@@ -111,7 +111,7 @@ function onKeydown(event: KeyboardEvent) {
     send();
 }
 
-const deleteTarget = ref<ThreadComment["id"] | null>(null);
+const deleteTarget = ref<ThreadComment['id'] | null>(null);
 const confirmOpen = ref(false);
 
 function askDelete(comment: ThreadComment) {
@@ -124,7 +124,7 @@ function confirmDelete() {
         return;
     }
 
-    emit("delete", deleteTarget.value);
+    emit('delete', deleteTarget.value);
     confirmOpen.value = false;
 }
 </script>
@@ -155,7 +155,7 @@ function confirmDelete() {
                         <span
                             class="text-fg min-w-0 text-sm font-semibold [overflow-wrap:anywhere]"
                             >{{
-                                comment.authorName || t("common.noName")
+                                comment.authorName || t('common.noName')
                             }}</span
                         >
                         <time :datetime="comment.createdAt">{{
@@ -175,7 +175,7 @@ function confirmDelete() {
                         </Button>
                     </div>
                     <p
-                        class="text-[15px] whitespace-pre-wrap [overflow-wrap:anywhere]"
+                        class="text-[15px] [overflow-wrap:anywhere] whitespace-pre-wrap"
                     >
                         {{ comment.body }}
                     </p>
@@ -194,7 +194,7 @@ function confirmDelete() {
             @submit.prevent="send"
         >
             <div class="flex w-full flex-col gap-2">
-                <Label :for="controlId">{{ t("list.comments.write") }}</Label>
+                <Label :for="controlId">{{ t('list.comments.write') }}</Label>
                 <Textarea
                     :id="controlId"
                     v-model="draft"
@@ -214,7 +214,7 @@ function confirmDelete() {
                     {{ error }}
                 </p>
                 <p :id="hintId" class="text-fg-muted text-sm">
-                    {{ t("list.comments.hint", { key: modifierKey }) }}
+                    {{ t('list.comments.hint', { key: modifierKey }) }}
                 </p>
             </div>
             <Button
@@ -222,7 +222,7 @@ function confirmDelete() {
                 variant="secondary"
                 size="sm"
                 :disabled="!canSend"
-                >{{ t("list.comments.send") }}</Button
+                >{{ t('list.comments.send') }}</Button
             >
         </form>
 
@@ -230,20 +230,20 @@ function confirmDelete() {
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{{
-                        t("list.comments.deleteTitle")
+                        t('list.comments.deleteTitle')
                     }}</AlertDialogTitle>
                     <AlertDialogDescription>{{
-                        t("list.comments.deleteText")
+                        t('list.comments.deleteText')
                     }}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>{{
-                        t("dialog.cancel")
+                        t('dialog.cancel')
                     }}</AlertDialogCancel>
                     <AlertDialogAction
                         variant="destructive"
                         @click="confirmDelete"
-                        >{{ t("list.comments.delete") }}</AlertDialogAction
+                        >{{ t('list.comments.delete') }}</AlertDialogAction
                     >
                 </AlertDialogFooter>
             </AlertDialogContent>

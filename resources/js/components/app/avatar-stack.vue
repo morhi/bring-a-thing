@@ -19,7 +19,12 @@ const { t } = useI18n();
 
 const shown = computed(() => props.people.slice(0, Math.max(0, props.max)));
 const rest = computed(() => props.people.length - shown.value.length);
-const names = computed(() => props.people.map((person) => person.name || person.email).filter(Boolean).join(', '));
+const names = computed(() =>
+    props.people
+        .map((person) => person.name || person.email)
+        .filter(Boolean)
+        .join(', '),
+);
 </script>
 
 <template>
@@ -30,8 +35,12 @@ const names = computed(() => props.people.map((person) => person.name || person.
             :name="person.name"
             :email="person.email"
             size="sm"
-            class="-ml-2.5 ring-2 ring-surface-raised first:ml-0"
+            class="ring-surface-raised -ml-2.5 ring-2 first:ml-0"
         />
-        <span v-if="rest > 0" class="ml-1.5 text-[13px] font-semibold text-fg-muted">{{ t('common.more', { n: rest }) }}</span>
+        <span
+            v-if="rest > 0"
+            class="text-fg-muted ml-1.5 text-[13px] font-semibold"
+            >{{ t('common.more', { n: rest }) }}</span
+        >
     </span>
 </template>

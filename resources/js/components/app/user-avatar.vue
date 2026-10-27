@@ -40,7 +40,7 @@ const initials = computed(() => {
 
 const toneIndex = computed(() => {
     if (props.tone) {
-        return ((Math.round(props.tone) - 1) % 5 + 5) % 5;
+        return (((Math.round(props.tone) - 1) % 5) + 5) % 5;
     }
 
     const seed = props.name || props.email || '';
@@ -78,7 +78,7 @@ const textSize = { sm: 'text-[10px]', default: 'text-xs', lg: 'text-base' };
                     'font-bold tracking-wide',
                     textSize[size],
                     isShadow
-                        ? 'border-2 border-dashed border-border-strong bg-transparent text-fg-muted'
+                        ? 'border-border-strong text-fg-muted border-2 border-dashed bg-transparent'
                         : toneClasses[toneIndex],
                 )
             "

@@ -11,7 +11,9 @@ const page = usePage();
 /**
  * Active interface language, shared by the backend on every page.
  */
-export const locale = computed<Locale>(() => (page.props.locale === 'de' ? 'de' : 'en'));
+export const locale = computed<Locale>(() =>
+    page.props.locale === 'de' ? 'de' : 'en',
+);
 
 function interpolate(text: string, params: TranslateParams): string {
     return Object.entries(params).reduce(
@@ -29,8 +31,13 @@ function interpolate(text: string, params: TranslateParams): string {
  * clobbered by `:name`. Unknown keys return the key itself.
  */
 export function t(key: string, params: TranslateParams = {}): string {
-    const translations = (page.props.translations ?? {}) as Record<string, string>;
-    const sorted = Object.fromEntries(Object.entries(params).sort(([a], [b]) => b.length - a.length));
+    const translations = (page.props.translations ?? {}) as Record<
+        string,
+        string
+    >;
+    const sorted = Object.fromEntries(
+        Object.entries(params).sort(([a], [b]) => b.length - a.length),
+    );
 
     return interpolate(translations[key] ?? key, sorted);
 }
@@ -41,7 +48,11 @@ export function t(key: string, params: TranslateParams = {}): string {
  * `:n` is filled with the count automatically. Uses the active language's
  * plural rules, so it also works for languages with other categories later.
  */
-export function tc(key: string, count: number, params: TranslateParams = {}): string {
+export function tc(
+    key: string,
+    count: number,
+    params: TranslateParams = {},
+): string {
     const forms = t(key, { ...params, n: count }).split('|');
     const category = new Intl.PluralRules(locale.value).select(count);
 
@@ -58,5 +69,9 @@ export function setLocale(language: Locale): void {
         return;
     }
 
-    router.patch(updateLanguage.url(), { language }, { preserveScroll: true, preserveState: true });
+    router.patch(
+        updateLanguage.url(),
+        { language },
+        { preserveScroll: true, preserveState: true },
+    );
 }

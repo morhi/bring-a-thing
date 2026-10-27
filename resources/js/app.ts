@@ -1,16 +1,16 @@
-import "@fontsource-variable/familjen-grotesk";
-import "@fontsource-variable/gabarito";
-import "@fontsource-variable/instrument-sans";
-import { createInertiaApp } from "@inertiajs/vue3";
-import { createApp, h, watchEffect } from "vue";
-import { configureEcho } from "@laravel/echo-vue";
-import { locale, t, tc } from "@/lib/i18n";
+import '@fontsource-variable/familjen-grotesk';
+import '@fontsource-variable/gabarito';
+import '@fontsource-variable/instrument-sans';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { createApp, h, watchEffect } from 'vue';
+import { configureEcho } from '@laravel/echo-vue';
+import { locale, t, tc } from '@/lib/i18n';
 
 configureEcho({
-    broadcaster: "reverb",
+    broadcaster: 'reverb',
 });
 
-const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -30,6 +30,6 @@ void createInertiaApp({
         });
     },
     progress: {
-        color: "#4B5563",
+        color: '#4B5563',
     },
 });

@@ -61,11 +61,15 @@ const submitLabel = computed(() => {
         return t('welcome.login.withPassword');
     }
 
-    return step.value === 'name' ? t('welcome.login.continue') : t('welcome.login.sendLink');
+    return step.value === 'name'
+        ? t('welcome.login.continue')
+        : t('welcome.login.sendLink');
 });
 
 const linkErrorText = computed(() =>
-    props.linkError === 'invalid' ? t('welcome.login.invalidLink') : t('welcome.login.expired'),
+    props.linkError === 'invalid'
+        ? t('welcome.login.invalidLink')
+        : t('welcome.login.expired'),
 );
 
 const inputClass =
@@ -89,7 +93,9 @@ function id(part: string): string {
 }
 
 function focusEmail(): void {
-    nextTick(() => (emailInput.value?.$el as HTMLInputElement | undefined)?.focus());
+    nextTick(() =>
+        (emailInput.value?.$el as HTMLInputElement | undefined)?.focus(),
+    );
 }
 
 function requestNewLink(): void {
@@ -101,7 +107,9 @@ async function submit(): Promise<void> {
     form.clearErrors();
 
     if (step.value === 'password') {
-        form.post(loginWithPassword.url(), { onError: () => form.reset('password') });
+        form.post(loginWithPassword.url(), {
+            onError: () => form.reset('password'),
+        });
 
         return;
     }
@@ -119,9 +127,12 @@ async function lookUpAccount(): Promise<void> {
     checking.value = true;
 
     try {
-        const response = await fetch(lookupEmail.url({ query: { email: form.email } }), {
-            headers: { Accept: 'application/json' },
-        });
+        const response = await fetch(
+            lookupEmail.url({ query: { email: form.email } }),
+            {
+                headers: { Accept: 'application/json' },
+            },
+        );
 
         if (!response.ok) {
             form.setError('email', t('welcome.login.invalid'));
@@ -129,7 +140,10 @@ async function lookUpAccount(): Promise<void> {
             return;
         }
 
-        const account = (await response.json()) as { needsName: boolean; hasPassword: boolean };
+        const account = (await response.json()) as {
+            needsName: boolean;
+            hasPassword: boolean;
+        };
 
         if (account.hasPassword) {
             step.value = 'password';
@@ -179,10 +193,18 @@ function startOver(): void {
             role="alert"
             class="border-warning bg-warning-soft text-fg flex gap-3 rounded-xl border p-4 text-sm"
         >
-            <ClockIcon class="text-warning mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <ClockIcon
+                class="text-warning mt-0.5 size-5 shrink-0"
+                aria-hidden="true"
+            />
             <div class="flex flex-col items-start gap-2.5">
                 <span>{{ linkErrorText }}</span>
-                <Button type="button" variant="secondary" size="sm" @click="requestNewLink">
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    @click="requestNewLink"
+                >
                     <MailIcon aria-hidden="true" />
                     {{ t('welcome.login.requestNew') }}
                 </Button>
@@ -190,7 +212,11 @@ function startOver(): void {
         </div>
 
         <template v-if="step !== 'sent'">
-            <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
+            <form
+                class="flex flex-col gap-5"
+                novalidate
+                @submit.prevent="submit"
+            >
                 <div class="flex flex-col gap-(--space-stack)">
                     <FormField
                         :label="t('welcome.login.email')"
@@ -198,7 +224,9 @@ function startOver(): void {
                         required
                         :error="form.errors.email"
                     >
-                        <template #default="{ id: controlId, describedBy, invalid }">
+                        <template
+                            #default="{ id: controlId, describedBy, invalid }"
+                        >
                             <Input
                                 :id="controlId"
                                 ref="emailInput"
@@ -222,7 +250,9 @@ function startOver(): void {
                         :hint="t('welcome.login.nameHint')"
                         :error="form.errors.name"
                     >
-                        <template #default="{ id: controlId, describedBy, invalid }">
+                        <template
+                            #default="{ id: controlId, describedBy, invalid }"
+                        >
                             <Input
                                 :id="controlId"
                                 v-model="form.name"
@@ -244,7 +274,9 @@ function startOver(): void {
                         :hint="t('welcome.login.passwordHint')"
                         :error="form.errors.password"
                     >
-                        <template #default="{ id: controlId, describedBy, invalid }">
+                        <template
+                            #default="{ id: controlId, describedBy, invalid }"
+                        >
                             <Input
                                 :id="controlId"
                                 v-model="form.password"
@@ -261,8 +293,16 @@ function startOver(): void {
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <Button type="submit" size="lg" class="h-11 w-full rounded-full" :disabled="busy">
-                        <CheckIcon v-if="step === 'password'" aria-hidden="true" />
+                    <Button
+                        type="submit"
+                        size="lg"
+                        class="h-11 w-full rounded-full"
+                        :disabled="busy"
+                    >
+                        <CheckIcon
+                            v-if="step === 'password'"
+                            aria-hidden="true"
+                        />
                         <MailIcon v-else aria-hidden="true" />
                         {{ submitLabel }}
                     </Button>
@@ -286,11 +326,27 @@ function startOver(): void {
         </template>
 
         <template v-else>
-            <div role="status" class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-xl p-4">
-                <strong class="font-display text-[17px]">{{ t('welcome.login.sentTitle') }}</strong>
-                <span>{{ t('welcome.login.sentText', { email: form.email, minutes: expiresInMinutes }) }}</span>
+            <div
+                role="status"
+                class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-xl p-4"
+            >
+                <strong class="font-display text-[17px]">{{
+                    t('welcome.login.sentTitle')
+                }}</strong>
+                <span>{{
+                    t('welcome.login.sentText', {
+                        email: form.email,
+                        minutes: expiresInMinutes,
+                    })
+                }}</span>
             </div>
-            <Button type="button" variant="ghost" size="lg" class="h-11 w-full rounded-full" @click="startOver">
+            <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                class="h-11 w-full rounded-full"
+                @click="startOver"
+            >
                 {{ t('welcome.login.again') }}
             </Button>
         </template>

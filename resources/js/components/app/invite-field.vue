@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { CheckIcon, LinkIcon, MailIcon, PlusIcon, XIcon } from "@lucide/vue";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import FormField from "@/components/app/form-field.vue";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useI18n } from "@/composables/use-i18n";
+import { CheckIcon, LinkIcon, MailIcon, PlusIcon, XIcon } from '@lucide/vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import FormField from '@/components/app/form-field.vue';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useI18n } from '@/composables/use-i18n';
 
 export type InviteFriend = {
     id: number | string;
@@ -21,8 +21,8 @@ export type InviteSelection = {
 };
 
 type Row =
-    | { kind: "friend"; friend: InviteFriend; disabled: boolean }
-    | { kind: "email"; email: string; disabled: boolean };
+    | { kind: 'friend'; friend: InviteFriend; disabled: boolean }
+    | { kind: 'email'; email: string; disabled: boolean };
 
 /**
  * Collect people to invite by friend name or email address as removable chips (F-04, F-05).
@@ -76,7 +76,7 @@ const { t } = useI18n();
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const query = ref("");
+const query = ref('');
 const open = ref(false);
 const active = ref(0);
 const copied = ref(false);
@@ -109,18 +109,18 @@ const rows = computed<Row[]>(() => {
         .filter(
             (friend) =>
                 friend.email.toLowerCase().includes(term) ||
-                (friend.name ?? "").toLowerCase().includes(term),
+                (friend.name ?? '').toLowerCase().includes(term),
         )
         .slice(0, props.maxSuggestions)
         .map((friend) => ({
-            kind: "friend",
+            kind: 'friend',
             friend,
             disabled: props.memberIds.includes(friend.id),
         }));
 
     const exactFriend = friendRows.some(
         (row) =>
-            row.kind === "friend" && row.friend.email.toLowerCase() === term,
+            row.kind === 'friend' && row.friend.email.toLowerCase() === term,
     );
 
     if (
@@ -133,7 +133,7 @@ const rows = computed<Row[]>(() => {
 
     return [
         {
-            kind: "email",
+            kind: 'email',
             email: term,
             disabled: memberEmailSet.value.has(term),
         },
@@ -146,7 +146,7 @@ const noMatch = computed(
     () => query.value.trim().length > 0 && rows.value.length === 0,
 );
 const hintText = computed(() =>
-    noMatch.value ? t("invite.noMatch") : props.hint,
+    noMatch.value ? t('invite.noMatch') : props.hint,
 );
 
 watch(rows, (value) => {
@@ -159,7 +159,7 @@ function optionId(index: number): string {
 }
 
 function rowKey(row: Row): string {
-    return row.kind === "friend"
+    return row.kind === 'friend'
         ? `friend-${row.friend.id}`
         : `email-${row.email}`;
 }
@@ -174,8 +174,8 @@ function initials(name: string | null | undefined, email: string): string {
 
     return parts
         .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase() ?? "")
-        .join("");
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
 }
 
 function pick(row: Row): void {
@@ -184,7 +184,7 @@ function pick(row: Row): void {
     }
 
     const selection: InviteSelection =
-        row.kind === "friend"
+        row.kind === 'friend'
             ? {
                   accountId: row.friend.id,
                   email: row.friend.email,
@@ -193,7 +193,7 @@ function pick(row: Row): void {
             : { accountId: null, email: row.email };
 
     model.value = [...model.value, selection];
-    query.value = "";
+    query.value = '';
     open.value = false;
 }
 
@@ -218,14 +218,14 @@ function move(step: number): void {
 }
 
 function onKey(event: KeyboardEvent): void {
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
-        move(event.key === "ArrowDown" ? 1 : -1);
+        move(event.key === 'ArrowDown' ? 1 : -1);
 
         return;
     }
 
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
         if (!open.value) {
             return;
         }
@@ -236,13 +236,13 @@ function onKey(event: KeyboardEvent): void {
         return;
     }
 
-    if (event.key === "Backspace" && !query.value && model.value.length) {
+    if (event.key === 'Backspace' && !query.value && model.value.length) {
         remove(model.value[model.value.length - 1]);
 
         return;
     }
 
-    if (event.key !== "Enter" && event.key !== ",") {
+    if (event.key !== 'Enter' && event.key !== ',') {
         return;
     }
 
@@ -265,20 +265,20 @@ async function copyLink(url: string | null = props.linkUrl): Promise<void> {
     try {
         await navigator.clipboard.writeText(url);
     } catch {
-        emit("copyFailed", url);
+        emit('copyFailed', url);
 
         return;
     }
 
     copied.value = true;
-    emit("copied", url);
+    emit('copied', url);
     clearTimeout(copiedTimer);
     copiedTimer = setTimeout(() => (copied.value = false), 2000);
 }
 
 function onLinkClick(): void {
     if (!props.linkUrl) {
-        emit("createLink");
+        emit('createLink');
 
         return;
     }
@@ -355,7 +355,7 @@ defineExpose({ copyLink });
                                 </Avatar>
                                 <span class="flex min-w-0 flex-1 flex-col">
                                     <span class="truncate">{{
-                                        row.friend.name || t("common.noName")
+                                        row.friend.name || t('common.noName')
                                     }}</span>
                                     <span
                                         class="text-fg-soft truncate text-[13px]"
@@ -373,11 +373,11 @@ defineExpose({ copyLink });
                                     />
                                 </span>
                                 <span class="min-w-0 flex-1 truncate">{{
-                                    t("invite.addEmail", { email: row.email })
+                                    t('invite.addEmail', { email: row.email })
                                 }}</span>
                             </template>
                             <Badge v-if="row.disabled" variant="secondary">{{
-                                t("invite.alreadyMember")
+                                t('invite.alreadyMember')
                             }}</Badge>
                         </li>
                     </ul>
@@ -444,15 +444,15 @@ defineExpose({ copyLink });
             >
                 <CheckIcon v-if="copied" aria-hidden="true" />
                 <LinkIcon v-else aria-hidden="true" />
-                {{ copied ? t("group.link.copied") : t("group.link.copy") }}
+                {{ copied ? t('group.link.copied') : t('group.link.copy') }}
             </Button>
             <span class="sr-only" aria-live="polite">{{
-                copied ? t("group.link.copied") : ""
+                copied ? t('group.link.copied') : ''
             }}</span>
         </div>
 
         <p v-if="link && !linkAvailable" class="text-fg-soft text-[13px]">
-            {{ t("invite.linkLater") }}
+            {{ t('invite.linkLater') }}
         </p>
     </div>
 </template>

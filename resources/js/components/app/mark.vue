@@ -6,11 +6,16 @@ import { cn } from '@/lib/utils';
 
 export type MarkAnswer = 'yes' | 'maybe' | 'no' | 'none';
 
-const props = withDefaults(defineProps<{ answer?: MarkAnswer; label?: string }>(), { answer: 'none', label: undefined });
+const props = withDefaults(
+    defineProps<{ answer?: MarkAnswer; label?: string }>(),
+    { answer: 'none', label: undefined },
+);
 
 const { t } = useI18n();
 
-const icon = computed(() => ({ yes: Check, maybe: CircleHelp, no: X, none: null })[props.answer]);
+const icon = computed(
+    () => ({ yes: Check, maybe: CircleHelp, no: X, none: null })[props.answer],
+);
 
 const classes = {
     yes: 'bg-primary text-primary-fg',
@@ -20,15 +25,28 @@ const classes = {
 };
 
 // The fallback is the answer word; callers pass a richer label such as "Anna: yes"
-const accessibleLabel = computed(() => props.label ?? t(`poll.answer.${props.answer}`));
+const accessibleLabel = computed(
+    () => props.label ?? t(`poll.answer.${props.answer}`),
+);
 </script>
 
 <template>
     <span
         role="img"
         :aria-label="accessibleLabel"
-        :class="cn('inline-grid size-[22px] flex-none place-items-center rounded-full', classes[answer])"
+        :class="
+            cn(
+                'inline-grid size-[22px] flex-none place-items-center rounded-full',
+                classes[answer],
+            )
+        "
     >
-        <component :is="icon" v-if="icon" class="size-[13px]" stroke-width="3" aria-hidden="true" />
+        <component
+            :is="icon"
+            v-if="icon"
+            class="size-[13px]"
+            stroke-width="3"
+            aria-hidden="true"
+        />
     </span>
 </template>

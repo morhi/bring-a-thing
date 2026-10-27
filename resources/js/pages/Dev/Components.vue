@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { Head } from "@inertiajs/vue3";
-import { computed, onMounted, ref } from "vue";
-import type { Component } from "vue";
-import { Button } from "@/components/ui/button";
-import { useI18n } from "@/composables/use-i18n";
+import { Head } from '@inertiajs/vue3';
+import { computed, onMounted, ref } from 'vue';
+import type { Component } from 'vue';
+import { Button } from '@/components/ui/button';
+import { useI18n } from '@/composables/use-i18n';
 
 const { locale, setLocale } = useI18n();
 
-const modules = import.meta.glob<{ default: Component }>("./sections/*.vue", {
+const modules = import.meta.glob<{ default: Component }>('./sections/*.vue', {
     eager: true,
 });
 
 const sections = Object.entries(modules)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([path, module]) => ({
-        name: path.replace("./sections/", "").replace(".vue", ""),
+        name: path.replace('./sections/', '').replace('.vue', ''),
         component: module.default,
     }));
 
 const frames = [
-    { label: "Fluid", width: null },
-    { label: "375", width: 375 },
-    { label: "1280", width: 1280 },
+    { label: 'Fluid', width: null },
+    { label: '375', width: 375 },
+    { label: '1280', width: 1280 },
 ] as const;
 
 const frame = ref<number | null>(null);
@@ -30,24 +30,24 @@ const toc = ref<{ id: string; label: string }[]>([]);
 const sectionsRoot = ref<HTMLElement | null>(null);
 
 const frameStyle = computed(() =>
-    frame.value === null ? {} : { width: `${frame.value}px`, maxWidth: "100%" },
+    frame.value === null ? {} : { width: `${frame.value}px`, maxWidth: '100%' },
 );
 
-function changeLocale(code: "en" | "de"): void {
+function changeLocale(code: 'en' | 'de'): void {
     setLocale(code);
     document.documentElement.lang = code;
 }
 
 function toggleTheme(): void {
     dark.value = !dark.value;
-    document.documentElement.classList.toggle("dark", dark.value);
+    document.documentElement.classList.toggle('dark', dark.value);
 }
 
 onMounted(() => {
     document.documentElement.lang = locale.value;
-    dark.value = document.documentElement.classList.contains("dark");
+    dark.value = document.documentElement.classList.contains('dark');
     toc.value = Array.from(
-        sectionsRoot.value?.querySelectorAll<HTMLElement>("h2[id]") ?? [],
+        sectionsRoot.value?.querySelectorAll<HTMLElement>('h2[id]') ?? [],
     ).map((heading) => ({
         id: heading.id,
         label: heading.textContent?.trim() ?? heading.id,
@@ -73,7 +73,7 @@ onMounted(() => {
                     :aria-pressed="dark"
                     @click="toggleTheme"
                 >
-                    {{ dark ? "Dark" : "Light" }}
+                    {{ dark ? 'Dark' : 'Light' }}
                 </Button>
 
                 <div

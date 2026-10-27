@@ -8,7 +8,9 @@ const props = defineProps<{
     label: string;
 }>();
 
-const percent = computed(() => Math.min(100, Math.round((100 * props.done) / Math.max(1, props.total))));
+const percent = computed(() =>
+    Math.min(100, Math.round((100 * props.done) / Math.max(1, props.total))),
+);
 </script>
 
 <template>
@@ -19,8 +21,11 @@ const percent = computed(() => Math.min(100, Math.round((100 * props.done) / Mat
         :aria-valuemax="Math.max(1, total)"
         :aria-valuenow="Math.min(done, Math.max(1, total))"
         :aria-valuetext="`${done} / ${total}`"
-        class="block h-1.5 min-w-16 flex-1 overflow-hidden rounded-[3px] bg-progress-track"
+        class="bg-progress-track block h-1.5 min-w-16 flex-1 overflow-hidden rounded-[3px]"
     >
-        <span class="block h-full rounded-[3px] bg-primary transition-[width] duration-200" :style="{ width: `${percent}%` }" />
+        <span
+            class="bg-primary block h-full rounded-[3px] transition-[width] duration-200"
+            :style="{ width: `${percent}%` }"
+        />
     </span>
 </template>

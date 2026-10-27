@@ -68,16 +68,30 @@ const display = computed(() => {
         return '';
     }
 
-    const date = new Date(value.value.year, value.value.month - 1, value.value.day);
+    const date = new Date(
+        value.value.year,
+        value.value.month - 1,
+        value.value.day,
+    );
 
     if (locale.value === 'de') {
-        return new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+        return new Intl.DateTimeFormat('de-CH', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        }).format(date);
     }
 
     // en-GB spells September "Sept" but every other month with three letters, so the month name comes from en-US
-    const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
+    const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(
+        date,
+    );
 
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Intl.DateTimeFormat('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    })
         .formatToParts(date)
         .map((part) => (part.type === 'month' ? month : part.value))
         .join('');

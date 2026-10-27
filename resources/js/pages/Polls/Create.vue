@@ -20,7 +20,10 @@ import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
 import OptionCalendar from '@/components/app/option-calendar.vue';
 import OptionRows from '@/components/app/poll/option-rows.vue';
-import type { OptionCalendarMode, OptionDraft } from '@/components/app/poll/types';
+import type {
+    OptionCalendarMode,
+    OptionDraft,
+} from '@/components/app/poll/types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -64,17 +67,32 @@ function draftsOf(pollData: App.Data.PollData | null): OptionDraft[] {
 
 const type = ref<App.Enums.PollType>(poll.value?.type ?? 'date_finder');
 // The calendar speaks "day" and "slots"; the backend stores the same choice as granularity "day" and "hour"
-const mode = ref<OptionCalendarMode>(poll.value?.uses_time_slots ? 'slots' : 'day');
+const mode = ref<OptionCalendarMode>(
+    poll.value?.uses_time_slots ? 'slots' : 'day',
+);
 const options = ref<OptionDraft[]>(draftsOf(poll.value));
-const defaultSlot = computed(() => ({ start: props.form.default_slot_start, end: props.form.default_slot_end }));
+const defaultSlot = computed(() => ({
+    start: props.form.default_slot_start,
+    end: props.form.default_slot_end,
+}));
 
 // Switching granularity converts what is there instead of discarding it; only possible before creation
 watch(mode, (next) => {
     if (next === 'day') {
         const seen = new Set<string>();
         options.value = options.value
-            .filter((option) => option.date && !seen.has(option.date) && seen.add(option.date))
-            .map((option) => ({ date: option.date, start: null, end: null, label: option.label }));
+            .filter(
+                (option) =>
+                    option.date &&
+                    !seen.has(option.date) &&
+                    seen.add(option.date),
+            )
+            .map((option) => ({
+                date: option.date,
+                start: null,
+                end: null,
+                label: option.label,
+            }));
 
         return;
     }
@@ -87,16 +105,41 @@ watch(mode, (next) => {
     }));
 });
 
-const validCount = computed(() => options.value.filter((option) => option.date && (mode.value === 'day' || (option.start && option.end))).length);
+const validCount = computed(
+    () =>
+        options.value.filter(
+            (option) =>
+                option.date &&
+                (mode.value === 'day' || (option.start && option.end)),
+        ).length,
+);
 
 const typeOptions = computed<ChoiceOption[]>(() => [
-    { value: 'date_finder', title: t('newPoll.type.dateFinder'), hint: t('newPoll.type.dateFinderHint'), feature: 'F-06' },
-    { value: 'attendance', title: t('newPoll.type.attendance'), hint: t('newPoll.type.attendanceHint'), feature: 'F-07' },
+    {
+        value: 'date_finder',
+        title: t('newPoll.type.dateFinder'),
+        hint: t('newPoll.type.dateFinderHint'),
+        feature: 'F-06',
+    },
+    {
+        value: 'attendance',
+        title: t('newPoll.type.attendance'),
+        hint: t('newPoll.type.attendanceHint'),
+        feature: 'F-07',
+    },
 ]);
 
 const modeOptions = computed<ChoiceOption[]>(() => [
-    { value: 'day', title: t('newPoll.mode.day'), hint: t('newPoll.mode.dayHint') },
-    { value: 'slots', title: t('newPoll.mode.slots'), hint: t('newPoll.mode.slotsHint') },
+    {
+        value: 'day',
+        title: t('newPoll.mode.day'),
+        hint: t('newPoll.mode.dayHint'),
+    },
+    {
+        value: 'slots',
+        title: t('newPoll.mode.slots'),
+        hint: t('newPoll.mode.slotsHint'),
+    },
 ]);
 
 const pageTitle = computed(() => {
@@ -122,10 +165,16 @@ const back = computed(() => {
     }
 
     if (sourceEvent.value) {
-        return { href: showEvent(sourceEvent.value.slug).url, name: sourceEvent.value.title };
+        return {
+            href: showEvent(sourceEvent.value.slug).url,
+            name: sourceEvent.value.title,
+        };
     }
 
-    return { href: showGroup(props.form.group_slug).url, name: props.form.group_name };
+    return {
+        href: showGroup(props.form.group_slug).url,
+        name: props.form.group_name,
+    };
 });
 
 const status = computed(() => {
@@ -141,7 +190,13 @@ const status = computed(() => {
 });
 
 // A date finder closes by fixing dates, unless it already has a fixed option (F-08, F-09)
-const canClose = computed(() => !!poll.value && !closed.value && (poll.value.type === 'attendance' || poll.value.options.some((option) => option.is_fixed)));
+const canClose = computed(
+    () =>
+        !!poll.value &&
+        !closed.value &&
+        (poll.value.type === 'attendance' ||
+            poll.value.options.some((option) => option.is_fixed)),
+);
 
 const optionsHint = computed(() => {
     if (closed.value) {
@@ -155,7 +210,9 @@ const pollForm = useForm({ title: poll.value?.title ?? '' });
 const optionsError = ref<string | null>(null);
 
 const optionsServerError = computed(() => {
-    const key = Object.keys(pollForm.errors).find((name) => name.startsWith('options') || name.startsWith('remove'));
+    const key = Object.keys(pollForm.errors).find(
+        (name) => name.startsWith('options') || name.startsWith('remove'),
+    );
 
     return key ? (pollForm.errors as Record<string, string>)[key] : null;
 });
@@ -164,7 +221,9 @@ function optionRows(withSlug: boolean): Record<string, string | null>[] {
     return options.value.map((option) => ({
         ...(withSlug && option.id ? { slug: String(option.id) } : {}),
         date: option.date,
-        ...(mode.value === 'slots' ? { starts_at: option.start, ends_at: option.end } : {}),
+        ...(mode.value === 'slots'
+            ? { starts_at: option.start, ends_at: option.end }
+            : {}),
         label: option.label.trim() || null,
     }));
 }
@@ -196,16 +255,26 @@ function save(): void {
             granularity: mode.value === 'slots' ? 'hour' : 'day',
             options: optionRows(false),
         }))
-        .post(sourceEvent.value ? storeFollowUpPoll(sourceEvent.value.slug).url : storePoll(props.form.group_slug).url);
+        .post(
+            sourceEvent.value
+                ? storeFollowUpPoll(sourceEvent.value.slug).url
+                : storePoll(props.form.group_slug).url,
+        );
 }
 
 // A closed poll keeps its options (F-08), so only the title is sent then
 function update(current: App.Data.PollData): void {
     const keptSlugs = options.value.map((option) => String(option.id ?? ''));
-    const remove = current.options.map((option) => option.slug).filter((slug) => !keptSlugs.includes(slug));
+    const remove = current.options
+        .map((option) => option.slug)
+        .filter((slug) => !keptSlugs.includes(slug));
 
     pollForm
-        .transform((data) => (closed.value ? data : { ...data, options: optionRows(true), remove }))
+        .transform((data) =>
+            closed.value
+                ? data
+                : { ...data, options: optionRows(true), remove },
+        )
         .patch(updatePoll(current.slug).url);
 }
 
@@ -235,7 +304,12 @@ function showRequestError(errors: Record<string, string>): void {
 
 // Closing and reopening keep the unsaved title; the option rows follow the reloaded poll
 function changeStatus(current: App.Data.PollData, reopen: boolean): void {
-    const visit = { preserveScroll: true, preserveState: true, onError: showRequestError, onSuccess: () => (options.value = draftsOf(props.form.poll)) };
+    const visit = {
+        preserveScroll: true,
+        preserveState: true,
+        onError: showRequestError,
+        onSuccess: () => (options.value = draftsOf(props.form.poll)),
+    };
 
     if (reopen) {
         router.delete(reopenPoll(current.slug).url, visit);
@@ -246,7 +320,13 @@ function changeStatus(current: App.Data.PollData, reopen: boolean): void {
     router.post(closePoll(current.slug).url, {}, visit);
 }
 
-const totalAnswers = computed(() => (poll.value?.options ?? []).reduce((sum, option) => sum + option.yes_count + option.maybe_count + option.no_count, 0));
+const totalAnswers = computed(() =>
+    (poll.value?.options ?? []).reduce(
+        (sum, option) =>
+            sum + option.yes_count + option.maybe_count + option.no_count,
+        0,
+    ),
+);
 const deleteOpen = ref(false);
 
 function deletePoll(current: App.Data.PollData): void {
@@ -261,18 +341,49 @@ const inputClass =
 <template>
     <Head :title="poll ? t('poll.edit.title') : pageTitle" />
 
-    <FormPage :title="pageTitle" :subtitle="subtitle" :back-href="back.href" :back-label="t('nav.backTo', { name: back.name })">
-        <form id="poll-form" class="flex flex-col gap-(--space-stack)" novalidate :data-feature="editing ? 'F-08' : 'F-06'" @submit.prevent="save">
-            <div class="bg-primary-soft text-primary-soft-fg flex items-center gap-3 rounded-md px-3.5 py-3 text-sm" :data-feature="sourceEvent ? 'F-12' : 'F-06'">
+    <FormPage
+        :title="pageTitle"
+        :subtitle="subtitle"
+        :back-href="back.href"
+        :back-label="t('nav.backTo', { name: back.name })"
+    >
+        <form
+            id="poll-form"
+            class="flex flex-col gap-(--space-stack)"
+            novalidate
+            :data-feature="editing ? 'F-08' : 'F-06'"
+            @submit.prevent="save"
+        >
+            <div
+                class="bg-primary-soft text-primary-soft-fg flex items-center gap-3 rounded-md px-3.5 py-3 text-sm"
+                :data-feature="sourceEvent ? 'F-12' : 'F-06'"
+            >
                 <Users class="size-6 flex-none" aria-hidden="true" />
                 <span class="flex min-w-0 flex-1 flex-col gap-px">
-                    <b v-if="sourceEvent" class="font-semibold">{{ t('newPoll.audienceEvent', { event: sourceEvent.title }) }}</b>
-                    <b v-else class="font-semibold">{{ t('newPoll.audienceGroup', { group: form.group_name }) }}</b>
-                    <span>{{ sourceEvent ? t('newPoll.audienceEventCount', { n: form.member_count }) : t('newPoll.audienceGroupCount', { n: form.member_count }) }}</span>
+                    <b v-if="sourceEvent" class="font-semibold">{{
+                        t('newPoll.audienceEvent', { event: sourceEvent.title })
+                    }}</b>
+                    <b v-else class="font-semibold">{{
+                        t('newPoll.audienceGroup', { group: form.group_name })
+                    }}</b>
+                    <span>{{
+                        sourceEvent
+                            ? t('newPoll.audienceEventCount', {
+                                  n: form.member_count,
+                              })
+                            : t('newPoll.audienceGroupCount', {
+                                  n: form.member_count,
+                              })
+                    }}</span>
                 </span>
             </div>
 
-            <FormField :label="t('newPoll.name')" control="poll-title" required :error="pollForm.errors.title">
+            <FormField
+                :label="t('newPoll.name')"
+                control="poll-title"
+                required
+                :error="pollForm.errors.title"
+            >
                 <template #default="{ describedBy, invalid }">
                     <Input
                         id="poll-title"
@@ -288,50 +399,136 @@ const inputClass =
                 </template>
             </FormField>
 
-            <div v-if="poll" class="flex flex-wrap gap-2" :title="t('newPoll.modeLocked')">
-                <Badge variant="outline">{{ poll.type === 'attendance' ? t('group.polls.attendance') : t('group.polls.dateFinder') }}</Badge>
-                <Badge variant="outline">{{ mode === 'slots' ? t('newPoll.mode.slots') : t('newPoll.mode.day') }}</Badge>
+            <div
+                v-if="poll"
+                class="flex flex-wrap gap-2"
+                :title="t('newPoll.modeLocked')"
+            >
+                <Badge variant="outline">{{
+                    poll.type === 'attendance'
+                        ? t('group.polls.attendance')
+                        : t('group.polls.dateFinder')
+                }}</Badge>
+                <Badge variant="outline">{{
+                    mode === 'slots'
+                        ? t('newPoll.mode.slots')
+                        : t('newPoll.mode.day')
+                }}</Badge>
                 <span class="sr-only">{{ t('newPoll.modeLocked') }}</span>
             </div>
 
             <template v-else>
                 <FormField :label="t('newPoll.type')" control="poll-type" group>
-                    <ChoiceGroup v-model="type" name="poll-type" :options="typeOptions" />
+                    <ChoiceGroup
+                        v-model="type"
+                        name="poll-type"
+                        :options="typeOptions"
+                    />
                 </FormField>
 
                 <FormField :label="t('newPoll.mode')" control="poll-mode" group>
-                    <ChoiceGroup v-model="mode" name="poll-mode" :options="modeOptions" />
+                    <ChoiceGroup
+                        v-model="mode"
+                        name="poll-mode"
+                        :options="modeOptions"
+                    />
                 </FormField>
             </template>
 
-            <FormField v-if="poll" :label="t('poll.edit.status')" control="poll-status" group data-feature="F-08">
+            <FormField
+                v-if="poll"
+                :label="t('poll.edit.status')"
+                control="poll-status"
+                group
+                data-feature="F-08"
+            >
                 <div class="flex flex-wrap items-center gap-2.5">
                     <Badge :variant="status.variant">{{ status.label }}</Badge>
-                    <Button v-if="closed" type="button" variant="secondary" size="sm" @click="changeStatus(poll, true)">{{ t('poll.actions.reopen') }}</Button>
-                    <Button v-else-if="canClose" type="button" variant="secondary" size="sm" @click="changeStatus(poll, false)">{{ t('poll.actions.close') }}</Button>
-                    <span v-else class="text-fg-muted text-sm">{{ t('poll.edit.closesByFixing') }}</span>
+                    <Button
+                        v-if="closed"
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        @click="changeStatus(poll, true)"
+                        >{{ t('poll.actions.reopen') }}</Button
+                    >
+                    <Button
+                        v-else-if="canClose"
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        @click="changeStatus(poll, false)"
+                        >{{ t('poll.actions.close') }}</Button
+                    >
+                    <span v-else class="text-fg-muted text-sm">{{
+                        t('poll.edit.closesByFixing')
+                    }}</span>
                 </div>
             </FormField>
 
-            <FormField v-if="!closed" :label="t('newPoll.options')" control="poll-options" group required :error="optionsError ?? optionsServerError">
-                <OptionCalendar v-model="options" :mode="mode" :today="form.today" :default-slot="defaultSlot" />
+            <FormField
+                v-if="!closed"
+                :label="t('newPoll.options')"
+                control="poll-options"
+                group
+                required
+                :error="optionsError ?? optionsServerError"
+            >
+                <OptionCalendar
+                    v-model="options"
+                    :mode="mode"
+                    :today="form.today"
+                    :default-slot="defaultSlot"
+                />
             </FormField>
 
-            <FormField :label="t('newPoll.selected', { n: validCount })" control="poll-rows" group :hint="optionsHint">
-                <OptionRows v-model="options" :mode="mode" :show-meta="editing" :disabled="closed" id-prefix="poll-option" @request-remove="requestRemove" />
+            <FormField
+                :label="t('newPoll.selected', { n: validCount })"
+                control="poll-rows"
+                group
+                :hint="optionsHint"
+            >
+                <OptionRows
+                    v-model="options"
+                    :mode="mode"
+                    :show-meta="editing"
+                    :disabled="closed"
+                    id-prefix="poll-option"
+                    @request-remove="requestRemove"
+                />
             </FormField>
         </form>
 
-        <section v-if="poll" class="border-border flex flex-col items-start gap-3 border-t pt-6" aria-labelledby="poll-delete-title" data-feature="F-08">
-            <h2 id="poll-delete-title" class="text-xl">{{ t('poll.settings.delete') }}</h2>
-            <Button type="button" variant="destructive" size="lg" :class="buttonClass" @click="deleteOpen = true">{{ t('poll.settings.delete') }}</Button>
+        <section
+            v-if="poll"
+            class="border-border flex flex-col items-start gap-3 border-t pt-6"
+            aria-labelledby="poll-delete-title"
+            data-feature="F-08"
+        >
+            <h2 id="poll-delete-title" class="text-xl">
+                {{ t('poll.settings.delete') }}
+            </h2>
+            <Button
+                type="button"
+                variant="destructive"
+                size="lg"
+                :class="buttonClass"
+                @click="deleteOpen = true"
+                >{{ t('poll.settings.delete') }}</Button
+            >
         </section>
 
         <template #actions>
             <Button as-child variant="outline" size="lg" :class="buttonClass">
                 <Link :href="back.href">{{ t('dialog.cancel') }}</Link>
             </Button>
-            <Button type="submit" form="poll-form" size="lg" :class="buttonClass" :disabled="pollForm.processing">
+            <Button
+                type="submit"
+                form="poll-form"
+                size="lg"
+                :class="buttonClass"
+                :disabled="pollForm.processing"
+            >
                 {{ editing ? t('poll.edit.save') : t('newPoll.create') }}
             </Button>
         </template>
@@ -340,12 +537,24 @@ const inputClass =
     <AlertDialog v-model:open="removeOpen">
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>{{ t('poll.settings.removeTitle') }}</AlertDialogTitle>
-                <AlertDialogDescription>{{ t('poll.settings.removeConfirm', { n: removing?.option.answerCount ?? 0 }) }}</AlertDialogDescription>
+                <AlertDialogTitle>{{
+                    t('poll.settings.removeTitle')
+                }}</AlertDialogTitle>
+                <AlertDialogDescription>{{
+                    t('poll.settings.removeConfirm', {
+                        n: removing?.option.answerCount ?? 0,
+                    })
+                }}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>{{ t('poll.settings.keep') }}</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" @click="confirmRemove">{{ t('poll.settings.remove') }}</AlertDialogAction>
+                <AlertDialogCancel>{{
+                    t('poll.settings.keep')
+                }}</AlertDialogCancel>
+                <AlertDialogAction
+                    variant="destructive"
+                    @click="confirmRemove"
+                    >{{ t('poll.settings.remove') }}</AlertDialogAction
+                >
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
@@ -353,12 +562,23 @@ const inputClass =
     <AlertDialog v-if="poll" v-model:open="deleteOpen">
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>{{ t('poll.settings.delete') }}</AlertDialogTitle>
-                <AlertDialogDescription>{{ t('poll.settings.deleteConfirm', { title: poll.title, n: totalAnswers }) }}</AlertDialogDescription>
+                <AlertDialogTitle>{{
+                    t('poll.settings.delete')
+                }}</AlertDialogTitle>
+                <AlertDialogDescription>{{
+                    t('poll.settings.deleteConfirm', {
+                        title: poll.title,
+                        n: totalAnswers,
+                    })
+                }}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>{{ t('dialog.cancel') }}</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" @click="deletePoll(poll)">{{ t('poll.settings.delete') }}</AlertDialogAction>
+                <AlertDialogAction
+                    variant="destructive"
+                    @click="deletePoll(poll)"
+                    >{{ t('poll.settings.delete') }}</AlertDialogAction
+                >
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

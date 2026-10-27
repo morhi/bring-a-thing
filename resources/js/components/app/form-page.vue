@@ -27,19 +27,28 @@ const backClasses =
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ backLabel ?? t('nav.back') }}
             </Link>
-            <button v-else type="button" :class="backClasses" @click="$emit('back')">
+            <button
+                v-else
+                type="button"
+                :class="backClasses"
+                @click="$emit('back')"
+            >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ backLabel ?? t('nav.back') }}
             </button>
             <h1 class="text-3xl">{{ title }}</h1>
-            <p v-if="subtitle" class="max-w-[60ch] text-fg-muted">{{ subtitle }}</p>
+            <p v-if="subtitle" class="text-fg-muted max-w-[60ch]">
+                {{ subtitle }}
+            </p>
         </header>
-        <div class="box flex flex-col gap-4 rounded-3xl px-4 pt-[18px] pb-5 shadow-card sm:px-8 sm:pt-7 sm:pb-8">
+        <div
+            class="box shadow-card flex flex-col gap-4 rounded-3xl px-4 pt-[18px] pb-5 sm:px-8 sm:pt-7 sm:pb-8"
+        >
             <slot />
         </div>
         <div
             v-if="$slots.actions"
-            class="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] -mt-2 mb-6 flex flex-wrap justify-end gap-2.5 rounded-md border border-border bg-surface-raised/90 px-3.5 py-3 shadow-md backdrop-blur-sm"
+            class="border-border bg-surface-raised/90 sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] -mt-2 mb-6 flex flex-wrap justify-end gap-2.5 rounded-md border px-3.5 py-3 shadow-md backdrop-blur-sm"
         >
             <slot name="actions" />
         </div>

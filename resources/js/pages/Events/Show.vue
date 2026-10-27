@@ -92,20 +92,41 @@ const statusLabel: Record<App.Enums.ParticipationStatus, string> = {
 
 const ownBadge = computed(() => {
     if (props.page.own_status === 'accepted') {
-        return { label: t('group.events.youAccepted'), class: 'bg-success-soft text-success' };
+        return {
+            label: t('group.events.youAccepted'),
+            class: 'bg-success-soft text-success',
+        };
     }
 
     if (props.page.own_status === 'declined') {
-        return { label: t('group.events.youDeclined'), class: 'bg-danger-soft text-danger' };
+        return {
+            label: t('group.events.youDeclined'),
+            class: 'bg-danger-soft text-danger',
+        };
     }
 
-    return { label: t('group.events.youPending'), class: 'bg-warning-soft text-warning' };
+    return {
+        label: t('group.events.youPending'),
+        class: 'bg-warning-soft text-warning',
+    };
 });
 
-const childBadge: Record<App.Enums.ParticipationStatus, { label: string; class: string }> = {
-    accepted: { label: 'group.events.youAccepted', class: 'bg-success-soft text-success' },
-    pending: { label: 'group.events.youPending', class: 'bg-warning-soft text-warning' },
-    declined: { label: 'group.events.youDeclined', class: 'bg-danger-soft text-danger' },
+const childBadge: Record<
+    App.Enums.ParticipationStatus,
+    { label: string; class: string }
+> = {
+    accepted: {
+        label: 'group.events.youAccepted',
+        class: 'bg-success-soft text-success',
+    },
+    pending: {
+        label: 'group.events.youPending',
+        class: 'bg-warning-soft text-warning',
+    },
+    declined: {
+        label: 'group.events.youDeclined',
+        class: 'bg-danger-soft text-danger',
+    },
 };
 
 function daysUntil(date: string): number {
@@ -142,7 +163,10 @@ const timeLabel = computed(() => {
         return event.value.starts_at;
     }
 
-    return t('event.timeRange', { start: event.value.starts_at, end: event.value.ends_at });
+    return t('event.timeRange', {
+        start: event.value.starts_at,
+        end: event.value.ends_at,
+    });
 });
 
 const endLabel = computed(() => {
@@ -187,23 +211,36 @@ const managing = ref(false);
 const canManage = computed(
     () =>
         !event.value.is_past &&
-        (permissions.value.can_set_status_for_others || permissions.value.can_remove_participants),
+        (permissions.value.can_set_status_for_others ||
+            permissions.value.can_remove_participants),
 );
-const canRespond = computed(() => permissions.value.can_respond && !event.value.is_past);
+const canRespond = computed(
+    () => permissions.value.can_respond && !event.value.is_past,
+);
 
 const columns = computed(() => {
-    const groups: { status: App.Enums.ParticipationStatus | null; label: string; people: App.Data.ParticipationData[] }[] = (
-        ['accepted', 'pending', 'declined'] as const
-    ).map((status) => ({
+    const groups: {
+        status: App.Enums.ParticipationStatus | null;
+        label: string;
+        people: App.Data.ParticipationData[];
+    }[] = (['accepted', 'pending', 'declined'] as const).map((status) => ({
         status,
         label: t(statusLabel[status]),
-        people: props.page.participants.filter((person) => person.status === status),
+        people: props.page.participants.filter(
+            (person) => person.status === status,
+        ),
     }));
-    const withoutStatus = props.page.participants.filter((person) => person.status === null);
+    const withoutStatus = props.page.participants.filter(
+        (person) => person.status === null,
+    );
 
     // People without a status only matter to those who can set one
     if (managing.value && withoutStatus.length) {
-        groups.push({ status: null, label: t('event.noStatus'), people: withoutStatus });
+        groups.push({
+            status: null,
+            label: t('event.noStatus'),
+            people: withoutStatus,
+        });
     }
 
     return groups;
@@ -215,7 +252,10 @@ function showError(errors: Record<string, string>): void {
     toast.error(Object.values(errors)[0] ?? t('event.notFound'));
 }
 
-function respond(status: 'accepted' | 'declined', confirmRelease = false): void {
+function respond(
+    status: 'accepted' | 'declined',
+    confirmRelease = false,
+): void {
     if (!canRespond.value) {
         return;
     }
@@ -259,11 +299,17 @@ function claimLabel(claim: App.Data.EventClaimData): string {
         return t('event.task');
     }
 
-    return claim.unit ? `${claim.quantity} ${claim.unit}` : String(claim.quantity);
+    return claim.unit
+        ? `${claim.quantity} ${claim.unit}`
+        : String(claim.quantity);
 }
 
 function setStatus(person: App.Data.ParticipationData, status: unknown): void {
-    if (status !== 'accepted' && status !== 'pending' && status !== 'declined') {
+    if (
+        status !== 'accepted' &&
+        status !== 'pending' &&
+        status !== 'declined'
+    ) {
         return;
     }
 
@@ -287,10 +333,13 @@ function confirmRemove(): void {
         return;
     }
 
-    router.delete(removeParticipant([event.value.slug, removeTarget.value.user_id]).url, {
-        preserveScroll: true,
-        onError: showError,
-    });
+    router.delete(
+        removeParticipant([event.value.slug, removeTarget.value.user_id]).url,
+        {
+            preserveScroll: true,
+            onError: showError,
+        },
+    );
     removeOpen.value = false;
 }
 
@@ -335,7 +384,12 @@ function deleteComment(id: ThreadComment['id']): void {
 // Live updates (F-21): participation, details and comments of this event
 useEcho<{ deleted?: boolean }>(
     `event.${props.page.event.id}`,
-    ['.event.updated', '.participation.changed', '.comment.added', '.comment.deleted'],
+    [
+        '.event.updated',
+        '.participation.changed',
+        '.comment.added',
+        '.comment.deleted',
+    ],
     (payload) => {
         if (payload.deleted) {
             router.visit(showGroup(props.page.event.group_slug).url);
@@ -349,7 +403,8 @@ useEcho<{ deleted?: boolean }>(
 
 const buttonClass = 'h-(--control-height) px-4';
 // Outline buttons fall back to a translucent border color in dark mode, so the surface and text are set explicitly
-const outlineClass = 'bg-control text-fg hover:bg-surface-muted dark:bg-control dark:hover:bg-surface-muted';
+const outlineClass =
+    'bg-control text-fg hover:bg-surface-muted dark:bg-control dark:hover:bg-surface-muted';
 const rowClass =
     'box text-fg flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:px-[22px] max-[560px]:flex-wrap';
 const badgeLinkClass =
@@ -369,11 +424,23 @@ const badgeLinkClass =
                 {{ t('event.back', { group: event.group_name }) }}
             </Link>
             <div class="flex flex-wrap items-start gap-x-5 gap-y-4">
-                <DateBlock :date="event.date" :fixed="event.origin_poll_slug !== null && !event.is_past" size="lg" />
+                <DateBlock
+                    :date="event.date"
+                    :fixed="event.origin_poll_slug !== null && !event.is_past"
+                    size="lg"
+                />
                 <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
                     <div class="flex flex-wrap items-center gap-2">
-                        <Badge v-if="event.is_past" class="bg-surface-muted text-fg-muted">{{ t('event.past') }}</Badge>
-                        <Badge v-else class="bg-primary-soft text-primary-soft-fg">{{ relativeDay }}</Badge>
+                        <Badge
+                            v-if="event.is_past"
+                            class="bg-surface-muted text-fg-muted"
+                            >{{ t('event.past') }}</Badge
+                        >
+                        <Badge
+                            v-else
+                            class="bg-primary-soft text-primary-soft-fg"
+                            >{{ relativeDay }}</Badge
+                        >
                         <Link
                             v-if="event.origin_poll_slug"
                             :href="showPoll(event.origin_poll_slug).url"
@@ -390,21 +457,45 @@ const badgeLinkClass =
                             data-feature="F-12"
                         >
                             <CalendarDays class="size-3.5" aria-hidden="true" />
-                            {{ t('event.parent', { event: event.parent_event.title }) }}
+                            {{
+                                t('event.parent', {
+                                    event: event.parent_event.title,
+                                })
+                            }}
                         </Link>
                     </div>
                     <h1 class="text-3xl break-words">{{ event.title }}</h1>
-                    <p class="text-fg-muted flex flex-wrap gap-x-[18px] gap-y-2 text-[15px]">
+                    <p
+                        class="text-fg-muted flex flex-wrap gap-x-[18px] gap-y-2 text-[15px]"
+                    >
                         <span class="inline-flex items-center gap-1.5">
-                            <CalendarDays class="text-fg-soft size-4" aria-hidden="true" />
-                            {{ longDate(event.date) }}<template v-if="endLabel"> – {{ endLabel }}</template>
+                            <CalendarDays
+                                class="text-fg-soft size-4"
+                                aria-hidden="true"
+                            />
+                            {{ longDate(event.date)
+                            }}<template v-if="endLabel">
+                                – {{ endLabel }}</template
+                            >
                         </span>
-                        <span v-if="timeLabel" class="inline-flex items-center gap-1.5">
-                            <Clock class="text-fg-soft size-4" aria-hidden="true" />
+                        <span
+                            v-if="timeLabel"
+                            class="inline-flex items-center gap-1.5"
+                        >
+                            <Clock
+                                class="text-fg-soft size-4"
+                                aria-hidden="true"
+                            />
                             {{ timeLabel }}
                         </span>
-                        <span v-if="event.location" class="inline-flex min-w-0 items-center gap-1.5 break-words">
-                            <MapPin class="text-fg-soft size-4 flex-none" aria-hidden="true" />
+                        <span
+                            v-if="event.location"
+                            class="inline-flex min-w-0 items-center gap-1.5 break-words"
+                        >
+                            <MapPin
+                                class="text-fg-soft size-4 flex-none"
+                                aria-hidden="true"
+                            />
                             {{ event.location }}
                         </span>
                         <Link
@@ -414,9 +505,16 @@ const badgeLinkClass =
                             <Users class="size-4" aria-hidden="true" />
                             {{ event.group_name }}
                         </Link>
-                        <span>{{ t('event.organizer', { name: personName(event.organizer_name) }) }}</span>
+                        <span>{{
+                            t('event.organizer', {
+                                name: personName(event.organizer_name),
+                            })
+                        }}</span>
                     </p>
-                    <p v-if="event.description" class="max-w-[65ch] text-[17px] whitespace-pre-line break-words">
+                    <p
+                        v-if="event.description"
+                        class="max-w-[65ch] text-[17px] break-words whitespace-pre-line"
+                    >
                         {{ event.description }}
                     </p>
                 </div>
@@ -424,13 +522,22 @@ const badgeLinkClass =
                     v-if="permissions.can_edit || permissions.can_delete"
                     class="flex w-full flex-wrap gap-2 min-[720px]:ml-auto min-[720px]:w-auto"
                 >
-                    <Button v-if="permissions.can_edit" as-child variant="outline" :class="outlineClass">
+                    <Button
+                        v-if="permissions.can_edit"
+                        as-child
+                        variant="outline"
+                        :class="outlineClass"
+                    >
                         <Link :href="editEvent(event.slug).url">
                             <Pencil aria-hidden="true" />
                             {{ t('event.edit') }}
                         </Link>
                     </Button>
-                    <Button v-if="permissions.can_delete" variant="destructive" @click="deleteOpen = true">
+                    <Button
+                        v-if="permissions.can_delete"
+                        variant="destructive"
+                        @click="deleteOpen = true"
+                    >
                         <Trash2 aria-hidden="true" />
                         {{ t('event.delete') }}
                     </Button>
@@ -438,9 +545,15 @@ const badgeLinkClass =
             </div>
         </header>
 
-        <section class="box flex flex-col gap-5 p-5 sm:p-7" aria-labelledby="participation-title" data-feature="F-11">
+        <section
+            class="box flex flex-col gap-5 p-5 sm:p-7"
+            aria-labelledby="participation-title"
+            data-feature="F-11"
+        >
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="participation-title" class="text-xl">{{ t('event.participation') }}</h2>
+                <h2 id="participation-title" class="text-xl">
+                    {{ t('event.participation') }}
+                </h2>
                 <span class="flex flex-wrap items-center gap-2">
                     <Badge :class="ownBadge.class">{{ ownBadge.label }}</Badge>
                     <Button
@@ -451,19 +564,34 @@ const badgeLinkClass =
                         :aria-pressed="managing"
                         @click="managing = !managing"
                     >
-                        {{ managing ? t('event.manageDone') : t('event.manage') }}
+                        {{
+                            managing ? t('event.manageDone') : t('event.manage')
+                        }}
                     </Button>
                 </span>
             </div>
 
-            <div class="bg-surface-muted flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-md px-5 py-4">
+            <div
+                class="bg-surface-muted flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-md px-5 py-4"
+            >
                 <span class="flex-[1_1_200px] font-semibold">{{
                     event.is_past ? t('event.pastNote') : t('event.yourAnswer')
                 }}</span>
-                <div class="flex flex-wrap gap-2" role="group" :aria-label="t('event.yourAnswer')">
+                <div
+                    class="flex flex-wrap gap-2"
+                    role="group"
+                    :aria-label="t('event.yourAnswer')"
+                >
                     <Button
-                        :variant="page.own_status === 'accepted' ? 'default' : 'outline'"
-                        :class="[buttonClass, page.own_status !== 'accepted' && outlineClass]"
+                        :variant="
+                            page.own_status === 'accepted'
+                                ? 'default'
+                                : 'outline'
+                        "
+                        :class="[
+                            buttonClass,
+                            page.own_status !== 'accepted' && outlineClass,
+                        ]"
                         :aria-pressed="page.own_status === 'accepted'"
                         :disabled="!canRespond || responding"
                         @click="respond('accepted')"
@@ -473,7 +601,10 @@ const badgeLinkClass =
                     </Button>
                     <Button
                         variant="destructive"
-                        :class="[buttonClass, page.own_status === 'declined' && 'border-danger']"
+                        :class="[
+                            buttonClass,
+                            page.own_status === 'declined' && 'border-danger',
+                        ]"
                         :aria-pressed="page.own_status === 'declined'"
                         :disabled="!canRespond || responding"
                         @click="decline"
@@ -491,22 +622,31 @@ const badgeLinkClass =
             >
                 <Users class="mt-0.5 size-5 flex-none" aria-hidden="true" />
                 <span>
-                    <b class="font-semibold">{{ t('event.noAcceptances.title') }}</b><br />
+                    <b class="font-semibold">{{
+                        t('event.noAcceptances.title')
+                    }}</b
+                    ><br />
                     {{ t('event.noAcceptances.text') }}
                 </span>
             </div>
 
-            <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-x-6 gap-y-5">
+            <div
+                class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-x-6 gap-y-5"
+            >
                 <div
                     v-for="column in columns"
                     :key="column.status ?? 'none'"
                     class="flex min-w-0 flex-col gap-2.5"
                 >
-                    <h3 :id="`participants-${column.status ?? 'none'}`" class="flex items-baseline gap-2 text-base">
+                    <h3
+                        :id="`participants-${column.status ?? 'none'}`"
+                        class="flex items-baseline gap-2 text-base"
+                    >
                         {{ column.label }}
-                        <span class="text-fg-soft font-sans text-sm font-semibold tabular-nums">{{
-                            column.people.length
-                        }}</span>
+                        <span
+                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
+                            >{{ column.people.length }}</span
+                        >
                     </h3>
                     <ul
                         v-if="column.people.length"
@@ -518,15 +658,25 @@ const badgeLinkClass =
                             :key="person.user_id"
                             class="flex min-h-9 min-w-0 items-center gap-2.5"
                         >
-                            <UserAvatar :name="person.name" size="sm" aria-hidden="true" />
-                            <span class="min-w-0 flex-auto truncate text-[15px]">
+                            <UserAvatar
+                                :name="person.name"
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                            <span
+                                class="min-w-0 flex-auto truncate text-[15px]"
+                            >
                                 {{ personName(person.name) }}
-                                <span v-if="person.user_id === currentUserId" class="text-fg-soft text-sm"
+                                <span
+                                    v-if="person.user_id === currentUserId"
+                                    class="text-fg-soft text-sm"
                                     >({{ t('group.member.you') }})</span
                                 >
                             </span>
                             <span
-                                v-if="managing && person.user_id !== currentUserId"
+                                v-if="
+                                    managing && person.user_id !== currentUserId
+                                "
                                 class="flex flex-none items-center gap-1"
                             >
                                 <NativeSelect
@@ -534,24 +684,48 @@ const badgeLinkClass =
                                     size="sm"
                                     class="w-[124px]"
                                     :model-value="person.status ?? ''"
-                                    :aria-label="t('event.setStatus', { name: personName(person.name) })"
-                                    @update:model-value="setStatus(person, $event)"
+                                    :aria-label="
+                                        t('event.setStatus', {
+                                            name: personName(person.name),
+                                        })
+                                    "
+                                    @update:model-value="
+                                        setStatus(person, $event)
+                                    "
                                 >
-                                    <NativeSelectOption v-if="person.status === null" value="" disabled>{{
-                                        t('event.noStatus')
-                                    }}</NativeSelectOption>
                                     <NativeSelectOption
-                                        v-for="status in ['accepted', 'pending', 'declined'] as const"
+                                        v-if="person.status === null"
+                                        value=""
+                                        disabled
+                                        >{{
+                                            t('event.noStatus')
+                                        }}</NativeSelectOption
+                                    >
+                                    <NativeSelectOption
+                                        v-for="status in [
+                                            'accepted',
+                                            'pending',
+                                            'declined',
+                                        ] as const"
                                         :key="status"
                                         :value="status"
-                                        >{{ t(statusLabel[status]) }}</NativeSelectOption
+                                        >{{
+                                            t(statusLabel[status])
+                                        }}</NativeSelectOption
                                     >
                                 </NativeSelect>
                                 <Button
-                                    v-if="permissions.can_remove_participants && person.status !== null"
+                                    v-if="
+                                        permissions.can_remove_participants &&
+                                        person.status !== null
+                                    "
                                     variant="ghost"
                                     size="icon-sm"
-                                    :aria-label="t('event.remove', { name: personName(person.name) })"
+                                    :aria-label="
+                                        t('event.remove', {
+                                            name: personName(person.name),
+                                        })
+                                    "
                                     @click="askRemove(person)"
                                 >
                                     <X aria-hidden="true" />
@@ -559,17 +733,28 @@ const badgeLinkClass =
                             </span>
                         </li>
                     </ul>
-                    <p v-else class="text-fg-soft text-sm">{{ t('event.none') }}</p>
+                    <p v-else class="text-fg-soft text-sm">
+                        {{ t('event.none') }}
+                    </p>
                 </div>
             </div>
 
-            <p v-if="!isParticipant" class="text-fg-muted text-sm">{{ t('event.keyDetailsNote') }}</p>
+            <p v-if="!isParticipant" class="text-fg-muted text-sm">
+                {{ t('event.keyDetailsNote') }}
+            </p>
         </section>
 
         <template v-if="isParticipant">
-            <section class="flex flex-col gap-4" aria-labelledby="event-lists-title" data-feature="F-13">
+            <section
+                class="flex flex-col gap-4"
+                aria-labelledby="event-lists-title"
+                data-feature="F-13"
+            >
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 id="event-lists-title" class="flex items-center gap-2.5 text-xl">
+                    <h2
+                        id="event-lists-title"
+                        class="flex items-center gap-2.5 text-xl"
+                    >
                         {{ t('event.lists') }}
                         <span
                             v-if="page.lists.length"
@@ -577,39 +762,79 @@ const badgeLinkClass =
                             >{{ page.lists.length }}</span
                         >
                     </h2>
-                    <Button v-if="permissions.can_create_list && page.lists.length" as-child variant="outline" :class="outlineClass">
-                        <Link :href="createList({ query: { event: event.slug } }).url">
+                    <Button
+                        v-if="permissions.can_create_list && page.lists.length"
+                        as-child
+                        variant="outline"
+                        :class="outlineClass"
+                    >
+                        <Link
+                            :href="
+                                createList({ query: { event: event.slug } }).url
+                            "
+                        >
                             <Plus aria-hidden="true" />
                             {{ t('group.new.list') }}
                         </Link>
                     </Button>
                 </div>
-                <ul v-if="page.lists.length" class="grid gap-2.5 sm:grid-cols-2">
+                <ul
+                    v-if="page.lists.length"
+                    class="grid gap-2.5 sm:grid-cols-2"
+                >
                     <li v-for="list in page.lists" :key="list.slug">
-                        <Link :href="showList(list.slug).url" :class="[rowClass, 'h-full items-start']">
-                            <span class="bg-primary-soft text-primary-soft-fg grid size-10 flex-none place-items-center rounded-xl">
+                        <Link
+                            :href="showList(list.slug).url"
+                            :class="[rowClass, 'h-full items-start']"
+                        >
+                            <span
+                                class="bg-primary-soft text-primary-soft-fg grid size-10 flex-none place-items-center rounded-xl"
+                            >
                                 <ListChecks class="size-5" aria-hidden="true" />
                             </span>
                             <span class="flex min-w-0 flex-1 flex-col gap-1">
-                                <span class="font-display text-[17px] leading-tight font-[640] break-words">{{
-                                    list.title
-                                }}</span>
+                                <span
+                                    class="font-display text-[17px] leading-tight font-[640] break-words"
+                                    >{{ list.title }}</span
+                                >
                                 <span class="text-fg-muted text-sm">{{
-                                    t('dash.lists.claimed', { done: list.claimed_count, total: list.item_count })
+                                    t('dash.lists.claimed', {
+                                        done: list.claimed_count,
+                                        total: list.item_count,
+                                    })
                                 }}</span>
                                 <ProgressBar
                                     class="mt-1"
                                     :done="list.claimed_count"
                                     :total="list.item_count"
-                                    :label="t('dash.lists.claimed', { done: list.claimed_count, total: list.item_count })"
+                                    :label="
+                                        t('dash.lists.claimed', {
+                                            done: list.claimed_count,
+                                            total: list.item_count,
+                                        })
+                                    "
                                 />
                             </span>
                         </Link>
                     </li>
                 </ul>
-                <EmptyState v-else :title="t('event.lists.empty.title')" :text="t('event.lists.empty.text')">
-                    <Button v-if="permissions.can_create_list" as-child size="lg" variant="secondary" :class="buttonClass">
-                        <Link :href="createList({ query: { event: event.slug } }).url">
+                <EmptyState
+                    v-else
+                    :title="t('event.lists.empty.title')"
+                    :text="t('event.lists.empty.text')"
+                >
+                    <Button
+                        v-if="permissions.can_create_list"
+                        as-child
+                        size="lg"
+                        variant="secondary"
+                        :class="buttonClass"
+                    >
+                        <Link
+                            :href="
+                                createList({ query: { event: event.slug } }).url
+                            "
+                        >
                             <Plus aria-hidden="true" />
                             {{ t('group.new.list') }}
                         </Link>
@@ -617,9 +842,17 @@ const badgeLinkClass =
                 </EmptyState>
             </section>
 
-            <section v-if="!isChild" class="flex flex-col gap-4" aria-labelledby="followups-title" data-feature="F-12">
+            <section
+                v-if="!isChild"
+                class="flex flex-col gap-4"
+                aria-labelledby="followups-title"
+                data-feature="F-12"
+            >
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2 id="followups-title" class="flex items-center gap-2.5 text-xl">
+                    <h2
+                        id="followups-title"
+                        class="flex items-center gap-2.5 text-xl"
+                    >
                         {{ t('event.followUps') }}
                         <span
                             v-if="page.follow_up_polls.length"
@@ -628,7 +861,10 @@ const badgeLinkClass =
                         >
                     </h2>
                     <Button
-                        v-if="permissions.can_create_follow_up_poll && page.follow_up_polls.length"
+                        v-if="
+                            permissions.can_create_follow_up_poll &&
+                            page.follow_up_polls.length
+                        "
                         as-child
                     >
                         <Link :href="createFollowUpPoll(event.slug).url">
@@ -637,31 +873,63 @@ const badgeLinkClass =
                         </Link>
                     </Button>
                 </div>
-                <p v-if="!permissions.can_create_follow_up_poll && !page.follow_up_polls.length" class="text-fg-muted text-sm">
+                <p
+                    v-if="
+                        !permissions.can_create_follow_up_poll &&
+                        !page.follow_up_polls.length
+                    "
+                    class="text-fg-muted text-sm"
+                >
                     {{ t('event.followUps.acceptFirst') }}
                 </p>
-                <ul v-else-if="page.follow_up_polls.length" class="flex flex-col gap-2.5">
+                <ul
+                    v-else-if="page.follow_up_polls.length"
+                    class="flex flex-col gap-2.5"
+                >
                     <li v-for="poll in page.follow_up_polls" :key="poll.slug">
                         <Link :href="showPoll(poll.slug).url" :class="rowClass">
                             <span
                                 class="grid size-11 flex-none place-items-center rounded-xl"
-                                :class="poll.is_closed ? 'bg-surface-muted text-fg-muted' : 'bg-primary-soft text-primary-soft-fg'"
+                                :class="
+                                    poll.is_closed
+                                        ? 'bg-surface-muted text-fg-muted'
+                                        : 'bg-primary-soft text-primary-soft-fg'
+                                "
                             >
-                                <Grid3x3 v-if="poll.type === 'attendance'" class="size-[22px]" aria-hidden="true" />
-                                <Vote v-else class="size-[22px]" aria-hidden="true" />
+                                <Grid3x3
+                                    v-if="poll.type === 'attendance'"
+                                    class="size-[22px]"
+                                    aria-hidden="true"
+                                />
+                                <Vote
+                                    v-else
+                                    class="size-[22px]"
+                                    aria-hidden="true"
+                                />
                             </span>
                             <span class="flex min-w-0 flex-1 flex-col gap-1">
-                                <span class="font-display text-[17px] leading-tight font-[640] break-words">{{
-                                    poll.title
-                                }}</span>
-                                <span class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm">
+                                <span
+                                    class="font-display text-[17px] leading-tight font-[640] break-words"
+                                    >{{ poll.title }}</span
+                                >
+                                <span
+                                    class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"
+                                >
                                     <span>{{
-                                        poll.type === 'attendance' ? t('group.polls.attendance') : t('group.polls.dateFinder')
+                                        poll.type === 'attendance'
+                                            ? t('group.polls.attendance')
+                                            : t('group.polls.dateFinder')
                                     }}</span>
-                                    <span>{{ t('group.polls.options', { n: poll.option_count }) }}</span>
+                                    <span>{{
+                                        t('group.polls.options', {
+                                            n: poll.option_count,
+                                        })
+                                    }}</span>
                                 </span>
                             </span>
-                            <span class="flex flex-none items-center gap-3 max-[560px]:basis-full max-[560px]:pl-[58px]">
+                            <span
+                                class="flex flex-none items-center gap-3 max-[560px]:basis-full max-[560px]:pl-[58px]"
+                            >
                                 <span
                                     v-if="!poll.is_closed"
                                     class="text-fg-muted inline-flex items-center gap-1.5 text-sm tabular-nums"
@@ -670,22 +938,41 @@ const badgeLinkClass =
                                         class="w-16 flex-none"
                                         :done="poll.answered_count"
                                         :total="poll.audience_count"
-                                        :label="t('group.polls.responses', { n: poll.answered_count, total: poll.audience_count })"
+                                        :label="
+                                            t('group.polls.responses', {
+                                                n: poll.answered_count,
+                                                total: poll.audience_count,
+                                            })
+                                        "
                                     />
-                                    {{ poll.answered_count }}/{{ poll.audience_count }}
+                                    {{ poll.answered_count }}/{{
+                                        poll.audience_count
+                                    }}
                                 </span>
-                                <Badge v-if="!poll.is_closed" class="bg-primary-soft text-primary-soft-fg">{{
-                                    t('group.polls.open')
-                                }}</Badge>
-                                <Badge v-else-if="poll.is_fixed" class="bg-success-soft text-success">{{
-                                    t('group.polls.fixed')
-                                }}</Badge>
-                                <Badge v-else class="bg-surface-muted text-fg-muted">{{ t('group.polls.closed') }}</Badge>
+                                <Badge
+                                    v-if="!poll.is_closed"
+                                    class="bg-primary-soft text-primary-soft-fg"
+                                    >{{ t('group.polls.open') }}</Badge
+                                >
+                                <Badge
+                                    v-else-if="poll.is_fixed"
+                                    class="bg-success-soft text-success"
+                                    >{{ t('group.polls.fixed') }}</Badge
+                                >
+                                <Badge
+                                    v-else
+                                    class="bg-surface-muted text-fg-muted"
+                                    >{{ t('group.polls.closed') }}</Badge
+                                >
                             </span>
                         </Link>
                     </li>
                 </ul>
-                <EmptyState v-else :title="t('event.followUps.empty.title')" :text="t('event.followUps.empty.text')">
+                <EmptyState
+                    v-else
+                    :title="t('event.followUps.empty.title')"
+                    :text="t('event.followUps.empty.text')"
+                >
                     <Button as-child size="lg" :class="buttonClass">
                         <Link :href="createFollowUpPoll(event.slug).url">
                             <Plus aria-hidden="true" />
@@ -695,8 +982,16 @@ const badgeLinkClass =
                 </EmptyState>
             </section>
 
-            <section v-if="!isChild" class="flex flex-col gap-4" aria-labelledby="children-title" data-feature="F-12">
-                <h2 id="children-title" class="flex items-center gap-2.5 text-xl">
+            <section
+                v-if="!isChild"
+                class="flex flex-col gap-4"
+                aria-labelledby="children-title"
+                data-feature="F-12"
+            >
+                <h2
+                    id="children-title"
+                    class="flex items-center gap-2.5 text-xl"
+                >
                     {{ t('event.children') }}
                     <span
                         v-if="page.child_events.length"
@@ -704,37 +999,73 @@ const badgeLinkClass =
                         >{{ page.child_events.length }}</span
                     >
                 </h2>
-                <ul v-if="page.child_events.length" class="flex flex-col gap-2.5">
+                <ul
+                    v-if="page.child_events.length"
+                    class="flex flex-col gap-2.5"
+                >
                     <li v-for="child in page.child_events" :key="child.slug">
-                        <Link :href="showEvent(child.slug).url" :class="[rowClass, child.is_past && 'opacity-75']" data-feature="F-09">
-                            <DateBlock :date="child.date" :fixed="child.is_from_poll && !child.is_past" />
+                        <Link
+                            :href="showEvent(child.slug).url"
+                            :class="[rowClass, child.is_past && 'opacity-75']"
+                            data-feature="F-09"
+                        >
+                            <DateBlock
+                                :date="child.date"
+                                :fixed="child.is_from_poll && !child.is_past"
+                            />
                             <span class="flex min-w-0 flex-1 flex-col gap-1">
-                                <span class="font-display text-[17px] leading-tight font-[640] break-words">{{
-                                    child.title
-                                }}</span>
-                                <span class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm">
+                                <span
+                                    class="font-display text-[17px] leading-tight font-[640] break-words"
+                                    >{{ child.title }}</span
+                                >
+                                <span
+                                    class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"
+                                >
                                     <span>{{ childWhen(child) }}</span>
-                                    <span v-if="child.location">{{ child.location }}</span>
-                                </span>
-                                <span class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm">
-                                    <span>{{ t('group.events.accepted', { n: child.accepted_count }) }}</span>
-                                    <span v-if="child.pending_count && !child.is_past">{{
-                                        t('group.events.pending', { n: child.pending_count })
+                                    <span v-if="child.location">{{
+                                        child.location
                                     }}</span>
+                                </span>
+                                <span
+                                    class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"
+                                >
+                                    <span>{{
+                                        t('group.events.accepted', {
+                                            n: child.accepted_count,
+                                        })
+                                    }}</span>
+                                    <span
+                                        v-if="
+                                            child.pending_count &&
+                                            !child.is_past
+                                        "
+                                        >{{
+                                            t('group.events.pending', {
+                                                n: child.pending_count,
+                                            })
+                                        }}</span
+                                    >
                                 </span>
                             </span>
                             <span
                                 v-if="child.own_status && !child.is_past"
                                 class="flex flex-none items-center max-[560px]:basis-full max-[560px]:pl-[68px]"
                             >
-                                <Badge :class="childBadge[child.own_status].class">{{
-                                    t(childBadge[child.own_status].label)
-                                }}</Badge>
+                                <Badge
+                                    :class="childBadge[child.own_status].class"
+                                    >{{
+                                        t(childBadge[child.own_status].label)
+                                    }}</Badge
+                                >
                             </span>
                         </Link>
                     </li>
                 </ul>
-                <EmptyState v-else :title="t('event.children.empty.title')" :text="t('event.children.empty.text')" />
+                <EmptyState
+                    v-else
+                    :title="t('event.children.empty.title')"
+                    :text="t('event.children.empty.text')"
+                />
             </section>
         </template>
 
@@ -747,13 +1078,18 @@ const badgeLinkClass =
             <h2 id="event-comments-title" class="text-lg">
                 <button
                     type="button"
-                    class="flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                    class="focus-visible:outline-focus-ring flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2"
                     :aria-expanded="commentsOpen"
                     aria-controls="event-comments-body"
                     @click="commentsOpen = !commentsOpen"
                 >
-                    <MessageSquare class="text-fg-soft size-5" aria-hidden="true" />
-                    <span class="min-w-0 flex-1">{{ t('event.comments.toggle', { n: page.comments.length }) }}</span>
+                    <MessageSquare
+                        class="text-fg-soft size-5"
+                        aria-hidden="true"
+                    />
+                    <span class="min-w-0 flex-1">{{
+                        t('event.comments.toggle', { n: page.comments.length })
+                    }}</span>
                     <ChevronRight
                         class="text-fg-soft size-4 transition-transform motion-reduce:transition-none"
                         :class="commentsOpen && 'rotate-90'"
@@ -761,7 +1097,11 @@ const badgeLinkClass =
                     />
                 </button>
             </h2>
-            <div v-if="commentsOpen" id="event-comments-body" class="border-border border-t pt-4">
+            <div
+                v-if="commentsOpen"
+                id="event-comments-body"
+                class="border-border border-t pt-4"
+            >
                 <CommentThread
                     v-model="commentForm.body"
                     :comments="threadComments"
@@ -776,8 +1116,12 @@ const badgeLinkClass =
         <AlertDialog v-model:open="declineOpen">
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{{ t('event.decline.title') }}</AlertDialogTitle>
-                    <AlertDialogDescription>{{ t('event.decline.text') }}</AlertDialogDescription>
+                    <AlertDialogTitle>{{
+                        t('event.decline.title')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.decline.text')
+                    }}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <ul class="flex flex-col gap-2" data-feature="F-11">
                     <li
@@ -785,18 +1129,28 @@ const badgeLinkClass =
                         :key="`${claim.roster_slug}-${index}`"
                         class="flex items-center gap-3"
                     >
-                        <Badge variant="outline" class="tabular-nums">{{ claimLabel(claim) }}</Badge>
+                        <Badge variant="outline" class="tabular-nums">{{
+                            claimLabel(claim)
+                        }}</Badge>
                         <span class="flex min-w-0 flex-col">
-                            <span class="font-semibold break-words">{{ claim.item_name }}</span>
-                            <span class="text-fg-muted text-sm">{{ t('event.inList', { list: claim.roster_title }) }}</span>
+                            <span class="font-semibold break-words">{{
+                                claim.item_name
+                            }}</span>
+                            <span class="text-fg-muted text-sm">{{
+                                t('event.inList', { list: claim.roster_title })
+                            }}</span>
                         </span>
                     </li>
                 </ul>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{{ t('dialog.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" @click="confirmDecline">{{
-                        t('event.decline.confirm')
-                    }}</AlertDialogAction>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="confirmDecline"
+                        >{{ t('event.decline.confirm') }}</AlertDialogAction
+                    >
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -805,15 +1159,23 @@ const badgeLinkClass =
             <AlertDialogContent v-if="removeTarget">
                 <AlertDialogHeader>
                     <AlertDialogTitle>{{
-                        t('event.removeTitle', { name: personName(removeTarget.name) })
+                        t('event.removeTitle', {
+                            name: personName(removeTarget.name),
+                        })
                     }}</AlertDialogTitle>
-                    <AlertDialogDescription>{{ t('event.removeText') }}</AlertDialogDescription>
+                    <AlertDialogDescription>{{
+                        t('event.removeText')
+                    }}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{{ t('dialog.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" @click="confirmRemove">{{
-                        t('event.removeConfirm')
-                    }}</AlertDialogAction>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="confirmRemove"
+                        >{{ t('event.removeConfirm') }}</AlertDialogAction
+                    >
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -821,27 +1183,45 @@ const badgeLinkClass =
         <AlertDialog v-if="page.delete_counts" v-model:open="deleteOpen">
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{{ t('event.delete.title') }}</AlertDialogTitle>
-                    <AlertDialogDescription>{{ t('event.delete.text') }}</AlertDialogDescription>
+                    <AlertDialogTitle>{{
+                        t('event.delete.title')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.delete.text')
+                    }}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <ul class="flex flex-wrap gap-2" data-feature="F-10">
-                    <li><Badge variant="outline">{{ tc('event.delete.lists', page.delete_counts.lists) }}</Badge></li>
                     <li>
                         <Badge variant="outline">{{
-                            tc('event.delete.polls', page.delete_counts.follow_up_polls)
+                            tc('event.delete.lists', page.delete_counts.lists)
                         }}</Badge>
                     </li>
                     <li>
                         <Badge variant="outline">{{
-                            tc('event.delete.children', page.delete_counts.child_events)
+                            tc(
+                                'event.delete.polls',
+                                page.delete_counts.follow_up_polls,
+                            )
+                        }}</Badge>
+                    </li>
+                    <li>
+                        <Badge variant="outline">{{
+                            tc(
+                                'event.delete.children',
+                                page.delete_counts.child_events,
+                            )
                         }}</Badge>
                     </li>
                 </ul>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{{ t('dialog.cancel') }}</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" @click="confirmDelete">{{
-                        t('event.delete.confirm')
-                    }}</AlertDialogAction>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="confirmDelete"
+                        >{{ t('event.delete.confirm') }}</AlertDialogAction
+                    >
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
