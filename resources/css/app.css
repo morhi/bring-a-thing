@@ -374,6 +374,26 @@
     }
 }
 
+/* Heading scale from docs/prototype/css/base.css; the clamps land on 28/20px at 375 and 40/24px at 1280 */
+
+@utility text-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 2.4vw + 18px, 40px);
+    font-weight: 640;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    text-wrap: balance;
+}
+
+@utility text-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 1vw + 15px, 24px);
+    font-weight: 640;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    text-wrap: balance;
+}
+
 /*
   Depth, ported from docs/prototype/css/depth.css. A .box picks its level from
   the number of .box ancestors (deeper stays at 3). Floating surfaces

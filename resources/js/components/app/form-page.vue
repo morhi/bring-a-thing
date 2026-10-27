@@ -36,7 +36,7 @@ const backClasses =
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ backLabel ?? t('nav.back') }}
             </button>
-            <h1 class="text-3xl">{{ title }}</h1>
+            <h1 class="text-h1">{{ title }}</h1>
             <p v-if="subtitle" class="text-fg-muted max-w-[60ch]">
                 {{ subtitle }}
             </p>
