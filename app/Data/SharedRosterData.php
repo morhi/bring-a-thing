@@ -6,6 +6,7 @@ use App\Actions\Auth\SendMagicLink;
 use App\Models\CustomField;
 use App\Models\Roster;
 use App\Models\RosterItem;
+use App\Models\User;
 use Spatie\LaravelData\Data;
 
 class SharedRosterData extends Data
@@ -31,9 +32,10 @@ class SharedRosterData extends Data
      * Build the shared list for a share link visitor (F-19).
      *
      * Shows names but no email addresses and no user IDs. The token and
-     * the link lifetime feed the login on the same page (F-01).
+     * the link lifetime feed the login on the same page (F-01). A
+     * logged-in viewer's own claims are marked so they can change them.
      */
-    public static function fromRoster(Roster $roster): self
+    public static function fromRoster(Roster $roster, ?User $viewer = null): self
     {
         $roster->load([
             'customFields',
@@ -42,7 +44,7 @@ class SharedRosterData extends Data
                 ->orderBy('date'),
         ]);
 
-        $items = $roster->items->map(fn (RosterItem $item) => RosterItemData::forShareLink($item));
+        $items = $roster->items->map(fn (RosterItem $item) => RosterItemData::forShareLink($item, $viewer));
 
         return new self(
             token: (string) $roster->share_token,

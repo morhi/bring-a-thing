@@ -135,6 +135,14 @@ const listDate = computed(() =>
         : null,
 );
 
+// The poll title rides in every option, because the closed select and screen readers show the option text alone
+function attendanceOptionLabel(
+    pollTitle: string,
+    option: App.Data.AttendanceOptionData,
+): string {
+    return `${pollTitle}: ${attendanceDayLabel(option, locale.value)}`;
+}
+
 function showError(errors: Record<string, string>): void {
     toast.error(Object.values(errors)[0] ?? t('list.notFound'));
 }
@@ -994,7 +1002,10 @@ const inputClass =
                                         :key="option.id"
                                         :value="option.id"
                                         >{{
-                                            attendanceDayLabel(option, locale)
+                                            attendanceOptionLabel(
+                                                poll.title,
+                                                option,
+                                            )
                                         }}</NativeSelectOption
                                     >
                                 </NativeSelectOptGroup>

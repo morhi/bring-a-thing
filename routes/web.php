@@ -56,6 +56,7 @@ Route::get('/login/{user}', [MagicLinkController::class, 'show'])
 // in or not. No auth/guest middleware here on purpose.
 Route::get('/shared/{token}', [SharedRosterController::class, 'show'])->name('shared-rosters.show');
 Route::post('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::class, 'store'])->name('shared-rosters.items.claim.store');
+Route::delete('/shared/{token}/items/{item}/claim', [SharedRosterClaimController::class, 'destroy'])->name('shared-rosters.items.claim.destroy');
 Route::post('/shared/{token}/items', [SharedRosterItemController::class, 'store'])->name('shared-rosters.items.store');
 
 // Group invite links: open to guests on purpose, joining is the point (F-04).

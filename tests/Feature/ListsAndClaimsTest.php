@@ -433,6 +433,83 @@ it('F-18 warns about a person without an answer and exposes who is available for
             ->where('page.items.0.attendance_day.available_user_ids', [$present->id]));
 });
 
+it('F-18: a member who cannot claim for others receives only their own attendance answer', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $absent = User::factory()->create();
+    $present = User::factory()->create();
+    [$roster, $option] = listsAttendanceRoster($owner, [$member, $absent, $present]);
+    $option->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::No]);
+    $option->responses()->create(['user_id' => $absent->id, 'status' => PollResponseStatus::No]);
+    $option->responses()->create(['user_id' => $present->id, 'status' => PollResponseStatus::Yes]);
+    RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    $this->actingAs($member)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Rosters/Show', false)
+            ->where('page.roster.attendance_day.available_user_ids', [])
+            ->where('page.roster.attendance_day.unavailable_user_ids', [$member->id])
+            ->where('page.items.0.attendance_day.available_user_ids', [])
+            ->where('page.items.0.attendance_day.unavailable_user_ids', [$member->id])
+            ->where('page.items.0.attendance_warning', true));
+    $this->actingAs($present)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Rosters/Show', false)
+            ->where('page.items.0.attendance_day.available_user_ids', [$present->id])
+            ->where('page.items.0.attendance_day.unavailable_user_ids', [])
+            ->where('page.items.0.attendance_warning', false));
+});
+
+it('F-18: a list manager receives everyone\'s attendance answers to warn when claiming for others', function () {
+    $owner = User::factory()->create();
+    $absent = User::factory()->create();
+    $present = User::factory()->create();
+    [$roster, $option] = listsAttendanceRoster($owner, [$absent, $present]);
+    $option->responses()->create(['user_id' => $absent->id, 'status' => PollResponseStatus::No]);
+    $option->responses()->create(['user_id' => $present->id, 'status' => PollResponseStatus::Yes]);
+    RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    $this->actingAs($owner)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Rosters/Show', false)
+            ->where('page.roster.attendance_day.available_user_ids', [$present->id])
+            ->where('page.roster.attendance_day.unavailable_user_ids', [$absent->id])
+            ->where('page.items.0.attendance_day.unavailable_user_ids', [$absent->id]));
+});
+
+it('F-18: a list manager who may not see the linked poll receives no other people\'s answers', function () {
+    $groupOwner = User::factory()->create();
+    $listOwner = User::factory()->create();
+    $absent = User::factory()->create();
+    $group = listsGroupWith($groupOwner, [$listOwner, $absent]);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $groupOwner->id]);
+    $poll = Poll::factory()->create(['type' => PollType::Attendance, 'group_id' => $group->id, 'organizer_id' => $groupOwner->id, 'event_id' => $event->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+    $option->responses()->create(['user_id' => $absent->id, 'status' => PollResponseStatus::No]);
+    $roster = Roster::factory()->create(['owner_id' => $listOwner->id, 'group_id' => $group->id, 'attendance_poll_option_id' => $option->id]);
+    RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    $this->actingAs($listOwner)->get(route('rosters.show', $roster))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Rosters/Show', false)
+            ->where('page.permissions.can_manage_claims', true)
+            ->where('page.roster.attendance_day.unavailable_user_ids', [])
+            ->where('page.items.0.attendance_day.unavailable_user_ids', []));
+});
+
+it('F-19: a share link visitor receives no attendance answers', function () {
+    $owner = User::factory()->create();
+    $absent = User::factory()->create();
+    [$roster, $option] = listsAttendanceRoster($owner, [$absent]);
+    $option->responses()->create(['user_id' => $absent->id, 'status' => PollResponseStatus::No]);
+    $roster->enableSharing();
+    RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    $this->get(route('shared-rosters.show', $roster->share_token))
+        ->assertOk()
+        ->assertDontSee('available_user_ids');
+});
+
 it('F-18 offers only attendance polls of the same group', function () {
     $owner = User::factory()->create();
     [$roster, $option, $group] = listsAttendanceRoster($owner, []);

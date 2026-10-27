@@ -8,6 +8,7 @@ use App\Http\Requests\SharedRosters\ClaimSharedRosterItemRequest;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class SharedRosterClaimController extends Controller
 {
@@ -48,5 +49,25 @@ class SharedRosterClaimController extends Controller
 
         return redirect()->route('welcome')
             ->with('success', __('ui.list.guest.pendingClaim', ['item' => $item->name]));
+    }
+
+    /**
+     * Remove the logged-in visitor's own claim from a shared list (F-15, F-19).
+     *
+     * Guests have no claim to remove, and a share link never removes
+     * other people's claims.
+     */
+    public function destroy(Request $request, string $token, RosterItem $item): RedirectResponse
+    {
+        $roster = Roster::query()->where('share_token', $token)->firstOrFail();
+        abort_unless($item->roster_id === $roster->getKey(), 404);
+
+        $user = $request->user();
+        abort_if($user === null || $roster->excludesShareLinkVisitor($user), 404);
+
+        $item->claims()->where('user_id', $user->getKey())->delete();
+        ClaimChanged::dispatch($roster->id, $item->id, $user->id);
+
+        return back()->with('success', __('ui.list.claim.removed'));
     }
 }

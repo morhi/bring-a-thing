@@ -383,6 +383,7 @@ export type RosterClaimData = {
 user_id: number | null,
 user_name: string,
 quantity: number | null,
+is_own: boolean,
 };
 export type RosterData = {
 id: number,

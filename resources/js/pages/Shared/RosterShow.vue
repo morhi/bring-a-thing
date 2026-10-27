@@ -11,7 +11,10 @@ import {
 } from '@lucide/vue';
 import { computed, nextTick, ref, useTemplateRef } from 'vue';
 import { toast } from 'vue-sonner';
-import { store as storeSharedClaim } from '@/actions/App/Http/Controllers/SharedRosterClaimController';
+import {
+    destroy as releaseSharedClaim,
+    store as storeSharedClaim,
+} from '@/actions/App/Http/Controllers/SharedRosterClaimController';
 import { store as storeSharedItem } from '@/actions/App/Http/Controllers/SharedRosterItemController';
 import type {
     ClaimEntry,
@@ -46,7 +49,7 @@ defineOptions({ layout: WebsiteLayout });
  * Shared list for people with the share link (F-19).
  *
  * Guests see the list without other people's email addresses; claiming or adding
- * opens the login on the same page, and the pending claim completes after it.
+ * opens the login on the same page, and the pending claim or item draft completes after it.
  */
 const props = defineProps<{ roster: App.Data.SharedRosterData }>();
 
@@ -79,8 +82,8 @@ function claimsOf(item: App.Data.RosterItemData): ClaimEntry[] {
         accountId: null,
         name: claim.user_name,
         quantity: claim.quantity,
-        isOwn: false,
-        canRemove: false,
+        isOwn: claim.is_own,
+        canRemove: claim.is_own,
     }));
 }
 
@@ -88,7 +91,7 @@ function claimsOf(item: App.Data.RosterItemData): ClaimEntry[] {
 
 type Pending =
     | { kind: 'claim'; item: App.Data.RosterItemData; quantity: number | null }
-    | { kind: 'add' }
+    | { kind: 'add'; name: string }
     | null;
 const loginOpen = ref(false);
 const pending = ref<Pending>(null);
@@ -108,7 +111,9 @@ const pendingLabel = computed(() => {
         return t('list.guest.pendingClaim', { item: pending.value.item.name });
     }
 
-    return pending.value?.kind === 'add' ? t('list.guest.pendingAdd') : '';
+    return pending.value?.kind === 'add'
+        ? t('list.guest.pendingAdd', { item: pending.value.name })
+        : '';
 });
 
 function openLogin(next: Pending = null): void {
@@ -157,7 +162,18 @@ function claim(item: App.Data.RosterItemData, request: ClaimRequest): void {
     );
 }
 
-// Adding (F-14 setting): guests log in first, logged-in visitors add right away
+// Only the own claim is removable through the share link (F-15)
+function release(item: App.Data.RosterItemData): void {
+    claimingItem.value = item.id;
+
+    router.delete(releaseSharedClaim([props.roster.token, item.slug]).url, {
+        preserveScroll: true,
+        onError: (errors) => toast.error(Object.values(errors)[0] ?? ''),
+        onFinish: () => (claimingItem.value = null),
+    });
+}
+
+// Adding (F-14 setting): a guest's draft waits in the session until the login on this page
 
 const addOpen = ref(false);
 const addForm = useForm({
@@ -165,17 +181,15 @@ const addForm = useForm({
     quantity: '' as string | number,
     unit: '',
     notes: '',
+    custom_fields: {} as Record<number, string>,
 });
 
 function startAdd(): void {
-    if (!loggedIn.value) {
-        openLogin({ kind: 'add' });
-
-        return;
-    }
-
     addForm.reset();
     addForm.clearErrors();
+    addForm.custom_fields = Object.fromEntries(
+        props.roster.custom_fields.map((field) => [field.id, '']),
+    );
     addOpen.value = true;
 }
 
@@ -188,10 +202,17 @@ function saveItem(): void {
             quantity: hasQuantity ? Number(data.quantity) : null,
             unit: hasQuantity && data.unit.trim() ? data.unit.trim() : null,
             notes: data.notes.trim() || null,
+            custom_fields: data.custom_fields,
         }))
         .post(storeSharedItem(props.roster.token).url, {
             preserveScroll: true,
-            onSuccess: () => (addOpen.value = false),
+            onSuccess: () => {
+                addOpen.value = false;
+
+                if (!loggedIn.value) {
+                    openLogin({ kind: 'add', name: addForm.name });
+                }
+            },
         });
 }
 
@@ -368,6 +389,7 @@ const inputClass =
                             :error="claimErrors[item.id] || null"
                             :processing="claimingItem === item.id"
                             @claim="claim(item, $event)"
+                            @release="release(item)"
                         />
                     </li>
                 </ul>
@@ -491,6 +513,29 @@ const inputClass =
                             />
                         </template>
                     </FormField>
+                    <FormField
+                        v-for="field in roster.custom_fields"
+                        :key="field.id"
+                        :label="field.name"
+                        :control="`shared-item-field-${field.id}`"
+                        data-feature="F-16"
+                    >
+                        <template #default="{ id, describedBy }">
+                            <Input
+                                :id="id"
+                                v-model="addForm.custom_fields[field.id]"
+                                :aria-describedby="describedBy"
+                                :class="inputClass"
+                            />
+                        </template>
+                    </FormField>
+                    <p
+                        v-if="addForm.errors.custom_fields"
+                        class="text-danger text-sm"
+                        role="alert"
+                    >
+                        {{ addForm.errors.custom_fields }}
+                    </p>
                 </form>
                 <DialogFooter class="flex-wrap gap-2">
                     <Button

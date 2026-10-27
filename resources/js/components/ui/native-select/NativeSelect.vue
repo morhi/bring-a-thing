@@ -25,7 +25,8 @@ const modelValue = useVModel(props, 'modelValue', emit, {
   defaultValue: '',
 })
 
-const delegatedProps = reactiveOmit(props, 'class', 'size')
+// modelValue goes through v-model; spreading it too rendered a stray modelvalue attribute
+const delegatedProps = reactiveOmit(props, 'class', 'size', 'modelValue')
 </script>
 
 <template>

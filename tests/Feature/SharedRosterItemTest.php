@@ -69,16 +69,18 @@ it('lets an authenticated non-member add a thing via the shared link for a group
     $this->assertDatabaseHas('roster_items', ['roster_id' => $roster->id, 'name' => 'Napkins']);
 });
 
-it('sends an unauthenticated visitor to log in and stashes their return to the shared list', function () {
+it('F-19: stashes an unauthenticated visitor\'s item draft and their return to the shared list until the login', function () {
     $owner = User::factory()->create();
     $roster = Roster::factory()->create(['owner_id' => $owner->id, 'members_can_add_items' => true]);
     $roster->enableSharing();
 
-    $response = $this->post(route('shared-rosters.items.store', $roster->share_token), [
-        'name' => 'Napkins',
-    ]);
+    $response = $this->from(route('shared-rosters.show', $roster->share_token))
+        ->post(route('shared-rosters.items.store', $roster->share_token), [
+            'name' => 'Napkins',
+        ]);
 
-    $response->assertRedirect(route('welcome'));
-    $response->assertSessionHas('success');
+    $response->assertRedirect(route('shared-rosters.show', $roster->share_token));
+    $response->assertSessionHas('pending_shared_item.name', 'Napkins');
+    $response->assertSessionHas('pending_shared_claim.roster_token', $roster->share_token);
     $this->assertDatabaseMissing('roster_items', ['roster_id' => $roster->id, 'name' => 'Napkins']);
 });
