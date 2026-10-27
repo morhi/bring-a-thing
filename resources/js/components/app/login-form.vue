@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { CheckIcon, ClockIcon, MailIcon } from '@lucide/vue';
+import { router, useForm } from '@inertiajs/vue3';
+import { CheckIcon, ClockIcon, KeyRoundIcon, MailIcon } from '@lucide/vue';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import {
@@ -11,6 +11,11 @@ import FormField from '@/components/app/form-field.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
+import {
+    isPasskeyCancelled,
+    loginWithPasskey,
+    supportsPasskeys,
+} from '@/composables/use-passkeys';
 
 export type LoginPendingClaim = {
     rosterToken: string;
@@ -23,8 +28,8 @@ export type LoginPendingClaim = {
  *
  * The email decides the next step: an account with a password gets the password
  * field, a new or nameless account gets the name field, everyone else gets the
- * link right away. A pending claim from a shared list rides along, so the claim
- * completes after the login (F-19).
+ * link right away. A passkey logs in without an email. A pending claim from a
+ * shared list rides along, so the claim completes after the login (F-19).
  */
 const props = withDefaults(
     defineProps<{
@@ -54,7 +59,12 @@ const checking = ref(false);
 const showLinkError = ref(props.linkError !== null);
 const emailInput = useTemplateRef<InstanceType<typeof Input>>('emailInput');
 
-const busy = computed(() => checking.value || form.processing);
+const passkeySupported = supportsPasskeys();
+const passkeyBusy = ref(false);
+
+const busy = computed(
+    () => checking.value || form.processing || passkeyBusy.value,
+);
 
 const submitLabel = computed(() => {
     if (step.value === 'password') {
@@ -171,6 +181,27 @@ function sendLink(): void {
             showLinkError.value = false;
         },
     });
+}
+
+async function submitPasskey(): Promise<void> {
+    form.clearErrors();
+    passkeyBusy.value = true;
+
+    try {
+        const redirect = await loginWithPasskey({
+            pending_claim_roster_token: form.pending_claim_roster_token,
+            pending_claim_item_id: form.pending_claim_item_id,
+            pending_claim_quantity: form.pending_claim_quantity,
+        });
+
+        router.visit(redirect);
+    } catch (error) {
+        if (!isPasskeyCancelled(error)) {
+            form.setError('email', t('welcome.login.passkeyFailed'));
+        }
+    } finally {
+        passkeyBusy.value = false;
+    }
 }
 
 function useLinkInstead(): void {
@@ -305,6 +336,18 @@ function startOver(): void {
                         />
                         <MailIcon v-else aria-hidden="true" />
                         {{ submitLabel }}
+                    </Button>
+                    <Button
+                        v-if="passkeySupported && step === 'email'"
+                        type="button"
+                        variant="secondary"
+                        size="lg"
+                        class="h-11 w-full rounded-full"
+                        :disabled="busy"
+                        @click="submitPasskey"
+                    >
+                        <KeyRoundIcon aria-hidden="true" />
+                        {{ t('welcome.login.passkey') }}
                     </Button>
                     <Button
                         v-if="step === 'password'"

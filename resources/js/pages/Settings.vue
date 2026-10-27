@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, LogOutIcon, MailIcon } from '@lucide/vue';
-import { computed } from 'vue';
+import {
+    ArrowLeft,
+    KeyRoundIcon,
+    LogOutIcon,
+    MailIcon,
+    Trash2Icon,
+} from '@lucide/vue';
+import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import {
     addEmail,
     updatePassword,
@@ -11,12 +18,28 @@ import ChoiceGroup from '@/components/app/choice-group.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
+import {
+    isPasskeyCancelled,
+    registerPasskey,
+    supportsPasskeys,
+} from '@/composables/use-passkeys';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { Locale } from '@/lib/i18n';
 import { dashboard, logout } from '@/routes';
+import { destroy as destroyPasskey } from '@/routes/passkey';
 
 defineOptions({ layout: AppLayout });
 
@@ -33,6 +56,12 @@ const passwordForm = useForm({
     password: '',
     password_confirmation: '',
 });
+
+const passkeyForm = useForm({ name: '' });
+const passkeySupported = supportsPasskeys();
+const savingPasskey = ref(false);
+const removingPasskey = ref<App.Data.PasskeyData | null>(null);
+const removeOpen = ref(false);
 
 // A name-only joiner has no email yet and adds one through a confirmation link (F-01)
 const hasEmail = computed(() => props.settings.email !== null);
@@ -65,6 +94,57 @@ function savePassword(): void {
         preserveScroll: true,
         onSuccess: () => passwordForm.reset(),
         onError: () => passwordForm.reset('password', 'password_confirmation'),
+    });
+}
+
+function formatDate(value: string): string {
+    return new Intl.DateTimeFormat(locale.value, {
+        dateStyle: 'medium',
+    }).format(new Date(value));
+}
+
+async function addPasskey(): Promise<void> {
+    passkeyForm.clearErrors();
+
+    if (passkeyForm.name.trim() === '') {
+        passkeyForm.setError('name', t('settings.passkeys.nameRequired'));
+
+        return;
+    }
+
+    savingPasskey.value = true;
+
+    try {
+        await registerPasskey(passkeyForm.name.trim());
+        passkeyForm.reset();
+        toast.success(t('settings.passkeys.added'), { duration: 4000 });
+        router.reload({ only: ['settings'] });
+    } catch (error) {
+        if (!isPasskeyCancelled(error)) {
+            toast.error(
+                error instanceof Error && error.message
+                    ? error.message
+                    : t('settings.passkeys.failed'),
+                { duration: 6000 },
+            );
+        }
+    } finally {
+        savingPasskey.value = false;
+    }
+}
+
+function confirmRemovePasskey(passkey: App.Data.PasskeyData): void {
+    removingPasskey.value = passkey;
+    removeOpen.value = true;
+}
+
+function removePasskey(): void {
+    if (!removingPasskey.value) {
+        return;
+    }
+
+    router.delete(destroyPasskey(removingPasskey.value.id).url, {
+        preserveScroll: true,
     });
 }
 
@@ -361,6 +441,122 @@ function logOut(): void {
 
         <section
             :class="sectionClass"
+            aria-labelledby="settings-passkeys-title"
+            data-feature="F-02"
+        >
+            <div class="flex min-w-0 flex-col gap-1.5">
+                <h2 id="settings-passkeys-title" class="text-h2">
+                    {{ t('settings.passkeys') }}
+                </h2>
+                <p class="text-fg-muted text-[15px]">
+                    {{ t('settings.passkeys.text') }}
+                </p>
+            </div>
+
+            <div :class="cardClass">
+                <p
+                    v-if="settings.passkeys.length === 0"
+                    class="text-fg-muted text-[15px]"
+                >
+                    {{ t('settings.passkeys.empty') }}
+                </p>
+
+                <ul v-else class="flex flex-col gap-3">
+                    <li
+                        v-for="passkey in settings.passkeys"
+                        :key="passkey.id"
+                        class="border-border flex items-center gap-3.5 rounded-xl border p-3.5"
+                    >
+                        <KeyRoundIcon
+                            class="text-primary size-5 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span class="flex min-w-0 flex-1 flex-col gap-px">
+                            <span
+                                class="font-semibold [overflow-wrap:anywhere]"
+                                >{{ passkey.name }}</span
+                            >
+                            <span class="text-fg-soft text-sm">
+                                {{
+                                    t('settings.passkeys.created', {
+                                        date: formatDate(passkey.created_at),
+                                    })
+                                }}
+                                ·
+                                {{
+                                    passkey.last_used_at
+                                        ? t('settings.passkeys.lastUsed', {
+                                              date: formatDate(
+                                                  passkey.last_used_at,
+                                              ),
+                                          })
+                                        : t('settings.passkeys.neverUsed')
+                                }}
+                            </span>
+                        </span>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            :aria-label="t('settings.passkeys.remove')"
+                            @click="confirmRemovePasskey(passkey)"
+                        >
+                            <Trash2Icon aria-hidden="true" />
+                        </Button>
+                    </li>
+                </ul>
+
+                <p
+                    v-if="!passkeySupported"
+                    class="text-fg-muted text-sm"
+                    role="note"
+                >
+                    {{ t('settings.passkeys.unsupported') }}
+                </p>
+
+                <form
+                    v-else
+                    class="border-border flex flex-col gap-(--space-stack) border-t pt-5"
+                    novalidate
+                    @submit.prevent="addPasskey"
+                >
+                    <FormField
+                        :label="t('settings.passkeys.name')"
+                        control="settings-passkey-name"
+                        required
+                        :hint="t('settings.passkeys.nameHint')"
+                        :error="passkeyForm.errors.name"
+                    >
+                        <template #default="{ id, describedBy, invalid }">
+                            <Input
+                                :id="id"
+                                v-model="passkeyForm.name"
+                                autocomplete="off"
+                                required
+                                :aria-describedby="describedBy"
+                                :aria-invalid="invalid || undefined"
+                                :class="inputClass"
+                            />
+                        </template>
+                    </FormField>
+                    <div>
+                        <Button
+                            type="submit"
+                            variant="secondary"
+                            size="lg"
+                            class="rounded-full px-4"
+                            :disabled="savingPasskey"
+                        >
+                            <KeyRoundIcon aria-hidden="true" />
+                            {{ t('settings.passkeys.add') }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section
+            :class="sectionClass"
             aria-labelledby="settings-language-title"
             data-feature="F-24"
         >
@@ -419,5 +615,30 @@ function logOut(): void {
                 </div>
             </div>
         </section>
+
+        <AlertDialog v-model:open="removeOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('settings.passkeys.removeTitle', {
+                            name: removingPasskey?.name ?? '',
+                        })
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('settings.passkeys.removeText')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="removePasskey"
+                        >{{ t('settings.passkeys.remove') }}</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

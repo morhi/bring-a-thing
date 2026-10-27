@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.12
+- **Version:** 1.13
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -45,6 +45,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A person who joins through an invite link (F-04) with name only gets a shadow account without an email and stays logged in on that browser. They can add an email at any time and receive a login link to keep access on other devices.
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
+- A passkey is optional and can be saved in the settings (F-02). The start page offers a "Log in with passkey" button that logs in without entering an email. The login link and the password stay available.
 - The login email is the only email the app sends.
 
 **Acceptance criteria:**
@@ -53,16 +54,23 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An email address invited twice results in exactly one account.
 - A name-only joiner who adds an email can log in on another device through the login link.
 - An account without a password shows no password field.
+- A guest can request passkey login options on the start page, and a passkey login without a credential does not log in.
+- After a passkey login, the person lands on the dashboard, or back on the shared list when a claim is pending (F-19).
 
 #### F-02 Account and settings (Secondary)
 
-**User goal:** Manage one's own name and password.
+**User goal:** Manage one's own name, password and passkeys.
 
 **Rules:**
-- The settings contain name, set or change password, and logout. Common practice applies.
+- The settings contain name, set or change password, saved passkeys, and logout. Common practice applies.
+- Passkeys: the person saves a passkey under a name of their choice, sees each one with its creation and last-use date, and removes it after a confirmation. Saving needs no password, so accounts that only use the login link can add one. A passkey belongs to one account and cannot be removed by another.
 
 **Acceptance criteria:**
 - After setting a password, login with email and password succeeds.
+- The settings list the saved passkeys of the account.
+- An account without a password can start saving a passkey.
+- Removing a passkey deletes it and shows a confirmation message.
+- A passkey of another account cannot be removed.
 
 #### F-03 Groups (Core)
 

@@ -313,6 +313,12 @@ user_id: number,
 name: string | null,
 status: App.Enums.ParticipationStatus | null,
 };
+export type PasskeyData = {
+id: number,
+name: string,
+created_at: string,
+last_used_at: string | null,
+};
 export type PollData = {
 id: number,
 slug: string,
@@ -467,6 +473,7 @@ pending_email: string | null,
 has_password: boolean,
 languages: App.Enums.Locale[],
 password_min_length: number,
+passkeys: App.Data.PasskeyData[],
 };
 export type SharedAuthData = {
 user: App.Data.SharedUserData | null,

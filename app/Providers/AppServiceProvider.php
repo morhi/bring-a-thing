@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Http\Responses\PasskeyDeletedResponse;
+use App\Http\Responses\PasskeyLoginResponse;
 use App\Models\Event;
 use App\Models\Roster;
 use App\Models\RosterItem;
@@ -12,6 +14,8 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Passkeys\Contracts\PasskeyDeletedResponse as PasskeyDeletedResponseContract;
+use Laravel\Passkeys\Contracts\PasskeyLoginResponse as PasskeyLoginResponseContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PasskeyLoginResponseContract::class, PasskeyLoginResponse::class);
+        $this->app->bind(PasskeyDeletedResponseContract::class, PasskeyDeletedResponse::class);
     }
 
     /**

@@ -12,6 +12,7 @@ class SettingsData extends Data
 {
     /**
      * @param  array<int, Locale>  $languages
+     * @param  array<int, PasskeyData>  $passkeys
      */
     public function __construct(
         public ?string $name,
@@ -21,6 +22,7 @@ class SettingsData extends Data
         #[LiteralTypeScriptType('App.Enums.Locale[]')]
         public array $languages,
         public int $password_min_length,
+        public array $passkeys,
     ) {}
 
     /**
@@ -39,6 +41,7 @@ class SettingsData extends Data
             has_password: $user->password !== null,
             languages: Locale::cases(),
             password_min_length: (int) (Password::default()->appliedRules()['min'] ?? 8),
+            passkeys: $user->passkeys()->oldest()->get()->map(PasskeyData::fromPasskey(...))->all(),
         );
     }
 }
