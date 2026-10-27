@@ -162,3 +162,31 @@ it('F-03: shows polls, upcoming and past events and group lists on the group pag
             ->where('page.permissions.can_manage_settings', true)
             ->where('page.permissions.can_invite', true));
 });
+
+it('F-04: shows member emails to owners and admins only, members see their own email', function () {
+    $owner = User::factory()->create(['name' => 'Olga', 'email' => 'olga@example.com']);
+    $admin = User::factory()->create(['name' => 'Adam', 'email' => 'adam@example.com']);
+    $member = User::factory()->create(['name' => 'Mia', 'email' => 'mia@example.com']);
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $group->addMember($admin, GroupRole::Admin, now());
+    $group->addMember($member, GroupRole::Member, now());
+
+    foreach ([$owner, $admin] as $viewer) {
+        $this->actingAs($viewer)
+            ->get(route('groups.show', $group))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('page.members.0.email', 'olga@example.com')
+                ->where('page.members.1.email', 'adam@example.com')
+                ->where('page.members.2.email', 'mia@example.com'));
+    }
+
+    $this->actingAs($member)
+        ->get(route('groups.show', $group))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('page.members.0.name', 'Olga')
+            ->where('page.members.0.role', 'owner')
+            ->where('page.members.0.email', null)
+            ->where('page.members.1.email', null)
+            ->where('page.members.2.email', 'mia@example.com'));
+});

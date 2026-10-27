@@ -81,11 +81,11 @@ const buttonClass = 'h-(--control-height) w-full px-4';
         class="flex max-w-[60ch] flex-col gap-4 py-2 md:py-6"
         data-feature="F-04"
     >
-        <h1 class="text-3xl">{{ t('group.notFound') }}</h1>
+        <h1 class="text-h1">{{ t('group.notFound') }}</h1>
         <p class="text-fg-muted text-lg">{{ t('join.notFoundText') }}</p>
         <Button
             as-child
-            variant="secondary"
+            variant="outline"
             size="lg"
             class="h-(--control-height) w-fit px-4"
         >
@@ -103,7 +103,7 @@ const buttonClass = 'h-(--control-height) w-full px-4';
             class="flex min-w-0 flex-col items-start gap-3.5"
             data-feature="F-04"
         >
-            <h1 class="text-3xl [overflow-wrap:anywhere] md:text-4xl">
+            <h1 class="text-h1 [overflow-wrap:anywhere]">
                 {{ t('join.title', { group: join.group_name }) }}
             </h1>
             <p class="text-fg-muted max-w-[52ch] text-lg">

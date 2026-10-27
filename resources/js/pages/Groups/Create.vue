@@ -44,6 +44,7 @@ function create(): void {
         .post(storeGroup().url);
 }
 
+// The dashboard is the only page that opens "New group", so back and cancel return there
 const cancelHref = dashboard().url;
 </script>
 
@@ -54,7 +55,6 @@ const cancelHref = dashboard().url;
         :title="t('newGroup.title')"
         :subtitle="t('newGroup.sub')"
         :back-href="cancelHref"
-        :back-label="t('nav.backToDashboard')"
     >
         <form
             id="new-group-form"

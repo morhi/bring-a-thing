@@ -35,6 +35,8 @@ import InviteField from '@/components/app/invite-field.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -201,7 +203,7 @@ function copyFailed(url: string): void {
 
 const buttonClass = 'h-(--control-height) px-4';
 const rowClass =
-    'box flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:px-[22px] max-[560px]:flex-wrap';
+    'flex items-center gap-3.5 sm:px-[22px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring max-[560px]:flex-wrap';
 </script>
 
 <template>
@@ -219,7 +221,7 @@ const rowClass =
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex min-w-0 flex-col gap-2">
                     <h1
-                        class="flex flex-wrap items-center gap-3.5 text-3xl break-words"
+                        class="text-h1 flex flex-wrap items-center gap-3.5 break-words"
                     >
                         {{ page.name }}
                         <Badge
@@ -256,6 +258,7 @@ const rowClass =
                     v-if="page.permissions.can_manage_settings"
                     as-child
                     variant="ghost"
+                    size="sm"
                     data-feature="F-03"
                 >
                     <Link :href="editGroup(page.slug).url">
@@ -278,7 +281,7 @@ const rowClass =
                 <Button
                     as-child
                     size="lg"
-                    variant="secondary"
+                    variant="outline"
                     :class="buttonClass"
                     data-feature="F-10"
                 >
@@ -290,7 +293,7 @@ const rowClass =
                 <Button
                     as-child
                     size="lg"
-                    variant="secondary"
+                    variant="outline"
                     :class="buttonClass"
                     data-feature="F-13"
                 >
@@ -308,20 +311,15 @@ const rowClass =
             class="grid gap-10 min-[960px]:grid-cols-[minmax(0,1fr)_320px] min-[960px]:items-start min-[960px]:gap-12"
         >
             <div class="flex min-w-0 flex-col gap-10">
-                <section
+                <SectionBox
                     v-if="alone && page.permissions.can_invite"
-                    class="box flex flex-col gap-4 p-5 sm:p-7"
-                    aria-labelledby="alone-title"
+                    id="alone-title"
+                    :title="t('group.alone.title')"
                     data-feature="F-04"
                 >
-                    <div class="flex flex-col gap-1.5">
-                        <h2 id="alone-title" class="text-xl">
-                            {{ t('group.alone.title') }}
-                        </h2>
-                        <p class="text-fg-muted max-w-[60ch]">
-                            {{ t('group.alone.text') }}
-                        </p>
-                    </div>
+                    <p class="text-fg-muted max-w-[60ch]">
+                        {{ t('group.alone.text') }}
+                    </p>
                     <InviteField
                         id="group-invite"
                         ref="inviteField"
@@ -340,40 +338,32 @@ const rowClass =
                         @create-link="createLink"
                         @copy-failed="copyFailed"
                     />
-                </section>
+                </SectionBox>
 
-                <section
-                    class="flex flex-col gap-4"
-                    aria-labelledby="polls-title"
+                <SectionBox
+                    id="polls-title"
+                    :title="t('group.polls')"
+                    :count="page.polls.length"
                     data-feature="F-06"
                 >
-                    <h2
-                        id="polls-title"
-                        class="flex items-center gap-2.5 text-xl"
-                    >
-                        {{ t('group.polls') }}
-                        <span
-                            v-if="page.polls.length"
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                            >{{ page.polls.length }}</span
-                        >
-                    </h2>
                     <div v-if="page.polls.length" class="flex flex-col gap-2.5">
                         <template
                             v-for="section in pollSections"
                             :key="section.id"
                         >
-                            <button
+                            <Button
                                 v-if="section.closed && section.polls.length"
                                 type="button"
-                                class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm py-1 text-sm font-semibold"
+                                variant="ghost"
+                                size="sm"
+                                class="self-start"
                                 :aria-expanded="closedOpen"
                                 aria-controls="closed-polls"
                                 data-feature="F-08"
                                 @click="closedOpen = !closedOpen"
                             >
                                 <ChevronRight
-                                    class="size-4 transition-transform motion-reduce:transition-none"
+                                    class="transition-transform motion-reduce:transition-none"
                                     :class="closedOpen && 'rotate-90'"
                                     aria-hidden="true"
                                 />
@@ -382,7 +372,7 @@ const rowClass =
                                         n: closedPolls.length,
                                     })
                                 }}
-                            </button>
+                            </Button>
                             <ul
                                 v-if="section.visible && section.polls.length"
                                 :id="section.id"
@@ -392,7 +382,8 @@ const rowClass =
                                     v-for="poll in section.polls"
                                     :key="poll.slug"
                                 >
-                                    <Link
+                                    <SectionBoxItem
+                                        :as="Link"
                                         :href="showPoll(poll.slug).url"
                                         :class="rowClass"
                                         :data-feature="
@@ -496,7 +487,7 @@ const rowClass =
                                                 }}</Badge
                                             >
                                         </span>
-                                    </Link>
+                                    </SectionBoxItem>
                                 </li>
                             </ul>
                         </template>
@@ -513,24 +504,14 @@ const rowClass =
                             </Link>
                         </Button>
                     </EmptyState>
-                </section>
+                </SectionBox>
 
-                <section
-                    class="flex flex-col gap-4"
-                    aria-labelledby="events-title"
+                <SectionBox
+                    id="events-title"
+                    :title="t('group.events')"
+                    :count="page.events.length"
                     data-feature="F-10"
                 >
-                    <h2
-                        id="events-title"
-                        class="flex items-center gap-2.5 text-xl"
-                    >
-                        {{ t('group.events') }}
-                        <span
-                            v-if="page.events.length"
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                            >{{ page.events.length }}</span
-                        >
-                    </h2>
                     <template v-if="page.events.length">
                         <div
                             v-for="block in [
@@ -562,11 +543,13 @@ const rowClass =
                                     v-for="event in block.events"
                                     :key="event.slug"
                                 >
-                                    <Link
+                                    <SectionBoxItem
+                                        :as="Link"
                                         :href="showEvent(event.slug).url"
                                         :class="[
                                             rowClass,
-                                            event.is_past && 'opacity-75',
+                                            'gap-4 py-3.5 max-[560px]:gap-x-3.5 max-[560px]:gap-y-2.5',
+                                            event.is_past && 'opacity-[0.72]',
                                         ]"
                                     >
                                         <DateBlock
@@ -651,7 +634,7 @@ const rowClass =
                                                 }}</Badge
                                             >
                                         </span>
-                                    </Link>
+                                    </SectionBoxItem>
                                 </li>
                             </ul>
                         </div>
@@ -664,7 +647,7 @@ const rowClass =
                         <Button
                             as-child
                             size="lg"
-                            variant="secondary"
+                            variant="outline"
                             :class="buttonClass"
                         >
                             <Link :href="createEvent(page.slug).url">
@@ -673,37 +656,26 @@ const rowClass =
                             </Link>
                         </Button>
                     </EmptyState>
-                </section>
+                </SectionBox>
 
-                <section
-                    class="flex flex-col gap-4"
-                    aria-labelledby="lists-title"
+                <SectionBox
+                    id="lists-title"
+                    :title="t('group.lists')"
+                    :count="page.lists.length"
                     data-feature="F-13"
                 >
-                    <div
-                        class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
-                    >
-                        <h2
-                            id="lists-title"
-                            class="flex items-center gap-2.5 text-xl"
-                        >
-                            {{ t('group.lists') }}
-                            <span
-                                v-if="page.lists.length"
-                                class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                                >{{ page.lists.length }}</span
-                            >
-                        </h2>
+                    <template #action>
                         <p class="text-fg-soft text-sm">
                             {{ t('group.lists.eventLists') }}
                         </p>
-                    </div>
+                    </template>
                     <ul
                         v-if="page.lists.length"
                         class="grid gap-2.5 sm:grid-cols-2"
                     >
                         <li v-for="list in page.lists" :key="list.slug">
-                            <Link
+                            <SectionBoxItem
+                                :as="Link"
                                 :href="showList(list.slug).url"
                                 :class="[rowClass, 'h-full items-start']"
                             >
@@ -752,7 +724,7 @@ const rowClass =
                                         "
                                     />
                                 </span>
-                            </Link>
+                            </SectionBoxItem>
                         </li>
                     </ul>
                     <EmptyState
@@ -763,7 +735,7 @@ const rowClass =
                         <Button
                             as-child
                             size="lg"
-                            variant="secondary"
+                            variant="outline"
                             :class="buttonClass"
                         >
                             <Link
@@ -777,27 +749,20 @@ const rowClass =
                             </Link>
                         </Button>
                     </EmptyState>
-                </section>
+                </SectionBox>
             </div>
 
             <aside
                 class="flex min-w-0 flex-col gap-5 min-[960px]:sticky min-[960px]:top-[calc(64px+24px+env(safe-area-inset-top,0px))]"
                 aria-labelledby="members-title"
             >
-                <section
-                    class="box flex flex-col gap-4 p-5"
+                <SectionBox
+                    id="members-title"
+                    :title="t('group.members')"
+                    :count="page.members.length"
+                    class="gap-4"
                     data-feature="F-04"
                 >
-                    <h2
-                        id="members-title"
-                        class="flex items-center gap-2.5 text-xl"
-                    >
-                        {{ t('group.members') }}
-                        <span
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                            >{{ page.members.length }}</span
-                        >
-                    </h2>
                     <ul class="flex flex-col">
                         <li
                             v-for="member in page.members"
@@ -882,7 +847,7 @@ const rowClass =
                     >
                         {{ t('group.memberNotice') }}
                     </p>
-                </section>
+                </SectionBox>
             </aside>
         </div>
     </div>

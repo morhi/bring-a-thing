@@ -39,7 +39,8 @@ class GroupShowData extends Data
      * Polls: open first, newest first; follow-up polls only for their
      * audience (F-12). Events: upcoming by start, then past with the most
      * recent first. Lists: group lists only, event lists live in the event.
-     * Invite link and friend suggestions only reach owners and admins.
+     * Invite link, friend suggestions and other members' emails only reach
+     * owners and admins.
      */
     public static function forUser(Group $group, User $user): self
     {
@@ -67,7 +68,7 @@ class GroupShowData extends Data
             slug: $group->slug,
             name: $group->name,
             own_role: $group->members->firstWhere('id', $user->getKey())->pivot->role,
-            members: GroupMemberData::listOf($group->members),
+            members: GroupMemberData::listOf($group->members, $user),
             polls: $polls->values()->all(),
             events: $events->values()->all(),
             lists: $group->rosters->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all(),

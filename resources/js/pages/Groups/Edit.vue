@@ -30,6 +30,8 @@ import ChoiceGroup from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
 import InviteField from '@/components/app/invite-field.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
@@ -284,18 +286,15 @@ const buttonClass = 'h-(--control-height) px-4';
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('groupSettings.back', { group: page.name }) }}
             </Link>
-            <h1 class="text-3xl">{{ t('groupSettings.title') }}</h1>
+            <h1 class="text-h1">{{ t('groupSettings.title') }}</h1>
             <p class="text-fg-muted text-lg break-words">{{ page.name }}</p>
         </header>
 
-        <section
-            class="flex flex-col gap-4"
-            aria-labelledby="gs-name-title"
+        <SectionBox
+            id="gs-name-title"
+            :title="t('groupSettings.name')"
             data-feature="F-03"
         >
-            <h2 id="gs-name-title" class="text-xl">
-                {{ t('groupSettings.name') }}
-            </h2>
             <form
                 v-if="page.permissions.can_rename"
                 class="max-w-field"
@@ -344,24 +343,21 @@ const buttonClass = 'h-(--control-height) px-4';
                     {{ t('groupSettings.nameOwnerOnly') }}
                 </p>
             </template>
-        </section>
+        </SectionBox>
 
-        <section
-            class="flex flex-col gap-4"
-            aria-labelledby="gs-link-title"
+        <SectionBox
+            id="gs-link-title"
+            :title="t('groupSettings.link.title')"
             data-feature="F-04"
         >
-            <div class="flex flex-col gap-1">
-                <h2 id="gs-link-title" class="text-xl">
-                    {{ t('groupSettings.link.title') }}
-                </h2>
+            <template #action>
                 <p class="text-fg-soft max-w-[70ch] text-sm">
                     {{ t('groupSettings.link.hint') }}
                 </p>
-            </div>
-            <div
+            </template>
+            <SectionBoxItem
                 v-if="page.invite_link.url"
-                class="box flex flex-col gap-(--space-stack) p-5 sm:p-6"
+                class="flex flex-col gap-(--space-stack) p-5 sm:p-6"
             >
                 <FormField
                     :label="t('groupSettings.link.url')"
@@ -382,7 +378,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         />
                         <Button
                             type="button"
-                            variant="secondary"
+                            variant="outline"
                             size="lg"
                             :class="buttonClass"
                             @click="copyLink"
@@ -439,7 +435,7 @@ const buttonClass = 'h-(--control-height) px-4';
                     </Button>
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         @click="confirmRegenerate"
                     >
                         {{ t('groupSettings.link.regenerate') }}
@@ -452,8 +448,11 @@ const buttonClass = 'h-(--control-height) px-4';
                         {{ t('groupSettings.link.revoke') }}
                     </Button>
                 </div>
-            </div>
-            <div v-else class="box flex flex-col items-start gap-4 p-5 sm:p-6">
+            </SectionBoxItem>
+            <SectionBoxItem
+                v-else
+                class="flex flex-col items-start gap-4 p-5 sm:p-6"
+            >
                 <p class="text-fg-muted">{{ t('groupSettings.link.none') }}</p>
                 <Button
                     type="button"
@@ -464,26 +463,20 @@ const buttonClass = 'h-(--control-height) px-4';
                     <LinkIcon aria-hidden="true" />
                     {{ t('groupSettings.link.create') }}
                 </Button>
-            </div>
-        </section>
+            </SectionBoxItem>
+        </SectionBox>
 
-        <section
-            class="flex flex-col gap-4"
-            aria-labelledby="gs-options-title"
+        <SectionBox
+            id="gs-options-title"
+            :title="t('groupSettings.options')"
             data-feature="F-03"
         >
-            <div class="flex flex-col gap-1">
-                <h2 id="gs-options-title" class="text-xl">
-                    {{ t('groupSettings.options') }}
-                </h2>
-                <p
-                    v-if="!page.permissions.can_switch_option"
-                    class="text-fg-soft text-sm"
-                >
+            <template v-if="!page.permissions.can_switch_option" #action>
+                <p class="text-fg-soft text-sm">
                     {{ t('groupSettings.options.ownerOnly') }}
                 </p>
-            </div>
-            <div class="box p-5 sm:p-6">
+            </template>
+            <SectionBoxItem class="p-5 sm:p-6">
                 <div class="flex items-start gap-3" data-feature="F-11">
                     <Checkbox
                         id="gs-set-status"
@@ -506,25 +499,16 @@ const buttonClass = 'h-(--control-height) px-4';
                         >
                     </span>
                 </div>
-            </div>
-        </section>
+            </SectionBoxItem>
+        </SectionBox>
 
-        <section
-            class="flex flex-col gap-4"
-            aria-labelledby="gs-members-title"
+        <SectionBox
+            id="gs-members-title"
+            :title="t('group.members')"
+            :count="page.members.length"
             data-feature="F-03"
         >
-            <div class="flex flex-col gap-1">
-                <h2
-                    id="gs-members-title"
-                    class="flex items-center gap-2.5 text-xl"
-                >
-                    {{ t('group.members') }}
-                    <span
-                        class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                        >{{ page.members.length }}</span
-                    >
-                </h2>
+            <template #action>
                 <p class="text-fg-soft text-sm">
                     {{
                         page.permissions.can_change_roles
@@ -532,8 +516,8 @@ const buttonClass = 'h-(--control-height) px-4';
                             : t('groupSettings.rolesHintAdmin')
                     }}
                 </p>
-            </div>
-            <div class="box flex flex-col gap-4 p-5 sm:p-6">
+            </template>
+            <SectionBoxItem class="flex flex-col gap-4 p-5 sm:p-6">
                 <ul class="flex flex-col">
                     <li
                         v-for="member in page.members"
@@ -656,20 +640,17 @@ const buttonClass = 'h-(--control-height) px-4';
                         @submit="sendInvites"
                     />
                 </div>
-            </div>
-        </section>
+            </SectionBoxItem>
+        </SectionBox>
 
-        <section
+        <SectionBox
             v-if="page.permissions.can_delete"
-            class="flex flex-col gap-4"
-            aria-labelledby="gs-danger-title"
+            id="gs-danger-title"
+            :title="t('groupSettings.danger')"
             data-feature="F-03"
         >
-            <h2 id="gs-danger-title" class="text-xl">
-                {{ t('groupSettings.danger') }}
-            </h2>
-            <div
-                class="box border-danger/45! flex flex-col items-start gap-3 p-5 sm:p-6 md:flex-row md:items-center md:justify-between md:gap-6"
+            <SectionBoxItem
+                class="border-danger/45! flex flex-col items-start gap-3 px-6 py-5 md:flex-row md:items-center md:justify-between md:gap-6"
             >
                 <p class="text-fg-muted max-w-md">
                     {{ t('groupSettings.deleteHint') }}
@@ -683,8 +664,8 @@ const buttonClass = 'h-(--control-height) px-4';
                 >
                     {{ t('groupSettings.delete') }}
                 </Button>
-            </div>
-        </section>
+            </SectionBoxItem>
+        </SectionBox>
 
         <AlertDialog v-model:open="confirmOpen">
             <AlertDialogContent v-if="confirmation">
