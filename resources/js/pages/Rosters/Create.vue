@@ -470,7 +470,7 @@ const smallInputClass =
                 <Checkbox
                     id="list-members-add"
                     v-model="listForm.members_can_add_items"
-                    class="mt-1 size-5"
+                    class="mt-0.5"
                     aria-describedby="list-members-add-hint"
                 />
                 <span class="flex flex-col gap-0.5">

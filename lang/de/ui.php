@@ -290,6 +290,7 @@ return [
     'event.noAcceptances.text' => 'Du kannst schon Listen und Folgeumfragen anlegen. Sie erreichen die Leute, sobald sie zusagen.',
     'event.noAcceptances.textChild' => 'Du kannst schon Listen anlegen. Sie erreichen die Leute, sobald sie zusagen.',
     'event.keyDetailsNote' => 'Listen und Folgeumfragen dieses Events sehen nur Teilnehmende.',
+    'event.keyDetailsNoteChild' => 'Listen dieses Events sehen nur Teilnehmende.',
     'event.setStatus' => 'Status für :name setzen',
     'event.remove' => ':name entfernen',
     'event.manage' => 'Verwalten',

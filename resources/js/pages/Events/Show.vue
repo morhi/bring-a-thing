@@ -508,7 +508,7 @@ const badgeLinkClass =
                         </span>
                         <Link
                             :href="showGroup(event.group_slug).url"
-                            class="text-primary hover:text-primary-hover inline-flex items-center gap-1.5 font-semibold underline decoration-1 underline-offset-[3px]"
+                            class="text-primary hover:text-primary-hover inline-flex min-h-6 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-[3px]"
                         >
                             <Users class="size-4" aria-hidden="true" />
                             {{ event.group_name }}
@@ -752,7 +752,13 @@ const badgeLinkClass =
             </div>
 
             <p v-if="!isParticipant" class="text-fg-muted text-sm">
-                {{ t('event.keyDetailsNote') }}
+                {{
+                    t(
+                        isChild
+                            ? 'event.keyDetailsNoteChild'
+                            : 'event.keyDetailsNote',
+                    )
+                }}
             </p>
         </SectionBox>
 
@@ -1071,7 +1077,7 @@ const badgeLinkClass =
             <h2 id="event-comments-title" class="text-h2">
                 <button
                     type="button"
-                    class="focus-visible:outline-focus-ring flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+                    class="focus-visible:outline-focus-ring flex min-h-6 w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2"
                     :aria-expanded="commentsOpen"
                     aria-controls="event-comments-body"
                     @click="commentsOpen = !commentsOpen"

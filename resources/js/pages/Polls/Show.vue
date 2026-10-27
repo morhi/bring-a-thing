@@ -613,7 +613,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         <input
                             v-model="selected"
                             type="checkbox"
-                            class="accent-primary size-5 flex-none"
+                            class="accent-primary size-6 flex-none"
                             :value="option.slug"
                             :disabled="option.is_fixed"
                         />

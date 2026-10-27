@@ -795,6 +795,11 @@ const rowClass =
                                         >({{ t('group.member.you') }})</span
                                     >
                                     <Badge
+                                        v-if="member.role !== 'member'"
+                                        class="bg-primary-soft text-primary"
+                                        >{{ t(roleLabel[member.role]) }}</Badge
+                                    >
+                                    <Badge
                                         v-if="member.is_pending"
                                         class="bg-warning-soft text-warning"
                                         >{{ t('group.member.pending') }}</Badge
@@ -808,15 +813,10 @@ const rowClass =
                                 </span>
                                 <span
                                     v-if="member.email"
-                                    class="text-fg-soft truncate text-[13px]"
+                                    class="text-fg-soft text-[13px] [overflow-wrap:anywhere]"
                                     >{{ member.email }}</span
                                 >
                             </span>
-                            <span
-                                v-if="member.role !== 'member'"
-                                class="text-fg-muted flex-none text-[13px]"
-                                >{{ t(roleLabel[member.role]) }}</span
-                            >
                         </li>
                     </ul>
 

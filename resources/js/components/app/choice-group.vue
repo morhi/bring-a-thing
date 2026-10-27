@@ -67,7 +67,7 @@ const cardClass =
     'has-disabled:cursor-not-allowed has-disabled:opacity-60 has-disabled:hover:border-depth-2-border';
 
 const indicatorClass =
-    'absolute top-4 right-4 flex size-5 shrink-0 items-center justify-center border border-control-border bg-control text-primary-fg outline-none ' +
+    'absolute top-3.5 right-3.5 flex size-6 shrink-0 items-center justify-center border border-control-border bg-control text-primary-fg outline-none ' +
     'data-[state=checked]:border-primary data-[state=checked]:bg-primary disabled:cursor-not-allowed ' +
     // The card label also toggles it, but the control itself still needs a 24 px target (WCAG 2.5.8)
     'after:absolute after:-inset-1';
@@ -100,7 +100,7 @@ const indicatorClass =
                 :class="[indicatorClass, 'rounded-full']"
             >
                 <RadioGroupIndicator
-                    class="bg-primary-fg size-2 rounded-full"
+                    class="bg-primary-fg size-2.5 rounded-full"
                 />
             </RadioGroupItem>
             <span
@@ -141,7 +141,7 @@ const indicatorClass =
                 @update:model-value="(checked) => toggle(option.value, checked)"
             >
                 <CheckboxIndicator>
-                    <CheckIcon class="size-3.5" />
+                    <CheckIcon class="size-4" />
                 </CheckboxIndicator>
             </CheckboxRoot>
             <span

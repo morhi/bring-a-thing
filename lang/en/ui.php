@@ -290,6 +290,7 @@ return [
     'event.noAcceptances.text' => 'You can already create lists and follow-up polls. They reach people as soon as they accept.',
     'event.noAcceptances.textChild' => 'You can already create lists. They reach people as soon as they accept.',
     'event.keyDetailsNote' => 'Lists and follow-up polls of this event are visible to participants only.',
+    'event.keyDetailsNoteChild' => 'Lists of this event are visible to participants only.',
     'event.setStatus' => 'Set status for :name',
     'event.remove' => 'Remove :name',
     'event.manage' => 'Manage',

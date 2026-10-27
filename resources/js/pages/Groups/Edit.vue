@@ -480,7 +480,7 @@ const buttonClass = 'h-(--control-height) px-4';
                 <div class="flex items-start gap-3" data-feature="F-11">
                     <Checkbox
                         id="gs-set-status"
-                        class="mt-1 size-5"
+                        class="mt-0.5"
                         :model-value="page.members_can_set_status"
                         :disabled="!page.permissions.can_switch_option"
                         aria-describedby="gs-set-status-hint"
