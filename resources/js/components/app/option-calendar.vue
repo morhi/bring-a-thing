@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Lock, Plus, X } from '@lucide/vue';
 import { useMediaQuery } from '@vueuse/core';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import {
     addDays,
     dateLocale,
@@ -375,6 +375,34 @@ const hours = Array.from(
     (_, index) => HOUR_START + index,
 );
 const gridHeight = (HOUR_END - HOUR_START) * HOUR_HEIGHT;
+
+const slotScroller = ref<HTMLElement | null>(null);
+
+// The grid shows only a few hours on small screens, so open it where the slots are rather than at 07:00
+watch(slotScroller, (element) => {
+    if (!element) {
+        return;
+    }
+
+    const starts = props.modelValue
+        .map((option) => option.start)
+        .filter((start): start is string => !!start)
+        .map(toMinutes);
+    const target = starts.length
+        ? Math.min(...starts)
+        : props.defaultSlot
+          ? toMinutes(props.defaultSlot.start)
+          : null;
+
+    if (target === null) {
+        return;
+    }
+
+    element.scrollTop = Math.max(
+        0,
+        (Math.floor(target / 60) - HOUR_START) * HOUR_HEIGHT,
+    );
+});
 
 function shiftWeek(delta: number): void {
     weekCursor.value = addDays(weekCursor.value, delta * visibleDayCount.value);
@@ -831,7 +859,10 @@ function hourLabel(hour: number): string {
                     </Button>
                 </span>
             </div>
-            <div class="max-h-[360px] overflow-y-auto overscroll-contain">
+            <div
+                ref="slotScroller"
+                class="max-h-[360px] overflow-y-auto overscroll-contain"
+            >
                 <div
                     class="relative grid touch-none grid-cols-[52px_repeat(var(--days),minmax(0,1fr))]"
                     :style="{ height: `${gridHeight}px` }"

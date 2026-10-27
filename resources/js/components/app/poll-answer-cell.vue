@@ -59,7 +59,7 @@ function choose(value: PollAnswer): void {
             :key="value"
             :class="
                 cn(
-                    'relative grid size-[30px] cursor-pointer place-items-center rounded-full',
+                    'relative grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full',
                     'has-[input:focus-visible]:outline-focus-ring has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-1',
                     answer === value && 'bg-surface-raised shadow-sm',
                     disabled && 'cursor-not-allowed opacity-60',

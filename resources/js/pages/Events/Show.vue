@@ -422,7 +422,7 @@ const badgeLinkClass =
         <header class="flex flex-col gap-[18px]" data-feature="F-10">
             <Link
                 :href="showGroup(event.group_slug).url"
-                class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
+                class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('event.back', { group: event.group_name }) }}
@@ -634,7 +634,11 @@ const badgeLinkClass =
                         t('event.noAcceptances.title')
                     }}</b
                     ><br />
-                    {{ t('event.noAcceptances.text') }}
+                    {{
+                        isChild
+                            ? t('event.noAcceptances.textChild')
+                            : t('event.noAcceptances.text')
+                    }}
                 </span>
             </div>
 

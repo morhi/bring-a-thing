@@ -281,7 +281,7 @@ const buttonClass = 'h-(--control-height) px-4';
         <header class="flex flex-col gap-2.5" data-feature="F-03">
             <Link
                 :href="showGroup(page.slug).url"
-                class="text-fg-muted hover:text-fg mb-1.5 inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
+                class="text-fg-muted hover:text-fg -mt-0.5 mb-1 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('groupSettings.back', { group: page.name }) }}

@@ -17,7 +17,7 @@ defineEmits<{ back: [] }>();
 const { t } = useI18n();
 
 const backClasses =
-    'inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold text-fg-muted hover:text-fg';
+    '-my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold text-fg-muted hover:text-fg';
 </script>
 
 <template>

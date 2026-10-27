@@ -48,7 +48,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ page: App.Data.GroupShowData }>();
 
-const { t, locale } = useI18n();
+const { t, tc, locale } = useI18n();
 const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 
 const openPolls = computed(() =>
@@ -213,7 +213,7 @@ const rowClass =
         <header class="flex flex-col gap-[18px]" data-feature="F-03">
             <Link
                 :href="dashboard().url"
-                class="text-fg-muted hover:text-fg inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline"
+                class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('nav.backToDashboard') }}
@@ -238,7 +238,9 @@ const rowClass =
                             ><b class="text-fg font-semibold tabular-nums">{{
                                 page.members.length
                             }}</b>
-                            {{ t('word.members') }}</span
+                            {{
+                                tc('word.memberCount', page.members.length)
+                            }}</span
                         >
                         <span v-if="openPolls.length"
                             ><b class="text-fg font-semibold tabular-nums">{{

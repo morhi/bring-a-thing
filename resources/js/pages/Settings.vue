@@ -91,7 +91,7 @@ function logOut(): void {
         <header class="flex flex-col gap-2.5">
             <Link
                 :href="dashboard().url"
-                class="text-fg-muted hover:text-fg mb-1.5 inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline"
+                class="text-fg-muted hover:text-fg -mt-0.5 mb-1 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold no-underline"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('nav.backToDashboard') }}

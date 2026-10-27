@@ -21,7 +21,7 @@ defineOptions({ layout: WebsiteLayout });
  */
 const props = defineProps<{ join: App.Data.GroupJoinData | null }>();
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 const page = usePage();
 const userName = computed(() => page.props.auth.user?.name ?? null);
 const loggedIn = computed(() => page.props.auth.user !== null);
@@ -115,7 +115,10 @@ const buttonClass = 'h-(--control-height) w-full px-4';
             </p>
             <div class="text-fg-muted flex items-center gap-2.5 text-[15px]">
                 <AvatarStack :people="join.members" :max="5" />
-                <span>{{ join.member_count }} {{ t('word.members') }}</span>
+                <span
+                    >{{ join.member_count }}
+                    {{ tc('word.memberCount', join.member_count) }}</span
+                >
             </div>
         </div>
 

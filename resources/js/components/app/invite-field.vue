@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
+import { initials } from '@/lib/initials';
 
 export type InviteFriend = {
     id: number | string;
@@ -166,16 +167,6 @@ function rowKey(row: Row): string {
 
 function selectionName(selection: InviteSelection): string {
     return selection.name || selection.email;
-}
-
-function initials(name: string | null | undefined, email: string): string {
-    const source = (name || email).trim();
-    const parts = source.split(/[\s@.]+/).filter(Boolean);
-
-    return parts
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase() ?? '')
-        .join('');
 }
 
 function pick(row: Row): void {

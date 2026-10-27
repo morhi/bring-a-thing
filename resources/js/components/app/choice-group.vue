@@ -68,7 +68,9 @@ const cardClass =
 
 const indicatorClass =
     'absolute top-4 right-4 flex size-5 shrink-0 items-center justify-center border border-control-border bg-control text-primary-fg outline-none ' +
-    'data-[state=checked]:border-primary data-[state=checked]:bg-primary disabled:cursor-not-allowed';
+    'data-[state=checked]:border-primary data-[state=checked]:bg-primary disabled:cursor-not-allowed ' +
+    // The card label also toggles it, but the control itself still needs a 24 px target (WCAG 2.5.8)
+    'after:absolute after:-inset-1';
 </script>
 
 <template>

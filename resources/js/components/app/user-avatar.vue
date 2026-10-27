@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { HTMLAttributes } from 'vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useI18n } from '@/composables/use-i18n';
+import { initials as initialsOf } from '@/lib/initials';
 import { cn } from '@/lib/utils';
 
 const props = withDefaults(
@@ -24,19 +25,7 @@ const isShadow = computed(() => !props.name);
 
 const label = computed(() => props.name || props.email || t('common.noName'));
 
-const initials = computed(() => {
-    if (props.name) {
-        return props.name
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((part) => Array.from(part)[0])
-            .slice(0, 2)
-            .join('')
-            .toUpperCase();
-    }
-
-    return props.email ? props.email.slice(0, 2).toUpperCase() : '?';
-});
+const initials = computed(() => initialsOf(props.name, props.email));
 
 const toneIndex = computed(() => {
     if (props.tone) {

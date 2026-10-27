@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Copy, Link2, Plus, X } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Check, Copy, Link2, Plus, X } from '@lucide/vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     destroy as destroyField,
@@ -333,17 +333,27 @@ function askDisable(): void {
     });
 }
 
+const linkCopied = ref(false);
+let linkCopiedTimer: ReturnType<typeof setTimeout> | undefined;
+
 async function copyLink(url: string): Promise<void> {
     try {
         await navigator.clipboard.writeText(url);
-        toast.success(t('list.share.copied'));
     } catch {
         toast.error(t('list.share.copyFailed'), {
             description: url,
             duration: 10000,
         });
+
+        return;
     }
+
+    linkCopied.value = true;
+    clearTimeout(linkCopiedTimer);
+    linkCopiedTimer = setTimeout(() => (linkCopied.value = false), 2000);
 }
+
+onBeforeUnmount(() => clearTimeout(linkCopiedTimer));
 
 // Duplicate (F-17) and delete (F-13)
 
@@ -628,9 +638,17 @@ const smallInputClass =
                                 size="sm"
                                 @click="copyLink(roster.share_url)"
                             >
-                                <Copy aria-hidden="true" />
-                                {{ t('list.share.copy') }}
+                                <Check v-if="linkCopied" aria-hidden="true" />
+                                <Copy v-else aria-hidden="true" />
+                                {{
+                                    linkCopied
+                                        ? t('list.share.copied')
+                                        : t('list.share.copy')
+                                }}
                             </Button>
+                            <span class="sr-only" aria-live="polite">{{
+                                linkCopied ? t('list.share.copied') : ''
+                            }}</span>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <Button
