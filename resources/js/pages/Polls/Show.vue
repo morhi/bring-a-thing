@@ -33,6 +33,8 @@ import type {
     PollKey,
     PollOptionTotals,
 } from '@/components/app/poll/types';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -341,7 +343,7 @@ const buttonClass = 'h-(--control-height) px-4';
             </Link>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex min-w-0 flex-col gap-2.5">
-                    <h1 class="text-3xl break-words">{{ poll.title }}</h1>
+                    <h1 class="text-h1 break-words">{{ poll.title }}</h1>
                     <div
                         class="text-fg-muted flex flex-wrap items-center gap-x-3 gap-y-2 text-sm"
                     >
@@ -360,7 +362,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         }}</Badge>
                         <Link
                             :href="showGroup(poll.group_slug).url"
-                            class="hover:text-fg inline-flex items-center gap-1.5 rounded-sm font-semibold"
+                            class="text-primary hover:text-primary-hover inline-flex items-center gap-1.5 rounded-sm font-semibold underline-offset-[3px] hover:underline"
                         >
                             <Users class="size-4" aria-hidden="true" />
                             {{ poll.group_name }}
@@ -430,7 +432,7 @@ const buttonClass = 'h-(--control-height) px-4';
 
             <div
                 v-if="poll.source_event"
-                class="bg-primary-soft text-primary-soft-fg flex flex-wrap items-center gap-3 rounded-md px-3.5 py-3 text-sm"
+                class="bg-primary-soft text-primary-soft-fg flex flex-wrap items-center gap-x-3.5 gap-y-3 rounded-md px-3.5 py-3 text-sm"
                 data-feature="F-12"
             >
                 <Users class="size-6 flex-none" aria-hidden="true" />
@@ -446,7 +448,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         })
                     }}</span>
                 </span>
-                <Button as-child variant="secondary" size="sm">
+                <Button as-child variant="secondary" size="sm" class="ml-auto">
                     <Link :href="showEvent(poll.source_event.slug).url">
                         {{ t('poll.openEvent') }}
                         <ChevronRight aria-hidden="true" />
@@ -456,7 +458,7 @@ const buttonClass = 'h-(--control-height) px-4';
 
             <div
                 v-if="!isOpen"
-                class="bg-success-soft flex gap-3 rounded-md px-5 py-3.5 text-[15px]"
+                class="box flex gap-3 px-5 py-3.5 text-[15px]"
                 role="status"
                 data-feature="F-08"
             >
@@ -488,27 +490,20 @@ const buttonClass = 'h-(--control-height) px-4';
             </div>
         </header>
 
-        <section
-            class="flex min-w-0 flex-col gap-4"
-            aria-labelledby="grid-title"
+        <SectionBox
+            id="grid-title"
+            :title="t('poll.grid')"
+            :count="answered.length"
             :data-feature="isDateFinder ? 'F-06' : 'F-07'"
         >
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 id="grid-title" class="flex items-center gap-2.5 text-xl">
-                    {{ t('poll.grid') }}
-                    <span
-                        v-if="answered.length"
-                        class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                        >{{ answered.length }}</span
-                    >
-                </h2>
+            <template #action>
                 <span class="text-fg-soft text-sm">{{
                     t('group.polls.responses', {
                         n: answered.length,
                         total: page.audience_count,
                     })
                 }}</span>
-            </div>
+            </template>
 
             <PollGrid
                 :id-prefix="`poll-${poll.slug}`"
@@ -553,32 +548,28 @@ const buttonClass = 'h-(--control-height) px-4';
                         .join(', ')
                 }}</span>
             </div>
-        </section>
+        </SectionBox>
 
-        <section
+        <SectionBox
             v-if="page.fixed_events.length"
-            class="flex flex-col gap-4"
-            aria-labelledby="fixed-title"
+            id="fixed-title"
+            :title="t('poll.events')"
+            :count="page.fixed_events.length"
             data-feature="F-09"
         >
-            <h2 id="fixed-title" class="flex items-center gap-2.5 text-xl">
-                {{ t('poll.events') }}
-                <span
-                    class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                    >{{ page.fixed_events.length }}</span
-                >
-            </h2>
-            <ul class="flex flex-col gap-2.5">
+            <ul class="flex flex-col gap-3">
                 <li v-for="event in page.fixed_events" :key="event.slug">
-                    <Link
+                    <SectionBoxItem
+                        :as="Link"
                         :href="showEvent(event.slug).url"
-                        class="box hover:border-border-strong focus-visible:outline-focus-ring flex items-center gap-3.5 px-4 py-3.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:px-[22px]"
+                        class="flex items-center gap-4 px-4 py-3.5 sm:px-[22px]"
                     >
                         <DateBlock :date="event.date" fixed />
-                        <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <span class="truncate font-semibold">{{
-                                event.title
-                            }}</span>
+                        <span class="flex min-w-0 flex-1 flex-col gap-1">
+                            <span
+                                class="font-display text-[17px] leading-tight font-[640] break-words"
+                                >{{ event.title }}</span
+                            >
                             <span class="text-fg-muted text-sm">{{
                                 optionWhen({
                                     date: event.date,
@@ -591,10 +582,10 @@ const buttonClass = 'h-(--control-height) px-4';
                             class="text-fg-soft size-5 flex-none"
                             aria-hidden="true"
                         />
-                    </Link>
+                    </SectionBoxItem>
                 </li>
             </ul>
-        </section>
+        </SectionBox>
 
         <Dialog v-model:open="fixOpen">
             <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">

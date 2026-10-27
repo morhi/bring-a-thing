@@ -499,24 +499,25 @@ const inputClass =
             </FormField>
         </form>
 
-        <section
-            v-if="poll"
-            class="border-border flex flex-col items-start gap-3 border-t pt-6"
-            aria-labelledby="poll-delete-title"
-            data-feature="F-08"
-        >
-            <h2 id="poll-delete-title" class="text-xl">
-                {{ t('poll.settings.delete') }}
-            </h2>
-            <Button
-                type="button"
-                variant="destructive"
-                size="lg"
-                :class="buttonClass"
-                @click="deleteOpen = true"
-                >{{ t('poll.settings.delete') }}</Button
+        <template v-if="poll">
+            <hr class="border-border border-t" />
+            <section
+                class="flex flex-col items-start gap-2.5"
+                aria-labelledby="poll-delete-title"
+                data-feature="F-08"
             >
-        </section>
+                <h2 id="poll-delete-title" class="text-h2">
+                    {{ t('poll.settings.delete') }}
+                </h2>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    @click="deleteOpen = true"
+                    >{{ t('poll.settings.delete') }}</Button
+                >
+            </section>
+        </template>
 
         <template #actions>
             <Button as-child variant="outline" size="lg" :class="buttonClass">

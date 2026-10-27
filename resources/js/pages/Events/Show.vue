@@ -47,6 +47,8 @@ import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
@@ -77,6 +79,10 @@ const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 const event = computed(() => props.page.event);
 const permissions = computed(() => props.page.permissions);
 const isChild = computed(() => event.value.parent_event !== null);
+// A date fixed from a poll carries the tilted tag until it has passed (F-09)
+const isFixed = computed(
+    () => event.value.origin_poll_slug !== null && !event.value.is_past,
+);
 // Only "accepted" and "pending" count as participants; everyone else sees the key details (F-11)
 const isParticipant = computed(
     () =>
@@ -405,8 +411,6 @@ const buttonClass = 'h-(--control-height) px-4';
 // Outline buttons fall back to a translucent border color in dark mode, so the surface and text are set explicitly
 const outlineClass =
     'bg-control text-fg hover:bg-surface-muted dark:bg-control dark:hover:bg-surface-muted';
-const rowClass =
-    'box text-fg flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:px-[22px] max-[560px]:flex-wrap';
 const badgeLinkClass =
     'border-border text-fg-muted hover:border-primary hover:text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 </script>
@@ -424,11 +428,7 @@ const badgeLinkClass =
                 {{ t('event.back', { group: event.group_name }) }}
             </Link>
             <div class="flex flex-wrap items-start gap-x-5 gap-y-4">
-                <DateBlock
-                    :date="event.date"
-                    :fixed="event.origin_poll_slug !== null && !event.is_past"
-                    size="lg"
-                />
+                <DateBlock :date="event.date" :fixed="isFixed" size="lg" />
                 <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <Badge
@@ -464,7 +464,7 @@ const badgeLinkClass =
                             }}
                         </Link>
                     </div>
-                    <h1 class="text-3xl break-words">{{ event.title }}</h1>
+                    <h1 class="text-h1 break-words">{{ event.title }}</h1>
                     <p
                         class="text-fg-muted flex flex-wrap gap-x-[18px] gap-y-2 text-[15px]"
                     >
@@ -473,8 +473,16 @@ const badgeLinkClass =
                                 class="text-fg-soft size-4"
                                 aria-hidden="true"
                             />
-                            {{ longDate(event.date)
-                            }}<template v-if="endLabel">
+                            <span
+                                v-if="isFixed"
+                                class="bg-primary font-tag text-primary-fg inline-block rotate-(--tag-tilt) rounded-lg px-2.5 pt-0.5 pb-[3px] leading-[1.2] font-bold shadow-sm"
+                                data-feature="F-09"
+                                >{{ longDate(event.date) }}</span
+                            >
+                            <template v-else>{{
+                                longDate(event.date)
+                            }}</template
+                            ><template v-if="endLabel">
                                 – {{ endLabel }}</template
                             >
                         </span>
@@ -545,15 +553,12 @@ const badgeLinkClass =
             </div>
         </header>
 
-        <section
-            class="box flex flex-col gap-5 p-5 sm:p-7"
-            aria-labelledby="participation-title"
+        <SectionBox
+            id="participation-title"
+            :title="t('event.participation')"
             data-feature="F-11"
         >
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="participation-title" class="text-xl">
-                    {{ t('event.participation') }}
-                </h2>
+            <template #action>
                 <span class="flex flex-wrap items-center gap-2">
                     <Badge :class="ownBadge.class">{{ ownBadge.label }}</Badge>
                     <Button
@@ -569,10 +574,10 @@ const badgeLinkClass =
                         }}
                     </Button>
                 </span>
-            </div>
+            </template>
 
             <div
-                class="bg-surface-muted flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-md px-5 py-4"
+                class="box flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4"
             >
                 <span class="flex-[1_1_200px] font-semibold">{{
                     event.is_past ? t('event.pastNote') : t('event.yourAnswer')
@@ -617,10 +622,13 @@ const badgeLinkClass =
 
             <div
                 v-if="page.accepted_count === 0"
-                class="bg-info-soft text-info flex items-start gap-3 rounded-md px-4 py-3 text-sm"
+                class="box flex items-start gap-3 px-5 py-3.5 text-[15px]"
                 role="status"
             >
-                <Users class="mt-0.5 size-5 flex-none" aria-hidden="true" />
+                <Users
+                    class="text-fg-soft mt-px size-5 flex-none"
+                    aria-hidden="true"
+                />
                 <span>
                     <b class="font-semibold">{{
                         t('event.noAcceptances.title')
@@ -640,11 +648,11 @@ const badgeLinkClass =
                 >
                     <h3
                         :id="`participants-${column.status ?? 'none'}`"
-                        class="flex items-baseline gap-2 text-base"
+                        class="flex items-baseline gap-0.5 text-base"
                     >
                         {{ column.label }}
                         <span
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
+                            class="text-fg-soft ml-1.5 font-sans text-[15px] font-medium tabular-nums"
                             >{{ column.people.length }}</span
                         >
                     </h3>
@@ -742,30 +750,23 @@ const badgeLinkClass =
             <p v-if="!isParticipant" class="text-fg-muted text-sm">
                 {{ t('event.keyDetailsNote') }}
             </p>
-        </section>
+        </SectionBox>
 
         <template v-if="isParticipant">
-            <section
-                class="flex flex-col gap-4"
-                aria-labelledby="event-lists-title"
+            <SectionBox
+                id="event-lists-title"
+                :title="t('event.lists')"
+                :count="page.lists.length"
                 data-feature="F-13"
             >
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2
-                        id="event-lists-title"
-                        class="flex items-center gap-2.5 text-xl"
-                    >
-                        {{ t('event.lists') }}
-                        <span
-                            v-if="page.lists.length"
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                            >{{ page.lists.length }}</span
-                        >
-                    </h2>
+                <template
+                    v-if="permissions.can_create_list && page.lists.length"
+                    #action
+                >
                     <Button
-                        v-if="permissions.can_create_list && page.lists.length"
                         as-child
                         variant="outline"
+                        size="sm"
                         :class="outlineClass"
                     >
                         <Link
@@ -777,18 +778,19 @@ const badgeLinkClass =
                             {{ t('group.new.list') }}
                         </Link>
                     </Button>
-                </div>
+                </template>
                 <ul
                     v-if="page.lists.length"
-                    class="grid gap-2.5 sm:grid-cols-2"
+                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
                 >
                     <li v-for="list in page.lists" :key="list.slug">
-                        <Link
+                        <SectionBoxItem
+                            :as="Link"
                             :href="showList(list.slug).url"
-                            :class="[rowClass, 'h-full items-start']"
+                            class="flex h-full items-center gap-3.5"
                         >
                             <span
-                                class="bg-primary-soft text-primary-soft-fg grid size-10 flex-none place-items-center rounded-xl"
+                                class="bg-surface-muted text-fg-muted grid size-10 flex-none place-items-center rounded-[12px]"
                             >
                                 <ListChecks class="size-5" aria-hidden="true" />
                             </span>
@@ -815,7 +817,7 @@ const badgeLinkClass =
                                     "
                                 />
                             </span>
-                        </Link>
+                        </SectionBoxItem>
                     </li>
                 </ul>
                 <EmptyState
@@ -840,56 +842,41 @@ const badgeLinkClass =
                         </Link>
                     </Button>
                 </EmptyState>
-            </section>
+            </SectionBox>
 
-            <section
+            <SectionBox
                 v-if="!isChild"
-                class="flex flex-col gap-4"
-                aria-labelledby="followups-title"
+                id="followups-title"
+                :title="t('event.followUps')"
+                :count="page.follow_up_polls.length"
                 data-feature="F-12"
             >
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <h2
-                        id="followups-title"
-                        class="flex items-center gap-2.5 text-xl"
-                    >
-                        {{ t('event.followUps') }}
-                        <span
-                            v-if="page.follow_up_polls.length"
-                            class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                            >{{ page.follow_up_polls.length }}</span
-                        >
-                    </h2>
-                    <Button
-                        v-if="
-                            permissions.can_create_follow_up_poll &&
-                            page.follow_up_polls.length
-                        "
-                        as-child
-                    >
+                <template
+                    v-if="
+                        permissions.can_create_follow_up_poll &&
+                        page.follow_up_polls.length
+                    "
+                    #action
+                >
+                    <Button as-child size="sm">
                         <Link :href="createFollowUpPoll(event.slug).url">
                             <Vote aria-hidden="true" />
                             {{ t('event.followUps.new') }}
                         </Link>
                     </Button>
-                </div>
-                <p
-                    v-if="
-                        !permissions.can_create_follow_up_poll &&
-                        !page.follow_up_polls.length
-                    "
-                    class="text-fg-muted text-sm"
-                >
-                    {{ t('event.followUps.acceptFirst') }}
-                </p>
+                </template>
                 <ul
-                    v-else-if="page.follow_up_polls.length"
-                    class="flex flex-col gap-2.5"
+                    v-if="page.follow_up_polls.length"
+                    class="flex flex-col gap-3"
                 >
                     <li v-for="poll in page.follow_up_polls" :key="poll.slug">
-                        <Link :href="showPoll(poll.slug).url" :class="rowClass">
+                        <SectionBoxItem
+                            :as="Link"
+                            :href="showPoll(poll.slug).url"
+                            class="flex items-center gap-3.5 px-4 max-[560px]:flex-wrap sm:px-[22px]"
+                        >
                             <span
-                                class="grid size-11 flex-none place-items-center rounded-xl"
+                                class="grid size-11 flex-none place-items-center rounded-[12px]"
                                 :class="
                                     poll.is_closed
                                         ? 'bg-surface-muted text-fg-muted'
@@ -965,48 +952,49 @@ const badgeLinkClass =
                                     >{{ t('group.polls.closed') }}</Badge
                                 >
                             </span>
-                        </Link>
+                        </SectionBoxItem>
                     </li>
                 </ul>
+                <!-- Pending participants see the section, but only accepted ones may start a follow-up poll (F-12) -->
                 <EmptyState
                     v-else
                     :title="t('event.followUps.empty.title')"
-                    :text="t('event.followUps.empty.text')"
+                    :text="
+                        permissions.can_create_follow_up_poll
+                            ? t('event.followUps.empty.text')
+                            : t('event.followUps.acceptFirst')
+                    "
                 >
-                    <Button as-child size="lg" :class="buttonClass">
+                    <Button
+                        v-if="permissions.can_create_follow_up_poll"
+                        as-child
+                        size="lg"
+                        :class="buttonClass"
+                    >
                         <Link :href="createFollowUpPoll(event.slug).url">
                             <Plus aria-hidden="true" />
                             {{ t('event.followUps.new') }}
                         </Link>
                     </Button>
                 </EmptyState>
-            </section>
+            </SectionBox>
 
-            <section
+            <SectionBox
                 v-if="!isChild"
-                class="flex flex-col gap-4"
-                aria-labelledby="children-title"
+                id="children-title"
+                :title="t('event.children')"
+                :count="page.child_events.length"
                 data-feature="F-12"
             >
-                <h2
-                    id="children-title"
-                    class="flex items-center gap-2.5 text-xl"
-                >
-                    {{ t('event.children') }}
-                    <span
-                        v-if="page.child_events.length"
-                        class="text-fg-soft font-sans text-sm font-semibold tabular-nums"
-                        >{{ page.child_events.length }}</span
-                    >
-                </h2>
-                <ul
-                    v-if="page.child_events.length"
-                    class="flex flex-col gap-2.5"
-                >
+                <ul v-if="page.child_events.length" class="flex flex-col gap-3">
                     <li v-for="child in page.child_events" :key="child.slug">
-                        <Link
+                        <SectionBoxItem
+                            :as="Link"
                             :href="showEvent(child.slug).url"
-                            :class="[rowClass, child.is_past && 'opacity-75']"
+                            :class="[
+                                'flex items-center gap-4 px-4 py-3.5 max-[560px]:flex-wrap sm:px-[22px]',
+                                child.is_past && 'opacity-75',
+                            ]"
                             data-feature="F-09"
                         >
                             <DateBlock
@@ -1049,7 +1037,7 @@ const badgeLinkClass =
                             </span>
                             <span
                                 v-if="child.own_status && !child.is_past"
-                                class="flex flex-none items-center max-[560px]:basis-full max-[560px]:pl-[68px]"
+                                class="flex flex-none items-center max-[560px]:basis-full max-[560px]:pl-[72px]"
                             >
                                 <Badge
                                     :class="childBadge[child.own_status].class"
@@ -1058,7 +1046,7 @@ const badgeLinkClass =
                                     }}</Badge
                                 >
                             </span>
-                        </Link>
+                        </SectionBoxItem>
                     </li>
                 </ul>
                 <EmptyState
@@ -1066,16 +1054,17 @@ const badgeLinkClass =
                     :title="t('event.children.empty.title')"
                     :text="t('event.children.empty.text')"
                 />
-            </section>
+            </SectionBox>
         </template>
 
+        <!-- One heading only: the disclosure button is the section's title, so no SectionBox title row -->
         <section
             v-if="permissions.can_comment"
-            class="box flex flex-col gap-4 p-5 sm:px-7"
+            class="box flex flex-col gap-4 rounded-3xl p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:py-6"
             aria-labelledby="event-comments-title"
             data-feature="F-20"
         >
-            <h2 id="event-comments-title" class="text-lg">
+            <h2 id="event-comments-title" class="text-h2">
                 <button
                     type="button"
                     class="focus-visible:outline-focus-ring flex w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -1084,14 +1073,14 @@ const badgeLinkClass =
                     @click="commentsOpen = !commentsOpen"
                 >
                     <MessageSquare
-                        class="text-fg-soft size-5"
+                        class="text-fg-soft size-5 flex-none"
                         aria-hidden="true"
                     />
                     <span class="min-w-0 flex-1">{{
                         t('event.comments.toggle', { n: page.comments.length })
                     }}</span>
                     <ChevronRight
-                        class="text-fg-soft size-4 transition-transform motion-reduce:transition-none"
+                        class="text-fg-soft size-4 flex-none transition-transform motion-reduce:transition-none"
                         :class="commentsOpen && 'rotate-90'"
                         aria-hidden="true"
                     />
