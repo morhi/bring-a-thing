@@ -25,6 +25,8 @@ import AvatarStack from '@/components/app/avatar-stack.vue';
 import type { AvatarStackPerson } from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import { formatDate, toIso } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +37,7 @@ import { formatAmount, relativeDay } from '@/lib/roster-items';
 
 defineOptions({ layout: AppLayout });
 
-// Mirrors App.Data.DashboardData; the SFC compiler cannot resolve the global type itself
+// Mirrors App.Data.DashboardData; the SFC compiler only resolves imported or local types, not the global namespace
 const props = defineProps<{
     waiting: App.Data.DashboardWaitingData[];
     upcoming: App.Data.DashboardEventData[];
@@ -132,71 +134,56 @@ function acceptedPeople(
         }),
     );
 }
-
-const sectionHead =
-    'flex flex-wrap items-center justify-between gap-x-4 gap-y-2';
-const sectionTitle = 'flex items-center gap-2.5 text-xl';
-const countClass = 'text-fg-soft font-sans text-sm font-semibold tabular-nums';
-const cardClass =
-    'box flex no-underline text-fg hover:text-fg transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 </script>
 
 <template>
     <Head :title="t('nav.dashboard')" />
 
-    <div class="flex flex-col gap-10" data-feature="F-22">
+    <div class="flex flex-col gap-10 min-[720px]:gap-14" data-feature="F-22">
         <header class="flex flex-col gap-1.5">
-            <h1 class="text-[clamp(30px,2.6vw+18px,44px)] break-words">
-                {{ greeting }}
-            </h1>
+            <h1 class="text-h1 break-words">{{ greeting }}</h1>
             <p class="text-fg-soft text-[15px]">{{ today }}</p>
         </header>
 
-        <section v-if="firstRun">
-            <EmptyState
-                :icon="ListChecks"
-                :title="t('dash.empty.title')"
-                :text="t('dash.empty.text')"
-            >
-                <Button as-child size="lg">
-                    <Link
-                        :href="createGroup().url"
-                        class="text-primary-fg hover:text-primary-fg no-underline"
-                    >
-                        <Plus aria-hidden="true" /> {{ t('dash.groups.new') }}
-                    </Link>
-                </Button>
-                <Button as-child size="lg" variant="secondary">
-                    <Link :href="createList().url" class="no-underline">{{
-                        t('dash.lists.new')
-                    }}</Link>
-                </Button>
-            </EmptyState>
-        </section>
+        <EmptyState
+            v-if="firstRun"
+            :icon="ListChecks"
+            :title="t('dash.empty.title')"
+            :text="t('dash.empty.text')"
+        >
+            <Button as-child size="lg">
+                <Link
+                    :href="createGroup().url"
+                    class="text-primary-fg hover:text-primary-fg no-underline"
+                >
+                    <Plus aria-hidden="true" /> {{ t('dash.groups.new') }}
+                </Link>
+            </Button>
+            <Button as-child size="lg" variant="secondary">
+                <Link :href="createList().url" class="no-underline">{{
+                    t('dash.lists.new')
+                }}</Link>
+            </Button>
+        </EmptyState>
 
         <template v-else>
+            <!-- The one block that asks for action keeps the only strong surface on the page -->
             <section
+                v-if="waiting.length"
                 aria-labelledby="waiting-title"
-                :class="
-                    waiting.length
-                        ? 'bg-primary-soft text-primary-soft-fg flex flex-col gap-3.5 rounded-(--card-radius) p-[22px] sm:px-7 sm:py-[26px]'
-                        : 'flex flex-col gap-4'
-                "
+                class="bg-primary-soft text-primary-soft-fg flex flex-col gap-3.5 rounded-(--card-radius) p-[22px] min-[720px]:px-7 min-[720px]:py-[26px]"
             >
                 <h2
                     id="waiting-title"
-                    class="flex items-center gap-2.5 text-xl"
-                    :class="{ 'text-primary-soft-fg': waiting.length > 0 }"
+                    class="text-h2 text-primary-soft-fg flex items-center gap-2.5"
                 >
                     {{ t('dash.waiting') }}
                     <span
-                        v-if="waiting.length"
                         class="bg-primary text-primary-fg inline-grid h-7 min-w-7 place-items-center rounded-full px-2 font-sans text-sm font-bold tabular-nums"
                         >{{ waiting.length }}</span
                     >
                 </h2>
                 <ul
-                    v-if="waiting.length"
                     class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))] gap-2.5"
                 >
                     <li
@@ -206,7 +193,7 @@ const cardClass =
                         <Link
                             :href="waitingHref(item)"
                             :data-feature="waitingFeature(item)"
-                            class="bg-surface-raised text-fg hover:text-fg hover:border-primary-ring focus-visible:outline-focus-ring flex h-full flex-wrap items-center gap-x-3.5 gap-y-2 rounded-xl border border-transparent px-4 py-3.5 no-underline transition hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            class="bg-surface-raised text-fg hover:text-fg hover:border-primary-ring flex h-full flex-wrap items-center gap-x-3.5 gap-y-2 rounded-xl border border-transparent px-4 py-3.5 no-underline transition hover:-translate-y-px motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                         >
                             <span
                                 class="bg-primary-soft text-primary-soft-fg grid size-10 flex-none place-items-center rounded-xl"
@@ -255,36 +242,31 @@ const cardClass =
                         </Link>
                     </li>
                 </ul>
+            </section>
+
+            <SectionBox v-else id="waiting-title" :title="t('dash.waiting')">
                 <EmptyState
-                    v-else
                     :icon="Check"
                     :title="t('dash.waiting.done.title')"
                     :text="t('dash.waiting.done.text')"
                 />
-            </section>
+            </SectionBox>
 
             <div
                 class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-x-12 gap-y-10"
             >
-                <section
-                    class="flex min-w-0 flex-col gap-4"
-                    aria-labelledby="upcoming-title"
+                <SectionBox
+                    id="upcoming-title"
+                    :title="t('dash.upcoming')"
+                    :count="upcoming.length"
                     data-feature="F-10"
                 >
-                    <h2 id="upcoming-title" :class="sectionTitle">
-                        {{ t('dash.upcoming') }}
-                        <span v-if="upcoming.length" :class="countClass">{{
-                            upcoming.length
-                        }}</span>
-                    </h2>
                     <ul v-if="upcoming.length" class="flex flex-col gap-3">
                         <li v-for="event in upcoming" :key="event.slug">
-                            <Link
+                            <SectionBoxItem
+                                :as="Link"
                                 :href="showEvent(event.slug).url"
-                                :class="[
-                                    cardClass,
-                                    'items-start gap-4 p-[18px]',
-                                ]"
+                                class="flex items-start gap-4 p-[18px]"
                             >
                                 <DateBlock
                                     :date="event.date"
@@ -336,7 +318,7 @@ const cardClass =
                                         >
                                     </span>
                                 </span>
-                            </Link>
+                            </SectionBoxItem>
                         </li>
                     </ul>
                     <EmptyState
@@ -344,22 +326,17 @@ const cardClass =
                         :title="t('dash.upcoming.empty.title')"
                         :text="t('dash.upcoming.empty.text')"
                     />
-                </section>
+                </SectionBox>
 
-                <section
-                    class="flex min-w-0 flex-col gap-4"
-                    aria-labelledby="claims-title"
+                <SectionBox
+                    id="claims-title"
+                    :title="t('dash.claims')"
+                    :count="claims.length"
                     data-feature="F-15"
                 >
-                    <h2 id="claims-title" :class="sectionTitle">
-                        {{ t('dash.claims') }}
-                        <span v-if="claims.length" :class="countClass">{{
-                            claims.length
-                        }}</span>
-                    </h2>
                     <ul
                         v-if="claims.length"
-                        class="box divide-border flex flex-col divide-y px-5 py-1.5"
+                        class="box divide-border flex min-w-0 flex-col divide-y px-6 py-1.5"
                     >
                         <li
                             v-for="(claim, index) in claims"
@@ -367,7 +344,7 @@ const cardClass =
                         >
                             <Link
                                 :href="showList(claim.roster_slug).url"
-                                class="group text-fg hover:text-fg focus-visible:outline-focus-ring flex items-center gap-3 rounded-sm py-3 no-underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                class="group text-fg hover:text-fg flex items-center gap-3 rounded-sm py-3 no-underline"
                             >
                                 <span
                                     class="font-display text-primary min-w-12 text-[15px] font-bold tabular-nums"
@@ -417,36 +394,32 @@ const cardClass =
                         :title="t('dash.claims.empty.title')"
                         :text="t('dash.claims.empty.text')"
                     />
-                </section>
+                </SectionBox>
             </div>
 
-            <section
-                class="flex flex-col gap-4"
-                aria-labelledby="groups-title"
+            <SectionBox
+                id="groups-title"
+                :title="t('dash.groups')"
+                :count="groups.length"
                 data-feature="F-03"
             >
-                <div :class="sectionHead">
-                    <h2 id="groups-title" :class="sectionTitle">
-                        {{ t('dash.groups') }}
-                        <span v-if="groups.length" :class="countClass">{{
-                            groups.length
-                        }}</span>
-                    </h2>
+                <template #action>
                     <Button as-child variant="secondary" size="sm">
                         <Link :href="createGroup().url" class="no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.groups.new') }}</Link
                         >
                     </Button>
-                </div>
+                </template>
                 <ul
                     v-if="groups.length"
-                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3"
+                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4"
                 >
                     <li v-for="group in groups" :key="group.slug">
-                        <Link
+                        <SectionBoxItem
+                            :as="Link"
                             :href="showGroup(group.slug).url"
-                            :class="[cardClass, 'h-full flex-col gap-3.5 p-5']"
+                            class="flex h-full flex-col gap-3.5 p-5"
                         >
                             <span
                                 class="flex items-start justify-between gap-3"
@@ -486,7 +459,7 @@ const cardClass =
                                     {{ t('word.upcoming') }}</span
                                 >
                             </span>
-                        </Link>
+                        </SectionBoxItem>
                     </li>
                 </ul>
                 <EmptyState
@@ -503,38 +476,31 @@ const cardClass =
                         >
                     </Button>
                 </EmptyState>
-            </section>
+            </SectionBox>
 
-            <section
-                class="flex flex-col gap-4"
-                aria-labelledby="lists-title"
+            <SectionBox
+                id="lists-title"
+                :title="t('dash.lists')"
+                :count="lists.length"
                 data-feature="F-13"
             >
-                <div :class="sectionHead">
-                    <h2 id="lists-title" :class="sectionTitle">
-                        {{ t('dash.lists') }}
-                        <span v-if="lists.length" :class="countClass">{{
-                            lists.length
-                        }}</span>
-                    </h2>
+                <template #action>
                     <Button as-child variant="secondary" size="sm">
                         <Link :href="createList().url" class="no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.lists.new') }}</Link
                         >
                     </Button>
-                </div>
+                </template>
                 <ul
                     v-if="lists.length"
-                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))] gap-3"
+                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
                 >
                     <li v-for="list in lists" :key="list.slug">
-                        <Link
+                        <SectionBoxItem
+                            :as="Link"
                             :href="showList(list.slug).url"
-                            :class="[
-                                cardClass,
-                                'h-full items-center gap-3.5 px-[18px] py-4',
-                            ]"
+                            class="flex h-full items-center gap-3.5"
                         >
                             <span
                                 class="bg-surface-muted text-fg-muted grid size-10 flex-none place-items-center rounded-xl"
@@ -578,7 +544,7 @@ const cardClass =
                                     </Badge>
                                 </span>
                             </span>
-                        </Link>
+                        </SectionBoxItem>
                     </li>
                 </ul>
                 <EmptyState
@@ -593,7 +559,7 @@ const cardClass =
                         >
                     </Button>
                 </EmptyState>
-            </section>
+            </SectionBox>
         </template>
     </div>
 </template>

@@ -48,8 +48,9 @@ const languageOptions = computed<ChoiceOption[]>(() =>
 const inputClass =
     'bg-control border-control-border hover:border-fg-soft focus-visible:border-primary-ring placeholder:text-fg-soft h-(--control-height) max-w-(--field-max-width) rounded-(--control-radius) px-3.5 text-[15px]';
 const sectionClass =
-    'grid gap-4 md:grid-cols-[260px_minmax(0,1fr)] md:items-start md:gap-8';
-const cardClass = 'box flex min-w-0 flex-col gap-(--space-stack) p-5 sm:p-6';
+    'grid gap-4 min-[720px]:grid-cols-[260px_minmax(0,1fr)] min-[720px]:items-start min-[720px]:gap-8';
+const cardClass =
+    'box flex min-w-0 flex-col gap-(--space-stack) p-(--card-padding) shadow-(--box-shadow)';
 
 function saveProfile(): void {
     profileForm.patch(updateProfile.url(), { preserveScroll: true });
@@ -86,7 +87,7 @@ function logOut(): void {
 <template>
     <Head :title="t('settings.title')" />
 
-    <div class="flex flex-col gap-10">
+    <div class="flex flex-col gap-10 min-[720px]:gap-14">
         <header class="flex flex-col gap-2.5">
             <Link
                 :href="dashboard().url"
@@ -95,7 +96,7 @@ function logOut(): void {
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('nav.backToDashboard') }}
             </Link>
-            <h1 class="text-3xl">{{ t('settings.title') }}</h1>
+            <h1 class="text-h1">{{ t('settings.title') }}</h1>
             <p class="text-fg-muted max-w-[60ch]">{{ t('settings.lede') }}</p>
         </header>
 
@@ -105,7 +106,7 @@ function logOut(): void {
             data-feature="F-02"
         >
             <div class="flex min-w-0 flex-col gap-1.5">
-                <h2 id="settings-account-title" class="text-xl">
+                <h2 id="settings-account-title" class="text-h2">
                     {{ t('settings.account') }}
                 </h2>
                 <p class="text-fg-muted text-[15px]">
@@ -266,7 +267,7 @@ function logOut(): void {
             data-feature="F-02"
         >
             <div class="flex min-w-0 flex-col gap-1.5">
-                <h2 id="settings-password-title" class="text-xl">
+                <h2 id="settings-password-title" class="text-h2">
                     {{ t('settings.password') }}
                 </h2>
                 <p class="text-fg-muted text-[15px]">
@@ -364,7 +365,7 @@ function logOut(): void {
             data-feature="F-24"
         >
             <div class="flex min-w-0 flex-col gap-1.5">
-                <h2 id="settings-language-title" class="text-xl">
+                <h2 id="settings-language-title" class="text-h2">
                     {{ t('settings.language') }}
                 </h2>
                 <p class="text-fg-muted text-[15px]">
@@ -395,7 +396,7 @@ function logOut(): void {
             data-feature="F-02"
         >
             <div class="flex min-w-0 flex-col gap-1.5">
-                <h2 id="settings-logout-title" class="text-xl">
+                <h2 id="settings-logout-title" class="text-h2">
                     {{ t('settings.logout') }}
                 </h2>
                 <p class="text-fg-muted text-[15px]">

@@ -6,7 +6,6 @@ import LoginForm from '@/components/app/login-form.vue';
 import Mark from '@/components/app/mark.vue';
 import type { MarkAnswer } from '@/components/app/mark.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
-import LanguageSwitch from '@/components/app/shell/language-switch.vue';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
@@ -19,7 +18,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 const user = computed(() => page.props.auth.user);
 
@@ -40,17 +39,10 @@ const pollRows: { name: string; marks: MarkAnswer[] }[] = [
     { name: people[3], marks: ['yes', 'no', 'none'] },
 ];
 
-function shortDate(iso: string): string {
-    const [year, month, day] = iso.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-
-    return locale.value === 'de'
-        ? `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.`
-        : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-}
-
-const pollDates = ['2026-11-20', '2026-11-21', '2026-11-27'];
-const bestDate = '2026-11-21';
+// Short day.month labels as in the prototype; a fixed picture reads the same in every language
+const pollDates = ['20.11.', '21.11.', '27.11.'];
+const bestDate = '21.11.';
+const eventDate = '14.11.';
 
 const listItems = computed(() => [
     { name: t('welcome.mini.item1'), who: 'Lena', answer: 'yes' as MarkAnswer },
@@ -73,9 +65,9 @@ const miniClass =
 
     <div class="flex flex-col">
         <section
-            class="grid items-start gap-10 pt-2 pb-2 min-[900px]:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] min-[900px]:gap-14 min-[900px]:pt-10"
+            class="-mt-2 grid items-start gap-10 pb-2 min-[900px]:mt-0 min-[900px]:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] min-[900px]:gap-14 min-[900px]:pt-4 min-[900px]:pb-4"
         >
-            <div class="flex min-w-0 flex-col gap-5">
+            <div class="flex min-w-0 flex-col gap-[22px]">
                 <h1
                     class="max-w-[14ch] text-[clamp(36px,4.4vw+14px,64px)] leading-[1.02] font-[720] tracking-[-0.03em]"
                 >
@@ -110,7 +102,7 @@ const miniClass =
                                 {{ t('welcome.mini.poll') }}
                             </div>
                             <div
-                                class="text-fg-muted grid grid-cols-[auto_repeat(3,1fr)] items-center gap-x-1.5 gap-y-1"
+                                class="text-fg-muted grid grid-cols-[auto_repeat(3,1fr)] items-center gap-x-1.5 gap-y-[5px]"
                             >
                                 <span />
                                 <span
@@ -122,7 +114,7 @@ const miniClass =
                                             ? 'text-primary'
                                             : 'text-fg-soft',
                                     ]"
-                                    >{{ shortDate(date) }}</span
+                                    >{{ date }}</span
                                 >
                                 <template
                                     v-for="row in pollRows"
@@ -159,19 +151,21 @@ const miniClass =
                             <div class="flex items-baseline gap-2">
                                 <span
                                     class="bg-primary font-tag text-primary-fg inline-block rotate-(--tag-tilt) rounded-lg px-[7px] pt-px pb-0.5 text-xs leading-[1.2] font-bold shadow-sm"
-                                    >{{ shortDate('2026-11-14') }}</span
+                                    >{{ eventDate }}</span
                                 >
                                 <span>18:00</span>
                             </div>
                             <div
                                 class="text-fg-muted flex items-center gap-1.5"
                             >
-                                <span class="flex -space-x-1.5">
+                                <!-- A slight overlap only, so every pair of initials stays readable -->
+                                <span class="flex flex-none items-center">
                                     <UserAvatar
                                         v-for="name in people"
                                         :key="name"
                                         :name="name"
                                         size="sm"
+                                        class="ring-surface-raised -ml-0.5 ring-2 first:ml-0"
                                     />
                                 </span>
                                 <span>{{ t('welcome.mini.accepted') }}</span>
@@ -197,11 +191,11 @@ const miniClass =
                             >
                                 {{ t('welcome.mini.list') }}
                             </div>
-                            <div class="flex flex-col gap-1">
+                            <div class="flex flex-col gap-[5px]">
                                 <div
                                     v-for="item in listItems"
                                     :key="item.name"
-                                    class="bg-surface-muted flex items-center gap-2 rounded-[7px] px-2 py-1"
+                                    class="bg-surface-muted flex items-center gap-2 rounded-[7px] px-2 py-[5px]"
                                 >
                                     <Mark
                                         :answer="item.answer"
@@ -222,7 +216,7 @@ const miniClass =
             </div>
 
             <div
-                class="box relative flex flex-col gap-5 overflow-hidden p-7 shadow-md md:p-8"
+                class="box relative flex flex-col gap-5 overflow-hidden p-7 shadow-md min-[720px]:p-8"
             >
                 <span
                     class="from-primary absolute inset-x-0 top-0 h-1.5 bg-linear-to-r to-(--accent)"
@@ -265,7 +259,7 @@ const miniClass =
         </section>
 
         <section
-            class="border-border mt-10 grid gap-5 border-t py-10 md:grid-cols-3 md:gap-8"
+            class="border-border grid gap-5 border-t py-10 min-[720px]:grid-cols-3 min-[720px]:gap-8"
             :aria-label="t('welcome.steps.label')"
         >
             <div v-for="step in steps" :key="step" class="flex flex-col gap-2">
@@ -282,11 +276,5 @@ const miniClass =
                 </p>
             </div>
         </section>
-
-        <div
-            class="border-border flex flex-wrap items-center justify-end gap-4 border-t pt-6"
-        >
-            <LanguageSwitch />
-        </div>
     </div>
 </template>

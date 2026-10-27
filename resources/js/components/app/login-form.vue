@@ -292,7 +292,7 @@ function startOver(): void {
                     </FormField>
                 </div>
 
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2.5">
                     <Button
                         type="submit"
                         size="lg"

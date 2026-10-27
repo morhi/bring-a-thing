@@ -8,6 +8,7 @@ import {
 } from '@/actions/App/Http/Controllers/FriendController';
 import EmptyState from '@/components/app/empty-state.vue';
 import FormField from '@/components/app/form-field.vue';
+import SectionBox from '@/components/app/section-box.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
@@ -86,7 +87,7 @@ function confirmRemove(): void {
 <template>
     <Head :title="t('friends.title')" />
 
-    <div class="flex flex-col gap-10">
+    <div class="flex flex-col gap-10 min-[720px]:gap-14">
         <header class="flex flex-col gap-2.5" data-feature="F-05">
             <Link
                 :href="dashboard().url"
@@ -95,11 +96,11 @@ function confirmRemove(): void {
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('nav.backToDashboard') }}
             </Link>
-            <h1 class="flex items-center gap-2.5 text-3xl">
-                {{ t('friends.title') }}
-                <span
+            <h1 class="text-h1">
+                {{ t('friends.title')
+                }}<span
                     v-if="friends.items.length"
-                    class="bg-surface-sunken text-fg-muted rounded-full px-2.5 py-0.5 font-sans text-sm font-semibold tabular-nums"
+                    class="text-fg-soft ml-1.5 font-sans text-[15px] font-medium tabular-nums"
                     >{{ friends.items.length }}</span
                 >
             </h1>
@@ -109,18 +110,14 @@ function confirmRemove(): void {
         <div
             class="grid gap-10 min-[960px]:grid-cols-[minmax(0,1fr)_340px] min-[960px]:items-start min-[960px]:gap-12"
         >
-            <section
-                class="flex min-w-0 flex-col gap-4"
-                aria-labelledby="friends-list-title"
+            <SectionBox
+                id="friends-list-title"
+                :title="t('friends.list')"
                 data-feature="F-05"
             >
-                <h2 id="friends-list-title" class="text-xl">
-                    {{ t('friends.list') }}
-                </h2>
-
                 <ul
                     v-if="friends.items.length"
-                    class="box divide-border flex flex-col divide-y px-5 py-1"
+                    class="box divide-border flex min-w-0 flex-col divide-y px-5 py-1"
                 >
                     <li
                         v-for="friend in friends.items"
@@ -173,19 +170,19 @@ function confirmRemove(): void {
                     :title="t('friends.empty.title')"
                     :text="t('friends.empty.text')"
                 />
-            </section>
+            </SectionBox>
 
             <aside
                 class="min-w-0 min-[960px]:sticky min-[960px]:top-[calc(64px+24px+env(safe-area-inset-top,0px))]"
                 aria-labelledby="friends-add-title"
             >
                 <form
-                    class="box flex flex-col gap-4 p-5 sm:p-6"
+                    class="box flex flex-col gap-4 p-(--card-padding) shadow-(--box-shadow)"
                     novalidate
                     data-feature="F-05"
                     @submit.prevent="add"
                 >
-                    <h2 id="friends-add-title" class="text-xl">
+                    <h2 id="friends-add-title" class="text-h2">
                         {{ t('friends.add.title') }}
                     </h2>
                     <FormField
