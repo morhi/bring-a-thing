@@ -23,8 +23,10 @@ const loggedIn = computed(() => page.props.auth.user !== null);
         class="flex max-w-[60ch] flex-col gap-4 py-2 md:py-6"
         data-feature="F-19"
     >
-        <h1 class="text-3xl">{{ t('list.share.invalidTitle') }}</h1>
-        <p class="text-fg-muted text-lg">{{ t('list.share.invalidText') }}</p>
+        <h1 class="text-h1">{{ t('list.share.invalidTitle') }}</h1>
+        <p class="text-fg-muted text-[17px]">
+            {{ t('list.share.invalidText') }}
+        </p>
         <Button
             as-child
             variant="secondary"

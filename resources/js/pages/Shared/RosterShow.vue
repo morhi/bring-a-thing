@@ -27,6 +27,8 @@ import LoginForm from '@/components/app/login-form.vue';
 import type { LoginPendingClaim } from '@/components/app/login-form.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
+import SectionBox from '@/components/app/section-box.vue';
+import SectionBoxItem from '@/components/app/section-box-item.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -230,7 +232,7 @@ const inputClass =
         <header class="flex flex-col gap-[18px]" data-feature="F-13">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex min-w-0 flex-[1_1_320px] flex-col gap-2.5">
-                    <h1 class="text-3xl break-words">{{ roster.title }}</h1>
+                    <h1 class="text-h1 break-words">{{ roster.title }}</h1>
                     <p
                         v-if="roster.description"
                         class="text-fg-muted max-w-[65ch] text-[17px] break-words whitespace-pre-line"
@@ -327,7 +329,7 @@ const inputClass =
             data-feature="F-01"
         >
             <div class="flex items-start justify-between gap-3">
-                <h2 id="guest-login-title" class="text-xl">
+                <h2 id="guest-login-title" class="text-h2">
                     {{
                         pending
                             ? t('list.guest.loginToContinue')
@@ -353,69 +355,76 @@ const inputClass =
             />
         </section>
 
-        <section
-            v-if="items.length"
-            class="flex flex-col gap-6"
-            aria-labelledby="items-title"
+        <SectionBox
+            id="items-title"
+            :title="t('list.items.title')"
+            :count="items.length"
         >
-            <h2 id="items-title" class="sr-only">
-                {{ t('list.items.title') }}
-            </h2>
-            <div
-                v-for="group in groups"
-                :key="group.key"
-                class="flex flex-col gap-3"
-            >
-                <h3
-                    v-if="grouped"
-                    class="text-fg-muted flex items-center gap-2 text-sm font-semibold"
+            <template v-if="items.length">
+                <div
+                    v-for="group in groups"
+                    :key="group.key"
+                    class="flex flex-col gap-3 [&+&]:mt-4"
                 >
-                    <CalendarDays class="size-4" aria-hidden="true" />
-                    {{ group.label }}
-                </h3>
-                <ul class="flex flex-col gap-3">
-                    <li v-for="item in group.items" :key="item.id">
-                        <ItemRow
-                            :item="{
-                                id: item.id,
-                                name: item.name,
-                                quantity: item.quantity,
-                                unit: item.unit,
-                                notes: item.notes,
-                                fields: itemFields(item, roster.custom_fields),
-                            }"
-                            :claims="claimsOf(item)"
-                            :can-claim="item.can_claim"
-                            :error="claimErrors[item.id] || null"
-                            :processing="claimingItem === item.id"
-                            @claim="claim(item, $event)"
-                            @release="release(item)"
-                        />
-                    </li>
-                </ul>
-            </div>
-        </section>
-        <EmptyState
-            v-else
-            :title="t('list.empty.title')"
-            :text="
-                roster.can_add_items
-                    ? t('list.empty.textAdd')
-                    : t('list.empty.textWait')
-            "
-            :icon="ListChecks"
-        >
-            <Button
-                v-if="roster.can_add_items"
-                size="lg"
-                :class="buttonClass"
-                data-feature="F-14"
-                @click="startAdd"
+                    <h3
+                        v-if="grouped"
+                        class="text-fg-muted flex items-center gap-2 text-sm font-semibold"
+                    >
+                        <CalendarDays class="size-4" aria-hidden="true" />
+                        {{ group.label }}
+                    </h3>
+                    <ul class="flex flex-col gap-3">
+                        <SectionBoxItem
+                            v-for="item in group.items"
+                            :key="item.id"
+                            as="li"
+                            class="p-[18px] md:px-[22px] md:py-5"
+                        >
+                            <ItemRow
+                                :item="{
+                                    id: item.id,
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                    unit: item.unit,
+                                    notes: item.notes,
+                                    fields: itemFields(
+                                        item,
+                                        roster.custom_fields,
+                                    ),
+                                }"
+                                :claims="claimsOf(item)"
+                                :can-claim="item.can_claim"
+                                :error="claimErrors[item.id] || null"
+                                :processing="claimingItem === item.id"
+                                @claim="claim(item, $event)"
+                                @release="release(item)"
+                            />
+                        </SectionBoxItem>
+                    </ul>
+                </div>
+            </template>
+            <EmptyState
+                v-else
+                :title="t('list.empty.title')"
+                :text="
+                    roster.can_add_items
+                        ? t('list.empty.textAdd')
+                        : t('list.empty.textWait')
+                "
+                :icon="ListChecks"
             >
-                <Plus aria-hidden="true" />
-                {{ t('list.empty.add') }}
-            </Button>
-        </EmptyState>
+                <Button
+                    v-if="roster.can_add_items"
+                    size="lg"
+                    :class="buttonClass"
+                    data-feature="F-14"
+                    @click="startAdd"
+                >
+                    <Plus aria-hidden="true" />
+                    {{ t('list.empty.add') }}
+                </Button>
+            </EmptyState>
+        </SectionBox>
 
         <Dialog v-model:open="addOpen">
             <DialogContent

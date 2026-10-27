@@ -385,7 +385,7 @@ const smallInputClass =
     >
         <form
             id="list-form"
-            class="flex max-w-[560px] flex-col gap-(--space-stack)"
+            class="flex flex-col gap-(--space-stack)"
             novalidate
             data-feature="F-13"
             @submit.prevent="save"
@@ -514,13 +514,13 @@ const smallInputClass =
 
         <template v-if="roster">
             <template v-if="form.can_manage_fields">
-                <Separator class="my-2" />
+                <Separator />
                 <section
-                    class="flex max-w-[560px] flex-col gap-3"
+                    class="flex flex-col items-start gap-2.5"
                     aria-labelledby="fields-title"
                     data-feature="F-16"
                 >
-                    <h2 id="fields-title" class="text-xl">
+                    <h2 id="fields-title" class="text-h2">
                         {{ t('list.fields.title') }}
                     </h2>
                     <p class="text-fg-muted text-sm">
@@ -528,7 +528,7 @@ const smallInputClass =
                     </p>
                     <ul
                         v-if="form.custom_fields.length"
-                        class="flex flex-col gap-2"
+                        class="flex w-full max-w-(--field-max-width) flex-col gap-2"
                     >
                         <li
                             v-for="field in form.custom_fields"
@@ -561,7 +561,7 @@ const smallInputClass =
                         {{ t('list.fields.renameHint') }}
                     </p>
                     <form
-                        class="flex items-center gap-2"
+                        class="flex w-full max-w-(--field-max-width) items-center gap-2"
                         novalidate
                         @submit.prevent="addField"
                     >
@@ -597,20 +597,22 @@ const smallInputClass =
             </template>
 
             <template v-if="form.can_share">
-                <Separator class="my-2" />
+                <Separator />
                 <section
-                    class="flex max-w-[560px] flex-col gap-3"
+                    class="flex flex-col items-start gap-2.5"
                     aria-labelledby="share-title"
                     data-feature="F-19"
                 >
-                    <h2 id="share-title" class="text-xl">
+                    <h2 id="share-title" class="text-h2">
                         {{ t('list.share.title') }}
                     </h2>
                     <p class="text-fg-muted text-sm">
                         {{ t('list.share.hint') }}
                     </p>
                     <template v-if="roster.share_url">
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div
+                            class="flex w-full max-w-(--field-max-width) flex-wrap items-center gap-2"
+                        >
                             <Input
                                 :model-value="roster.share_url"
                                 readonly
@@ -662,13 +664,13 @@ const smallInputClass =
             </template>
 
             <template v-if="form.can_duplicate">
-                <Separator class="my-2" />
+                <Separator />
                 <section
-                    class="flex max-w-[560px] flex-col items-start gap-3"
+                    class="flex flex-col items-start gap-2.5"
                     aria-labelledby="duplicate-title"
                     data-feature="F-17"
                 >
-                    <h2 id="duplicate-title" class="text-xl">
+                    <h2 id="duplicate-title" class="text-h2">
                         {{ t('list.settings.duplicate') }}
                     </h2>
                     <p class="text-fg-muted text-sm">
@@ -685,13 +687,13 @@ const smallInputClass =
             </template>
 
             <template v-if="form.can_delete">
-                <Separator class="my-2" />
+                <Separator />
                 <section
-                    class="flex max-w-[560px] flex-col items-start gap-3"
+                    class="flex flex-col items-start gap-2.5"
                     aria-labelledby="delete-title"
                     data-feature="F-13"
                 >
-                    <h2 id="delete-title" class="text-xl">
+                    <h2 id="delete-title" class="text-h2">
                         {{ t('list.settings.delete') }}
                     </h2>
                     <p class="text-fg-muted text-sm">

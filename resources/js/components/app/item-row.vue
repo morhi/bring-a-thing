@@ -116,8 +116,9 @@ const hasMenu = computed(() => showAddComment.value || props.canEdit);
 </script>
 
 <template>
+    <!-- The surrounding SectionBoxItem draws the box, so the row stays plain inside any container -->
     <article
-        class="box flex flex-col gap-3.5 p-[18px] md:px-[22px] md:py-5"
+        class="flex min-w-0 flex-col gap-3.5"
         :aria-labelledby="`${threadId}-name`"
         data-feature="F-14"
     >
