@@ -11,4 +11,14 @@ class UpdateEventRequest extends StoreEventRequest
     {
         return $this->user()->can('update', $this->route('event'));
     }
+
+    /**
+     * An event keeps its parent when edited, so the update has no parent rule.
+     *
+     * @return array<string, array<mixed>>
+     */
+    protected function parentRules(): array
+    {
+        return [];
+    }
 }

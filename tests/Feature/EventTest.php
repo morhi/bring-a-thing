@@ -323,3 +323,85 @@ it('F-09: creating an event from a poll option derives participation from the re
         ->and($event->statusOf($no))->toBeNull()
         ->and($event->statusOf($owner))->toBeNull();
 });
+
+it('F-10: a manager creates a sub-event that starts with the parent participants', function () {
+    [$group, $owner, , $members] = eventGroup(3);
+    $parent = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    EventParticipation::factory()->create(['event_id' => $parent->id, 'user_id' => $owner->id, 'status' => ParticipationStatus::Accepted]);
+    EventParticipation::factory()->create(['event_id' => $parent->id, 'user_id' => $members[0]->id, 'status' => ParticipationStatus::Pending]);
+    EventParticipation::factory()->create(['event_id' => $parent->id, 'user_id' => $members[1]->id, 'status' => ParticipationStatus::Declined]);
+    $organizer = $members[2];
+    $group->members()->updateExistingPivot($organizer->id, ['role' => GroupRole::Admin]);
+
+    $this->actingAs($organizer)
+        ->get(route('events.create', ['group' => $group, 'parent_event_id' => $parent->id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('form.parent_event_id', $parent->id)->where('form.parent_event_title', $parent->title));
+
+    $this->actingAs($organizer)
+        ->post(route('events.store', $group), eventInput(['parent_event_id' => $parent->id]))
+        ->assertRedirect()
+        ->assertSessionHas('success', __('ui.newEvent.created'));
+
+    $child = Event::query()->where('parent_event_id', $parent->id)->firstOrFail();
+
+    expect($child->participations->pluck('status', 'user_id')->all())->toBe([
+        $owner->id => ParticipationStatus::Pending,
+        $members[0]->id => ParticipationStatus::Pending,
+        $organizer->id => ParticipationStatus::Accepted,
+    ]);
+});
+
+it('F-12: the event page offers "Add sub-event" only to managers of an event without a parent', function () {
+    [$group, $owner, , $members] = eventGroup(1);
+    $parent = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $child = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'parent_event_id' => $parent->id]);
+
+    $this->actingAs($owner)->get(route('events.show', $parent))
+        ->assertInertia(fn (Assert $page) => $page->where('page.permissions.can_create_sub_event', true));
+    $this->actingAs($owner)->get(route('events.show', $child))
+        ->assertInertia(fn (Assert $page) => $page->where('page.permissions.can_create_sub_event', false));
+    $this->actingAs($members[0])->get(route('events.show', $parent))
+        ->assertInertia(fn (Assert $page) => $page->where('page.permissions.can_create_sub_event', false));
+});
+
+it('F-10: a plain member cannot create a sub-event', function () {
+    [$group, $owner, , $members] = eventGroup(1);
+    $parent = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+
+    $this->actingAs($members[0])
+        ->post(route('events.store', $group), eventInput(['parent_event_id' => $parent->id]))
+        ->assertForbidden();
+    $this->actingAs($members[0])
+        ->get(route('events.create', ['group' => $group, 'parent_event_id' => $parent->id]))
+        ->assertForbidden();
+
+    expect(Event::query()->where('parent_event_id', $parent->id)->exists())->toBeFalse();
+});
+
+it('F-12: a child event cannot get a sub-event', function () {
+    [$group, $owner] = eventGroup(1);
+    $parent = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $child = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'parent_event_id' => $parent->id]);
+
+    $this->actingAs($owner)
+        ->post(route('events.store', $group), eventInput(['parent_event_id' => $child->id]))
+        ->assertForbidden();
+
+    expect(Event::query()->where('parent_event_id', $child->id)->exists())->toBeFalse();
+});
+
+it('F-10: a parent event from another group is rejected', function () {
+    [$group, $owner] = eventGroup(1);
+    [$otherGroup, $otherOwner] = eventGroup(0);
+    $foreign = Event::factory()->create(['group_id' => $otherGroup->id, 'organizer_id' => $otherOwner->id]);
+
+    $this->actingAs($owner)
+        ->post(route('events.store', $group), eventInput(['parent_event_id' => $foreign->id]))
+        ->assertSessionHasErrors('parent_event_id');
+    $this->actingAs($owner)
+        ->get(route('events.create', ['group' => $group, 'parent_event_id' => $foreign->id]))
+        ->assertNotFound();
+
+    expect(Event::query()->where('parent_event_id', $foreign->id)->exists())->toBeFalse();
+});

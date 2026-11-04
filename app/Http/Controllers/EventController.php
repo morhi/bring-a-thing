@@ -27,14 +27,21 @@ class EventController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Show the "New event" page for the group (F-10).
+     * Show the "New event" page for the group, or for a sub-event with ?parent_event_id (F-10, F-12).
      */
-    public function create(Group $group): Response
+    public function create(Request $request, Group $group): Response
     {
         $this->authorize('createForGroup', [Event::class, $group]);
 
+        $parent = null;
+
+        if ($request->filled('parent_event_id')) {
+            $parent = Event::query()->where('group_id', $group->getKey())->findOrFail((int) $request->query('parent_event_id'));
+            $this->authorize('createSubEvent', $parent);
+        }
+
         return Inertia::render('Events/Create', [
-            'form' => EventFormData::forGroup($group),
+            'form' => EventFormData::forGroup($group, parent: $parent),
         ]);
     }
 
@@ -43,11 +50,15 @@ class EventController extends Controller
      */
     public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
-        $event = $createEvent->handle($group, $request->user(), $request->eventAttributes());
+        $event = $createEvent->handle($group, $request->user(), $request->eventAttributes(), $request->parentEvent());
 
         DashboardChanged::forGroup($group);
 
         $sendNotification->handle(new EventCreated($event, $request->user()));
+
+        if ($event->parent_event_id !== null) {
+            EventUpdated::dispatch($event->parent_event_id);
+        }
 
         return to_route('events.show', $event)->with('success', __('ui.newEvent.created'));
     }

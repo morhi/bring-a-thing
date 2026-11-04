@@ -92,6 +92,29 @@ class EventPolicy
     }
 
     /**
+     * Determine whether the user can create a sub-event directly under the event (F-10, F-12).
+     *
+     * Only the parent's managers can, and only one level deep: a child
+     * event never has children of its own.
+     */
+    public function createSubEvent(User $user, Event $parent): Response
+    {
+        if (! $parent->group->hasMember($user)) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($parent->parent_event_id !== null) {
+            return Response::deny('Child events have no sub-events.');
+        }
+
+        if ($parent->isManagedBy($user)) {
+            return Response::allow();
+        }
+
+        return Response::deny();
+    }
+
+    /**
      * Determine whether the user can accept or decline the event for themselves (F-11).
      */
     public function respond(User $user, Event $event): Response

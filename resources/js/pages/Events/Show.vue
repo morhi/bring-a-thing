@@ -26,6 +26,7 @@ import {
 } from '@/actions/App/Http/Controllers/EventCommentController';
 import {
     destroy as destroyEvent,
+    create as createEvent,
     edit as editEvent,
     show as showEvent,
 } from '@/actions/App/Http/Controllers/EventController';
@@ -527,7 +528,11 @@ const badgeLinkClass =
                     </p>
                 </div>
                 <div
-                    v-if="permissions.can_edit || permissions.can_delete"
+                    v-if="
+                        permissions.can_edit ||
+                        permissions.can_delete ||
+                        permissions.can_create_sub_event
+                    "
                     class="flex w-full flex-wrap gap-2 min-[720px]:ml-auto min-[720px]:w-auto"
                 >
                     <Button
@@ -539,6 +544,24 @@ const badgeLinkClass =
                         <Link :href="editEvent(event.slug).url">
                             <Pencil aria-hidden="true" />
                             {{ t('event.edit') }}
+                        </Link>
+                    </Button>
+                    <Button
+                        v-if="permissions.can_create_sub_event"
+                        as-child
+                        variant="outline"
+                        :class="outlineClass"
+                        data-feature="F-12"
+                    >
+                        <Link
+                            :href="
+                                createEvent(event.group_slug, {
+                                    query: { parent_event_id: event.id },
+                                }).url
+                            "
+                        >
+                            <Plus aria-hidden="true" />
+                            {{ t('event.subEvent.new') }}
                         </Link>
                     </Button>
                     <Button

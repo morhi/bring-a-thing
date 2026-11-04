@@ -16,6 +16,7 @@ class EventPermissionsData extends Data
         public bool $can_set_status_for_others,
         public bool $can_remove_participants,
         public bool $can_create_follow_up_poll,
+        public bool $can_create_sub_event,
         public bool $can_create_list,
         public bool $can_comment,
     ) {}
@@ -38,6 +39,7 @@ class EventPermissionsData extends Data
             can_set_status_for_others: $user->can('setStatusForOthers', $event),
             can_remove_participants: $user->can('removeParticipant', $event),
             can_create_follow_up_poll: $user->can('createFollowUpPoll', $event),
+            can_create_sub_event: $user->can('createSubEvent', $event),
             can_create_list: $user->can('createForEvent', [Roster::class, $event]),
             can_comment: $user->can('comment', $event),
         );

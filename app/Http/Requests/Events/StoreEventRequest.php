@@ -5,6 +5,7 @@ namespace App\Http\Requests\Events;
 use App\Models\Event;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreEventRequest extends FormRequest
@@ -14,7 +15,28 @@ class StoreEventRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('createForGroup', [Event::class, $this->route('group')]);
+        if (! $this->user()->can('createForGroup', [Event::class, $this->route('group')])) {
+            return false;
+        }
+
+        $parent = $this->parentEvent();
+
+        // A parent from another group fails validation instead of revealing that it exists
+        return $parent === null || $this->user()->can('createSubEvent', $parent);
+    }
+
+    /**
+     * The parent event of a sub-event (F-10, F-12), when it exists in the route's group.
+     */
+    public function parentEvent(): ?Event
+    {
+        if (! $this->filled('parent_event_id') || ! is_numeric($this->input('parent_event_id'))) {
+            return null;
+        }
+
+        return Event::query()
+            ->where('group_id', $this->route('group')->getKey())
+            ->find((int) $this->input('parent_event_id'));
     }
 
     /**
@@ -28,6 +50,7 @@ class StoreEventRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->parentRules(),
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'location' => ['nullable', 'string', 'max:255'],
@@ -36,6 +59,16 @@ class StoreEventRequest extends FormRequest
             'end_date' => ['nullable', 'required_with:ends_at', 'date_format:Y-m-d', 'after_or_equal:date'],
             'ends_at' => ['nullable', 'date_format:H:i'],
         ];
+    }
+
+    /**
+     * The rule for the optional parent of a sub-event; it must lie in the route's group (F-10, F-12).
+     *
+     * @return array<string, array<mixed>>
+     */
+    protected function parentRules(): array
+    {
+        return ['parent_event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('group_id', $this->route('group')->getKey())]];
     }
 
     /**

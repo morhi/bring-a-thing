@@ -13,6 +13,8 @@ class EventFormData extends Data
         public string $group_name,
         public int $member_count,
         public ?EventData $event,
+        public ?int $parent_event_id = null,
+        public ?string $parent_event_title = null,
     ) {}
 
     /**
@@ -20,13 +22,15 @@ class EventFormData extends Data
      *
      * member_count feeds the audience note: every member is asked to accept or decline.
      */
-    public static function forGroup(Group $group, ?Event $event = null): self
+    public static function forGroup(Group $group, ?Event $event = null, ?Event $parent = null): self
     {
         return new self(
             group_slug: $group->slug,
             group_name: $group->name,
             member_count: $group->members()->count(),
             event: $event ? EventData::fromEvent($event) : null,
+            parent_event_id: $parent?->id,
+            parent_event_title: $parent?->title,
         );
     }
 }

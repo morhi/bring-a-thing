@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { TriangleAlert, Users } from '@lucide/vue';
+import { CalendarDays, TriangleAlert, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import {
     show as showEvent,
@@ -28,6 +28,7 @@ const { t } = useI18n();
 const editing = computed(() => props.form.event !== null);
 
 const eventForm = useForm({
+    parent_event_id: props.form.parent_event_id,
     title: props.form.event?.title ?? '',
     description: props.form.event?.description ?? '',
     location: props.form.event?.location ?? '',
@@ -56,6 +57,16 @@ const backLabel = computed(() =>
         : t('event.back', { group: props.form.group_name }),
 );
 
+const subtitle = computed(() => {
+    if (editing.value) {
+        return t('event.edit.dateHint');
+    }
+
+    return props.form.parent_event_title
+        ? t('newEvent.subOf', { event: props.form.parent_event_title })
+        : t('newEvent.sub');
+});
+
 function submit(): void {
     const options = { preserveScroll: true };
 
@@ -78,7 +89,7 @@ const buttonClass = 'h-(--control-height) px-4';
 
     <FormPage
         :title="editing ? t('event.edit.title') : t('newEvent.title')"
-        :subtitle="editing ? t('event.edit.dateHint') : t('newEvent.sub')"
+        :subtitle="subtitle"
         :back-href="backHref"
         :back-label="backLabel"
     >
@@ -228,7 +239,19 @@ const buttonClass = 'h-(--control-height) px-4';
             </div>
 
             <div
-                v-if="!editing"
+                v-if="!editing && form.parent_event_title"
+                class="bg-primary-soft text-primary-soft-fg flex max-w-(--field-max-width) items-center gap-3 rounded-md px-3.5 py-3 text-sm"
+                data-feature="F-12"
+            >
+                <CalendarDays class="size-6 flex-none" aria-hidden="true" />
+                <b class="font-semibold">{{
+                    t('newEvent.subAudience', {
+                        event: form.parent_event_title,
+                    })
+                }}</b>
+            </div>
+            <div
+                v-else-if="!editing"
                 class="bg-primary-soft text-primary-soft-fg flex max-w-(--field-max-width) items-center gap-3 rounded-md px-3.5 py-3 text-sm"
                 data-feature="F-11"
             >
