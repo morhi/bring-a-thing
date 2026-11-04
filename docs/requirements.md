@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.14
+- **Version:** 1.15
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -42,7 +42,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - The start page carries a single form for login and registration. The person enters their email and receives a login link by email. If the account has no name yet, the form asks for it. If the account has a password, the person can log in with the password instead.
 - An invitation by email (F-04) creates a shadow account immediately. It appears as a member right away, and the invited person logs in through a login link without registering.
-- A person who joins through an invite link (F-04) with name only gets a shadow account without an email and stays logged in on that browser. They can add an email at any time and receive a login link to keep access on other devices.
+- A person who joins through an invite link (F-04) enters an email like any other guest and receives a login link; the join completes when they use it. The app creates no account without an email, so nobody loses access after logging out.
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
 - A passkey is optional and can be saved in the settings (F-02). The start page offers a "Log in with passkey" button that logs in without entering an email. The login link and the password stay available.
@@ -52,7 +52,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A new email address receives a login link after entering email and name, and the link leads to the dashboard.
 - An expired or altered link shows an error and does not log in.
 - An email address invited twice results in exactly one account.
-- A name-only joiner who adds an email can log in on another device through the login link.
+- A guest who opens an invite link and enters no email gets a validation error and no account.
 - An account without a password shows no password field.
 - A guest can request passkey login options on the start page, and a passkey login without a credential does not log in.
 - After a passkey login, the person lands on the dashboard, or back on the shared list when a claim is pending (F-19).
@@ -95,11 +95,11 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Owners and admins invite by email. The app creates a shadow account if needed (F-01) and saves the person as a friend of the inviting person (F-05).
 - Until their first login, the member carries the label "Invitation pending".
-- One invite field takes an email address or a name. It suggests matching friends by name or email, and an email that matches a friend selects that friend. Text that is neither a friend nor an email address offers no invitation. Selected people appear as removable chips. The same component offers "Copy invite link", and it is used when creating a group, on the group page and in group settings. The link's lock setting is managed in group settings.
+- One invite field takes an email address or a name. It suggests matching friends by name or email, and an email that matches a friend selects that friend. Text that is neither a friend nor an email address offers no invitation. Selected people appear as removable chips. The same component offers "Copy invite link", and it is used when creating a group, on the group page and in group settings.
 - Owners and admins remove members. Admins cannot remove the owner.
 - Removing a member ends the membership only. Participations, claims and responses stay.
 - Owners and admins create one invite link per group and share it through any messenger. The "Copy invite link" button creates it on first use.
-- The link has a lock setting. Open (default): a person enters a name and joins as a member at once, labeled "Joined via link". Closed: the person must enter an email and log in through a login link before joining.
+- A guest must enter an email (plus a name for a new account) and log in through a login link before joining; the link has no name-only join. A logged-in account with a verified email joins with one click. The member is labeled "Joined via link".
 - A person who joins through the link has the same access as any other member.
 - Owners and admins revoke or regenerate the link in group settings (F-03). The old link then shows "Not found".
 
@@ -108,8 +108,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Typing the first letters of a saved friend shows them as a suggestion.
 - Typing a friend's email address selects that friend and creates no second invitation.
 - A member without the admin role sees no invite form.
-- With an open link, a person who enters a name appears in the member list at once.
-- With a closed link, a person appears as a member only after logging in with an email.
+- A guest appears as a member only after logging in with an email.
+- A guest who enters no email on the join page gets a validation error and is not added.
 - After revoking, the old link shows "Not found".
 - A member without the admin role sees no invite link button.
 
@@ -205,12 +205,14 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Organizer, owner and admins edit and delete the event. Deleting removes its lists, follow-up polls and child events after a confirmation.
 - When the date or time changes, the app resets all acceptances to "pending", because the acceptance applied to the old date.
 - The event shows acceptances, pending responses and declines with counts, its lists, follow-up polls and child events.
+- Organizer, owner and admins of an event add a sub-event directly under it with "Add sub-event", without a follow-up poll. The sub-event is an event of the same group with the source event as parent. Its participants start as the source event's participants ("accepted" and "pending") with "pending", and the organizer is "accepted". A child event has no sub-events of its own.
 - An event whose start has passed counts as past. There is no other status.
 
 **Acceptance criteria:**
 - A directly created event in a group with five members shows one accepted organizer and four pending responses.
 - After moving the event from 12.03. to 19.03., all acceptances are "pending" again.
 - Deleting an event with a list also removes the list.
+- A manager who adds a sub-event to an event with three participants gets a child event with those three participants. A plain member and a child event do not offer "Add sub-event".
 
 #### F-11 Participation (Core)
 
@@ -237,6 +239,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The circle follows current participation: whoever accepts later sees the poll and can respond. Whoever declines no longer sees it, and their responses no longer count.
 - Fixing dates follows F-09, and the new events attach to the source event.
 - Child events do not offer follow-up polls. Follow-up polls exist only on events without a parent event.
+- Child events also arise from "Add sub-event" (F-10). Both kinds sit in the source event under the child events, one level deep.
 
 **Acceptance criteria:**
 - A group member without acceptance sees the follow-up poll neither in the group nor on the dashboard.

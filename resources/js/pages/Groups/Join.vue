@@ -27,11 +27,10 @@ const userName = computed(() => page.props.auth.user?.name ?? null);
 const loggedIn = computed(() => page.props.auth.user !== null);
 
 const form = useForm({ name: '', email: '' });
-// The closed flow ends on this page: the login link joins on use
+// The guest flow ends on this page: the login link joins on use
 const sentTo = ref<string | null>(null);
-// A new or nameless account on a closed link also needs a name; the backend says when
+// A new or nameless account also needs a name; the backend says when
 const nameRequested = ref(false);
-const askName = computed(() => !props.join?.locked || nameRequested.value);
 
 function submit(): void {
     if (!props.join) {
@@ -42,7 +41,7 @@ function submit(): void {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            if (!props.join?.locked || props.join.is_authenticated) {
+            if (props.join?.is_authenticated) {
                 return;
             }
 
@@ -107,11 +106,7 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                 {{ t('join.title', { group: join.group_name }) }}
             </h1>
             <p class="text-fg-muted max-w-[52ch] text-lg">
-                {{
-                    t(join.locked ? 'join.lede.closed' : 'join.lede.open', {
-                        group: join.group_name,
-                    })
-                }}
+                {{ t('join.lede', { group: join.group_name }) }}
             </p>
             <div class="text-fg-muted flex items-center gap-2.5 text-[15px]">
                 <AvatarStack :people="join.members" :max="5" />
@@ -207,7 +202,6 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                 @submit.prevent="submit"
             >
                 <FormField
-                    v-if="join.locked"
                     :label="t('welcome.login.email')"
                     control="join-email"
                     required
@@ -229,7 +223,7 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                     </template>
                 </FormField>
                 <FormField
-                    v-if="askName"
+                    v-if="nameRequested"
                     :label="t('welcome.login.name')"
                     control="join-name"
                     required
@@ -255,13 +249,8 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                     :class="buttonClass"
                     :disabled="form.processing"
                 >
-                    <template v-if="join.locked">
-                        <Mail aria-hidden="true" />
-                        {{ t('welcome.login.sendLink') }}
-                    </template>
-                    <template v-else>
-                        <Check aria-hidden="true" /> {{ t('join.button') }}
-                    </template>
+                    <Mail aria-hidden="true" />
+                    {{ t('welcome.login.sendLink') }}
                 </Button>
             </form>
         </div>

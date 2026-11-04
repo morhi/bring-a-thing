@@ -6,8 +6,6 @@ import {
     Copy,
     ExternalLink,
     Link as LinkIcon,
-    Lock,
-    LockOpen,
     X,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
@@ -24,9 +22,7 @@ import {
     destroy as revokeInviteLink,
     regenerate as regenerateInviteLink,
     store as storeInviteLink,
-    update as updateInviteLink,
 } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
-import ChoiceGroup from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
 import InviteField from '@/components/app/invite-field.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
@@ -90,29 +86,6 @@ function saveName(): void {
 }
 
 // Invite link (F-04)
-const lockOptions = computed(() => [
-    {
-        value: 'open',
-        title: t('groupSettings.link.openTitle'),
-        hint: t('groupSettings.link.openHint'),
-    },
-    {
-        value: 'closed',
-        title: t('groupSettings.link.closedTitle'),
-        hint: t('groupSettings.link.closedHint'),
-    },
-]);
-const lock = computed({
-    get: () => (props.page.invite_link.locked ? 'closed' : 'open'),
-    set: (value) => {
-        router.patch(
-            updateInviteLink(props.page.slug).url,
-            { locked: value === 'closed' },
-            visitOptions,
-        );
-    },
-});
-
 const copied = ref(false);
 let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -396,33 +369,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         }}</span>
                     </div>
                 </FormField>
-                <FormField
-                    :label="t('groupSettings.link.lock')"
-                    control="gs-link-lock"
-                    group
-                >
-                    <ChoiceGroup
-                        v-model="lock"
-                        name="gs-link-lock"
-                        :options="lockOptions"
-                    />
-                </FormField>
-                <div class="flex flex-wrap items-center gap-2">
-                    <span
-                        class="text-fg-muted mr-auto inline-flex items-center gap-1.5 text-sm"
-                    >
-                        <Lock
-                            v-if="page.invite_link.locked"
-                            class="size-4"
-                            aria-hidden="true"
-                        />
-                        <LockOpen v-else class="size-4" aria-hidden="true" />
-                        {{
-                            page.invite_link.locked
-                                ? t('groupSettings.link.nowClosed')
-                                : t('groupSettings.link.nowOpen')
-                        }}
-                    </span>
+                <div class="flex flex-wrap items-center justify-end gap-2">
                     <Button as-child variant="ghost">
                         <a
                             :href="page.invite_link.url"

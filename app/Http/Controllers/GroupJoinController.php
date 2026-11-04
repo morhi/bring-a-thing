@@ -8,10 +8,8 @@ use App\Actions\Groups\JoinGroupViaLink;
 use App\Data\GroupJoinData;
 use App\Http\Requests\Groups\JoinGroupRequest;
 use App\Models\Group;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
@@ -46,9 +44,8 @@ class GroupJoinController extends Controller
     /**
      * Join the group through its invite link.
      *
-     * Logged-in accounts join at once. On an open link a guest gets a
-     * name-only account that stays logged in on this browser (F-01). On a
-     * closed link a guest receives a login link that joins on use.
+     * Logged-in accounts join at once. A guest always receives a login link
+     * that joins on use, so no account is left without a way to log back in.
      */
     public function store(
         JoinGroupRequest $request,
@@ -66,24 +63,9 @@ class GroupJoinController extends Controller
             return to_route('groups.show', $group)->with('success', __('ui.join.joined'));
         }
 
-        if ($group->invite_link_locked) {
-            $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
-            $sendMagicLink->handle($user, joinGroup: $group);
+        $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
+        $sendMagicLink->handle($user, joinGroup: $group);
 
-            return back()->with('success', __('ui.welcome.login.sentFlash'));
-        }
-
-        $user = User::query()->create([
-            'name' => $request->string('name')->value(),
-            'email' => null,
-            'language' => app()->getLocale(),
-            'password' => null,
-        ]);
-        $joinGroup->handle($group, $user);
-
-        Auth::login($user, remember: true);
-        $request->session()->regenerate();
-
-        return to_route('groups.show', $group)->with('success', __('ui.join.joined'));
+        return back()->with('success', __('ui.welcome.login.sentFlash'));
     }
 }

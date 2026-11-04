@@ -94,45 +94,6 @@ it('F-04: a member without the admin role sees no invite form', function () {
         ->assertForbidden();
 });
 
-it('F-04: with an open link, a person who enters a name appears in the member list at once', function () {
-    [$group] = groupWithOwner(locked: false);
-
-    $response = $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Link Joiner']);
-
-    $joiner = User::query()->where('name', 'Link Joiner')->firstOrFail();
-    $response->assertRedirect(route('groups.show', $group));
-    $response->assertSessionHas('success', 'You joined the group');
-    $this->assertAuthenticatedAs($joiner);
-    expect($joiner->email)->toBeNull();
-
-    $this->get(route('groups.show', $group))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('page.members.1.name', 'Link Joiner')
-            ->where('page.members.1.role', 'member')
-            ->where('page.members.1.joined_via_link', true)
-            ->where('page.members.1.is_pending', false));
-});
-
-it('F-01: keeps a name-only joiner logged in on that browser', function () {
-    [$group] = groupWithOwner(locked: false);
-
-    $response = $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Link Joiner']);
-
-    $joiner = User::query()->where('name', 'Link Joiner')->firstOrFail();
-    expect($joiner->remember_token)->not->toBeNull();
-    $response->assertCookie(Auth::guard()->getRecallerName());
-});
-
-it('F-04: requires a name to join through an open link', function () {
-    [$group] = groupWithOwner(locked: false);
-
-    $this->post(route('groups.join.store', $group->invite_token), ['name' => ''])->assertInvalid('name');
-
-    expect($group->members()->count())->toBe(1);
-    $this->assertGuest();
-});
-
 it('F-04: shows the join page for a valid link', function () {
     [$group] = groupWithOwner(locked: true);
 
@@ -141,7 +102,6 @@ it('F-04: shows the join page for a valid link', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Groups/Join', false)
             ->where('join.group_name', $group->name)
-            ->where('join.locked', true)
             ->where('join.link_expires_in_minutes', SendMagicLink::EXPIRES_IN_MINUTES)
             ->where('join.needs_email', true)
             ->where('join.is_authenticated', false)
@@ -149,7 +109,7 @@ it('F-04: shows the join page for a valid link', function () {
             ->missing('join.members.0.email'));
 });
 
-it('F-04: with a closed link, a person appears as a member only after logging in with an email', function () {
+it('F-04: a guest appears as a member only after logging in with an email', function () {
     Mail::fake();
     [$group] = groupWithOwner(locked: true);
 
@@ -175,12 +135,26 @@ it('F-04: with a closed link, a person appears as a member only after logging in
     expect($pivot->accepted_at)->not->toBeNull();
 });
 
-it('F-04: rejects a name-only join through a closed link', function () {
-    [$group] = groupWithOwner(locked: true);
+it('F-04: a guest without an email gets a validation error, whatever the old lock setting says', function (bool $locked) {
+    [$group] = groupWithOwner(locked: $locked);
 
     $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Name Only'])->assertInvalid('email');
 
     expect(User::query()->where('name', 'Name Only')->exists())->toBeFalse();
+    expect($group->members()->count())->toBe(1);
+    $this->assertGuest();
+})->with([true, false]);
+
+it('F-01: a guest on a link stored as open still receives a login link instead of a name-only account', function () {
+    Mail::fake();
+    [$group] = groupWithOwner(locked: false);
+
+    $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Open Joiner', 'email' => 'open@example.com'])
+        ->assertSessionHas('success', 'A login link has been sent to your email address.');
+
+    $this->assertGuest();
+    expect($group->hasMember(User::query()->where('email', 'open@example.com')->firstOrFail()))->toBeFalse();
+    Mail::assertQueued(MagicLinkMail::class, 1);
 });
 
 it('F-04: does not join through a login link requested before the invite link was revoked', function () {
@@ -266,7 +240,7 @@ it('F-04: lets a logged-in account join at once and sends existing members to th
         ->assertRedirect(route('groups.show', $group));
 });
 
-it('F-04: asks a logged-in account without an email to add one before joining through a closed link', function () {
+it('F-04: asks a logged-in account without an email to add one before joining through the link', function () {
     [$group] = groupWithOwner(locked: true);
     $nameOnly = User::factory()->create(['email' => null]);
 
@@ -279,8 +253,8 @@ it('F-04: asks a logged-in account without an email to add one before joining th
 
 it('F-04: gives a person who joined through the link the same access as any other member', function () {
     [$group] = groupWithOwner(locked: false);
-    $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Link Joiner']);
-    $joiner = User::query()->where('name', 'Link Joiner')->firstOrFail();
+    $joiner = User::factory()->create();
+    $this->actingAs($joiner)->post(route('groups.join.store', $group->invite_token));
 
     expect($group->members()->whereKey($joiner->id)->first()?->pivot->role)->toBe(GroupRole::Member);
     expect($joiner->can('view', $group))->toBeTrue();

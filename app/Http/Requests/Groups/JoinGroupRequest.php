@@ -26,21 +26,18 @@ class JoinGroupRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * Logged-in accounts join with one click. Guests enter a name on an open
-     * link, or an email (plus a name for a new account) on a closed link (F-04).
+     * Logged-in accounts join with one click. Guests always enter an email,
+     * plus a name for a new account (F-04).
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        // Resolve the group first so an unknown or revoked token is a 404 before any field error
+        $this->group();
+
         if ($this->user() !== null) {
             return [];
-        }
-
-        if (! $this->group()->invite_link_locked) {
-            return [
-                'name' => ['required', 'string', 'max:255'],
-            ];
         }
 
         return [
@@ -55,7 +52,7 @@ class JoinGroupRequest extends FormRequest
     /**
      * Get the "after" validation callables for the request.
      *
-     * A closed link requires a proven email, so a logged-in account without
+     * An invite link requires a proven email, so a logged-in account without
      * a verified email has to add or confirm one first (F-01).
      *
      * @return array<int, callable>
@@ -65,10 +62,6 @@ class JoinGroupRequest extends FormRequest
         return [
             function (Validator $validator): void {
                 if ($this->user() === null || $this->user()->hasVerifiedEmail()) {
-                    return;
-                }
-
-                if (! $this->group()->invite_link_locked) {
                     return;
                 }
 
