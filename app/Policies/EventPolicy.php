@@ -20,11 +20,13 @@ class EventPolicy
     /**
      * Determine whether the user can view the event.
      *
-     * Anyone outside the group sees "Not found" (section 8), so the event's existence stays hidden.
+     * Group members and guests with a grant that covers the event (F-26,
+     * F-27) see it. Anyone else sees "Not found" (section 8), so the
+     * event's existence stays hidden.
      */
     public function view(User $user, Event $event): Response
     {
-        if ($event->group->hasMember($user)) {
+        if ($event->admits($user)) {
             return Response::allow();
         }
 
@@ -36,11 +38,12 @@ class EventPolicy
      *
      * Participants ("accepted" or "pending") and the event's managers can.
      * Other members see only the key details (F-11), so the thread stays
-     * hidden from them; outsiders get "Not found".
+     * hidden from them; outsiders get "Not found". Guests with a grant
+     * follow the same rule as members (F-26, F-27).
      */
     public function comment(User $user, Event $event): Response
     {
-        if (! $event->group->hasMember($user)) {
+        if (! $event->admits($user)) {
             return Response::denyAsNotFound();
         }
 
@@ -77,7 +80,7 @@ class EventPolicy
     public function createFollowUpPoll(User $user, Event $event): Response
     {
         if (! $event->group->hasMember($user)) {
-            return Response::denyAsNotFound();
+            return $this->denyForGuest($user, $event);
         }
 
         if ($event->parent_event_id !== null) {
@@ -100,7 +103,7 @@ class EventPolicy
     public function createSubEvent(User $user, Event $parent): Response
     {
         if (! $parent->group->hasMember($user)) {
-            return Response::denyAsNotFound();
+            return $this->denyForGuest($user, $parent);
         }
 
         if ($parent->parent_event_id !== null) {
@@ -115,11 +118,11 @@ class EventPolicy
     }
 
     /**
-     * Determine whether the user can accept or decline the event for themselves (F-11).
+     * Determine whether the user can accept or decline the event for themselves (F-11, F-26, F-27).
      */
     public function respond(User $user, Event $event): Response
     {
-        if (! $event->group->hasMember($user)) {
+        if (! $event->admits($user)) {
             return Response::denyAsNotFound();
         }
 
@@ -155,5 +158,25 @@ class EventPolicy
     public function removeParticipant(User $user, Event $event): bool
     {
         return $event->isManagedBy($user);
+    }
+
+    /**
+     * Determine whether the user can create, regenerate or revoke the event's invite link: its managers only (F-26).
+     */
+    public function manageInviteLink(User $user, Event $event): bool
+    {
+        return $event->isManagedBy($user);
+    }
+
+    /**
+     * Deny a group-only action: a guest with a grant sees the event and gets a plain denial, anyone else "Not found".
+     */
+    private function denyForGuest(User $user, Event $event): Response
+    {
+        if ($event->admits($user)) {
+            return Response::deny();
+        }
+
+        return Response::denyAsNotFound();
     }
 }

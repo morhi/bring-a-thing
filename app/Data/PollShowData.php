@@ -27,6 +27,7 @@ class PollShowData extends Data
         public bool $show_no_counts,
         public array $fixed_events,
         public PollPermissionsData $permissions,
+        public ?EntityInviteLinkData $invite_link,
     ) {}
 
     /**
@@ -39,7 +40,9 @@ class PollShowData extends Data
      * anyone who left it drops out of the grid and the totals (F-12).
      * audience_count feeds the audience note.
      * show_no_counts is set when no answers decided between options tied on
-     * yes, so the grid explains the best option (F-06).
+     * yes, so the grid explains the best option (F-06). Guests with a grant
+     * (F-26, F-27) belong to the audience; invite_link is only set for
+     * editors (F-27).
      */
     public static function forUser(Poll $poll, User $user): self
     {
@@ -57,10 +60,11 @@ class PollShowData extends Data
             ->map(fn ($answers) => $answers->pluck('status', 'option_slug')->all());
 
         $audience = $poll->audience();
+        $permissions = PollPermissionsData::forUser($poll, $user);
         $formerResponders = $poll->options
             ->flatMap(fn (PollOption $option) => $option->responses)
             ->filter(fn (PollResponse $response) => $poll->countsResponseFrom($response->user_id))
-            ->reject(fn (PollResponse $response) => $poll->group->members->contains('id', $response->user_id))
+            ->reject(fn (PollResponse $response) => $audience->contains('id', $response->user_id))
             ->map(fn (PollResponse $response) => $response->user)
             ->filter()
             ->unique('id');
@@ -83,7 +87,8 @@ class PollShowData extends Data
             best_option_slugs: $poll->bestOptions()->pluck('slug')->all(),
             show_no_counts: $poll->bestIsDecidedByNoAnswers(),
             fixed_events: $poll->fixedEvents()->with('group')->get()->map(fn (Event $event) => EventSummaryData::fromEvent($event))->all(),
-            permissions: PollPermissionsData::forUser($poll, $user),
+            permissions: $permissions,
+            invite_link: $permissions->can_manage_invite_link ? EntityInviteLinkData::fromEntity($poll) : null,
         );
     }
 }

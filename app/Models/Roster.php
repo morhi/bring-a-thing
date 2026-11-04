@@ -151,10 +151,20 @@ class Roster extends Model
     }
 
     /**
+     * Whether the user reaches this list through a grant on its event, its parent event or the poll it was fixed from (F-26, F-27).
+     */
+    public function grantsAccessTo(User $user): bool
+    {
+        return $this->event_id !== null && $this->event->grantsAccessTo($user);
+    }
+
+    /**
      * Whether the user sees the list by placement: owner, group member, event participant or person with a claim (F-13).
      *
      * Event lists are for participants ("accepted" or "pending") only;
      * whoever manages the list keeps seeing it regardless of their status.
+     * A guest with a grant on the event (F-26, F-27) becomes a participant
+     * the same way as a member, so no extra check is needed here.
      */
     public function isVisibleTo(User $user): bool
     {
@@ -201,7 +211,8 @@ class Roster extends Model
      * Whether a logged-in visitor of the share link is a group member kept out of this event list (F-13, F-19).
      *
      * The share link lets people outside the group take part. A member of
-     * the event's group stays bound to the participation rules instead, so
+     * the event's group or a guest with a grant on the event (F-26, F-27)
+     * stays bound to the participation rules instead, so
      * the link is no way around a decline or a missing participation.
      */
     public function excludesShareLinkVisitor(User $user): bool
@@ -214,7 +225,7 @@ class Roster extends Model
             return false;
         }
 
-        return $this->event->group->hasMember($user);
+        return $this->event->admits($user);
     }
 
     /**
@@ -228,7 +239,7 @@ class Roster extends Model
             return true;
         }
 
-        if (! $this->event->group->hasMember($user)) {
+        if (! $this->event->admits($user)) {
             return true;
         }
 

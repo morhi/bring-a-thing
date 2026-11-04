@@ -35,7 +35,8 @@ class SetParticipantStatusRequest extends FormRequest
     /**
      * Get the "after" validation callables for the request.
      *
-     * The status can only be set for current members of the event's group.
+     * The status can only be set for current members of the event's group
+     * and for guests with a grant that covers the event (F-26, F-27).
      *
      * @return array<int, callable>
      */
@@ -48,7 +49,7 @@ class SetParticipantStatusRequest extends FormRequest
                 /** @var User $member */
                 $member = $this->route('member');
 
-                if (! $event->group->hasMember($member)) {
+                if (! $event->admits($member)) {
                     $validator->errors()->add('status', 'This person is not a member of the group.');
                 }
             },

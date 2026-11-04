@@ -5,9 +5,11 @@ use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DevComponentsController;
+use App\Http\Controllers\EntityJoinController;
 use App\Http\Controllers\EventCommentController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventFollowUpPollController;
+use App\Http\Controllers\EventInviteLinkController;
 use App\Http\Controllers\EventParticipationController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
@@ -16,6 +18,7 @@ use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\PollInviteLinkController;
 use App\Http\Controllers\PollOptionController;
 use App\Http\Controllers\PollResponseController;
 use App\Http\Controllers\RosterCommentController;
@@ -65,6 +68,13 @@ Route::post('/shared/{token}/items', [SharedRosterItemController::class, 'store'
 // the join page can render that state inside the app's layout.
 Route::get('/join/{token}', [GroupJoinController::class, 'show'])->name('groups.join.show');
 Route::post('/join/{token}', [GroupJoinController::class, 'store'])->name('groups.join.store');
+
+// Event and poll invite links: open to guests too, they grant access to the
+// entity and its sub-entities without group membership (F-26, F-27).
+Route::get('/join/event/{token}', [EntityJoinController::class, 'showEvent'])->name('events.join.show');
+Route::post('/join/event/{token}', [EntityJoinController::class, 'storeEvent'])->name('events.join.store');
+Route::get('/join/poll/{token}', [EntityJoinController::class, 'showPoll'])->name('polls.join.show');
+Route::post('/join/poll/{token}', [EntityJoinController::class, 'storePoll'])->name('polls.join.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -168,6 +178,16 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/polls/create', [EventFollowUpPollController::class, 'create'])->name('events.polls.create');
     Route::post('/events/{event}/polls', [EventFollowUpPollController::class, 'store'])->name('events.polls.store');
+});
+
+// Event and poll invite link management for their managers (F-26, F-27).
+Route::middleware('auth')->group(function () {
+    Route::post('/events/{event}/invite-link', [EventInviteLinkController::class, 'store'])->name('events.invite-link.store');
+    Route::post('/events/{event}/invite-link/regenerate', [EventInviteLinkController::class, 'regenerate'])->name('events.invite-link.regenerate');
+    Route::delete('/events/{event}/invite-link', [EventInviteLinkController::class, 'destroy'])->name('events.invite-link.destroy');
+    Route::post('/polls/{poll}/invite-link', [PollInviteLinkController::class, 'store'])->name('polls.invite-link.store');
+    Route::post('/polls/{poll}/invite-link/regenerate', [PollInviteLinkController::class, 'regenerate'])->name('polls.invite-link.regenerate');
+    Route::delete('/polls/{poll}/invite-link', [PollInviteLinkController::class, 'destroy'])->name('polls.invite-link.destroy');
 });
 
 // Event comment thread (F-20).

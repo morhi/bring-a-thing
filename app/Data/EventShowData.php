@@ -37,6 +37,7 @@ class EventShowData extends Data
         public array $comments,
         public ?EventDeleteCountsData $delete_counts,
         public EventPermissionsData $permissions,
+        public ?EntityInviteLinkData $invite_link,
     ) {}
 
     /**
@@ -51,6 +52,8 @@ class EventShowData extends Data
      * own_claims feeds the decline confirmation. comments is the event's
      * own thread, only for those who may comment (F-20). delete_counts
      * feeds the delete confirmation, only for those who may delete.
+     * Guests with a grant on the event (F-26, F-27) join the participants
+     * after the group members. invite_link is only set for managers (F-26).
      */
     public static function forUser(Event $event, User $user): self
     {
@@ -62,6 +65,9 @@ class EventShowData extends Data
             ->concat($event->participations
                 ->reject(fn (EventParticipation $participation) => $event->group->members->contains('id', $participation->user_id))
                 ->map(fn (EventParticipation $participation) => new ParticipationData($participation->user_id, $participation->user?->name, $participation->status)))
+            ->concat($event->guests()
+                ->reject(fn (User $guest) => $statuses->has($guest->id))
+                ->map(fn (User $guest) => new ParticipationData($guest->id, $guest->name, null)))
             ->values();
 
         $isParticipant = $event->hasParticipant($user);
@@ -86,6 +92,7 @@ class EventShowData extends Data
             comments: $permissions->can_comment ? $event->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $event), $user))->all() : [],
             delete_counts: $permissions->can_delete ? EventDeleteCountsData::fromEvent($event) : null,
             permissions: $permissions,
+            invite_link: $permissions->can_manage_invite_link ? EntityInviteLinkData::fromEntity($event) : null,
         );
     }
 }

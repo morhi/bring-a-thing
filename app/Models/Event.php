@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\ParticipationStatus;
+use App\Models\Concerns\HasEntityInviteLink;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -31,14 +33,23 @@ use Illuminate\Support\Collection;
  * @property string|null $ends_at
  * @property int|null $origin_poll_option_id
  * @property int|null $parent_event_id
+ * @property string|null $invite_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable(['title', 'description', 'location', 'date', 'starts_at', 'end_date', 'ends_at'])]
+#[Hidden(['invite_token'])]
 class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
-    use HasFactory, HasSlug;
+    use HasEntityInviteLink, HasFactory, HasSlug;
+
+    /**
+     * The guests resolved once per instance, since audience checks run per response.
+     *
+     * @var EloquentCollection<int, User>|null
+     */
+    protected ?EloquentCollection $resolvedGuests = null;
 
     /**
      * Get the attributes that should be cast.
@@ -194,7 +205,9 @@ class Event extends Model
     }
 
     /**
-     * The group members who see and answer the event's follow-up polls (F-12).
+     * The people who see and answer the event's follow-up polls (F-12, F-26).
+     *
+     * Group members and grant holders follow the same rule: accepted participants and managers.
      *
      * @return Collection<int, User>
      */
@@ -203,9 +216,83 @@ class Event extends Model
         $this->loadMissing('group.members', 'participations');
 
         return $this->group->members
+            ->concat($this->guests())
             ->filter(fn (User $member) => $this->admitsToFollowUpPolls($member))
             ->toBase()
             ->values();
+    }
+
+    /**
+     * The grant holders outside the group who reach this event through an invite link (F-26, F-27).
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public function guests(): EloquentCollection
+    {
+        $this->loadMissing('group.members');
+
+        return $this->resolvedGuests ??= $this->grantHolders()
+            ->reject(fn (User $holder) => $this->group->members->contains('id', $holder->getKey()))
+            ->values();
+    }
+
+    /**
+     * Whether the user may open the event: a group member or a holder of a grant that covers it (F-10, F-26, F-27).
+     */
+    public function admits(User $user): bool
+    {
+        if ($this->group->hasMember($user)) {
+            return true;
+        }
+
+        return $this->grantsAccessTo($user);
+    }
+
+    /**
+     * The grant sources that open this event: its own link, its parent event's and the poll it was fixed from (F-26, F-27).
+     *
+     * A parent event passes its sources on, so a grant on a poll also
+     * covers the child events of the events fixed from it.
+     *
+     * @return array<int, array{0: string, 1: int}>
+     */
+    public function grantSources(): array
+    {
+        $sources = [['event', $this->getKey()]];
+
+        if ($this->origin_poll_option_id !== null && $this->originPollOption !== null) {
+            $sources[] = ['poll', $this->originPollOption->poll_id];
+        }
+
+        if ($this->parent_event_id !== null && $this->parentEvent !== null) {
+            $sources = [...$sources, ...$this->parentEvent->grantSources()];
+        }
+
+        return $sources;
+    }
+
+    /**
+     * Limit the query to events the user reaches through a grant, mirroring grantSources() (F-26, F-27).
+     */
+    #[Scope]
+    protected function reachableThroughGrants(Builder $query, User $user): void
+    {
+        $eventIds = AccessGrant::idsFor($user, 'event');
+        $pollIds = AccessGrant::idsFor($user, 'poll');
+
+        $query->where(fn (Builder $query) => $query
+            ->whereIn('events.id', $eventIds)
+            ->orWhereIn('events.parent_event_id', $eventIds)
+            ->orWhereHas('originPollOption', fn (Builder $option) => $option->whereIn('poll_id', $pollIds))
+            ->orWhereHas('parentEvent.originPollOption', fn (Builder $option) => $option->whereIn('poll_id', $pollIds)));
+    }
+
+    /**
+     * The name of the route that shows the event's join page.
+     */
+    protected function inviteJoinRouteName(): string
+    {
+        return 'events.join.show';
     }
 
     /**

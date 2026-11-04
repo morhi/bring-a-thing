@@ -39,8 +39,9 @@ class SearchData extends Data
      *
      * Every type follows the same visibility as its page: groups by
      * membership, polls through Poll::visibleTo(), events by group
-     * membership and lists through the roster policy. Types without a
-     * match are left out.
+     * membership and lists through the roster policy. Polls, events and
+     * their lists reached through a grant (F-26, F-27) count as well.
+     * Types without a match are left out.
      */
     public static function forUser(User $user, string $query): self
     {
@@ -64,7 +65,7 @@ class SearchData extends Data
                 context: $poll->group->name,
                 url: route('polls.show', $poll),
             ))),
-            self::section('events', self::events($groupIds, $query)->map(fn (Event $event) => new SearchResultData(
+            self::section('events', self::events($user, $groupIds, $query)->map(fn (Event $event) => new SearchResultData(
                 id: 'event:'.$event->slug,
                 title: $event->title,
                 context: self::formatDate($event->date, $locale).' · '.$event->group->name,
@@ -127,15 +128,17 @@ class SearchData extends Data
     }
 
     /**
-     * The events of the person's groups whose title matches, latest date first (F-10).
+     * The events of the person's groups or reached through a grant whose title matches, latest date first (F-10, F-26, F-27).
      *
      * @param  array<int, int>  $groupIds
      * @return Collection<int, Event>
      */
-    private static function events(array $groupIds, string $query): Collection
+    private static function events(User $user, array $groupIds, string $query): Collection
     {
         return Event::query()
-            ->whereIn('group_id', $groupIds)
+            ->where(fn (Builder $scope) => $scope
+                ->whereIn('group_id', $groupIds)
+                ->orWhere(fn (Builder $grants) => $grants->reachableThroughGrants($user)))
             ->where(self::matches('events.title', $query))
             ->with('group')
             ->orderByDesc('date')
@@ -162,6 +165,7 @@ class SearchData extends Data
                 ->where('owner_id', $user->getKey())
                 ->orWhereIn('group_id', $groupIds)
                 ->orWhereHas('event', fn (Builder $event) => $event->whereIn('group_id', $groupIds))
+                ->orWhereHas('event', fn (Builder $event) => $event->reachableThroughGrants($user))
                 ->orWhereHas('items.claims', fn (Builder $claim) => $claim->where('user_id', $user->getKey())))
             ->with(['group', 'event.group']);
 

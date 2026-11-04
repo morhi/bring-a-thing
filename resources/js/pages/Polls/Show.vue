@@ -16,15 +16,22 @@ import { toast } from 'vue-sonner';
 import { show as showEvent } from '@/actions/App/Http/Controllers/EventController';
 import { show as showGroup } from '@/actions/App/Http/Controllers/GroupController';
 import {
+    destroy as revokeInviteLink,
+    regenerate as regenerateInviteLink,
+    store as storeInviteLink,
+} from '@/actions/App/Http/Controllers/PollInviteLinkController';
+import {
     close as closePoll,
     edit as editPoll,
     fix as fixPoll,
     reopen as reopenPoll,
 } from '@/actions/App/Http/Controllers/PollController';
 import { store as storeResponse } from '@/actions/App/Http/Controllers/PollResponseController';
+import { dashboard } from '@/routes';
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
+import InviteLinkCard from '@/components/app/invite-link-card.vue';
 import PollCalendar from '@/components/app/poll-calendar.vue';
 import PollGrid from '@/components/app/poll-grid.vue';
 import { describeOption, formatDate } from '@/components/app/poll/dates';
@@ -70,6 +77,10 @@ const backLink = computed(() => {
             href: showEvent(poll.value.source_event.slug).url,
             name: poll.value.source_event.title,
         };
+    }
+
+    if (!permissions.value.can_view_group) {
+        return null;
     }
 
     return {
@@ -311,7 +322,7 @@ useEcho<{ deleted?: boolean }>(
     ['.poll.changed', '.poll.response.updated', '.poll.option.fixed'],
     (payload) => {
         if (payload.deleted) {
-            router.visit(backLink.value.href);
+            router.visit(backLink.value?.href ?? dashboard().url);
 
             return;
         }
@@ -352,6 +363,7 @@ const buttonClass = 'h-(--control-height) px-4';
     <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-[18px]" :data-feature="featureId">
             <Link
+                v-if="backLink"
                 :href="backLink.href"
                 class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
@@ -378,12 +390,20 @@ const buttonClass = 'h-(--control-height) px-4';
                                 : t('newPoll.mode.day')
                         }}</Badge>
                         <Link
+                            v-if="permissions.can_view_group"
                             :href="showGroup(poll.group_slug).url"
                             class="text-primary hover:text-primary-hover inline-flex items-center gap-1.5 rounded-sm font-semibold underline-offset-[3px] hover:underline"
                         >
                             <Users class="size-4" aria-hidden="true" />
                             {{ poll.group_name }}
                         </Link>
+                        <span
+                            v-else
+                            class="inline-flex items-center gap-1.5 font-semibold"
+                        >
+                            <Users class="size-4" aria-hidden="true" />
+                            {{ poll.group_name }}
+                        </span>
                         <span class="inline-flex items-center gap-1.5">
                             <UserAvatar :name="poll.organizer_name" size="sm" />
                             {{
@@ -640,6 +660,17 @@ const buttonClass = 'h-(--control-height) px-4';
                 </li>
             </ul>
         </SectionBox>
+
+        <InviteLinkCard
+            v-if="page.invite_link"
+            id="poll-link"
+            :url="page.invite_link.url"
+            :create-url="storeInviteLink(poll.slug).url"
+            :regenerate-url="regenerateInviteLink(poll.slug).url"
+            :revoke-url="revokeInviteLink(poll.slug).url"
+            :hint="t('entityLink.pollHint')"
+            data-feature="F-27"
+        />
 
         <Dialog v-model:open="fixOpen">
             <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">

@@ -29,9 +29,10 @@ Broadcast::channel('presence.roster.{rosterId}', function (User $user, int $rost
     return ['id' => $user->id, 'name' => $user->name ?? $user->email];
 });
 
-// Event pages: every member who may open the event hears participation,
-// detail and comment changes. Payloads carry ids only, so a member without
-// access to the thread learns nothing beyond what the event page shows (F-21).
+// Event pages: everyone who may open the event, members and guests with a
+// grant (F-26, F-27), hears participation, detail and comment changes.
+// Payloads carry ids only, so a member without access to the thread learns
+// nothing beyond what the event page shows (F-21).
 Broadcast::channel('event.{eventId}', function (User $user, int $eventId) {
     $event = Event::find($eventId);
 

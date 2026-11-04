@@ -20,7 +20,8 @@ class PollPolicy
     /**
      * Determine whether the user can view the poll.
      *
-     * Everyone else sees "Not found" (section 8), so the poll's existence
+     * Guests with a grant (F-27, or F-26 through the source event) see it
+     * by Poll::isOpenTo() too. Everyone else sees "Not found" (section 8), so the poll's existence
      * stays hidden; on a follow-up poll that includes group members who have
      * not accepted the source event (F-12).
      */
@@ -57,6 +58,14 @@ class PollPolicy
      * Determine whether the user can delete the poll.
      */
     public function delete(User $user, Poll $poll): bool
+    {
+        return $this->update($user, $poll);
+    }
+
+    /**
+     * Determine whether the user can create, regenerate or revoke the poll's invite link: its editors only (F-27).
+     */
+    public function manageInviteLink(User $user, Poll $poll): bool
     {
         return $this->update($user, $poll);
     }

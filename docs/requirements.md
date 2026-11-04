@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.15
+- **Version:** 1.16
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -29,7 +29,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Member:** sees all polls and events of the group and the group lists, responds to polls, accepts or declines events, comments and claims items.
 - **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events.
 - **List owner:** whoever creates a list. Manages settings, items, custom fields and the share link of that list.
-- **Participants:** members with the participation status "accepted" or "pending" for an event. Only they see the lists of that event (F-11, F-13). Only participants with "accepted" see and create its follow-up polls (F-12).
+- **Link guest:** account that joined an event or poll through its invite link without group membership (F-26, F-27). Has the rights of a member for that event or poll and its sub-entities only, never manages them and never sees the group.
+- **Participants:** members and link guests with the participation status "accepted" or "pending" for an event. Only they see the lists of that event (F-11, F-13). Only participants with "accepted" see and create its follow-up polls (F-12).
 
 ## 5. Features
 
@@ -219,7 +220,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Accept or decline bindingly without leaving claimed items hanging.
 
 **Rules:**
-- Every group member accepts or declines while the event is not past, also without a previous participation status.
+- Every group member and every link guest of the event (F-26, F-27) accepts or declines while the event is not past, also without a previous participation status.
 - Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03). The per-person status controls appear after the "Manage" action on the participation block, for everyone who may use them.
 - A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims. A status set for someone else, and removing a participant, never releases their claims. Only the person's own decline does.
 - Only participants see the event's lists (F-13). Only participants with "accepted" see follow-up polls and the action to create them (F-12). Members without participation or with a decline see only the event's key details.
@@ -419,7 +420,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The header carries a search field in the middle; on narrow screens it shows as a search icon. Cmd+K on Mac and Ctrl+K elsewhere opens and closes the palette, Esc closes it.
 - Without input, the palette shows the quick actions "New group", "New list", "Dashboard", "Settings" and "Friends". Typing filters them.
 - From two letters on, the palette also searches the titles of groups, polls, events and lists, grouped by type with a heading. Each type shows at most five results.
-- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, and the lists by the rules of F-13.
+- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, the events and polls reached through an invite link (F-26, F-27), and the lists by the rules of F-13.
 - The arrow keys move through the entries and Enter opens the selected one. While searching, the palette shows a loading state; without results it says so.
 
 **Acceptance criteria:**
@@ -429,6 +430,42 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A poll, event or list of a group the person is not a member of never appears.
 - An event list or follow-up poll appears only once the person takes part in the event.
 - With seven matching polls, the palette shows five.
+
+#### F-26 Event invite link (Secondary)
+
+**User goal:** Bring people into a single event without adding them to the group.
+
+**Rules:**
+- Organizer, owner and admins of an event create one invite link per event, regenerate it and revoke it. The old link then shows "Not found". People who already joined keep their access.
+- The link is always open. A logged-in account joins with one click. A guest joins with a name only, or with an email (plus a name for a new account) and a login link. The join page warns that a name-only account loses access at logout.
+- Joining grants access to the event, its child events, its follow-up polls and its lists, without group membership. Follow-up polls and lists follow the participation rules of F-11 to F-13 as for members.
+- A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, and never see the group page.
+- The event shows link guests among its participants. Their events and polls appear on their dashboard (F-22) and in search (F-25).
+
+**Acceptance criteria:**
+- A member without the manager role cannot create, regenerate or revoke the link.
+- A guest who joins with a name only lands on the event and stays logged in on this browser.
+- A guest who joins with an email gets access only after following the login link.
+- A link guest opens a child event, and after accepting the event its follow-up polls and lists.
+- A link guest sees neither a sibling event nor the group page.
+- After revoking or regenerating, the old link shows "Not found".
+- A link guest can accept the event but not edit it.
+
+#### F-27 Poll invite link (Secondary)
+
+**User goal:** Let people answer a single poll without adding them to the group.
+
+**Rules:**
+- Organizer, owner and admins of a poll create, regenerate and revoke one invite link per poll, as in F-26.
+- Joining follows F-26: one click when logged in, otherwise name only or email with a login link.
+- Joining grants access to the poll and to the events fixed from it (F-09), including their lists by the rules of F-13. A link guest belongs to the poll's respondents and counts in totals and the best option.
+- A link guest answers the poll but never edits, closes or fixes it, and never sees the group page.
+
+**Acceptance criteria:**
+- A logged-in account without group membership answers the poll right after joining through the link.
+- A link guest opens an event fixed from the poll, but no other event of the group.
+- A revoked link shows "Not found".
+- The poll and its fixed events appear on the link guest's dashboard and in search.
 
 ## 6. Structure
 
@@ -478,6 +515,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Custom field:** list (required), name (text, required).
 - **Comment:** list, item or event (exactly one, required), author (account, required), text (required), timestamp.
 - **Notification:** account, type (choice per F-23), reference, read at (date).
+- **Access grant:** account (required), event or poll (exactly one, required), joined via (link). At most one grant per account and event or poll (F-26, F-27). Events and polls carry an optional invite link.
 
 Groups, lists, items, polls, events and custom fields appear in URLs with random identifiers instead of sequential numbers, so nobody finds other people's content by trying numbers.
 
@@ -499,7 +537,8 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Decline without claims:** no confirmation needed.
 - **Status set for another person:** claims stay, also on "declined".
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
-- **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden.
+- **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden. An event or poll invite link gives permission for that event or poll and its sub-entities, never for the group (F-26, F-27).
+- **Revoked event or poll invite link:** the join page shows "Not found"; people who joined keep their access.
 - **Invalid share link:** shows a note that the link is no longer valid.
 - **Expired login link:** shows a note with the action "Request new link".
 - **Attendance link without an attendance poll in the group:** the field does not appear.
@@ -520,7 +559,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - Costs, fees and splitting expenses
 - Setlists and other occasion-specific content
 - Native apps
-- Polls without a group and poll responses without an account
+- Polls without a group and poll responses without an account; an invite link guest always gets an account, if only with a name (F-26, F-27)
 - Recurring events and automatically recurring lists (duplication only)
 - Emails other than the login email, including reminders
 - Status fields for lists and items; past is derived from the date

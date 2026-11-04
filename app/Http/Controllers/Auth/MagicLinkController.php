@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Access\GrantEntityAccess;
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
 use App\Actions\Groups\JoinGroupViaLink;
@@ -10,7 +11,9 @@ use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Enums\LoginLinkError;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RequestMagicLinkRequest;
+use App\Models\Event;
 use App\Models\Group;
+use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -87,6 +90,8 @@ class MagicLinkController extends Controller
      * before login, takes priority over both. A `join` invite token, set
      * when the link was requested through a closed invite link, joins that
      * group and lands there, unless the invite link was revoked meanwhile.
+     * A `join_event` or `join_poll` token does the same for an event or
+     * poll invite link (F-26, F-27): it grants access and lands there.
      *
      * An expired or altered link logs nobody in and returns to the start
      * page, which offers a new link (F-01, section 8).
@@ -96,6 +101,7 @@ class MagicLinkController extends Controller
         User $user,
         CompletePendingSharedClaim $completePendingSharedClaim,
         JoinGroupViaLink $joinGroup,
+        GrantEntityAccess $grantAccess,
     ): RedirectResponse {
         if (! URL::hasValidSignature($request)) {
             $error = URL::hasCorrectSignature($request) ? LoginLinkError::Expired : LoginLinkError::Invalid;
@@ -122,6 +128,26 @@ class MagicLinkController extends Controller
             $joinGroup->handle($group, $user);
 
             return redirect()->route('groups.show', $group);
+        }
+
+        $event = $request->filled('join_event')
+            ? Event::query()->where('invite_token', $request->string('join_event')->value())->first()
+            : null;
+
+        if ($event !== null) {
+            $grantAccess->handle($event, $user);
+
+            return redirect()->route('events.show', $event);
+        }
+
+        $poll = $request->filled('join_poll')
+            ? Poll::query()->where('invite_token', $request->string('join_poll')->value())->first()
+            : null;
+
+        if ($poll !== null) {
+            $grantAccess->handle($poll, $user);
+
+            return redirect()->route('polls.show', $poll);
         }
 
         $roster = Roster::query()->find($request->integer('roster'));

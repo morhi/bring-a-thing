@@ -95,6 +95,14 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
     }
 
     /**
+     * The events and polls this user reaches through an invite link without group membership (F-26, F-27).
+     */
+    public function accessGrants(): HasMany
+    {
+        return $this->hasMany(AccessGrant::class);
+    }
+
+    /**
      * Whether registering or logging in with this email should require a name.
      *
      * True for a brand new account and for an existing account that still

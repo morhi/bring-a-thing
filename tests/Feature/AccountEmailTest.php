@@ -29,11 +29,8 @@ function requestEmailConfirmation(User $user, string $email): string
 
 it('F-01: a name-only joiner who adds an email can log in on another device through the login link', function () {
     Mail::fake();
-    $owner = User::factory()->create();
-    $group = Group::factory()->withInviteLink()->create(['owner_id' => $owner->id]);
-    $group->addMember($owner, GroupRole::Owner, now());
-    $this->post(route('groups.join.store', $group->invite_token), ['name' => 'Link Joiner']);
-    $joiner = User::query()->where('name', 'Link Joiner')->firstOrFail();
+    $joiner = User::factory()->create(['name' => 'Link Joiner', 'email' => null, 'email_verified_at' => null]);
+    $this->actingAs($joiner);
 
     $this->patch(route('settings.email'), ['email' => 'joiner@example.com'])
         ->assertRedirect()

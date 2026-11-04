@@ -3,7 +3,9 @@
 namespace App\Actions\Auth;
 
 use App\Mail\MagicLinkMail;
+use App\Models\Event;
 use App\Models\Group;
+use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -23,9 +25,11 @@ class SendMagicLink
      * link carries it along so the login can land the user there directly
      * instead of the dashboard. A group passed from a closed invite link
      * (F-04) carries its invite token, so following the link joins the group.
+     * An event or poll passed from its invite link (F-26, F-27) carries its
+     * token the same way, so following the link grants access to it.
      * Accounts without an email (name-only joiners) receive nothing.
      */
-    public function handle(User $user, ?Roster $landOnRoster = null, ?Group $joinGroup = null): void
+    public function handle(User $user, ?Roster $landOnRoster = null, ?Group $joinGroup = null, Event|Poll|null $grantAccessTo = null): void
     {
         if ($user->email === null) {
             return;
@@ -38,6 +42,8 @@ class SendMagicLink
                 'user' => $user->getKey(),
                 'roster' => $landOnRoster?->getKey(),
                 'join' => $joinGroup?->invite_token,
+                'join_event' => $grantAccessTo instanceof Event ? $grantAccessTo->invite_token : null,
+                'join_poll' => $grantAccessTo instanceof Poll ? $grantAccessTo->invite_token : null,
             ]),
         );
 

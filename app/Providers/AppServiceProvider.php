@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Responses\PasskeyDeletedResponse;
 use App\Http\Responses\PasskeyLoginResponse;
 use App\Models\Event;
+use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
@@ -47,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
             'roster' => Roster::class,
             'roster_item' => RosterItem::class,
             'event' => Event::class,
+            'poll' => Poll::class,
             'user' => User::class,
         ]);
 

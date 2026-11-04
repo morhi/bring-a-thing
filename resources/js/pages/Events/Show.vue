@@ -36,6 +36,11 @@ import {
     update as updateOwnParticipation,
     updateFor as updateParticipation,
 } from '@/actions/App/Http/Controllers/EventParticipationController';
+import {
+    destroy as revokeInviteLink,
+    regenerate as regenerateInviteLink,
+    store as storeInviteLink,
+} from '@/actions/App/Http/Controllers/EventInviteLinkController';
 import { show as showGroup } from '@/actions/App/Http/Controllers/GroupController';
 import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
 import {
@@ -47,6 +52,7 @@ import type { ThreadComment } from '@/components/app/comment-thread.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import { formatDate } from '@/components/app/poll/dates';
+import InviteLinkCard from '@/components/app/invite-link-card.vue';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
@@ -422,6 +428,7 @@ const badgeLinkClass =
     <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-[18px]" data-feature="F-10">
             <Link
+                v-if="permissions.can_view_group"
                 :href="showGroup(event.group_slug).url"
                 class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
@@ -508,12 +515,20 @@ const badgeLinkClass =
                             {{ event.location }}
                         </span>
                         <Link
+                            v-if="permissions.can_view_group"
                             :href="showGroup(event.group_slug).url"
                             class="text-primary hover:text-primary-hover inline-flex min-h-6 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-[3px]"
                         >
                             <Users class="size-4" aria-hidden="true" />
                             {{ event.group_name }}
                         </Link>
+                        <span
+                            v-else
+                            class="inline-flex min-h-6 items-center gap-1.5 font-semibold"
+                        >
+                            <Users class="size-4" aria-hidden="true" />
+                            {{ event.group_name }}
+                        </span>
                         <span>{{
                             t('event.organizer', {
                                 name: personName(event.organizer_name),
@@ -1134,6 +1149,17 @@ const badgeLinkClass =
                 />
             </div>
         </section>
+
+        <InviteLinkCard
+            v-if="page.invite_link"
+            id="event-link"
+            :url="page.invite_link.url"
+            :create-url="storeInviteLink(event.slug).url"
+            :regenerate-url="regenerateInviteLink(event.slug).url"
+            :revoke-url="revokeInviteLink(event.slug).url"
+            :hint="t('entityLink.eventHint')"
+            data-feature="F-26"
+        />
 
         <AlertDialog v-model:open="declineOpen">
             <AlertDialogContent>

@@ -51,7 +51,7 @@ class DashboardData extends Data
         $groupIds = $groups->modelKeys();
 
         $waiting = [
-            ...self::pollsToAnswer($user, $groupIds)->map(fn (Poll $poll) => DashboardWaitingData::fromPoll($poll))->all(),
+            ...self::pollsToAnswer($user)->map(fn (Poll $poll) => DashboardWaitingData::fromPoll($poll))->all(),
             ...self::eventsWith($user, $groupIds, ParticipationStatus::Pending)->map(fn (Event $event) => DashboardWaitingData::fromEvent($event))->all(),
         ];
         $upcoming = self::eventsWith($user, $groupIds, ParticipationStatus::Accepted)->map(fn (Event $event) => DashboardEventData::fromEvent($event))->all();
@@ -73,15 +73,14 @@ class DashboardData extends Data
      * The open polls in the person's groups they may see and have not answered for every option (F-06, F-12).
      *
      * Follow-up polls pass through Poll::visibleTo(), so only accepted
-     * participants and managers of the source event get them.
+     * participants and managers of the source event get them. The scope
+     * also adds polls reached through a grant (F-26, F-27).
      *
-     * @param  array<int, int>  $groupIds
      * @return \Illuminate\Database\Eloquent\Collection<int, Poll>
      */
-    private static function pollsToAnswer(User $user, array $groupIds)
+    private static function pollsToAnswer(User $user)
     {
         return Poll::query()
-            ->whereIn('group_id', $groupIds)
             ->whereNull('closed_at')
             ->visibleTo($user)
             ->with([
@@ -98,7 +97,8 @@ class DashboardData extends Data
     /**
      * The upcoming events of the person's groups where they have the given status (F-10, F-11).
      *
-     * Loads the accepted participations, which fill the avatar stack and the accepted count.
+     * Includes events reached through a grant (F-26, F-27). Loads the
+     * accepted participations, which fill the avatar stack and the accepted count.
      *
      * @param  array<int, int>  $groupIds
      * @return \Illuminate\Database\Eloquent\Collection<int, Event>
@@ -107,7 +107,9 @@ class DashboardData extends Data
     {
         return Event::query()
             ->upcoming()
-            ->whereIn('group_id', $groupIds)
+            ->where(fn (Builder $query) => $query
+                ->whereIn('group_id', $groupIds)
+                ->orWhere(fn (Builder $query) => $query->reachableThroughGrants($user)))
             ->whereHas('participations', fn (Builder $query) => $query
                 ->where('user_id', $user->getKey())
                 ->where('status', $status))

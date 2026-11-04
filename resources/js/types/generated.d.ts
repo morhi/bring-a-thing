@@ -102,6 +102,20 @@ starts_at: string | null,
 accepted_count: number | null,
 source_event: App.Data.EventSummaryData | null,
 };
+export type EntityInviteLinkData = {
+url: string | null,
+};
+export type EntityJoinData = {
+token: string,
+kind: string,
+title: string,
+organizer_name: string | null,
+date: string | null,
+starts_at: string | null,
+is_authenticated: boolean,
+has_email: boolean,
+link_expires_in_minutes: number,
+};
 export type EventClaimData = {
 item_name: string,
 quantity: number | null,
@@ -154,6 +168,8 @@ can_create_follow_up_poll: boolean,
 can_create_sub_event: boolean,
 can_create_list: boolean,
 can_comment: boolean,
+can_manage_invite_link: boolean,
+can_view_group: boolean,
 };
 export type EventShowData = {
 event: App.Data.EventData,
@@ -170,6 +186,7 @@ child_events: App.Data.GroupEventData[],
 comments: App.Data.CommentData[],
 delete_counts: App.Data.EventDeleteCountsData | null,
 permissions: App.Data.EventPermissionsData,
+invite_link: App.Data.EntityInviteLinkData | null,
 };
 export type EventSummaryData = {
 slug: string,
@@ -370,6 +387,8 @@ can_respond: boolean,
 can_fix: boolean,
 can_close: boolean,
 can_reopen: boolean,
+can_manage_invite_link: boolean,
+can_view_group: boolean,
 };
 export type PollRespondentData = {
 user_id: number,
@@ -386,6 +405,7 @@ best_option_slugs: string[],
 show_no_counts: boolean,
 fixed_events: App.Data.EventSummaryData[],
 permissions: App.Data.PollPermissionsData,
+invite_link: App.Data.EntityInviteLinkData | null,
 };
 export type RosterClaimData = {
 user_id: number | null,

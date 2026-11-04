@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import {
-    ArrowLeft,
-    Check,
-    Copy,
-    ExternalLink,
-    Link as LinkIcon,
-    X,
-} from '@lucide/vue';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { ArrowLeft, X } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     destroy as destroyGroup,
@@ -24,6 +17,7 @@ import {
     store as storeInviteLink,
 } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
 import FormField from '@/components/app/form-field.vue';
+import InviteLinkCard from '@/components/app/invite-link-card.vue';
 import InviteField from '@/components/app/invite-field.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
 import SectionBox from '@/components/app/section-box.vue';
@@ -85,39 +79,6 @@ function saveName(): void {
     });
 }
 
-// Invite link (F-04)
-const copied = ref(false);
-let copiedTimer: ReturnType<typeof setTimeout> | undefined;
-
-async function copyLink(): Promise<void> {
-    const url = props.page.invite_link.url;
-
-    if (!url) {
-        return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(url);
-    } catch {
-        toast.error(t('group.link.copyFailed'), {
-            description: url,
-            duration: 10000,
-        });
-
-        return;
-    }
-
-    copied.value = true;
-    clearTimeout(copiedTimer);
-    copiedTimer = setTimeout(() => (copied.value = false), 2000);
-}
-
-onBeforeUnmount(() => clearTimeout(copiedTimer));
-
-function createLink(): void {
-    router.post(storeInviteLink(props.page.slug).url, {}, visitOptions);
-}
-
 // Option "Members can set the participation status for others" (owner only, F-03)
 function setOption(checked: boolean | 'indeterminate'): void {
     router.patch(
@@ -164,30 +125,6 @@ function confirmRemove(member: App.Data.GroupMemberData): void {
         run: () =>
             router.delete(
                 removeMember({ group: props.page.slug, member: member.id }).url,
-                visitOptions,
-            ),
-    });
-}
-
-function confirmRevoke(): void {
-    ask({
-        title: t('groupSettings.link.revokeTitle'),
-        text: t('groupSettings.link.revokeText'),
-        action: t('groupSettings.link.revoke'),
-        run: () =>
-            router.delete(revokeInviteLink(props.page.slug).url, visitOptions),
-    });
-}
-
-function confirmRegenerate(): void {
-    ask({
-        title: t('groupSettings.link.regenerateTitle'),
-        text: t('groupSettings.link.regenerateText'),
-        action: t('groupSettings.link.regenerate'),
-        run: () =>
-            router.post(
-                regenerateInviteLink(props.page.slug).url,
-                {},
                 visitOptions,
             ),
     });
@@ -318,100 +255,15 @@ const buttonClass = 'h-(--control-height) px-4';
             </template>
         </SectionBox>
 
-        <SectionBox
-            id="gs-link-title"
-            :title="t('groupSettings.link.title')"
+        <InviteLinkCard
+            id="gs-link"
+            :url="page.invite_link.url"
+            :create-url="storeInviteLink(page.slug).url"
+            :regenerate-url="regenerateInviteLink(page.slug).url"
+            :revoke-url="revokeInviteLink(page.slug).url"
+            :hint="t('groupSettings.link.hint')"
             data-feature="F-04"
-        >
-            <template #action>
-                <p class="text-fg-soft max-w-[70ch] text-sm">
-                    {{ t('groupSettings.link.hint') }}
-                </p>
-            </template>
-            <SectionBoxItem
-                v-if="page.invite_link.url"
-                class="flex flex-col gap-(--space-stack) p-5 sm:p-6"
-            >
-                <FormField
-                    :label="t('groupSettings.link.url')"
-                    control="gs-link-url"
-                >
-                    <div class="flex flex-wrap gap-2">
-                        <Input
-                            id="gs-link-url"
-                            :model-value="page.invite_link.url"
-                            readonly
-                            :class="[
-                                inputClass,
-                                'bg-surface-muted text-fg-muted min-w-0 flex-[1_1_220px] text-ellipsis',
-                            ]"
-                            @focus="
-                                ($event.target as HTMLInputElement).select()
-                            "
-                        />
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            :class="buttonClass"
-                            @click="copyLink"
-                        >
-                            <Check v-if="copied" aria-hidden="true" />
-                            <Copy v-else aria-hidden="true" />
-                            {{
-                                copied
-                                    ? t('group.link.copied')
-                                    : t('groupSettings.link.copy')
-                            }}
-                        </Button>
-                        <span class="sr-only" aria-live="polite">{{
-                            copied ? t('group.link.copied') : ''
-                        }}</span>
-                    </div>
-                </FormField>
-                <div class="flex flex-wrap items-center justify-end gap-2">
-                    <Button as-child variant="ghost">
-                        <a
-                            :href="page.invite_link.url"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            <ExternalLink aria-hidden="true" />
-                            {{ t('groupSettings.link.openJoinPage') }}
-                        </a>
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        @click="confirmRegenerate"
-                    >
-                        {{ t('groupSettings.link.regenerate') }}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        @click="confirmRevoke"
-                    >
-                        {{ t('groupSettings.link.revoke') }}
-                    </Button>
-                </div>
-            </SectionBoxItem>
-            <SectionBoxItem
-                v-else
-                class="flex flex-col items-start gap-4 p-5 sm:p-6"
-            >
-                <p class="text-fg-muted">{{ t('groupSettings.link.none') }}</p>
-                <Button
-                    type="button"
-                    size="lg"
-                    :class="buttonClass"
-                    @click="createLink"
-                >
-                    <LinkIcon aria-hidden="true" />
-                    {{ t('groupSettings.link.create') }}
-                </Button>
-            </SectionBoxItem>
-        </SectionBox>
+        />
 
         <SectionBox
             id="gs-options-title"
