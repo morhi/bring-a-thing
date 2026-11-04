@@ -1,6 +1,6 @@
 <?php
 
-// Ported from docs/prototype/js/i18n.js. Flat dotted keys on purpose: some keys are also
+// Flat dotted keys on purpose: some keys are also
 // prefixes of others (settings.account / settings.account.text), which nesting cannot hold.
 // Placeholders use the Laravel :name form.
 

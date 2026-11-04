@@ -7,7 +7,7 @@
 @source '../../storage/framework/views/*.php';
 
 /*
-  Bring a Thing design tokens, ported from docs/prototype/css/tokens.css.
+  Bring a Thing design tokens.
 
   Layer 1: primitives, never used in markup (no utilities are generated for them)
   Layer 2: semantic tokens with light (:root) and dark (.dark) values
@@ -374,7 +374,7 @@
     }
 }
 
-/* Heading scale from docs/prototype/css/base.css; the clamps land on 28/20px at 375 and 40/24px at 1280 */
+/* Heading scale; the clamps land on 28/20px at 375 and 40/24px at 1280 */
 
 @utility text-h1 {
     font-family: var(--font-display);
@@ -395,7 +395,7 @@
 }
 
 /*
-  Depth, ported from docs/prototype/css/depth.css. A .box picks its level from
+  Depth. A .box picks its level from
   the number of .box ancestors (deeper stays at 3). Floating surfaces
   (.box-float: dialogs, menus, panels) restart at level 1 above the page.
 */
