@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.17
+- **Version:** 1.18
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -29,7 +29,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Member:** sees all polls and events of the group and the group lists, responds to polls, accepts or declines events, comments and claims items.
 - **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events.
 - **List owner:** whoever creates a list. Manages settings, items, custom fields and the share link of that list.
-- **Link guest:** account that joined an event or poll through its invite link without group membership (F-26, F-27). Has the rights of a member for that event or poll and its sub-entities only, never manages them and never sees the group.
+- **Link guest:** account that joined an event or poll through its invite link without group membership (F-26, F-27). Has the rights of a member for that event or poll and its sub-entities only and never manages them. Sees the item's group only as a restricted guest group page (F-22, F-26, F-27), never its members or other items.
 - **Participants:** members and link guests with the participation status "accepted" or "pending" for an event. Only they see the lists of that event (F-11, F-13). Only participants with "accepted" see and create its follow-up polls (F-12).
 
 ## 5. Features
@@ -380,7 +380,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
   3. Upcoming events: full width, compact rows, with one's own acceptance.
   4. Current polls: open polls the person may see, each with the own status "answered", "partly answered" or "not answered".
   5. Lists: active lists the person may open, plus a link "All lists" (F-28). Past lists are missing; event lists show only while the event is not past.
-  6. Groups: the person's own groups plus the virtual group "Without groups" (F-29).
+  6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one list without a group.
 - Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
 
@@ -391,6 +391,10 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A child event and a follow-up poll with a complete response have no dashboard row.
 - A list of a past event is missing from the lists section.
 - Collapsing "Übernahmen" hides the claims; they show again after expanding.
+- After joining one event of a group through its link, the group shows under "Groups" with the guest mark and the count 1 for events and 0 for polls and lists the person may not open.
+- A group with three polls of which the person may open one shows the poll count 1 on the guest card.
+- After the person joins the group as a member (F-04), the guest mark disappears from its card and the group shows its full counts.
+- Without an own list without a group, the card "Without groups" is missing.
 
 #### F-23 Notifications (Secondary)
 
@@ -430,14 +434,14 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The header carries a search field in the middle; on narrow screens it shows as a search icon. Cmd+K on Mac and Ctrl+K elsewhere opens and closes the palette, Esc closes it.
 - Without input, the palette shows the quick actions "New group", "New list", "Dashboard", "Settings" and "Friends". Typing filters them.
 - From two letters on, the palette also searches the titles of groups, polls, events and lists, grouped by type with a heading. Each type shows at most five results.
-- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, the events and polls reached through an invite link (F-26, F-27), and the lists by the rules of F-13.
+- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, the events and polls reached through an invite link (F-26, F-27) with their group as guest group, and the lists by the rules of F-13.
 - The arrow keys move through the entries and Enter opens the selected one. While searching, the palette shows a loading state; without results it says so.
 
 **Acceptance criteria:**
 - Searching requires a login.
 - An empty query or a single letter returns no records, only the quick actions.
 - "gig" finds the group, poll, event and list with "gig" in their title, each with its heading and link.
-- A poll, event or list of a group the person is not a member of never appears.
+- A poll, event or list of a group the person is not a member of never appears, unless the person reached it through an invite link or by the rules of F-13.
 - An event list or follow-up poll appears only once the person takes part in the event.
 - With seven matching polls, the palette shows five.
 
@@ -449,15 +453,20 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Organizer, owner and admins of an event create one invite link per event, regenerate it and revoke it. The old link then shows "Not found". People who already joined keep their access.
 - The link is always open. A logged-in account joins with one click. A guest joins with a name only, or with an email (plus a name for a new account) and a login link. The join page warns that a name-only account loses access at logout.
 - Joining grants access to the event, its child events, its follow-up polls and its lists, without group membership. Follow-up polls and lists follow the participation rules of F-11 to F-13 as for members.
-- A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, and never see the group page.
-- The event shows link guests among its participants. Their events and polls appear in the group "Without groups" (F-29), in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
+- A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, never see the group's other items or its members, and see the group only as the restricted group page.
+- The event shows link guests among its participants. The event belongs to its real group, which the link guest sees as a guest group under "Groups" (F-22). Their events and polls appear in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
 
 **Acceptance criteria:**
 - A member without the manager role cannot create, regenerate or revoke the link.
 - A guest who joins with a name only lands on the event and stays logged in on this browser.
 - A guest who joins with an email gets access only after following the login link.
 - A link guest opens a child event, and after accepting the event its follow-up polls and lists.
-- A link guest sees neither a sibling event nor the group page.
+- A link guest sees no sibling event, neither on the restricted group page nor by direct address (it shows "Not found").
+- The restricted group page shows the group name and only the polls, events and lists the person may open. It shows no members list, no settings, no invite link and no actions "New poll", "New event" and "New list".
+- Items outside the person's access never appear on the restricted page, not even their count or title.
+- Opening a group without access to any of its items shows "Not found".
+- A link guest never edits the group or its items.
+- An owner or admin who invites the link guest as a member (F-04) turns the guest into a member; the guest mark disappears and the full group page opens.
 - After revoking or regenerating, the old link shows "Not found".
 - A link guest can accept the event but not edit it.
 
@@ -469,14 +478,15 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Organizer, owner and admins of a poll create, regenerate and revoke one invite link per poll, as in F-26.
 - Joining follows F-26: one click when logged in, otherwise name only or email with a login link.
 - Joining grants access to the poll, to the events fixed from it (F-09) and their child events, and to follow-up polls and lists under the same participation rules as in F-26 (F-11 to F-13). A link guest belongs to the poll's respondents and counts in totals and the best option.
-- A link guest answers the poll but never edits, closes or fixes it, and never sees the group page.
+- A link guest answers the poll but never edits, closes or fixes it, and sees the group only as the restricted group page (F-26).
 
 **Acceptance criteria:**
 - A logged-in account without group membership answers the poll right after joining through the link.
 - A link guest opens an event fixed from the poll, but no other event of the group.
 - A revoked link shows "Not found".
 - A link guest opens a child event of a fixed event, and after accepting the fixed event its follow-up polls and lists.
-- The poll and its fixed events appear in the group "Without groups" (F-29) and in search.
+- The poll and its fixed events appear on the restricted group page of their group (F-26), in the dashboard sections of F-22 and in search.
+- The restricted group page shows the poll and its fixed events, and no other poll or event of the group.
 
 #### F-28 All lists (Secondary)
 
@@ -495,16 +505,17 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-29 Without groups (Secondary)
 
-**User goal:** Reach content that belongs to no group of one's own.
+**User goal:** Reach one's own lists that belong to no group.
 
 **Rules:**
-- The dashboard shows the virtual group "Without groups" as a card in the groups section (F-22). It appears nowhere else: not in group pickers, and polls and events without a group still do not exist.
-- Its page lists the events and polls reached through invite links (F-26, F-27) and the person's own lists without a group.
+- The dashboard shows the virtual group "Without groups" as a card in the groups section (F-22). It appears only when the person owns at least one list without a group. It appears nowhere else: not in group pickers, and polls and events without a group still do not exist.
+- Its page lists only the person's own lists without a group. Items reached through invite links (F-26, F-27) do not appear there; they belong to their real group.
 - Hidden items stay "Not found".
 
 **Acceptance criteria:**
-- After joining an event through its link, the event appears on the page "Without groups".
-- A list of the person without a group appears there; a list of another person does not.
+- A list of the person without a group appears on the page "Without groups"; a list of another person does not.
+- Without an own list without a group, the dashboard shows no card "Without groups".
+- After joining an event through its link, the event does not appear on the page "Without groups".
 - The group pickers when creating a poll, event or list do not offer "Without groups".
 - Opening an item of a revoked or unreached link shows "Not found".
 
@@ -516,9 +527,9 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
 - **Dashboard:** F-22, actions "New group" and "New list".
 - **All lists:** table of all lists the person may open, with filters (F-28).
-- **Without groups:** virtual group page with link-reached events and polls and own lists without group (F-29).
+- **Without groups:** virtual group page with the person's own lists without group (F-29).
 - **New group:** name and invitations (F-03, F-04).
-- **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
+- **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list". Link guests see a restricted version with the group name and only the items they may open, without members, settings, invite link and create actions (F-26, F-27).
 - **Group settings:** name, invite link, option, roles, delete (F-03, F-04).
 - **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
 - **Poll edit:** the "New poll" page in edit mode with the same components: title, options, close, delete (F-08).
@@ -580,7 +591,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Decline without claims:** no confirmation needed.
 - **Status set for another person:** claims stay, also on "declined".
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
-- **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden. An event or poll invite link gives permission for that event or poll and its sub-entities, never for the group (F-26, F-27).
+- **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden. An event or poll invite link gives permission for that event or poll and its sub-entities, never for the group's other items or members. The group appears to the link guest as a restricted page with only the permitted items, and a group without any permitted item shows "Not found" (F-26, F-27).
 - **Revoked event or poll invite link:** the join page shows "Not found"; people who joined keep their access.
 - **Invalid share link:** shows a note that the link is no longer valid.
 - **Expired login link:** shows a note with the action "Request new link".
