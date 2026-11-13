@@ -10,7 +10,7 @@ use Inertia\Response;
 class DashboardController extends Controller
 {
     /**
-     * Show the dashboard (F-22): what waits for the person, upcoming events and claims, groups and standalone lists.
+     * Show the dashboard (F-22): what waits for the person, upcoming events and claims, current polls, active lists and groups.
      */
     public function __invoke(Request $request): Response
     {

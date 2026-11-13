@@ -16,6 +16,7 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupInviteLinkController;
 use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\ListsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollInviteLinkController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\SharedRosterClaimController;
 use App\Http\Controllers\SharedRosterController;
 use App\Http\Controllers\SharedRosterItemController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\WithoutGroupController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('welcome');
@@ -172,6 +174,12 @@ Route::middleware('auth')->group(function () {
 // /rosters/{roster} would capture a "create" segment.
 Route::middleware('auth')->group(function () {
     Route::get('/lists/new', [RosterController::class, 'create'])->name('rosters.create');
+});
+
+// All lists with filters (F-28) and the virtual group "Without groups" (F-29).
+Route::middleware('auth')->group(function () {
+    Route::get('/lists', [ListsController::class, 'index'])->name('lists.index');
+    Route::get('/without-group', WithoutGroupController::class)->name('without-group.show');
 });
 
 // Follow-up polls within an event (F-12).

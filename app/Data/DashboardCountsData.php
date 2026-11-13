@@ -10,7 +10,8 @@ class DashboardCountsData extends Data
         public int $waiting,
         public int $upcoming,
         public int $claims,
-        public int $groups,
+        public int $polls,
         public int $lists,
+        public int $groups,
     ) {}
 }

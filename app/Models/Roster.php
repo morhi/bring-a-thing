@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\GroupRole;
 use App\Enums\ParticipationStatus;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\RosterFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -181,6 +183,78 @@ class Roster extends Model
         }
 
         return $this->hasClaimBy($user);
+    }
+
+    /**
+     * Limit the query to lists the user may open, mirroring isVisibleTo() (F-13).
+     *
+     * Event lists need a participation ("accepted" or "pending") or the
+     * event's management; group lists need membership; standalone lists
+     * need ownership or a claim. The owner always sees the list.
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        $userId = $user->getKey();
+        $isMember = fn (Builder $member) => $member->whereKey($userId);
+
+        $query->where(fn (Builder $query) => $query
+            ->where('owner_id', $userId)
+            ->orWhere(fn (Builder $query) => $query
+                ->whereNotNull('event_id')
+                ->whereHas('event', fn (Builder $event) => $event
+                    ->whereHas('participations', fn (Builder $participation) => $participation
+                        ->where('user_id', $userId)
+                        ->whereIn('status', [ParticipationStatus::Accepted, ParticipationStatus::Pending]))
+                    ->orWhere(fn (Builder $event) => $event
+                        ->where('organizer_id', $userId)
+                        ->whereHas('group.members', $isMember))
+                    ->orWhereHas('group', fn (Builder $group) => $group
+                        ->where('owner_id', $userId)
+                        ->orWhereHas('members', fn (Builder $member) => $member
+                            ->whereKey($userId)
+                            ->whereIn('group_user.role', [GroupRole::Owner, GroupRole::Admin])))))
+            ->orWhere(fn (Builder $query) => $query
+                ->whereNull('event_id')
+                ->whereNotNull('group_id')
+                ->whereHas('group', fn (Builder $group) => $group
+                    ->where('owner_id', $userId)
+                    ->orWhereHas('members', $isMember)))
+            ->orWhere(fn (Builder $query) => $query
+                ->whereNull('event_id')
+                ->whereNull('group_id')
+                ->whereHas('items.claims', fn (Builder $claim) => $claim->where('user_id', $userId))));
+    }
+
+    /**
+     * Limit the query to active lists: not past by date, and for event lists an event that has not started (F-22, F-28).
+     */
+    #[Scope]
+    protected function active(Builder $query): void
+    {
+        $query
+            ->where(fn (Builder $query) => $query->whereNull('date')->orWhereDate('date', '>=', Carbon::today()))
+            ->where(fn (Builder $query) => $query->whereNull('event_id')->orWhereHas('event', fn (Builder $event) => $event->upcoming()));
+    }
+
+    /**
+     * Limit the query to lists the user owns or holds a claim on ("My lists", F-28).
+     */
+    #[Scope]
+    protected function ownOrClaimedBy(Builder $query, User $user): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->where('owner_id', $user->getKey())
+            ->orWhereHas('items.claims', fn (Builder $claim) => $claim->where('user_id', $user->getKey())));
+    }
+
+    /**
+     * Limit the query to lists with at least one task, an item without a quantity (F-14, F-28).
+     */
+    #[Scope]
+    protected function withTasks(Builder $query): void
+    {
+        $query->whereHas('items', fn (Builder $item) => $item->whereNull('quantity'));
     }
 
     /**

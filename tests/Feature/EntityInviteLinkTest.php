@@ -30,14 +30,6 @@ function linkGroup(): array
     return [$group, $owner, $member];
 }
 
-/**
- * Give the user a grant on the event or poll, as joining through its link does.
- */
-function grantOn(Event|Poll $entity, User $user): void
-{
-    $entity->accessGrants()->create(['user_id' => $user->id, 'joined_via' => 'link']);
-}
-
 it('F-26: a manager creates, regenerates and revokes the event invite link with feedback', function () {
     [$group, $owner] = linkGroup();
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);

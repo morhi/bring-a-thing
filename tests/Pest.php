@@ -1,5 +1,17 @@
 <?php
 
+use App\Enums\GroupRole;
+use App\Enums\ParticipationStatus;
+use App\Enums\PollResponseStatus;
+use App\Models\Event;
+use App\Models\EventParticipation;
+use App\Models\Group;
+use App\Models\Poll;
+use App\Models\PollOption;
+use App\Models\Roster;
+use App\Models\RosterItem;
+use App\Models\RosterItemClaim;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +59,73 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Give the user a grant on the event or poll, as joining through its link does.
+ */
+function grantOn(Event|Poll $entity, User $user): void
+{
+    $entity->accessGrants()->create(['user_id' => $user->id, 'joined_via' => 'link']);
+}
+
+/**
+ * Create a group with its owner and one plain member.
+ *
+ * @return array{0: Group, 1: User, 2: User}
+ */
+function dashboardGroup(): array
+{
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $group->addMember($member, GroupRole::Member, now());
+
+    return [$group, $owner, $member];
+}
+
+/**
+ * Create a poll with the given number of options, answered "yes" on the first few by the user.
+ */
+function dashboardPoll(Group $group, User $organizer, int $options, ?User $user = null, int $answered = 0, array $attributes = []): Poll
+{
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id, ...$attributes]);
+    $created = PollOption::factory()->count($options)->create(['poll_id' => $poll->id]);
+
+    foreach ($created->take($answered) as $option) {
+        $option->responses()->create(['user_id' => $user->id, 'status' => PollResponseStatus::Yes]);
+    }
+
+    return $poll;
+}
+
+/**
+ * Create an event in the group with the user's participation status.
+ */
+function dashboardEvent(Group $group, User $organizer, ?User $user = null, ?ParticipationStatus $status = null, array $attributes = []): Event
+{
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id, ...$attributes]);
+
+    if ($user !== null && $status !== null) {
+        EventParticipation::factory()->create(['event_id' => $event->id, 'user_id' => $user->id, 'status' => $status]);
+    }
+
+    return $event;
+}
+
+/**
+ * Create a list with two items, the first one claimed by the given user.
+ */
+function dashboardList(User $owner, array $attributes = [], ?User $claimer = null): Roster
+{
+    $roster = Roster::factory()->create(['owner_id' => $owner->id, ...$attributes]);
+    $first = RosterItem::factory()->create(['roster_id' => $roster->id]);
+    RosterItem::factory()->create(['roster_id' => $roster->id]);
+
+    if ($claimer !== null) {
+        RosterItemClaim::factory()->create(['roster_item_id' => $first->id, 'user_id' => $claimer->id]);
+    }
+
+    return $roster;
 }

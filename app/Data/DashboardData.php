@@ -19,15 +19,18 @@ class DashboardData extends Data
      * @param  array<int, DashboardWaitingData>  $waiting
      * @param  array<int, DashboardEventData>  $upcoming
      * @param  array<int, DashboardClaimData>  $claims
-     * @param  array<int, DashboardGroupData>  $groups
+     * @param  array<int, DashboardPollData>  $polls
      * @param  array<int, DashboardListData>  $lists
+     * @param  array<int, DashboardGroupData>  $groups
      */
     public function __construct(
         public array $waiting,
         public array $upcoming,
         public array $claims,
-        public array $groups,
+        public array $polls,
         public array $lists,
+        public array $groups,
+        public ?DashboardWithoutGroupData $withoutGroup,
         public DashboardCountsData $counts,
     ) {}
 
@@ -36,7 +39,8 @@ class DashboardData extends Data
      *
      * Everything is scoped to the person's groups and visibility rules, and
      * each part loads its relations up front, so the query count does not
-     * grow with the data. Past events and lists are left out.
+     * grow with the data. Past events and lists are left out. The virtual
+     * group "Without groups" only shows when it has content (F-29).
      */
     public static function forUser(User $user): self
     {
@@ -50,27 +54,32 @@ class DashboardData extends Data
             ->get();
         $groupIds = $groups->modelKeys();
 
+        $openPolls = self::openPolls($user);
         $waiting = [
-            ...self::pollsToAnswer($user)->map(fn (Poll $poll) => DashboardWaitingData::fromPoll($poll))->all(),
+            ...self::pollsToAnswer($openPolls)->map(fn (Poll $poll) => DashboardWaitingData::fromPoll($poll))->all(),
             ...self::eventsWith($user, $groupIds, ParticipationStatus::Pending)->map(fn (Event $event) => DashboardWaitingData::fromEvent($event))->all(),
         ];
         $upcoming = self::eventsWith($user, $groupIds, ParticipationStatus::Accepted)->map(fn (Event $event) => DashboardEventData::fromEvent($event))->all();
         $claims = self::upcomingClaims($user, $groupIds)->map(fn (RosterItemClaim $claim) => DashboardClaimData::fromClaim($claim))->all();
+        // Follow-up polls get no row of their own; they live on their event page.
+        $polls = $openPolls->whereNull('event_id')->map(fn (Poll $poll) => DashboardPollData::fromPoll($poll))->values()->all();
+        $lists = self::activeLists($user)->map(fn (Roster $roster) => DashboardListData::fromRoster($roster))->all();
         $groupCards = $groups->map(fn ($group) => DashboardGroupData::fromGroup($group))->all();
-        $lists = self::standaloneLists($user)->map(fn (Roster $roster) => DashboardListData::fromRoster($roster))->all();
 
         return new self(
             waiting: $waiting,
             upcoming: $upcoming,
             claims: $claims,
-            groups: $groupCards,
+            polls: $polls,
             lists: $lists,
-            counts: new DashboardCountsData(count($waiting), count($upcoming), count($claims), count($groupCards), count($lists)),
+            groups: $groupCards,
+            withoutGroup: WithoutGroupData::countsFor($user),
+            counts: new DashboardCountsData(count($waiting), count($upcoming), count($claims), count($polls), count($lists), count($groupCards)),
         );
     }
 
     /**
-     * The open polls in the person's groups they may see and have not answered for every option (F-06, F-12).
+     * The open polls the person may see, with their own responses (F-06, F-12, F-22).
      *
      * Follow-up polls pass through Poll::visibleTo(), so only accepted
      * participants and managers of the source event get them. The scope
@@ -78,7 +87,7 @@ class DashboardData extends Data
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Poll>
      */
-    private static function pollsToAnswer(User $user)
+    private static function openPolls(User $user)
     {
         return Poll::query()
             ->whereNull('closed_at')
@@ -89,7 +98,18 @@ class DashboardData extends Data
                 'options.responses' => fn ($query) => $query->where('user_id', $user->getKey()),
             ])
             ->orderBy('id')
-            ->get()
+            ->get();
+    }
+
+    /**
+     * The open polls the person has not answered for every option (F-06, F-12).
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Poll>  $openPolls
+     * @return \Illuminate\Database\Eloquent\Collection<int, Poll>
+     */
+    private static function pollsToAnswer($openPolls)
+    {
+        return $openPolls
             ->filter(fn (Poll $poll) => $poll->options->isNotEmpty() && $poll->options->contains(fn ($option) => $option->responses->isEmpty()))
             ->values();
     }
@@ -161,23 +181,12 @@ class DashboardData extends Data
     }
 
     /**
-     * The standalone lists the person owns or claims on that are not past (F-13, F-22).
+     * The active lists the person may open, in groups, events and standalone (F-13, F-22).
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, Roster>
      */
-    private static function standaloneLists(User $user)
+    private static function activeLists(User $user)
     {
-        return Roster::query()
-            ->whereNull('group_id')
-            ->whereNull('event_id')
-            ->where(fn (Builder $query) => $query->whereNull('date')->orWhereDate('date', '>=', Carbon::today()))
-            ->where(fn (Builder $query) => $query
-                ->where('owner_id', $user->getKey())
-                ->orWhereHas('items.claims', fn (Builder $claim) => $claim->where('user_id', $user->getKey())))
-            ->with('items.claims')
-            ->orderByRaw('date is null')
-            ->orderBy('date')
-            ->latest('id')
-            ->get();
+        return DashboardListData::ordered(Roster::query()->visibleTo($user)->active()->with(DashboardListData::RELATIONS))->get();
     }
 }
