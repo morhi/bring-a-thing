@@ -69,10 +69,12 @@ accepted_names: string[],
 export type DashboardGroupData = {
 slug: string,
 name: string,
-role: App.Enums.GroupRole,
-member_count: number,
+is_guest: boolean,
+role: App.Enums.GroupRole | null,
+member_count: number | null,
 open_poll_count: number,
 upcoming_event_count: number,
+active_list_count: number,
 };
 export type DashboardListData = {
 slug: string,
@@ -109,8 +111,6 @@ accepted_count: number | null,
 source_event: App.Data.EventSummaryData | null,
 };
 export type DashboardWithoutGroupData = {
-events_count: number,
-polls_count: number,
 lists_count: number,
 };
 export type EntityInviteLinkData = {
@@ -267,6 +267,7 @@ joined_via_link: boolean,
 export type GroupPermissionsData = {
 can_manage_settings: boolean,
 can_invite: boolean,
+can_create: boolean,
 };
 export type GroupPollData = {
 slug: string,
@@ -300,7 +301,8 @@ can_delete: boolean,
 export type GroupShowData = {
 slug: string,
 name: string,
-own_role: App.Enums.GroupRole,
+is_guest: boolean,
+own_role: App.Enums.GroupRole | null,
 members: App.Data.GroupMemberData[],
 polls: App.Data.GroupPollData[],
 events: App.Data.GroupEventData[],
@@ -587,8 +589,6 @@ login_link_error: App.Enums.LoginLinkError | null,
 link_expires_in_minutes: number,
 };
 export type WithoutGroupData = {
-events: App.Data.EventSummaryData[],
-polls: App.Data.DashboardPollData[],
 lists: App.Data.DashboardListData[],
 };
 }

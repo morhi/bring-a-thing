@@ -225,7 +225,15 @@ const rowClass =
                     >
                         {{ page.name }}
                         <Badge
-                            v-if="page.own_role !== 'member'"
+                            v-if="page.is_guest"
+                            class="bg-info-soft text-info font-sans"
+                            data-feature="F-26"
+                            >{{ t('group.guest') }}</Badge
+                        >
+                        <Badge
+                            v-else-if="
+                                page.own_role && page.own_role !== 'member'
+                            "
                             variant="outline"
                             class="font-sans"
                             >{{ t(roleLabel[page.own_role]) }}</Badge
@@ -234,7 +242,7 @@ const rowClass =
                     <p
                         class="text-fg-muted flex flex-wrap gap-x-[18px] gap-y-2.5 text-[15px]"
                     >
-                        <span
+                        <span v-if="!page.is_guest"
                             ><b class="text-fg font-semibold tabular-nums">{{
                                 page.members.length
                             }}</b>
@@ -255,6 +263,14 @@ const rowClass =
                             {{ t('word.upcoming') }}</span
                         >
                     </p>
+                    <!-- Guests reach single items through links; the notice explains why the page looks sparse -->
+                    <p
+                        v-if="page.is_guest"
+                        class="text-fg-muted max-w-[60ch]"
+                        data-feature="F-26"
+                    >
+                        {{ t('group.guest.notice', { group: page.name }) }}
+                    </p>
                 </div>
                 <Button
                     v-if="page.permissions.can_manage_settings"
@@ -269,7 +285,10 @@ const rowClass =
                     </Link>
                 </Button>
             </div>
-            <div class="flex flex-wrap gap-2.5">
+            <div
+                v-if="page.permissions.can_create"
+                class="flex flex-wrap gap-2.5"
+            >
                 <Button
                     as-child
                     size="lg"
@@ -309,8 +328,13 @@ const rowClass =
             </div>
         </header>
 
+        <!-- Guests get no members column, so the content takes the full width -->
         <div
-            class="grid gap-10 min-[960px]:grid-cols-[minmax(0,1fr)_320px] min-[960px]:items-start min-[960px]:gap-12"
+            :class="[
+                'grid gap-10',
+                !page.is_guest &&
+                    'min-[960px]:grid-cols-[minmax(0,1fr)_320px] min-[960px]:items-start min-[960px]:gap-12',
+            ]"
         >
             <div class="flex min-w-0 flex-col gap-10">
                 <SectionBox
@@ -497,9 +521,18 @@ const rowClass =
                     <EmptyState
                         v-else
                         :title="t('group.polls.empty.title')"
-                        :text="t('group.polls.empty.text')"
+                        :text="
+                            page.permissions.can_create
+                                ? t('group.polls.empty.text')
+                                : undefined
+                        "
                     >
-                        <Button as-child size="lg" :class="buttonClass">
+                        <Button
+                            v-if="page.permissions.can_create"
+                            as-child
+                            size="lg"
+                            :class="buttonClass"
+                        >
                             <Link :href="createPoll(page.slug).url">
                                 <Plus aria-hidden="true" />
                                 {{ t('group.new.poll') }}
@@ -644,9 +677,14 @@ const rowClass =
                     <EmptyState
                         v-else
                         :title="t('group.events.empty.title')"
-                        :text="t('group.events.empty.text')"
+                        :text="
+                            page.permissions.can_create
+                                ? t('group.events.empty.text')
+                                : undefined
+                        "
                     >
                         <Button
+                            v-if="page.permissions.can_create"
                             as-child
                             size="lg"
                             variant="outline"
@@ -732,9 +770,14 @@ const rowClass =
                     <EmptyState
                         v-else
                         :title="t('group.lists.empty.title')"
-                        :text="t('group.lists.empty.text')"
+                        :text="
+                            page.permissions.can_create
+                                ? t('group.lists.empty.text')
+                                : undefined
+                        "
                     >
                         <Button
+                            v-if="page.permissions.can_create"
                             as-child
                             size="lg"
                             variant="outline"
@@ -755,6 +798,7 @@ const rowClass =
             </div>
 
             <aside
+                v-if="!page.is_guest"
                 class="flex min-w-0 flex-col gap-5 min-[960px]:sticky min-[960px]:top-[calc(64px+24px+env(safe-area-inset-top,0px))]"
                 aria-labelledby="members-title"
             >

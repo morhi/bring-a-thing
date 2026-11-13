@@ -149,6 +149,23 @@ function shortDate(date: string): string {
     });
 }
 
+// Guests see no member count; the rest is limited to what they reach (F-26, F-27)
+function groupCounts(
+    group: App.Data.DashboardGroupData,
+): { value: number; label: string }[] {
+    const counts = [
+        { value: group.open_poll_count, label: 'word.openPolls' },
+        { value: group.upcoming_event_count, label: 'word.upcoming' },
+        { value: group.active_list_count, label: 'word.activeLists' },
+    ];
+
+    if (group.member_count === null) {
+        return counts;
+    }
+
+    return [{ value: group.member_count, label: 'word.members' }, ...counts];
+}
+
 function weekdayDate(date: string): string {
     return formatDate(date, locale.value, {
         weekday: 'short',
@@ -598,34 +615,31 @@ function acceptedPeople(
                                     >{{ group.name }}</span
                                 >
                                 <Badge
-                                    v-if="group.role !== 'member'"
+                                    v-if="group.is_guest"
+                                    class="bg-info-soft text-info"
+                                    data-feature="F-26"
+                                    >{{ t('group.guest') }}</Badge
+                                >
+                                <Badge
+                                    v-else-if="
+                                        group.role && group.role !== 'member'
+                                    "
                                     variant="outline"
                                     >{{ t(roleLabel[group.role]) }}</Badge
                                 >
                             </span>
+                            <!-- Every card lists its counts in the same order, so the cards read alike -->
                             <span
                                 class="text-fg-muted flex flex-wrap gap-x-4 gap-y-1 text-sm"
                             >
                                 <span
+                                    v-for="count in groupCounts(group)"
+                                    :key="count.label"
                                     ><b
                                         class="text-fg font-semibold tabular-nums"
-                                        >{{ group.member_count }}</b
+                                        >{{ count.value }}</b
                                     >
-                                    {{ t('word.members') }}</span
-                                >
-                                <span v-if="group.open_poll_count"
-                                    ><b
-                                        class="text-fg font-semibold tabular-nums"
-                                        >{{ group.open_poll_count }}</b
-                                    >
-                                    {{ t('word.openPolls') }}</span
-                                >
-                                <span v-if="group.upcoming_event_count"
-                                    ><b
-                                        class="text-fg font-semibold tabular-nums"
-                                        >{{ group.upcoming_event_count }}</b
-                                    >
-                                    {{ t('word.upcoming') }}</span
+                                    {{ t(count.label) }}</span
                                 >
                             </span>
                         </SectionBoxItem>
@@ -646,28 +660,12 @@ function acceptedPeople(
                                     t('dash.withoutGroup.text')
                                 }}</span>
                             </span>
-                            <span
-                                class="text-fg-muted flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums"
-                            >
-                                <span v-if="withoutGroup.events_count">{{
-                                    tc(
-                                        'dash.withoutGroup.events',
-                                        withoutGroup.events_count,
-                                    )
-                                }}</span>
-                                <span v-if="withoutGroup.polls_count">{{
-                                    tc(
-                                        'dash.withoutGroup.polls',
-                                        withoutGroup.polls_count,
-                                    )
-                                }}</span>
-                                <span v-if="withoutGroup.lists_count">{{
-                                    tc(
-                                        'dash.withoutGroup.lists',
-                                        withoutGroup.lists_count,
-                                    )
-                                }}</span>
-                            </span>
+                            <span class="text-fg-muted text-sm tabular-nums">{{
+                                tc(
+                                    'dash.withoutGroup.lists',
+                                    withoutGroup.lists_count,
+                                )
+                            }}</span>
                         </SectionBoxItem>
                     </li>
                 </ul>
