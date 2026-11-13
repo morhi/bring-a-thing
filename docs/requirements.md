@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.16
+- **Version:** 1.17
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -374,13 +374,23 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** See at a glance where one needs to respond or get something done.
 
 **Rules:**
-- The dashboard shows "Waiting for you" at the top: open polls without a complete response and events with the status "pending".
-- Below, it shows upcoming events with one's own acceptance, one's own claims on upcoming lists, groups and standalone lists.
+- The dashboard shows these sections in this order:
+  1. "Waiting for you": open polls without a complete response and events with the status "pending". When nothing waits, the section shrinks to one slim line.
+  2. "Übernahmen": one's own claims (things and tasks) on upcoming lists. The section is collapsible.
+  3. Upcoming events: full width, compact rows, with one's own acceptance.
+  4. Current polls: open polls the person may see, each with the own status "answered", "partly answered" or "not answered".
+  5. Lists: active lists the person may open, plus a link "All lists" (F-28). Past lists are missing; event lists show only while the event is not past.
+  6. Groups: the person's own groups plus the virtual group "Without groups" (F-29).
+- Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
 
 **Acceptance criteria:**
-- An open poll in which a person answered two of five options appears under "Waiting for you".
+- An open poll in which a person answered two of five options appears under "Waiting for you" and, with the status "partly answered", under the current polls.
 - After accepting, the event disappears from "Waiting for you" and appears under the upcoming events.
+- With nothing waiting, "Waiting for you" shows one slim line.
+- A child event and a follow-up poll with a complete response have no dashboard row.
+- A list of a past event is missing from the lists section.
+- Collapsing "Übernahmen" hides the claims; they show again after expanding.
 
 #### F-23 Notifications (Secondary)
 
@@ -440,7 +450,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The link is always open. A logged-in account joins with one click. A guest joins with a name only, or with an email (plus a name for a new account) and a login link. The join page warns that a name-only account loses access at logout.
 - Joining grants access to the event, its child events, its follow-up polls and its lists, without group membership. Follow-up polls and lists follow the participation rules of F-11 to F-13 as for members.
 - A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, and never see the group page.
-- The event shows link guests among its participants. Their events and polls appear on their dashboard (F-22) and in search (F-25).
+- The event shows link guests among its participants. Their events and polls appear in the group "Without groups" (F-29), in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
 
 **Acceptance criteria:**
 - A member without the manager role cannot create, regenerate or revoke the link.
@@ -458,14 +468,45 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Organizer, owner and admins of a poll create, regenerate and revoke one invite link per poll, as in F-26.
 - Joining follows F-26: one click when logged in, otherwise name only or email with a login link.
-- Joining grants access to the poll and to the events fixed from it (F-09), including their lists by the rules of F-13. A link guest belongs to the poll's respondents and counts in totals and the best option.
+- Joining grants access to the poll, to the events fixed from it (F-09) and their child events, and to follow-up polls and lists under the same participation rules as in F-26 (F-11 to F-13). A link guest belongs to the poll's respondents and counts in totals and the best option.
 - A link guest answers the poll but never edits, closes or fixes it, and never sees the group page.
 
 **Acceptance criteria:**
 - A logged-in account without group membership answers the poll right after joining through the link.
 - A link guest opens an event fixed from the poll, but no other event of the group.
 - A revoked link shows "Not found".
-- The poll and its fixed events appear on the link guest's dashboard and in search.
+- A link guest opens a child event of a fixed event, and after accepting the fixed event its follow-up polls and lists.
+- The poll and its fixed events appear in the group "Without groups" (F-29) and in search.
+
+#### F-28 All lists (Secondary)
+
+**User goal:** Find any list one may open, also past ones, in one place.
+
+**Rules:**
+- The page "All lists", reached from the dashboard link (F-22), shows a table of all lists the person may open by the rules of F-13, active and past.
+- Filters: "My lists only" (the person owns the list or has a claim on it), "Tasks only", and a switch between active and all lists. The default is active.
+- Lists the person may not open never appear.
+
+**Acceptance criteria:**
+- A past list appears only after switching to "all".
+- "My lists only" hides a list that the person neither owns nor has a claim on.
+- "Tasks only" hides a list without tasks.
+- A list of a group the person is not a member of never appears.
+
+#### F-29 Without groups (Secondary)
+
+**User goal:** Reach content that belongs to no group of one's own.
+
+**Rules:**
+- The dashboard shows the virtual group "Without groups" as a card in the groups section (F-22). It appears nowhere else: not in group pickers, and polls and events without a group still do not exist.
+- Its page lists the events and polls reached through invite links (F-26, F-27) and the person's own lists without a group.
+- Hidden items stay "Not found".
+
+**Acceptance criteria:**
+- After joining an event through its link, the event appears on the page "Without groups".
+- A list of the person without a group appears there; a list of another person does not.
+- The group pickers when creating a poll, event or list do not offer "Without groups".
+- Opening an item of a revoked or unreached link shows "Not found".
 
 ## 6. Structure
 
@@ -474,6 +515,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Pages:**
 - **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
 - **Dashboard:** F-22, actions "New group" and "New list".
+- **All lists:** table of all lists the person may open, with filters (F-28).
+- **Without groups:** virtual group page with link-reached events and polls and own lists without group (F-29).
 - **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list".
 - **Group settings:** name, invite link, option, roles, delete (F-03, F-04).
@@ -522,7 +565,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 ## 8. States and edge cases
 
 - **No groups and lists:** the dashboard explains both entry points and offers "New group" and "New list".
-- **Nothing waiting:** "Waiting for you" shows "All caught up." instead of an empty area.
+- **Nothing waiting:** "Waiting for you" shrinks to one slim line "All caught up." instead of an empty area.
 - **Group without other members:** the group shows the invite form prominently.
 - **Empty list:** shows the action "Add first item" or, without the right to add, a note that the owner has not added anything yet.
 - **Everything claimed:** the list shows "All taken".
