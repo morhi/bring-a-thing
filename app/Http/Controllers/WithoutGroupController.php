@@ -10,7 +10,7 @@ use Inertia\Response;
 class WithoutGroupController extends Controller
 {
     /**
-     * Show the virtual group "Without groups" (F-29): grant-reached events and polls and groupless lists.
+     * Show the virtual group "Without groups" (F-29): the person's own groupless lists.
      */
     public function __invoke(Request $request): Response
     {

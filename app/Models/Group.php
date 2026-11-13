@@ -9,6 +9,8 @@ use Carbon\CarbonInterface;
 use Database\Factories\GroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -112,6 +114,20 @@ class Group extends Model
     public function hasMember(User $user): bool
     {
         return $this->members()->whereKey($user->getKey())->exists();
+    }
+
+    /**
+     * Limit the query to groups holding an event or poll the user reaches through a grant (F-22, F-26, F-27).
+     *
+     * Lists need no branch of their own: a guest only reaches the lists of
+     * events reached this way.
+     */
+    #[Scope]
+    protected function reachableThroughGrants(Builder $query, User $user): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->whereHas('events', fn (Builder $event) => $event->reachableThroughGrants($user))
+            ->orWhereHas('polls', fn (Builder $poll) => $poll->reachableThroughGrants($user)));
     }
 
     /**

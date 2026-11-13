@@ -61,10 +61,19 @@ class GroupController extends Controller
 
     /**
      * Show the group: members with invite, polls, events and group lists.
+     *
+     * A link guest gets the restricted page with only the items a grant
+     * reaches (F-26, F-27); membership wins over a grant.
      */
     public function show(Request $request, Group $group): Response
     {
         $this->authorize('view', $group);
+
+        if (! $group->hasMember($request->user())) {
+            return Inertia::render('Groups/Show', [
+                'page' => GroupShowData::forGuest($group, $request->user()),
+            ]);
+        }
 
         return Inertia::render('Groups/Show', [
             'page' => GroupShowData::forUser($group, $request->user()),

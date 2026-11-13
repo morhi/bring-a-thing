@@ -167,7 +167,7 @@ it('F-27: a logged-in account joins a poll with one click and may answer it but 
         ->assertInertia(fn (Assert $page) => $page
             ->where('page.permissions.can_respond', true)
             ->where('page.permissions.can_edit', false)
-            ->where('page.permissions.can_view_group', false)
+            ->where('page.permissions.can_view_group', true)
             ->where('page.audience_count', 3));
     $this->actingAs($outsider)->post(route('polls.responses.store', [$poll, $option]), ['status' => 'yes'])->assertRedirect();
     expect($option->responses()->where('user_id', $outsider->id)->exists())->toBeTrue();
@@ -193,7 +193,7 @@ it('F-26: a guest with an event grant may respond and comment but not edit the e
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page
             ->where('page.permissions.can_edit', false)
-            ->where('page.permissions.can_view_group', false)
+            ->where('page.permissions.can_view_group', true)
             ->where('page.permissions.can_create_sub_event', false));
 });
 
@@ -232,7 +232,6 @@ it('F-26: an event grant covers child events, accepted follow-up polls and lists
     $this->actingAs($guest)->get(route('rosters.show', $list))->assertOk();
     $this->actingAs($guest)->get(route('events.show', $sibling))->assertNotFound();
     $this->actingAs($guest)->get(route('polls.show', $groupPoll))->assertNotFound();
-    $this->actingAs($guest)->get(route('groups.show', $group))->assertForbidden();
     expect($followUp->fresh()->audience()->pluck('id'))->toContain($guest->id);
 });
 
@@ -294,7 +293,9 @@ it('F-26: events and polls reached through a grant appear on the dashboard and i
         ->has('waiting', 2)
         ->where('waiting.0.slug', $poll->slug)
         ->where('waiting.1.slug', $event->slug)
-        ->has('groups', 0));
+        ->has('groups', 1)
+        ->where('groups.0.slug', $group->slug)
+        ->where('groups.0.is_guest', true));
 
     $response = $this->actingAs($guest)->getJson(route('search', ['q' => 'picnic']))->assertOk();
     $titles = collect($response->json('sections'))->mapWithKeys(fn (array $section) => [$section['type'] => collect($section['results'])->pluck('title')->all()])->all();

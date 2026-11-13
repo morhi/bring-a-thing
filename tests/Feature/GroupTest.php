@@ -40,7 +40,7 @@ it('allows a member to view the group', function () {
     $response->assertOk();
 });
 
-it('forbids a non-member from viewing the group', function () {
+it('shows "Not found" to a non-member without access to any item of the group', function () {
     $owner = User::factory()->create();
     $outsider = User::factory()->create();
     $group = Group::factory()->create(['owner_id' => $owner->id]);
@@ -48,7 +48,7 @@ it('forbids a non-member from viewing the group', function () {
 
     $response = $this->actingAs($outsider)->get(route('groups.show', $group));
 
-    $response->assertForbidden();
+    $response->assertNotFound();
 });
 
 it('allows the owner to update the group', function () {

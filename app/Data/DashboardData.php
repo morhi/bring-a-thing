@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Enums\ParticipationStatus;
 use App\Models\Event;
+use App\Models\Group;
 use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\RosterItemClaim;
@@ -38,8 +39,9 @@ class DashboardData extends Data
      *
      * Everything is scoped to the person's groups and visibility rules, and
      * each part loads its relations up front, so the query count does not
-     * grow with the data. Past events and lists are left out. The virtual
-     * group "Without groups" only shows when it has content (F-29).
+     * grow with the data. Past events and lists are left out. Groups hold
+     * member groups and guest groups by name; the virtual group "Without
+     * groups" only shows with an own groupless list (F-29).
      */
     public static function forUser(User $user): self
     {
@@ -49,9 +51,10 @@ class DashboardData extends Data
                 'polls as open_polls_count' => fn (Builder $query) => $query->whereNull('closed_at')->visibleTo($user),
                 'events as upcoming_events_count' => fn (Builder $query) => $query->upcoming(),
             ])
-            ->orderBy('groups.name')
             ->get();
         $groupIds = $groups->modelKeys();
+        $guestGroups = self::guestGroups($user, $groupIds);
+        $listCounts = self::activeListCounts($user, $groupIds, $guestGroups->modelKeys());
 
         $openPolls = self::openPolls($user);
         $waiting = [
@@ -63,7 +66,12 @@ class DashboardData extends Data
         // Follow-up polls get no row of their own; they live on their event page.
         $polls = $openPolls->whereNull('event_id')->map(fn (Poll $poll) => DashboardPollData::fromPoll($poll))->values()->all();
         $lists = self::activeLists($user)->map(fn (Roster $roster) => DashboardListData::fromRoster($roster))->all();
-        $groupCards = $groups->map(fn ($group) => DashboardGroupData::fromGroup($group))->all();
+        $groupCards = $groups->toBase()
+            ->map(fn (Group $group) => DashboardGroupData::fromGroup($group, $listCounts->get($group->getKey(), 0)))
+            ->concat($guestGroups->map(fn (Group $group) => DashboardGroupData::forGuest($group, $listCounts->get($group->getKey(), 0))))
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
 
         return new self(
             waiting: $waiting,
@@ -74,6 +82,57 @@ class DashboardData extends Data
             groups: $groupCards,
             withoutGroup: WithoutGroupData::countsFor($user),
         );
+    }
+
+    /**
+     * The groups the person reaches only through invite links, with their counts (F-22, F-26, F-27).
+     *
+     * Member groups are left out, so membership wins over a grant inside
+     * the group. Poll and event counts only cover items a grant reaches.
+     *
+     * @param  array<int, int>  $memberGroupIds
+     * @return \Illuminate\Database\Eloquent\Collection<int, Group>
+     */
+    private static function guestGroups(User $user, array $memberGroupIds)
+    {
+        return Group::query()
+            ->whereKeyNot($memberGroupIds)
+            ->reachableThroughGrants($user)
+            ->withCount([
+                'polls as open_polls_count' => fn (Builder $query) => $query->whereNull('closed_at')->reachableThroughGrants($user),
+                'events as upcoming_events_count' => fn (Builder $query) => $query->upcoming()->reachableThroughGrants($user),
+            ])
+            ->get();
+    }
+
+    /**
+     * The number of active lists per group card that the person may open (F-13, F-22).
+     *
+     * A group's lists are its group lists and the lists of its events, since
+     * event lists carry no group of their own. Member and guest cards count
+     * the same way, so a list keeps its count when a guest joins; a guest
+     * only reaches the lists of events a grant opens.
+     *
+     * @param  array<int, int>  $memberGroupIds
+     * @param  array<int, int>  $guestGroupIds
+     * @return Collection<int, int>
+     */
+    private static function activeListCounts(User $user, array $memberGroupIds, array $guestGroupIds): Collection
+    {
+        if ($memberGroupIds === [] && $guestGroupIds === []) {
+            return collect();
+        }
+
+        return Roster::query()
+            ->active()
+            ->visibleTo($user)
+            ->where(fn (Builder $query) => $query
+                ->whereIn('group_id', $memberGroupIds)
+                ->orWhereIn('event_id', Event::query()->select('id')->whereIn('group_id', $memberGroupIds))
+                ->orWhereIn('event_id', Event::query()->select('id')->whereIn('group_id', $guestGroupIds)->reachableThroughGrants($user)))
+            ->addSelect(['event_group_id' => Event::query()->select('group_id')->whereColumn('events.id', 'rosters.event_id')])
+            ->get()
+            ->countBy(fn (Roster $roster) => $roster->group_id ?? $roster->event_group_id);
     }
 
     /**

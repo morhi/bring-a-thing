@@ -18,10 +18,22 @@ class GroupPolicy
 
     /**
      * Determine whether the user can view the group.
+     *
+     * Members see the full page; a link guest sees the restricted page
+     * while a grant reaches one of its events or polls (F-26, F-27).
+     * Anyone else sees "Not found" (section 8), so the group stays hidden.
      */
-    public function view(User $user, Group $group): bool
+    public function view(User $user, Group $group): Response
     {
-        return $group->members()->whereKey($user->getKey())->exists();
+        if ($group->hasMember($user)) {
+            return Response::allow();
+        }
+
+        if (Group::query()->whereKey($group->getKey())->reachableThroughGrants($user)->exists()) {
+            return Response::allow();
+        }
+
+        return Response::denyAsNotFound();
     }
 
     /**

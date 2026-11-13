@@ -197,10 +197,7 @@ class Poll extends Model
 
         $this->loadMissing('group.members');
 
-        $direct = User::query()
-            ->whereHas('accessGrants', fn (Builder $grant) => $grant->where('accessible_type', 'poll')->where('accessible_id', $this->getKey()))
-            ->orderBy('id')
-            ->get();
+        $direct = $this->holdersOf([['poll', $this->getKey()]]);
         $throughEvent = $this->event_id === null
             ? new EloquentCollection
             : $this->event->guests()->filter(fn (User $guest) => $this->event->admitsToFollowUpPolls($guest));

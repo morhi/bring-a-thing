@@ -8,11 +8,14 @@ use App\Models\Group;
 use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\LaravelData\Data;
 
 class GroupShowData extends Data
 {
+    private const array POLL_RELATIONS = ['event.participations', 'event.originPollOption', 'event.parentEvent.originPollOption', 'options.responses', 'options.event'];
+
     /**
      * @param  array<int, GroupMemberData>  $members
      * @param  array<int, GroupPollData>  $polls
@@ -23,7 +26,8 @@ class GroupShowData extends Data
     public function __construct(
         public string $slug,
         public string $name,
-        public GroupRole $own_role,
+        public bool $is_guest,
+        public ?GroupRole $own_role,
         public array $members,
         public array $polls,
         public array $events,
@@ -46,35 +50,97 @@ class GroupShowData extends Data
     {
         $group->load([
             'members',
-            'polls' => fn (HasMany $polls) => $polls->visibleTo($user)->with('event.participations', 'options.responses', 'options.event')->latest(),
+            'polls' => fn (HasMany $polls) => $polls->visibleTo($user)->with(self::POLL_RELATIONS)->latest(),
             'events' => fn (HasMany $events) => $events->with('participations'),
             'rosters' => fn (HasMany $rosters) => $rosters->whereNull('event_id')->with('items.claims')->latest(),
         ]);
-
-        $polls = $group->polls
-            ->each(fn (Poll $poll) => $poll->setRelation('group', $group))
-            ->sortBy(fn (Poll $poll) => $poll->isClosed() ? 1 : 0)
-            ->map(fn (Poll $poll) => GroupPollData::fromPoll($poll));
-
-        [$past, $upcoming] = $group->events->partition(fn (Event $event) => $event->isPast());
-        $startOf = fn (Event $event) => $event->date->format('Y-m-d').' '.($event->starts_at ?? '00:00');
-        $events = $upcoming->sortBy($startOf)
-            ->concat($past->sortByDesc($startOf))
-            ->map(fn (Event $event) => GroupEventData::forUser($event, $user));
 
         $canInvite = $user->can('invite', $group);
 
         return new self(
             slug: $group->slug,
             name: $group->name,
+            is_guest: false,
             own_role: $group->members->firstWhere('id', $user->getKey())->pivot->role,
             members: GroupMemberData::listOf($group->members, $user),
-            polls: $polls->values()->all(),
-            events: $events->values()->all(),
+            polls: self::pollRows($group, $group->polls),
+            events: self::eventRows($group->events, $user),
             lists: $group->rosters->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all(),
             permissions: GroupPermissionsData::forUser($group, $user),
             invite_link: $user->can('manageInviteLink', $group) ? GroupInviteLinkData::fromGroup($group) : null,
             friends: $canInvite ? InviteFriendData::listFor($user) : [],
         );
+    }
+
+    /**
+     * Build the restricted group page for a link guest (F-26, F-27).
+     *
+     * Holds only the polls and events a grant reaches and the lists of
+     * those events by the participation rules of F-13. Members, settings,
+     * invite link, friends and create actions stay out of the props, so a
+     * hidden item or person never reaches the browser. The members are
+     * still loaded, since poll counts need the audience.
+     */
+    public static function forGuest(Group $group, User $user): self
+    {
+        $group->load('members');
+        $polls = Poll::query()->whereBelongsTo($group)->reachableThroughGrants($user)->with(self::POLL_RELATIONS)->latest()->get();
+        $events = Event::query()->whereBelongsTo($group)->reachableThroughGrants($user)->with('participations')->get();
+        $lists = Roster::query()->whereIn('event_id', $events->modelKeys())->visibleTo($user)->with('items.claims')->latest()->get();
+
+        return new self(
+            slug: $group->slug,
+            name: $group->name,
+            is_guest: true,
+            own_role: null,
+            members: [],
+            polls: self::pollRows($group, $polls),
+            events: self::eventRows($events, $user),
+            lists: $lists->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all(),
+            permissions: GroupPermissionsData::forGuest(),
+            invite_link: null,
+            friends: [],
+        );
+    }
+
+    /**
+     * Order the poll rows: open first, newest first within each part.
+     *
+     * The audience of every poll needs its guests, so the grants of all
+     * polls and their source events load in one query.
+     *
+     * @param  Collection<int, Poll>  $polls
+     * @return array<int, GroupPollData>
+     */
+    private static function pollRows(Group $group, Collection $polls): array
+    {
+        $polls->each(fn (Poll $poll) => $poll->setRelation('group', $group)->event?->setRelation('group', $group));
+        $sourceEvents = $polls->pluck('event')->filter();
+        Poll::preloadGrantHolders($polls);
+        Event::preloadGrantHolders($sourceEvents);
+
+        return $polls
+            ->sortBy(fn (Poll $poll) => $poll->isClosed() ? 1 : 0)
+            ->map(fn (Poll $poll) => GroupPollData::fromPoll($poll))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Order the event rows: upcoming by start, then past with the most recent first.
+     *
+     * @param  Collection<int, Event>  $events
+     * @return array<int, GroupEventData>
+     */
+    private static function eventRows(Collection $events, User $user): array
+    {
+        [$past, $upcoming] = $events->partition(fn (Event $event) => $event->isPast());
+        $startOf = fn (Event $event) => $event->date->format('Y-m-d').' '.($event->starts_at ?? '00:00');
+
+        return $upcoming->sortBy($startOf)
+            ->concat($past->sortByDesc($startOf))
+            ->map(fn (Event $event) => GroupEventData::forUser($event, $user))
+            ->values()
+            ->all();
     }
 }

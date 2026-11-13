@@ -32,8 +32,8 @@ class EventPermissionsData extends Data
      * shows the comment thread to participants and managers (F-20).
      * can_create_list follows the list policy: participants and managers (F-13).
      * can_manage_invite_link shows the invite link card to managers (F-26).
-     * can_view_group is false for guests who reach the event through a
-     * grant, so the page hides links to the group (F-26, F-27).
+     * can_view_group is also true for guests who reach the event through a
+     * grant; they open the restricted group page (F-26, F-27).
      */
     public static function forUser(Event $event, User $user): self
     {

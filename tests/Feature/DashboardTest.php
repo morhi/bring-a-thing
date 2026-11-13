@@ -336,41 +336,182 @@ it('F-22: lists includes the list of an event the guest reaches through a grant'
     $this->actingAs($bystander)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->has('lists', 0));
 });
 
-it('F-22: withoutGroup carries counts of grant-reached events, polls and groupless lists', function (int $events, int $polls, int $lists) {
-    $guest = User::factory()->create();
-    [$group, $owner] = dashboardGroup();
+/**
+ * Collect the group cards of the user's dashboard, keyed by slug.
+ *
+ * @return Collection<string, array<string, mixed>>
+ */
+function dashboardCards(User $user): Collection
+{
+    return collect(test()->actingAs($user)->get(route('dashboard'))->assertOk()->inertiaProps('groups'))->keyBy('slug');
+}
 
-    Collection::times($events, fn () => grantOn(dashboardEvent($group, $owner), $guest));
-    Collection::times($polls, fn () => grantOn(dashboardPoll($group, $owner, 1), $guest));
-    Collection::times($lists, fn () => dashboardList($guest));
+/**
+ * Reduce a guest card to its three counts.
+ *
+ * @param  array<string, mixed>  $card
+ * @return array{polls: int, events: int, lists: int}
+ */
+function guestCounts(array $card): array
+{
+    return ['polls' => $card['open_poll_count'], 'events' => $card['upcoming_event_count'], 'lists' => $card['active_list_count']];
+}
+
+it('F-22: a person holding a grant shows the group as a guest group', function (Closure $grant) {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    $grant($group, $owner, $guest);
 
     $this->actingAs($guest)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
-        ->where('withoutGroup', ['events_count' => $events, 'polls_count' => $polls, 'lists_count' => $lists])
-        ->has('groups', 0));
+        ->has('groups', 1)
+        ->where('groups.0.slug', $group->slug)
+        ->where('groups.0.name', $group->name)
+        ->where('groups.0.is_guest', true)
+        ->where('groups.0.role', null)
+        ->where('groups.0.member_count', null));
 })->with([
-    'only an event grant' => [1, 0, 0],
-    'only a poll grant' => [0, 1, 0],
-    'only an own groupless list' => [0, 0, 1],
-    'all three, two events' => [2, 1, 1],
+    'event link' => [fn ($group, User $owner, User $guest) => grantOn(dashboardEvent($group, $owner), $guest)],
+    'poll link' => [fn ($group, User $owner, User $guest) => grantOn(dashboardPoll($group, $owner, 1), $guest)],
 ]);
 
-it('F-22: withoutGroup does not count items of the person\'s own groups', function (bool $foreignGrant, ?array $expected) {
-    [$group, $owner, $member] = dashboardGroup();
-    grantOn(dashboardEvent($group, $owner), $member);
-    grantOn(dashboardPoll($group, $owner, 1), $member);
-    dashboardList($member, ['group_id' => $group->id]);
+it('F-22: a guest group counts only accessible items', function () {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    grantOn(dashboardEvent($group, $owner), $guest);
+    dashboardEvent($group, $owner);
+    dashboardPoll($group, $owner, 1);
+    dashboardList($owner, ['group_id' => $group->id]);
 
-    if ($foreignGrant) {
-        [$otherGroup, $otherOwner] = dashboardGroup();
-        grantOn(dashboardEvent($otherGroup, $otherOwner), $member);
-    }
+    expect(guestCounts(dashboardCards($guest)[$group->slug]))->toBe(['polls' => 0, 'events' => 1, 'lists' => 0]);
+});
 
-    $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
-        ->where('withoutGroup', $expected)
-        ->has('groups', 1));
+it('F-22: guest counts follow the access rules of each item type', function (Closure $setup, array $expected) {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    $setup($group, $owner, $guest);
+
+    expect(guestCounts(dashboardCards($guest)[$group->slug]))->toBe($expected);
 })->with([
-    'only own group items' => [false, null],
-    'plus a foreign event grant' => [true, ['events_count' => 1, 'polls_count' => 0, 'lists_count' => 0]],
+    'follow-up poll, source event accepted' => [function ($group, User $owner, User $guest) {
+        $event = dashboardEvent($group, $owner, $guest, ParticipationStatus::Accepted);
+        grantOn($event, $guest);
+        dashboardPoll($group, $owner, 1, null, 0, ['event_id' => $event->id]);
+    }, ['polls' => 1, 'events' => 1, 'lists' => 0]],
+    'follow-up poll, source event pending' => [function ($group, User $owner, User $guest) {
+        $event = dashboardEvent($group, $owner, $guest, ParticipationStatus::Pending);
+        grantOn($event, $guest);
+        dashboardPoll($group, $owner, 1, null, 0, ['event_id' => $event->id]);
+    }, ['polls' => 0, 'events' => 1, 'lists' => 0]],
+    'list of the granted event, accepted' => [function ($group, User $owner, User $guest) {
+        $event = dashboardEvent($group, $owner, $guest, ParticipationStatus::Accepted);
+        grantOn($event, $guest);
+        dashboardList($owner, ['event_id' => $event->id]);
+    }, ['polls' => 0, 'events' => 1, 'lists' => 1]],
+    'list of the granted event, no participation' => [function ($group, User $owner, User $guest) {
+        $event = dashboardEvent($group, $owner);
+        grantOn($event, $guest);
+        dashboardList($owner, ['event_id' => $event->id]);
+    }, ['polls' => 0, 'events' => 1, 'lists' => 0]],
+    'closed poll under a poll grant' => [fn ($group, User $owner, User $guest) => grantOn(dashboardPoll($group, $owner, 1, null, 0, ['closed_at' => now()]), $guest),
+        ['polls' => 0, 'events' => 0, 'lists' => 0]],
+    'past event under an event grant' => [fn ($group, User $owner, User $guest) => grantOn(dashboardEvent($group, $owner, null, null, ['date' => now()->subWeek()->format('Y-m-d')]), $guest),
+        ['polls' => 0, 'events' => 0, 'lists' => 0]],
+]);
+
+it('F-22: several grants in one group give one card and count items once', function () {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    $event = dashboardEvent($group, $owner);
+    $poll = dashboardPoll($group, $owner, 1);
+    $fixed = dashboardEvent($group, $owner, null, null, ['origin_poll_option_id' => $poll->options()->first()->id]);
+    dashboardEvent($group, $owner, null, null, ['parent_event_id' => $event->id]);
+    grantOn($event, $guest);
+    grantOn($poll, $guest);
+    grantOn($fixed, $guest);
+
+    $cards = dashboardCards($guest);
+
+    expect($cards)->toHaveCount(1)
+        ->and(guestCounts($cards[$group->slug]))->toBe(['polls' => 1, 'events' => 3, 'lists' => 0]);
+});
+
+it('F-22: a member group stays a member group, also with a grant inside it', function () {
+    [$memberGroup, $memberOwner, $person] = dashboardGroup();
+    grantOn(dashboardEvent($memberGroup, $memberOwner), $person);
+    [$guestGroup, $guestOwner] = dashboardGroup();
+    grantOn(dashboardEvent($guestGroup, $guestOwner), $person);
+
+    $cards = dashboardCards($person);
+
+    expect($cards)->toHaveCount(2)
+        ->and($cards[$memberGroup->slug])->toMatchArray(['is_guest' => false, 'role' => 'member', 'member_count' => 2])
+        ->and($cards[$guestGroup->slug]['is_guest'])->toBeTrue();
+});
+
+it('F-22: the list count covers group and event lists the same way for members and guests', function () {
+    [$group, $owner, $member] = dashboardGroup();
+    dashboardList($owner, ['group_id' => $group->id]);
+    dashboardList($owner, ['group_id' => $group->id, 'date' => now()->subWeek()->format('Y-m-d')]);
+    $event = dashboardEvent($group, $owner, $member, ParticipationStatus::Accepted);
+    dashboardList($owner, ['event_id' => $event->id]);
+    $guest = User::factory()->create();
+    grantOn($event, $guest);
+    EventParticipation::factory()->create(['event_id' => $event->id, 'user_id' => $guest->id, 'status' => ParticipationStatus::Accepted]);
+
+    expect(dashboardCards($member)[$group->slug]['active_list_count'])->toBe(2)
+        ->and(dashboardCards($guest)[$group->slug]['active_list_count'])->toBe(1);
+
+    $group->addMember($guest, GroupRole::Member, now());
+
+    expect(dashboardCards($guest)[$group->slug]['active_list_count'])->toBe(2);
+});
+
+it('F-22: after the person becomes a member the guest mark is gone', function () {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    grantOn(dashboardEvent($group, $owner), $guest);
+
+    expect(dashboardCards($guest)[$group->slug]['is_guest'])->toBeTrue();
+
+    $group->addMember($guest, GroupRole::Member, now());
+    $cards = dashboardCards($guest);
+
+    expect($cards)->toHaveCount(1)
+        ->and($cards[$group->slug])->toMatchArray(['is_guest' => false, 'role' => 'member', 'member_count' => 3]);
+});
+
+it('F-22: a revoked grant or a grant of another person gives no guest group', function (Closure $setup) {
+    [$group, $owner] = dashboardGroup();
+    $person = User::factory()->create();
+    $setup(dashboardEvent($group, $owner), $person);
+
+    $this->actingAs($person)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->has('groups', 0));
+})->with([
+    'grant deleted after creation' => [function ($event, User $person) {
+        grantOn($event, $person);
+        $event->accessGrants()->where('user_id', $person->id)->delete();
+    }],
+    'grant held by another user' => [fn ($event) => grantOn($event, User::factory()->create())],
+]);
+
+it('F-22: the card "Without groups" depends on own groupless lists only', function (Closure $setup, ?array $expected) {
+    [$group, $owner] = dashboardGroup();
+    $person = User::factory()->create();
+    $setup($group, $owner, $person);
+
+    $this->actingAs($person)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->where('withoutGroup', $expected));
+})->with([
+    'own groupless list only' => [fn ($group, User $owner, User $person) => dashboardList($person), ['lists_count' => 1]],
+    'grants only' => [function ($group, User $owner, User $person) {
+        grantOn(dashboardEvent($group, $owner), $person);
+        grantOn(dashboardPoll($group, $owner, 1), $person);
+    }, null],
+    'own list plus grants' => [function ($group, User $owner, User $person) {
+        dashboardList($person);
+        grantOn(dashboardEvent($group, $owner), $person);
+        grantOn(dashboardPoll($group, $owner, 1), $person);
+    }, ['lists_count' => 1]],
+    'foreign groupless list with only a claim' => [fn ($group, User $owner, User $person) => dashboardList($owner, [], $person), null],
 ]);
 
 it('F-22: the dashboard needs no additional queries for more groups, polls, events, claims and lists', function () {
