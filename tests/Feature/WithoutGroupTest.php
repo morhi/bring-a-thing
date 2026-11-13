@@ -7,9 +7,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
-// The Vue page comes with the frontend task; until then it is missing from the Vite manifest.
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Collect the slugs per section of the page "Without groups" for the user.
  *
@@ -30,6 +27,7 @@ it('F-29: a guest is sent to the login', function () {
 
 it('F-29: a person without grants sees the empty state', function () {
     $this->actingAs(User::factory()->create())->get(route('without-group.show'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('WithoutGroup/Show')
         ->has('events', 0)
         ->has('polls', 0)
         ->has('lists', 0));

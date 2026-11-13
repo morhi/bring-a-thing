@@ -116,16 +116,14 @@ it('F-22: a person without groups and lists gets an empty dashboard with both en
     $this->actingAs($user)->get(route('dashboard'))
         ->assertInertia(fn (Assert $page) => $page
             ->has('groups', 0)
-            ->has('lists', 0)
-            ->where('counts.groups', 0)
-            ->where('counts.lists', 0));
+            ->has('lists', 0));
 });
 
-it('F-22: nothing waiting gives an empty "Waiting for you" so the page can show "All caught up."', function () {
+it('F-22: nothing waiting gives an empty "Waiting for you" so the page can show the slim empty line', function () {
     [, , , $member] = criteriaGroup();
 
     $this->actingAs($member)->get(route('dashboard'))
-        ->assertInertia(fn (Assert $page) => $page->has('waiting', 0)->where('counts.waiting', 0)->has('groups', 1));
+        ->assertInertia(fn (Assert $page) => $page->has('waiting', 0)->has('groups', 1));
 });
 
 it('F-04: a group without other members offers the owner the invite form', function () {

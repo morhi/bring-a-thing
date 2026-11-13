@@ -18,7 +18,6 @@ class DashboardEventData extends Data
         public string $date,
         public ?string $starts_at,
         public ?string $location,
-        public bool $is_fixed_from_poll,
         public int $accepted_count,
         public array $accepted_names,
     ) {}
@@ -39,7 +38,6 @@ class DashboardEventData extends Data
             date: $event->date->format('Y-m-d'),
             starts_at: EventSummaryData::time($event->starts_at),
             location: $event->location,
-            is_fixed_from_poll: $event->origin_poll_option_id !== null,
             accepted_count: $event->participations->count(),
             accepted_names: $event->participations->take(5)->map(fn ($participation) => (string) $participation->user?->name)->values()->all(),
         );

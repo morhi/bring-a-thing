@@ -8,9 +8,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
-// The Vue page comes with the frontend task; until then it is missing from the Vite manifest.
-beforeEach(fn () => $this->withoutVite());
-
 /**
  * Collect the slugs of the lists the page shows for the user with the given filters.
  *
@@ -29,6 +26,7 @@ it('F-28: a guest is sent to the login', function () {
 
 it('F-28: a person without lists gets the empty list', function () {
     $this->actingAs(User::factory()->create())->get(route('lists.index'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('Rosters/Index')
         ->has('lists', 0)
         ->where('filters', ['mine' => false, 'tasks' => false, 'all' => false]));
 });

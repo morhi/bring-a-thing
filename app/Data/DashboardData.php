@@ -31,7 +31,6 @@ class DashboardData extends Data
         public array $lists,
         public array $groups,
         public ?DashboardWithoutGroupData $withoutGroup,
-        public DashboardCountsData $counts,
     ) {}
 
     /**
@@ -74,7 +73,6 @@ class DashboardData extends Data
             lists: $lists,
             groups: $groupCards,
             withoutGroup: WithoutGroupData::countsFor($user),
-            counts: new DashboardCountsData(count($waiting), count($upcoming), count($claims), count($polls), count($lists), count($groupCards)),
         );
     }
 

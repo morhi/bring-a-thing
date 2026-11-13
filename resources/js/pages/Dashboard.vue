@@ -2,39 +2,47 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { useEcho, useEchoNotification } from '@laravel/echo-vue';
 import {
+    ArrowRight,
     CalendarCheck,
     Check,
+    ChevronDown,
     ChevronRight,
-    Clock,
-    Link2,
     ListChecks,
     Plus,
     Vote,
 } from '@lucide/vue';
-import { computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { show as showEvent } from '@/actions/App/Http/Controllers/EventController';
 import {
     create as createGroup,
     show as showGroup,
 } from '@/actions/App/Http/Controllers/GroupController';
+import { index as listsIndex } from '@/actions/App/Http/Controllers/ListsController';
 import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
 import {
     create as createList,
     show as showList,
 } from '@/actions/App/Http/Controllers/RosterController';
+import showWithoutGroup from '@/actions/App/Http/Controllers/WithoutGroupController';
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import type { AvatarStackPerson } from '@/components/app/avatar-stack.vue';
-import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
+import ListRow from '@/components/app/list-row.vue';
+import { formatDate, toIso } from '@/components/app/poll/dates';
+import PollRow from '@/components/app/poll-row.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
-import { formatDate, toIso } from '@/components/app/poll/dates';
-import ProgressBar from '@/components/app/progress-bar.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatAmount, relativeDay } from '@/lib/roster-items';
+import { rowLinkClass } from '@/lib/row-link';
 
 defineOptions({ layout: AppLayout });
 
@@ -43,10 +51,14 @@ const props = defineProps<{
     waiting: App.Data.DashboardWaitingData[];
     upcoming: App.Data.DashboardEventData[];
     claims: App.Data.DashboardClaimData[];
-    groups: App.Data.DashboardGroupData[];
+    polls: App.Data.DashboardPollData[];
     lists: App.Data.DashboardListData[];
-    counts: App.Data.DashboardCountsData;
+    groups: App.Data.DashboardGroupData[];
+    withoutGroup: App.Data.DashboardWithoutGroupData | null;
 }>();
+
+// Open on every visit; the state lives only as long as the page
+const claimsOpen = ref(true);
 
 const { t, tc, locale } = useI18n();
 const user = computed(() => usePage().props.auth.user);
@@ -67,9 +79,10 @@ function scheduleReload(): void {
                 'waiting',
                 'upcoming',
                 'claims',
-                'groups',
+                'polls',
                 'lists',
-                'counts',
+                'groups',
+                'withoutGroup',
             ],
         });
     }, 300);
@@ -110,9 +123,16 @@ const today = computed(() =>
     }),
 );
 
-// Section 8: without groups and lists only the two entry points are worth showing
+// With nothing to show in any section only the two entry points are worth showing
 const firstRun = computed(
-    () => props.groups.length === 0 && props.lists.length === 0,
+    () =>
+        props.groups.length === 0 &&
+        props.withoutGroup === null &&
+        props.lists.length === 0 &&
+        props.waiting.length === 0 &&
+        props.upcoming.length === 0 &&
+        props.claims.length === 0 &&
+        props.polls.length === 0,
 );
 
 const roleLabel: Record<App.Enums.GroupRole, string> = {
@@ -126,6 +146,14 @@ function shortDate(date: string): string {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
+    });
+}
+
+function weekdayDate(date: string): string {
+    return formatDate(date, locale.value, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
     });
 }
 
@@ -292,158 +320,251 @@ function acceptedPeople(
                 </ul>
             </section>
 
-            <SectionBox v-else id="waiting-title" :title="t('dash.waiting')">
-                <EmptyState
-                    :icon="Check"
-                    :title="t('dash.waiting.done.title')"
-                    :text="t('dash.waiting.done.text')"
-                />
-            </SectionBox>
-
-            <div
-                class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-x-12 gap-y-10"
+            <!-- Nothing waiting: one slim line, so the sections below move up -->
+            <section
+                v-else
+                aria-labelledby="waiting-title"
+                class="border-border text-fg-muted flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-full border px-4 py-2 text-sm"
             >
-                <SectionBox
-                    id="upcoming-title"
-                    :title="t('dash.upcoming')"
-                    :count="upcoming.length"
-                    data-feature="F-10"
-                >
-                    <ul v-if="upcoming.length" class="flex flex-col gap-3">
-                        <li v-for="event in upcoming" :key="event.slug">
-                            <SectionBoxItem
-                                :as="Link"
-                                :href="showEvent(event.slug).url"
-                                class="flex items-start gap-4 p-[18px]"
-                            >
-                                <DateBlock
-                                    :date="event.date"
-                                    :fixed="event.is_fixed_from_poll"
-                                />
-                                <span
-                                    class="flex min-w-0 flex-1 flex-col gap-1.5"
-                                >
-                                    <span
-                                        class="font-display text-[17px] leading-tight font-[640] break-words"
-                                        >{{ event.title }}</span
-                                    >
-                                    <span
-                                        class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"
-                                    >
-                                        <span class="sr-only">{{
-                                            shortDate(event.date)
-                                        }}</span>
-                                        <span>{{ event.group_name }}</span>
-                                        <span
-                                            v-if="event.starts_at"
-                                            class="inline-flex items-center gap-1"
-                                        >
-                                            <Clock
-                                                class="size-3.5"
-                                                aria-hidden="true"
-                                            />
-                                            {{ event.starts_at }}
-                                        </span>
-                                        <span
-                                            v-if="event.location"
-                                            class="break-words"
-                                            >{{ event.location }}</span
-                                        >
-                                    </span>
-                                    <span
-                                        class="mt-1 flex flex-wrap items-center justify-between gap-2.5"
-                                    >
-                                        <AvatarStack
-                                            v-if="event.accepted_count"
-                                            :people="acceptedPeople(event)"
-                                            :max="5"
-                                        />
-                                        <Badge
-                                            class="bg-primary-soft text-primary-soft-fg ml-auto"
-                                            >{{
-                                                relativeDay(event.date)
-                                            }}</Badge
-                                        >
-                                    </span>
-                                </span>
-                            </SectionBoxItem>
-                        </li>
-                    </ul>
-                    <EmptyState
-                        v-else
-                        :title="t('dash.upcoming.empty.title')"
-                        :text="t('dash.upcoming.empty.text')"
-                    />
-                </SectionBox>
+                <Check
+                    class="text-primary size-4 flex-none"
+                    aria-hidden="true"
+                />
+                <h2 id="waiting-title" class="text-fg font-semibold">
+                    {{ t('dash.waiting') }}
+                </h2>
+                <span>{{ t('dash.waiting.none') }}</span>
+            </section>
 
+            <Collapsible v-model:open="claimsOpen">
                 <SectionBox
                     id="claims-title"
                     :title="t('dash.claims')"
                     :count="claims.length"
                     data-feature="F-15"
                 >
-                    <ul
-                        v-if="claims.length"
-                        class="box divide-border flex min-w-0 flex-col divide-y px-6 py-1.5"
-                    >
-                        <li
-                            v-for="(claim, index) in claims"
-                            :key="`${claim.roster_slug}-${index}`"
-                        >
-                            <Link
-                                :href="showList(claim.roster_slug).url"
-                                class="group text-fg hover:text-fg flex items-center gap-3 rounded-sm py-3 no-underline"
+                    <template #action>
+                        <!-- The button base drops the outline, so the trigger restores the app's focus ring -->
+                        <CollapsibleTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                             >
-                                <span
-                                    class="font-display text-primary min-w-12 text-[15px] font-bold tabular-nums"
-                                >
-                                    <template v-if="claim.quantity !== null">{{
-                                        formatAmount(
-                                            claim.quantity,
-                                            claim.unit,
-                                            locale,
-                                        )
-                                    }}</template>
-                                    <Check
-                                        v-else
-                                        class="size-4"
-                                        aria-hidden="true"
-                                    />
-                                </span>
-                                <span class="flex min-w-0 flex-1 flex-col">
-                                    <span
-                                        class="group-hover:text-primary font-semibold break-words"
-                                        >{{ claim.item_name }}</span
-                                    >
-                                    <span
-                                        class="text-fg-muted text-sm break-words"
-                                    >
-                                        {{
-                                            t('dash.claims.for', {
-                                                list: claim.roster_title,
-                                            })
-                                        }}<template v-if="claim.date">
-                                            ·
-                                            {{
-                                                shortDate(claim.date)
-                                            }}</template
-                                        >
-                                    </span>
-                                </span>
-                                <ChevronRight
-                                    class="text-fg-soft size-5 flex-none"
+                                <ChevronDown
+                                    :class="[
+                                        'transition-transform motion-reduce:transition-none',
+                                        claimsOpen ? 'rotate-180' : '',
+                                    ]"
                                     aria-hidden="true"
                                 />
-                            </Link>
-                        </li>
-                    </ul>
-                    <EmptyState
-                        v-else
-                        :title="t('dash.claims.empty.title')"
-                        :text="t('dash.claims.empty.text')"
-                    />
+                                {{
+                                    claimsOpen
+                                        ? t('common.collapse')
+                                        : t('common.expand')
+                                }}
+                            </Button>
+                        </CollapsibleTrigger>
+                    </template>
+                    <CollapsibleContent>
+                        <ul
+                            v-if="claims.length"
+                            class="divide-border flex min-w-0 flex-col divide-y"
+                        >
+                            <li
+                                v-for="(claim, index) in claims"
+                                :key="`${claim.roster_slug}-${index}`"
+                            >
+                                <Link
+                                    :href="showList(claim.roster_slug).url"
+                                    :class="[
+                                        rowLinkClass,
+                                        'flex items-center gap-3 py-3',
+                                    ]"
+                                >
+                                    <span
+                                        class="font-display text-primary min-w-12 text-[15px] font-bold tabular-nums"
+                                    >
+                                        <template
+                                            v-if="claim.quantity !== null"
+                                            >{{
+                                                formatAmount(
+                                                    claim.quantity,
+                                                    claim.unit,
+                                                    locale,
+                                                )
+                                            }}</template
+                                        >
+                                        <Check
+                                            v-else
+                                            class="size-4"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                    <span
+                                        class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-0.5"
+                                    >
+                                        <span
+                                            class="group-hover:text-primary font-semibold break-words"
+                                            >{{ claim.item_name }}</span
+                                        >
+                                        <span
+                                            class="text-fg-muted text-sm break-words"
+                                        >
+                                            {{
+                                                t('dash.claims.for', {
+                                                    list: claim.roster_title,
+                                                })
+                                            }}<template v-if="claim.date">
+                                                ·
+                                                {{
+                                                    shortDate(claim.date)
+                                                }}</template
+                                            >
+                                        </span>
+                                    </span>
+                                    <ChevronRight
+                                        class="text-fg-soft size-5 flex-none"
+                                        aria-hidden="true"
+                                    />
+                                </Link>
+                            </li>
+                        </ul>
+                        <EmptyState
+                            v-else
+                            :title="t('dash.claims.empty.title')"
+                            :text="t('dash.claims.empty.text')"
+                        />
+                    </CollapsibleContent>
                 </SectionBox>
-            </div>
+            </Collapsible>
+
+            <SectionBox
+                id="upcoming-title"
+                :title="t('dash.upcoming')"
+                :count="upcoming.length"
+                data-feature="F-10"
+            >
+                <ul
+                    v-if="upcoming.length"
+                    class="divide-border @container flex min-w-0 flex-col divide-y"
+                >
+                    <li v-for="event in upcoming" :key="event.slug">
+                        <Link
+                            :href="showEvent(event.slug).url"
+                            :class="[
+                                rowLinkClass,
+                                'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-2.5 @[760px]:grid-cols-[8.5rem_minmax(0,1fr)_minmax(0,12rem)_7rem_11rem_6.5rem]',
+                            ]"
+                        >
+                            <span class="text-fg-muted text-sm tabular-nums">
+                                <span class="text-fg font-semibold">{{
+                                    weekdayDate(event.date)
+                                }}</span>
+                                <template v-if="event.starts_at">
+                                    · {{ event.starts_at }}</template
+                                >
+                            </span>
+                            <Badge
+                                class="bg-primary-soft text-primary-soft-fg justify-self-end @[760px]:order-last"
+                                >{{ relativeDay(event.date) }}</Badge
+                            >
+                            <span
+                                class="group-hover:text-primary col-span-2 min-w-0 font-semibold break-words @[760px]:col-span-1"
+                                >{{ event.title }}</span
+                            >
+                            <span
+                                class="text-fg-muted col-span-2 min-w-0 truncate text-sm @[760px]:col-span-1"
+                                >{{ event.group_name
+                                }}<template v-if="event.location">
+                                    · {{ event.location }}</template
+                                ></span
+                            >
+                            <span
+                                class="text-primary inline-flex items-center gap-1 text-sm font-semibold"
+                                data-feature="F-11"
+                            >
+                                <Check class="size-3.5" aria-hidden="true" />
+                                {{ t('dash.upcoming.accepted') }}
+                            </span>
+                            <span
+                                class="text-fg-muted flex items-center justify-end gap-2 text-sm tabular-nums"
+                            >
+                                <AvatarStack
+                                    v-if="event.accepted_count"
+                                    :people="acceptedPeople(event)"
+                                    :max="4"
+                                />
+                                {{
+                                    t('dash.upcoming.going', {
+                                        n: event.accepted_count,
+                                    })
+                                }}
+                            </span>
+                        </Link>
+                    </li>
+                </ul>
+                <EmptyState
+                    v-else
+                    :title="t('dash.upcoming.empty.title')"
+                    :text="t('dash.upcoming.empty.text')"
+                />
+            </SectionBox>
+
+            <SectionBox
+                id="polls-title"
+                :title="t('dash.polls')"
+                :count="polls.length"
+                data-feature="F-06"
+            >
+                <ul
+                    v-if="polls.length"
+                    class="divide-border flex min-w-0 flex-col divide-y"
+                >
+                    <li v-for="poll in polls" :key="poll.slug">
+                        <PollRow :poll="poll" />
+                    </li>
+                </ul>
+                <p v-else class="text-fg-muted text-sm">
+                    {{ t('dash.polls.empty') }}
+                </p>
+            </SectionBox>
+
+            <SectionBox
+                id="lists-title"
+                :title="t('dash.lists')"
+                :count="lists.length"
+                data-feature="F-13"
+            >
+                <template #action>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link
+                            :href="listsIndex().url"
+                            class="no-underline"
+                            data-feature="F-28"
+                            >{{ t('dash.lists.all') }}
+                            <ArrowRight aria-hidden="true"
+                        /></Link>
+                    </Button>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="createList().url" class="no-underline"
+                            ><Plus aria-hidden="true" />
+                            {{ t('dash.lists.new') }}</Link
+                        >
+                    </Button>
+                </template>
+                <ul
+                    v-if="lists.length"
+                    class="divide-border flex min-w-0 flex-col divide-y"
+                >
+                    <li v-for="list in lists" :key="list.slug">
+                        <ListRow :list="list" />
+                    </li>
+                </ul>
+                <p v-else class="text-fg-muted text-sm">
+                    {{ t('dash.lists.empty') }}
+                </p>
+            </SectionBox>
 
             <SectionBox
                 id="groups-title"
@@ -460,14 +581,14 @@ function acceptedPeople(
                     </Button>
                 </template>
                 <ul
-                    v-if="groups.length"
-                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4"
+                    v-if="groups.length || withoutGroup"
+                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] items-start gap-4"
                 >
                     <li v-for="group in groups" :key="group.slug">
                         <SectionBoxItem
                             :as="Link"
                             :href="showGroup(group.slug).url"
-                            class="flex h-full flex-col gap-3.5 p-5"
+                            class="flex flex-col gap-3.5 p-5"
                         >
                             <span
                                 class="flex items-start justify-between gap-3"
@@ -509,6 +630,46 @@ function acceptedPeople(
                             </span>
                         </SectionBoxItem>
                     </li>
+                    <li v-if="withoutGroup">
+                        <SectionBoxItem
+                            :as="Link"
+                            :href="showWithoutGroup().url"
+                            class="flex flex-col gap-3.5 border-dashed p-5"
+                            data-feature="F-29"
+                        >
+                            <span class="flex flex-col gap-1">
+                                <span
+                                    class="font-display min-w-0 text-lg font-[640] break-words"
+                                    >{{ t('dash.withoutGroup') }}</span
+                                >
+                                <span class="text-fg-muted text-sm">{{
+                                    t('dash.withoutGroup.text')
+                                }}</span>
+                            </span>
+                            <span
+                                class="text-fg-muted flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums"
+                            >
+                                <span v-if="withoutGroup.events_count">{{
+                                    tc(
+                                        'dash.withoutGroup.events',
+                                        withoutGroup.events_count,
+                                    )
+                                }}</span>
+                                <span v-if="withoutGroup.polls_count">{{
+                                    tc(
+                                        'dash.withoutGroup.polls',
+                                        withoutGroup.polls_count,
+                                    )
+                                }}</span>
+                                <span v-if="withoutGroup.lists_count">{{
+                                    tc(
+                                        'dash.withoutGroup.lists',
+                                        withoutGroup.lists_count,
+                                    )
+                                }}</span>
+                            </span>
+                        </SectionBoxItem>
+                    </li>
                 </ul>
                 <EmptyState
                     v-else
@@ -521,89 +682,6 @@ function acceptedPeople(
                             class="text-primary-fg hover:text-primary-fg no-underline"
                             ><Plus aria-hidden="true" />
                             {{ t('dash.groups.new') }}</Link
-                        >
-                    </Button>
-                </EmptyState>
-            </SectionBox>
-
-            <SectionBox
-                id="lists-title"
-                :title="t('dash.lists')"
-                :count="lists.length"
-                data-feature="F-13"
-            >
-                <template #action>
-                    <Button as-child variant="outline" size="sm">
-                        <Link :href="createList().url" class="no-underline"
-                            ><Plus aria-hidden="true" />
-                            {{ t('dash.lists.new') }}</Link
-                        >
-                    </Button>
-                </template>
-                <ul
-                    v-if="lists.length"
-                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
-                >
-                    <li v-for="list in lists" :key="list.slug">
-                        <SectionBoxItem
-                            :as="Link"
-                            :href="showList(list.slug).url"
-                            class="flex h-full items-center gap-3.5"
-                        >
-                            <span
-                                class="bg-surface-muted text-fg-muted grid size-10 flex-none place-items-center rounded-xl"
-                            >
-                                <ListChecks class="size-5" aria-hidden="true" />
-                            </span>
-                            <span class="flex min-w-0 flex-1 flex-col gap-1">
-                                <span class="font-semibold break-words">{{
-                                    list.title
-                                }}</span>
-                                <span class="text-fg-muted text-sm">
-                                    <template v-if="list.date"
-                                        >{{ shortDate(list.date) }} · </template
-                                    >{{
-                                        t('dash.lists.claimed', {
-                                            done: list.claimed_count,
-                                            total: list.item_count,
-                                        })
-                                    }}
-                                </span>
-                                <span
-                                    class="flex flex-wrap items-center gap-2.5"
-                                >
-                                    <ProgressBar
-                                        :done="list.claimed_count"
-                                        :total="list.item_count"
-                                        :label="
-                                            t('dash.lists.claimed', {
-                                                done: list.claimed_count,
-                                                total: list.item_count,
-                                            })
-                                        "
-                                    />
-                                    <Badge
-                                        v-if="list.is_shared"
-                                        variant="outline"
-                                        data-feature="F-19"
-                                    >
-                                        <Link2 aria-hidden="true" />
-                                        {{ t('dash.lists.shared') }}
-                                    </Badge>
-                                </span>
-                            </span>
-                        </SectionBoxItem>
-                    </li>
-                </ul>
-                <EmptyState
-                    v-else
-                    :title="t('dash.lists.empty.title')"
-                    :text="t('dash.lists.empty.text')"
-                >
-                    <Button as-child variant="outline">
-                        <Link :href="createList().url" class="no-underline"
-                            ><Plus aria-hidden="true" />
-                            {{ t('dash.lists.new') }}</Link
                         >
                     </Button>
                 </EmptyState>

@@ -21,8 +21,7 @@ it('F-22: an open poll answered on two of five options appears under "Waiting fo
         ->where('waiting.0.kind', 'poll')
         ->where('waiting.0.slug', $poll->slug)
         ->where('waiting.0.answered', 2)
-        ->where('waiting.0.total', 5)
-        ->where('counts.waiting', 1));
+        ->where('waiting.0.total', 5));
 });
 
 it('F-22: a completely answered, a closed and a foreign poll are not waiting', function () {
@@ -33,8 +32,7 @@ it('F-22: a completely answered, a closed and a foreign poll are not waiting', f
     dashboardPoll($otherGroup, $otherOwner, 2);
 
     $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
-        ->has('waiting', 0)
-        ->where('counts.waiting', 0));
+        ->has('waiting', 0));
 });
 
 it('F-22: an upcoming event with the status "pending" is waiting, a past one is not', function () {
@@ -73,8 +71,7 @@ it('F-22: after accepting, the event leaves "Waiting for you" and appears under 
         ->has('upcoming', 1)
         ->where('upcoming.0.slug', $event->slug)
         ->where('upcoming.0.accepted_count', 1)
-        ->where('upcoming.0.accepted_names.0', $member->name)
-        ->where('counts.upcoming', 1));
+        ->where('upcoming.0.accepted_names.0', $member->name));
 });
 
 it('F-22: upcoming events are ordered by start and leave out declined, unanswered and past events', function () {
@@ -140,8 +137,7 @@ it('F-22: own claims on upcoming lists show, claims on past lists and of others 
         ->where('claims.0.item_name', 'Salad')
         ->where('claims.0.quantity', 1)
         ->where('claims.0.unit', 'bowls')
-        ->where('claims.0.roster_slug', $upcoming->slug)
-        ->where('counts.claims', 1));
+        ->where('claims.0.roster_slug', $upcoming->slug));
 });
 
 it('F-22: claims on a list of an event show while the event is upcoming and the person takes part', function () {
@@ -175,15 +171,14 @@ it('F-22: groups show members, visible open polls and upcoming events', function
         ->where('groups.0.role', 'member')
         ->where('groups.0.member_count', 2)
         ->where('groups.0.open_poll_count', 1)
-        ->where('groups.0.upcoming_event_count', 1)
-        ->where('counts.groups', 1));
+        ->where('groups.0.upcoming_event_count', 1));
 
     $this->actingAs($owner)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->where('groups.0.role', 'owner')
         ->where('groups.0.open_poll_count', 2));
 });
 
-it('F-22: a person without anything gets empty sections, zero counts and no "Without groups"', function () {
+it('F-22: a person without anything gets empty sections and no "Without groups"', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
@@ -193,8 +188,7 @@ it('F-22: a person without anything gets empty sections, zero counts and no "Wit
         ->has('polls', 0)
         ->has('lists', 0)
         ->has('groups', 0)
-        ->where('withoutGroup', null)
-        ->where('counts', ['waiting' => 0, 'upcoming' => 0, 'claims' => 0, 'polls' => 0, 'lists' => 0, 'groups' => 0]));
+        ->where('withoutGroup', null));
 });
 
 it('F-22: a closed poll is not under current polls', function () {
@@ -204,8 +198,7 @@ it('F-22: a closed poll is not under current polls', function () {
 
     $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->has('polls', 1)
-        ->where('polls.0.slug', $open->slug)
-        ->where('counts.polls', 1));
+        ->where('polls.0.slug', $open->slug));
 });
 
 it('F-22: current polls carries the own answer status', function (int $answered, string $status, int $waiting) {
@@ -267,8 +260,7 @@ it('F-22: lists shows every active list the person may open', function (Closure 
         ->where('lists.0.slug', $roster->slug)
         ->where('lists.0.item_count', 2)
         ->where('lists.0.claimed_count', 1)
-        ->where('lists.0.is_shared', $shared)
-        ->where('counts.lists', 1));
+        ->where('lists.0.is_shared', $shared));
 })->with([
     'owned standalone, undated' => [fn (User $user) => dashboardList($user), true],
     'owned standalone, future date' => [fn (User $user) => dashboardList($user, ['date' => now()->addWeek()->format('Y-m-d')]), false],
@@ -354,8 +346,7 @@ it('F-22: withoutGroup carries counts of grant-reached events, polls and grouple
 
     $this->actingAs($guest)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->where('withoutGroup', ['events_count' => $events, 'polls_count' => $polls, 'lists_count' => $lists])
-        ->has('groups', 0)
-        ->where('counts.groups', 0));
+        ->has('groups', 0));
 })->with([
     'only an event grant' => [1, 0, 0],
     'only a poll grant' => [0, 1, 0],

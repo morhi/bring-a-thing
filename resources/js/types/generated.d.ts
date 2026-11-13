@@ -46,20 +46,14 @@ quantity: number | null,
 unit: string | null,
 date: string | null,
 };
-export type DashboardCountsData = {
-waiting: number,
-upcoming: number,
-claims: number,
-groups: number,
-lists: number,
-};
 export type DashboardData = {
 waiting: App.Data.DashboardWaitingData[],
 upcoming: App.Data.DashboardEventData[],
 claims: App.Data.DashboardClaimData[],
-groups: App.Data.DashboardGroupData[],
+polls: App.Data.DashboardPollData[],
 lists: App.Data.DashboardListData[],
-counts: App.Data.DashboardCountsData,
+groups: App.Data.DashboardGroupData[],
+withoutGroup: App.Data.DashboardWithoutGroupData | null,
 };
 export type DashboardEventData = {
 slug: string,
@@ -69,7 +63,6 @@ group_name: string,
 date: string,
 starts_at: string | null,
 location: string | null,
-is_fixed_from_poll: boolean,
 accepted_count: number,
 accepted_names: string[],
 };
@@ -88,6 +81,19 @@ date: string | null,
 claimed_count: number,
 item_count: number,
 is_shared: boolean,
+is_past: boolean,
+group_name: string | null,
+event_title: string | null,
+event_slug: string | null,
+};
+export type DashboardPollData = {
+slug: string,
+title: string,
+status: App.Enums.DashboardPollStatus,
+group_name: string,
+answered: number,
+total: number,
+is_closed: boolean,
 };
 export type DashboardWaitingData = {
 kind: App.Enums.DashboardWaitingKind,
@@ -101,6 +107,11 @@ date: string | null,
 starts_at: string | null,
 accepted_count: number | null,
 source_event: App.Data.EventSummaryData | null,
+};
+export type DashboardWithoutGroupData = {
+events_count: number,
+polls_count: number,
+lists_count: number,
 };
 export type EntityInviteLinkData = {
 url: string | null,
@@ -302,6 +313,15 @@ export type InviteFriendData = {
 id: number,
 name: string | null,
 email: string,
+};
+export type ListsFiltersData = {
+mine: boolean,
+tasks: boolean,
+all: boolean,
+};
+export type ListsIndexData = {
+lists: App.Data.DashboardListData[],
+filters: App.Data.ListsFiltersData,
 };
 export type NotificationData = {
 id: string,
@@ -566,8 +586,14 @@ export type WelcomeData = {
 login_link_error: App.Enums.LoginLinkError | null,
 link_expires_in_minutes: number,
 };
+export type WithoutGroupData = {
+events: App.Data.EventSummaryData[],
+polls: App.Data.DashboardPollData[],
+lists: App.Data.DashboardListData[],
+};
 }
 namespace Enums {
+export type DashboardPollStatus = 'answered' | 'partial' | 'unanswered';
 export type DashboardWaitingKind = 'poll' | 'event';
 export type GroupJoinMethod = 'invite' | 'link';
 export type GroupRole = 'owner' | 'admin' | 'member';
