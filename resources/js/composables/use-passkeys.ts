@@ -106,7 +106,7 @@ export async function loginWithPasskey(
     const { redirect } = await request<{ redirect: string }>(
         login().url,
         'POST',
-        { ...extras, credential: credential.toJSON() },
+        { ...extras, credential: credential.toJSON(), remember: true },
     );
 
     return redirect;

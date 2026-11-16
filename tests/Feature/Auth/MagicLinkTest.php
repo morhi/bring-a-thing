@@ -5,6 +5,7 @@ use App\Mail\MagicLinkMail;
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
@@ -64,6 +65,8 @@ it('F-01: logs in the user when visiting a valid signed magic link', function ()
 
     $response->assertRedirect(route('dashboard'));
     $this->assertAuthenticatedAs($user);
+    $this->assertNotNull($user->fresh()->remember_token);
+    $response->assertCookie(Auth::guard()->getRecallerName());
 });
 
 it('F-01: rejects an expired magic link', function () {
