@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\Poll;
+use App\Models\User;
 use Spatie\LaravelData\Data;
 
 class PollFormData extends Data
@@ -16,6 +17,9 @@ class PollFormData extends Data
 
     public const DEFAULT_SLOT_END = '22:00';
 
+    /**
+     * @param  array<int, RosterParentData>|null  $groups  Set on the page opened outside a group: the groups to pick from.
+     */
     public function __construct(
         public string $group_slug,
         public string $group_name,
@@ -25,6 +29,7 @@ class PollFormData extends Data
         public string $today,
         public string $default_slot_start,
         public string $default_slot_end,
+        public ?array $groups = null,
     ) {}
 
     /**
@@ -56,6 +61,24 @@ class PollFormData extends Data
             member_count: $group->members()->count(),
             source_event: null,
             poll: $poll ? PollData::fromPoll($poll) : null,
+        );
+    }
+
+    /**
+     * Build the "New poll" page opened outside a group, offering every group of the user (F-06).
+     *
+     * Creating is allowed in every group the user is a member of, the same set as the group page's create buttons.
+     */
+    public static function forCreate(User $user): self
+    {
+        return new self(
+            ...self::calendarDefaults(),
+            group_slug: '',
+            group_name: '',
+            member_count: 0,
+            source_event: null,
+            poll: null,
+            groups: RosterParentData::forGroups($user),
         );
     }
 

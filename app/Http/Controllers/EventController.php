@@ -46,6 +46,16 @@ class EventController extends Controller
     }
 
     /**
+     * Show the "New event" page with a select over the user's groups, for creating from outside a group (F-10).
+     */
+    public function createWithoutGroup(Request $request): Response
+    {
+        return Inertia::render('Events/Create', [
+            'form' => EventFormData::forCreate($request->user()),
+        ]);
+    }
+
+    /**
      * Create an event directly and ask every group member to accept or decline.
      */
     public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse

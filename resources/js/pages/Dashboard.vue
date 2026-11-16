@@ -12,13 +12,21 @@ import {
     Vote,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
-import { show as showEvent } from '@/actions/App/Http/Controllers/EventController';
+import {
+    createWithoutGroup as createEventAny,
+    show as showEvent,
+} from '@/actions/App/Http/Controllers/EventController';
+import { index as eventsIndex } from '@/actions/App/Http/Controllers/EventsController';
 import {
     create as createGroup,
     show as showGroup,
 } from '@/actions/App/Http/Controllers/GroupController';
 import { index as listsIndex } from '@/actions/App/Http/Controllers/ListsController';
-import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
+import {
+    createWithoutGroup as createPollAny,
+    show as showPoll,
+} from '@/actions/App/Http/Controllers/PollController';
+import { index as pollsIndex } from '@/actions/App/Http/Controllers/PollsController';
 import {
     create as createList,
     show as showList,
@@ -462,6 +470,25 @@ function acceptedPeople(
                 :count="upcoming.length"
                 data-feature="F-10"
             >
+                <template #action>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link
+                            :href="eventsIndex().url"
+                            class="no-underline"
+                            data-feature="F-32"
+                            ><span class="sr-only @[30rem]:not-sr-only">{{
+                                t('dash.upcoming.all')
+                            }}</span>
+                            <ArrowRight aria-hidden="true"
+                        /></Link>
+                    </Button>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="createEventAny().url" class="no-underline"
+                            ><Plus aria-hidden="true" />
+                            {{ t('dash.upcoming.new') }}</Link
+                        >
+                    </Button>
+                </template>
                 <ul
                     v-if="upcoming.length"
                     class="divide-border @container flex min-w-0 flex-col divide-y"
@@ -534,6 +561,25 @@ function acceptedPeople(
                 :count="polls.length"
                 data-feature="F-06"
             >
+                <template #action>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link
+                            :href="pollsIndex().url"
+                            class="no-underline"
+                            data-feature="F-31"
+                            ><span class="sr-only @[30rem]:not-sr-only">{{
+                                t('dash.polls.all')
+                            }}</span>
+                            <ArrowRight aria-hidden="true"
+                        /></Link>
+                    </Button>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="createPollAny().url" class="no-underline"
+                            ><Plus aria-hidden="true" />
+                            {{ t('dash.polls.new') }}</Link
+                        >
+                    </Button>
+                </template>
                 <ul
                     v-if="polls.length"
                     class="divide-border flex min-w-0 flex-col divide-y"
@@ -559,7 +605,9 @@ function acceptedPeople(
                             :href="listsIndex().url"
                             class="no-underline"
                             data-feature="F-28"
-                            >{{ t('dash.lists.all') }}
+                            ><span class="sr-only @[30rem]:not-sr-only">{{
+                                t('dash.lists.all')
+                            }}</span>
                             <ArrowRight aria-hidden="true"
                         /></Link>
                     </Button>

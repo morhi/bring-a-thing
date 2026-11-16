@@ -191,6 +191,13 @@ it('F-22: a person without anything gets empty sections and no "Without groups"'
         ->where('withoutGroup', null));
 });
 
+it('F-22: a person without anything still reaches the pages behind the events and polls actions', function (string $route) {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+    $this->actingAs($user)->get(route($route))->assertOk();
+})->with(['all events' => 'events.index', 'all polls' => 'polls.index', 'new event' => 'events.create-any', 'new poll' => 'polls.create-any']);
+
 it('F-22: a closed poll is not under current polls', function () {
     [$group, $owner, $member] = dashboardGroup();
     $open = dashboardPoll($group, $owner, 2);

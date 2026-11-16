@@ -16,7 +16,7 @@ const props = defineProps<{
         :aria-labelledby="id"
         :class="
             cn(
-                'box flex min-w-0 flex-col gap-[18px] rounded-3xl p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:pt-6 sm:pb-[26px]',
+                'box @container flex min-w-0 flex-col gap-[18px] rounded-3xl p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:pt-6 sm:pb-[26px]',
                 props.class,
             )
         "

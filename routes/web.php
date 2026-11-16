@@ -11,6 +11,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventFollowUpPollController;
 use App\Http\Controllers\EventInviteLinkController;
 use App\Http\Controllers\EventParticipationController;
+use App\Http\Controllers\EventsController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupInviteLinkController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollInviteLinkController;
 use App\Http\Controllers\PollOptionController;
 use App\Http\Controllers\PollResponseController;
+use App\Http\Controllers\PollsController;
 use App\Http\Controllers\RosterCommentController;
 use App\Http\Controllers\RosterController;
 use App\Http\Controllers\RosterItemClaimController;
@@ -136,6 +138,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('rosters.custom-fields.update');
     Route::delete('/rosters/{roster}/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->name('rosters.custom-fields.destroy');
 
+    // "New" routes sit before the slug routes so {poll} and {event} never capture the segment.
+    Route::get('/polls/new', [PollController::class, 'createWithoutGroup'])->name('polls.create-any');
     Route::post('/groups/{group}/polls', [PollController::class, 'store'])->name('polls.store');
     Route::get('/polls/{poll}', [PollController::class, 'show'])->name('polls.show');
     Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
@@ -160,6 +164,8 @@ if (app()->environment('local')) {
 Route::middleware('auth')->group(function () {
     Route::get('/groups/{group}/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/groups/{group}/events', [EventController::class, 'store'])->name('events.store');
+    Route::get('/events', [EventsController::class, 'index'])->name('events.index');
+    Route::get('/events/new', [EventController::class, 'createWithoutGroup'])->name('events.create-any');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::patch('/events/{event}', [EventController::class, 'update'])->name('events.update');
@@ -186,6 +192,7 @@ Route::middleware('auth')->group(function () {
 // All lists with filters (F-28) and the virtual group "Without groups" (F-29).
 Route::middleware('auth')->group(function () {
     Route::get('/lists', [ListsController::class, 'index'])->name('lists.index');
+    Route::get('/polls', [PollsController::class, 'index'])->name('polls.index');
     Route::get('/without-group', WithoutGroupController::class)->name('without-group.show');
 });
 

@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.22
+- **Version:** 1.23
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -144,6 +144,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
+- A poll can also be created from outside a group ("New poll" at /polls/new): the page has a required group select with the user's own groups, and the poll is created in the chosen group. Without a group the form shows an error.
 - A "Table / Calendar" toggle switches the view. The calendar shows a week grid for a time-slot poll and a month grid for a by-day poll. Options can be answered in both views, and the tab order follows the options chronologically.
 
 **Acceptance criteria:**
@@ -152,6 +153,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Two options with three yes and one no answer each both carry "Best option". Of two options with three yes answers, the one with fewer no answers alone carries it.
 - "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
 - An option with a label shows it in the grid header.
+- On the page opened outside a group, a member of two groups picks one and the poll is created in that group; only the member's own groups are offered.
 - In an edited poll, "Use this time for all" leaves options with answers unchanged.
 - An answer chosen with the arrow keys is saved right away and shown after a reload.
 - The calendar view of a time-slot poll shows a week grid and of a by-day poll a month grid; options can be answered there, and tabbing moves through them in chronological order.
@@ -217,11 +219,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The event shows acceptances, pending responses and declines with counts, its lists, follow-up polls and child events.
 - Organizer, owner and admins of an event add a sub-event directly under it with "Add sub-event", without a follow-up poll. The sub-event is an event of the same group with the source event as parent. Its participants start as the source event's participants ("accepted" and "pending") with "pending", and the organizer is "accepted". A child event has no sub-events of its own.
 - An event whose start has passed counts as past. There is no other status.
+- An event can also be created from outside a group ("New event" at /events/new): the page has a required group select with the user's own groups, and the event is created in the chosen group. Without a group the form shows an error.
 
 **Acceptance criteria:**
 - A directly created event in a group with five members shows one accepted organizer and four pending responses.
 - After moving the event from 12.03. to 19.03., all acceptances are "pending" again.
 - Deleting an event with a list also removes the list.
+- On the page opened outside a group, a member of two groups picks one and the event is created in that group; only the member's own groups are offered.
 - A manager who adds a sub-event to an event with three participants gets a child event with those three participants. A plain member and a child event do not offer "Add sub-event".
 
 #### F-11 Participation (Core)
@@ -389,9 +393,9 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The dashboard shows these sections in this order:
   1. "Waiting for you": open polls without a complete response and events with the status "pending". When nothing waits, the section shrinks to one slim line.
   2. "Übernahmen": one's own claims (things and tasks) on upcoming lists. The section is collapsible.
-  3. Upcoming events: full width, compact rows, with one's own acceptance.
-  4. Current polls: open polls the person may see, each with the own status "answered", "partly answered" or "not answered".
-  5. Lists: active lists the person may open, plus a link "All lists" (F-28). Past lists are missing; event lists show only while the event is not past.
+  3. "Events": upcoming events, full width, compact rows, with one's own acceptance, plus a link "All events" (F-32) and a button "New event" that leads to the group selection for a new event.
+  4. "Polls": open polls the person may see, each with the own status "answered", "partly answered" or "not answered", plus a link "All polls" (F-31) and a button "New poll" that leads to the group selection for a new poll.
+  5. "Lists": active lists the person may open, plus a link "All lists" (F-28) and a button "New list". Past lists are missing; event lists show only while the event is not past.
   6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one list without a group.
 - Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
@@ -403,6 +407,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - With nothing waiting, "Waiting for you" shows one slim line.
 - A child event and a follow-up poll with a complete response have no dashboard row.
 - A list of a past event is missing from the lists section.
+- The sections "Events" and "Polls" show their links "All events" / "All polls" and the buttons "New event" / "New poll" also when they are empty, and the targets of these links open.
 - Collapsing "Übernahmen" hides the claims; they show again after expanding.
 - After joining one event of a group through its link, the group shows under "Groups" with the guest mark and the count 1 for events and 0 for polls and lists the person may not open.
 - A group with three polls of which the person may open one shows the poll count 1 on the guest card.
@@ -555,14 +560,48 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A closed poll, an option of another poll, an already fixed option or a missing permission sends no email.
 - A participant who left the group before the fixing receives no email.
 
+#### F-31 All polls (Secondary)
+
+**User goal:** Find any poll one may open, also closed ones, in one place and start a new poll from there.
+
+**Rules:**
+- The page "Polls" shows the polls the person may open by the rules of F-06 and F-22: polls they withdrew from (F-08) and follow-up polls (F-12) are left out. The default is open polls.
+- Filters: "Unanswered" (the person answered none or only some options), "My polls only" (the person organizes the poll), and a switch between open and all polls, which adds closed ones.
+- Filters combine. The page has a button "New poll" that leads to the group selection for a new poll.
+- Polls the person may not open never appear.
+
+**Acceptance criteria:**
+- A closed poll appears only after switching to "all".
+- "Unanswered" shows a poll with no or partial answers and hides a fully answered one.
+- "My polls only" hides a poll that another person organizes.
+- A poll of a group the person is not a member of, a poll the person withdrew from and a follow-up poll never appear.
+- Active filters combine with AND.
+
+#### F-32 All events (Secondary)
+
+**User goal:** Find every event one takes part in, also past ones, in one place and start a new one from there.
+
+**Rules:**
+- The page "All events" shows the events the person may open by the rules of F-22 (events of their groups and events reached through an invite link) and where their participation is "accepted" or "pending". Withdrawn and declined events and child events do not appear.
+- Filters: "My events only" (the person accepted), and a switch between upcoming and all events. The default is upcoming.
+- The button "New event" leads to the group selection for creating an event.
+
+**Acceptance criteria:**
+- Events of a group the person is not a member of never appear.
+- A past event appears only after switching to "all".
+- "My events only" hides an event the person has not accepted yet.
+- An event the person declined or withdrew from, and a child event, does not appear.
+
 ## 6. Structure
 
 **Navigation:** header with logo (leads to the dashboard), search and quick actions (F-25), notifications (F-23) and user menu (settings, friends, logout). There is no permanent sidebar; groups, events and lists link to each other on their pages.
 
 **Pages:**
 - **Start page:** public page with explanation, login form (F-01) and language switch (F-24).
-- **Dashboard:** F-22, actions "New group" and "New list".
+- **Dashboard:** F-22, actions "New group", "New list", "New event" and "New poll", links "All lists", "All events" and "All polls".
 - **All lists:** table of all lists the person may open, with filters (F-28).
+- **All polls:** list of all polls the person may open, with filters and the button "New poll" (F-31).
+- **All events:** list of all events the person may open, with filters and the button "New event" (F-32).
 - **Without groups:** virtual group page with the person's own lists without group (F-29).
 - **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list". Link guests see a restricted version with the group name and only the items they may open, without members, settings, invite link and create actions (F-26, F-27).

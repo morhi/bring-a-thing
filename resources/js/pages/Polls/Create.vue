@@ -37,8 +37,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 defineOptions({ layout: AppLayout });
 
@@ -171,6 +176,10 @@ const back = computed(() => {
         };
     }
 
+    if (groupChoices.value) {
+        return { href: dashboard().url, name: null };
+    }
+
     return {
         href: showGroup(props.form.group_slug).url,
         name: props.form.group_name,
@@ -206,7 +215,11 @@ const optionsHint = computed(() => {
     return editing.value ? t('poll.edit.optionsHint') : null;
 });
 
+// Opened outside a group (F-06): the group comes from a select, and the poll posts to that group
+const groupChoices = computed(() => props.form.groups);
+const chosenGroup = ref('');
 const pollForm = useForm({ title: poll.value?.title ?? '' });
+const groupError = ref<string | null>(null);
 const optionsError = ref<string | null>(null);
 
 const optionsServerError = computed(() => {
@@ -230,6 +243,19 @@ function optionRows(withSlug: boolean): Record<string, string | null>[] {
 
 function save(): void {
     optionsError.value = null;
+    groupError.value = null;
+
+    if (groupChoices.value && !chosenGroup.value) {
+        groupError.value = t('newCreate.groupRequired');
+    }
+
+    if (groupError.value && !pollForm.title.trim()) {
+        pollForm.setError('title', t('newPoll.titleRequired'));
+    }
+
+    if (groupError.value) {
+        return;
+    }
 
     if (!closed.value && options.value.length === 0) {
         optionsError.value = t('newPoll.optionsRequired');
@@ -258,7 +284,7 @@ function save(): void {
         .post(
             sourceEvent.value
                 ? storeFollowUpPoll(sourceEvent.value.slug).url
-                : storePoll(props.form.group_slug).url,
+                : storePoll(chosenGroup.value || props.form.group_slug).url,
         );
 }
 
@@ -345,7 +371,11 @@ const inputClass =
         :title="pageTitle"
         :subtitle="subtitle"
         :back-href="back.href"
-        :back-label="t('nav.backTo', { name: back.name })"
+        :back-label="
+            back.name === null
+                ? t('nav.backToDashboard')
+                : t('nav.backTo', { name: back.name })
+        "
     >
         <form
             id="poll-form"
@@ -354,7 +384,38 @@ const inputClass =
             :data-feature="editing ? 'F-08' : 'F-06'"
             @submit.prevent="save"
         >
+            <FormField
+                v-if="groupChoices"
+                :label="t('newCreate.group')"
+                control="poll-group"
+                required
+                :error="groupError"
+            >
+                <template #default="{ describedBy, invalid }">
+                    <NativeSelect
+                        id="poll-group"
+                        v-model="chosenGroup"
+                        required
+                        class="w-full max-w-(--field-max-width)"
+                        :aria-describedby="describedBy"
+                        :aria-invalid="invalid || undefined"
+                        @change="groupError = null"
+                    >
+                        <NativeSelectOption value="">{{
+                            t('newCreate.groupPlaceholder')
+                        }}</NativeSelectOption>
+                        <NativeSelectOption
+                            v-for="group in groupChoices"
+                            :key="group.id"
+                            :value="group.slug"
+                            >{{ group.title }}</NativeSelectOption
+                        >
+                    </NativeSelect>
+                </template>
+            </FormField>
+
             <div
+                v-if="!groupChoices"
                 class="bg-primary-soft text-primary-soft-fg flex items-center gap-3 rounded-md px-3.5 py-3 text-sm"
                 :data-feature="sourceEvent ? 'F-12' : 'F-06'"
             >

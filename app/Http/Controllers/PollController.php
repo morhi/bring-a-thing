@@ -48,6 +48,16 @@ class PollController extends Controller
     }
 
     /**
+     * Show the "New poll" page with a select over the user's groups, for creating from outside a group (F-06).
+     */
+    public function createWithoutGroup(Request $request): Response
+    {
+        return Inertia::render('Polls/Create', [
+            'form' => PollFormData::forCreate($request->user()),
+        ]);
+    }
+
+    /**
      * Create a new poll on the group, with either explicit option rows or an auto-expanded date range.
      */
     public function store(StorePollRequest $request, Group $group, CreatePollOptions $createOptions, SendInAppNotification $sendNotification): RedirectResponse

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { CalendarDays, TriangleAlert, Users } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import {
     show as showEvent,
     store as storeEvent,
@@ -14,9 +14,14 @@ import FormPage from '@/components/app/form-page.vue';
 import TimePicker from '@/components/app/time-picker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 defineOptions({ layout: AppLayout });
 
@@ -46,16 +51,29 @@ const moved = computed(
             eventForm.starts_at !== props.form.event?.starts_at),
 );
 
-const backHref = computed(() =>
-    props.form.event
-        ? showEvent(props.form.event.slug).url
-        : showGroup(props.form.group_slug).url,
-);
-const backLabel = computed(() =>
-    props.form.event
-        ? t('nav.backTo', { name: props.form.event.title })
-        : t('event.back', { group: props.form.group_name }),
-);
+// Opened outside a group (F-10): the group comes from a select, and the event posts to that group
+const groupChoices = computed(() => props.form.groups);
+const chosenGroup = ref('');
+const groupError = ref<string | null>(null);
+
+const backHref = computed(() => {
+    if (props.form.event) {
+        return showEvent(props.form.event.slug).url;
+    }
+
+    return groupChoices.value
+        ? dashboard().url
+        : showGroup(props.form.group_slug).url;
+});
+const backLabel = computed(() => {
+    if (props.form.event) {
+        return t('nav.backTo', { name: props.form.event.title });
+    }
+
+    return groupChoices.value
+        ? t('nav.backToDashboard')
+        : t('event.back', { group: props.form.group_name });
+});
 
 const subtitle = computed(() => {
     if (editing.value) {
@@ -76,7 +94,16 @@ function submit(): void {
         return;
     }
 
-    eventForm.post(storeEvent(props.form.group_slug).url, options);
+    if (groupChoices.value && !chosenGroup.value) {
+        groupError.value = t('newCreate.groupRequired');
+
+        return;
+    }
+
+    eventForm.post(
+        storeEvent(chosenGroup.value || props.form.group_slug).url,
+        options,
+    );
 }
 
 const inputClass =
@@ -100,6 +127,36 @@ const buttonClass = 'h-(--control-height) px-4';
             data-feature="F-10"
             @submit.prevent="submit"
         >
+            <FormField
+                v-if="groupChoices"
+                :label="t('newCreate.group')"
+                control="event-group"
+                required
+                :error="groupError"
+            >
+                <template #default="{ describedBy, invalid }">
+                    <NativeSelect
+                        id="event-group"
+                        v-model="chosenGroup"
+                        required
+                        class="w-full max-w-(--field-max-width)"
+                        :aria-describedby="describedBy"
+                        :aria-invalid="invalid || undefined"
+                        @change="groupError = null"
+                    >
+                        <NativeSelectOption value="">{{
+                            t('newCreate.groupPlaceholder')
+                        }}</NativeSelectOption>
+                        <NativeSelectOption
+                            v-for="group in groupChoices"
+                            :key="group.id"
+                            :value="group.slug"
+                            >{{ group.title }}</NativeSelectOption
+                        >
+                    </NativeSelect>
+                </template>
+            </FormField>
+
             <FormField
                 :label="t('newEvent.name')"
                 control="event-title"
@@ -251,7 +308,7 @@ const buttonClass = 'h-(--control-height) px-4';
                 }}</b>
             </div>
             <div
-                v-else-if="!editing"
+                v-else-if="!editing && !groupChoices"
                 class="bg-primary-soft text-primary-soft-fg flex max-w-(--field-max-width) items-center gap-3 rounded-md px-3.5 py-3 text-sm"
                 data-feature="F-11"
             >

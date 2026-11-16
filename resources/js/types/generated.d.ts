@@ -164,6 +164,7 @@ member_count: number,
 event: App.Data.EventData | null,
 parent_event_id: number | null,
 parent_event_title: string | null,
+groups: App.Data.RosterParentData[] | null,
 };
 export type EventLinkData = {
 slug: string,
@@ -206,6 +207,14 @@ title: string,
 date: string,
 starts_at: string | null,
 is_past: boolean,
+};
+export type EventsFiltersData = {
+mine: boolean,
+all: boolean,
+};
+export type EventsIndexData = {
+events: App.Data.DashboardEventData[],
+filters: App.Data.EventsFiltersData,
 };
 export type FriendData = {
 slug: string,
@@ -395,6 +404,7 @@ poll: App.Data.PollData | null,
 today: string,
 default_slot_start: string,
 default_slot_end: string,
+groups: App.Data.RosterParentData[] | null,
 };
 export type PollOptionData = {
 slug: string,
@@ -439,6 +449,15 @@ show_no_counts: boolean,
 fixed_events: App.Data.EventSummaryData[],
 permissions: App.Data.PollPermissionsData,
 invite_link: App.Data.EntityInviteLinkData | null,
+};
+export type PollsFiltersData = {
+unanswered: boolean,
+mine: boolean,
+all: boolean,
+};
+export type PollsIndexData = {
+polls: App.Data.DashboardPollData[],
+filters: App.Data.PollsFiltersData,
 };
 export type RosterClaimData = {
 user_id: number | null,
