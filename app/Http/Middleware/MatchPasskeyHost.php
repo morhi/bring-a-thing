@@ -13,11 +13,16 @@ class MatchPasskeyHost
      *
      * A host outside the APP_URL domain (e.g. www vs apex) makes iOS Safari reject
      * the ceremony with a SecurityError, because the RP ID is not a suffix of it.
+     * Only hosts listed in passkeys.allowed_hosts rebind, so a spoofed Host header changes nothing.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $configuredHost = parse_url((string) config('app.url'), PHP_URL_HOST);
         $requestHost = $request->getHost();
+
+        if (! in_array($requestHost, config('passkeys.allowed_hosts', []), true)) {
+            return $next($request);
+        }
 
         if (! is_string($configuredHost) || $requestHost === $configuredHost || str_ends_with($requestHost, '.'.$configuredHost)) {
             return $next($request);

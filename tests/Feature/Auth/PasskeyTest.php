@@ -142,7 +142,11 @@ it('F-19: ignores an invalid pending claim on a passkey login', function () {
 });
 
 it('F-02: binds the passkey relying party to a host outside the APP_URL domain', function () {
-    config(['app.url' => 'https://www.example.test', 'passkeys.relying_party_id' => 'www.example.test']);
+    config([
+        'app.url' => 'https://www.example.test',
+        'passkeys.relying_party_id' => 'www.example.test',
+        'passkeys.allowed_hosts' => ['example.test'],
+    ]);
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -150,4 +154,15 @@ it('F-02: binds the passkey relying party to a host outside the APP_URL domain',
         ->getJson('https://example.test/user/passkeys/options')
         ->assertOk()
         ->assertJsonPath('options.rp.id', 'example.test');
+});
+
+it('F-02: keeps the configured passkey relying party for a host that is not allowed', function () {
+    config(['app.url' => 'https://www.example.test', 'passkeys.relying_party_id' => 'www.example.test']);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession([EnsureRecentLogin::SESSION_KEY => now()->timestamp])
+        ->getJson('https://evil.test/user/passkeys/options')
+        ->assertOk()
+        ->assertJsonPath('options.rp.id', 'www.example.test');
 });

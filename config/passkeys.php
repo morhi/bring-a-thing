@@ -34,6 +34,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed Hosts
+    |--------------------------------------------------------------------------
+    |
+    | Extra hosts outside the application URL domain (e.g. the www or apex
+    | variant) on which passkeys may be used. Comma-separated in the env value.
+    | A request on one of them binds the relying party ID to that host.
+    |
+    */
+
+    'allowed_hosts' => array_values(array_filter(array_map(trim(...), explode(',', (string) env('PASSKEYS_ALLOWED_HOSTS', ''))))),
+
+    /*
+    |--------------------------------------------------------------------------
     | User Handle Secret
     |--------------------------------------------------------------------------
     |
