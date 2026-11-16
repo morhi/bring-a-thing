@@ -9,6 +9,7 @@ import {
     Clock,
     Grid3x3,
     ListChecks,
+    LogOut,
     MapPin,
     MessageSquare,
     Pencil,
@@ -35,6 +36,7 @@ import {
     destroy as removeParticipant,
     update as updateOwnParticipation,
     updateFor as updateParticipation,
+    withdraw as withdrawFromEvent,
 } from '@/actions/App/Http/Controllers/EventParticipationController';
 import {
     destroy as revokeInviteLink,
@@ -365,6 +367,17 @@ function confirmDelete(): void {
     deleteOpen.value = false;
 }
 
+// Withdraw (F-11): removes the own participation and releases the own claims
+
+const withdrawOpen = ref(false);
+
+function confirmWithdraw(): void {
+    router.delete(withdrawFromEvent(event.value.slug).url, {
+        onError: showError,
+    });
+    withdrawOpen.value = false;
+}
+
 // Comments (F-20): collapsed by default
 
 const commentsOpen = ref(false);
@@ -546,7 +559,8 @@ const badgeLinkClass =
                     v-if="
                         permissions.can_edit ||
                         permissions.can_delete ||
-                        permissions.can_create_sub_event
+                        permissions.can_create_sub_event ||
+                        permissions.can_withdraw
                     "
                     class="flex w-full flex-wrap gap-2 min-[720px]:ml-auto min-[720px]:w-auto"
                 >
@@ -578,6 +592,16 @@ const badgeLinkClass =
                             <Plus aria-hidden="true" />
                             {{ t('event.subEvent.new') }}
                         </Link>
+                    </Button>
+                    <Button
+                        v-if="permissions.can_withdraw"
+                        variant="outline"
+                        :class="outlineClass"
+                        data-feature="F-11"
+                        @click="withdrawOpen = true"
+                    >
+                        <LogOut aria-hidden="true" />
+                        {{ t('event.withdraw') }}
                     </Button>
                     <Button
                         v-if="permissions.can_delete"
@@ -1198,6 +1222,53 @@ const badgeLinkClass =
                         variant="destructive"
                         @click="confirmDecline"
                         >{{ t('event.decline.confirm') }}</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog v-model:open="withdrawOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('event.withdraw.title', { event: event.title })
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.withdraw.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <template v-if="page.own_claims.length">
+                    <p class="text-sm">{{ t('event.withdraw.claims') }}</p>
+                    <ul class="flex flex-col gap-2" data-feature="F-11">
+                        <li
+                            v-for="(claim, index) in page.own_claims"
+                            :key="`${claim.roster_slug}-${index}`"
+                            class="flex items-center gap-3"
+                        >
+                            <Badge variant="outline" class="tabular-nums">{{
+                                claimLabel(claim)
+                            }}</Badge>
+                            <span class="flex min-w-0 flex-col">
+                                <span class="font-semibold break-words">{{
+                                    claim.item_name
+                                }}</span>
+                                <span class="text-fg-muted text-sm">{{
+                                    t('event.inList', {
+                                        list: claim.roster_title,
+                                    })
+                                }}</span>
+                            </span>
+                        </li>
+                    </ul>
+                </template>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="confirmWithdraw"
+                        >{{ t('event.withdraw') }}</AlertDialogAction
                     >
                 </AlertDialogFooter>
             </AlertDialogContent>

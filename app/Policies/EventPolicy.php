@@ -134,6 +134,20 @@ class EventPolicy
     }
 
     /**
+     * Determine whether the user can withdraw from the event: remove their own participation (F-11).
+     *
+     * Everyone with a participation can, except the event's managers, while the event is not past.
+     */
+    public function withdraw(User $user, Event $event): bool
+    {
+        if ($event->isPast() || $event->isManagedBy($user)) {
+            return false;
+        }
+
+        return $event->statusOf($user) !== null && $event->admits($user);
+    }
+
+    /**
      * Determine whether the user can set the participation status for other members (F-11).
      *
      * Organizer, owner and admins always can; plain members only while the

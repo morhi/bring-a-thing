@@ -43,6 +43,21 @@ class PollPolicy
     }
 
     /**
+     * Determine whether the user can withdraw from the poll (F-08).
+     *
+     * Anyone in the audience can, except those who manage the poll; once
+     * the poll is closed or has a fixed option, the responses count for the result.
+     */
+    public function withdraw(User $user, Poll $poll): bool
+    {
+        if ($poll->isClosed() || $this->update($user, $poll)) {
+            return false;
+        }
+
+        return $poll->isOpenTo($user) && ! $poll->hasFixedOption();
+    }
+
+    /**
      * Determine whether the user can edit the poll: organizer, group owner and admins (F-08).
      */
     public function update(User $user, Poll $poll): bool

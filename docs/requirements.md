@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.21
+- **Version:** 1.22
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -178,12 +178,15 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - They close the poll and reopen it. A closed poll accepts no responses and allows no changes to options.
 - A date finder poll closes by fixing dates (F-09). An attendance poll closes without a selection.
 - Reopening keeps events that were already created.
+- A person in the poll's audience who was invited by accident withdraws with "Withdraw" in the poll header, after a confirmation. Their responses are deleted, they leave the audience, and the poll no longer shows to them: not on the dashboard, not on the group page, and opening it shows "Not found". Organizer, owner and admins cannot withdraw, and nobody can from a closed poll or a poll with a fixed option. Joining the poll again through its invite link (F-27) lifts the withdrawal.
 
 **Acceptance criteria:**
 - A response to a closed poll is rejected with the message "This poll is closed."
 - A member without the admin role sees no edit actions on other people's polls.
 - After reopening a fixed poll, its events still exist.
 - On an option with answers, the date and time fields are disabled; on an option without answers they can be edited.
+- A member who withdraws from an open poll lands on the dashboard with a confirmation message; their responses are gone, the totals and best option no longer count them, and the poll is missing from their dashboard.
+- Organizer, owner, admins, a person outside the audience and everyone on a closed poll see no "Withdraw" action, and withdrawing is refused for them.
 
 #### F-09 Fixing dates (Core)
 
@@ -230,12 +233,15 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03). The per-person status controls appear after the "Manage" action on the participation block, for everyone who may use them.
 - A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims. A status set for someone else, and removing a participant, never releases their claims. Only the person's own decline does.
 - Only participants see the event's lists (F-13). Only participants with "accepted" see follow-up polls and the action to create them (F-12). Members without participation or with a decline see only the event's key details.
+- A person with a participation status who was invited by accident withdraws with "Withdraw" in the event header, after a confirmation that lists their claimed items. Their participation is removed and their claims on the event's lists are released, so the event leaves their dashboard. Group members still reach the event page and see it like a member without participation. Organizer, owner and admins cannot withdraw, and nobody can from a past event.
 
 **Acceptance criteria:**
 - A decline with two claimed items shows both items in the confirmation, and both are free again afterwards.
 - When an admin sets a member to "declined", the member's claims stay.
 - A member who declined does not see the event's lists.
 - A past event allows no accepting or declining.
+- A participant who withdraws from an upcoming event lands on the dashboard with a confirmation message; their participation is gone, their claims are free again, and the event is missing from their dashboard.
+- Organizer, owner, admins and everyone on a past event see no "Withdraw" action, and withdrawing is refused for them.
 
 #### F-12 Follow-up poll (Core)
 
@@ -389,6 +395,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
   6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one list without a group.
 - Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
+- A poll the person withdrew from (F-08) is missing from every section and from the open poll count of its group card. An event they withdrew from (F-11) is missing from "Waiting for you" and the upcoming events.
 
 **Acceptance criteria:**
 - An open poll in which a person answered two of five options appears under "Waiting for you" and, with the status "partly answered", under the current polls.
@@ -401,6 +408,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A group with three polls of which the person may open one shows the poll count 1 on the guest card.
 - After the person joins the group as a member (F-04), the guest mark disappears from its card and the group shows its full counts.
 - Without an own list without a group, the card "Without groups" is missing.
+- After withdrawing from a poll, it is missing from "Waiting for you", from the current polls and from the open poll count of its group card.
 
 #### F-23 Notifications (Secondary)
 
@@ -485,6 +493,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Joining follows F-26: one click when logged in, otherwise name only or email with a login link.
 - Joining grants access to the poll, to the events fixed from it (F-09) and their child events, and to follow-up polls and lists under the same participation rules as in F-26 (F-11 to F-13). A link guest belongs to the poll's respondents and counts in totals and the best option.
 - A link guest answers the poll but never edits, closes or fixes it, and sees the group only as the restricted group page (F-26).
+- A person who withdrew from the poll (F-08) and joins again through its link is back in the audience and opens the poll.
 
 **Acceptance criteria:**
 - A logged-in account without group membership answers the poll right after joining through the link.
@@ -493,6 +502,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A link guest opens a child event of a fixed event, and after accepting the fixed event its follow-up polls and lists.
 - The poll and its fixed events appear on the restricted group page of their group (F-26), in the dashboard sections of F-22 and in search.
 - The restricted group page shows the poll and its fixed events, and no other poll or event of the group.
+- A member who withdrew from the poll and joins through its link opens the poll again.
 
 #### F-28 All lists (Secondary)
 
@@ -588,6 +598,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Poll:** group (required), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
 - **Poll option:** poll (required), date (required), start and end (time, required for time slots), label (text), fixed (yes/no).
 - **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
+- **Poll withdrawal:** poll, account (both required). At most one per account and poll (F-08).
 - **Event:** group (required), organizer (account, required), title (text, required), description (text), location (text), start (date, required; time optional), end (date and time, optional), origin (poll option, optional), parent event (optional, one level).
 - **Participation:** event, account, status (choice: accepted, pending, declined, required). At most one participation per account and event.
 - **List:** title (text, required), description (text), owner (account, required), group or event (each optional, at most one), date (date), members can add items (yes/no), share link (text, optional), attendance day (option of an attendance poll, optional).
@@ -617,6 +628,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Event moved:** acceptances switch to "pending"; claims stay.
 - **Decline without claims:** no confirmation needed.
 - **Status set for another person:** claims stay, also on "declined".
+- **Withdrawn from a poll or event:** the poll shows "Not found" to the person; the event stays reachable for group members and link guests without a participation status (F-08, F-11).
 - **Claim above the remaining quantity:** rejected with the remaining quantity in the message.
 - **No access:** a list, poll or event without permission shows "Not found", so its existence stays hidden. An event or poll invite link gives permission for that event or poll and its sub-entities, never for the group's other items or members. The group appears to the link guest as a restricted page with only the permitted items, and a group without any permitted item shows "Not found" (F-26, F-27).
 - **Revoked event or poll invite link:** the join page shows "Not found"; people who joined keep their access.

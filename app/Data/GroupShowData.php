@@ -14,7 +14,7 @@ use Spatie\LaravelData\Data;
 
 class GroupShowData extends Data
 {
-    private const array POLL_RELATIONS = ['event.participations', 'event.originPollOption', 'event.parentEvent.originPollOption', 'options.responses', 'options.event'];
+    private const array POLL_RELATIONS = ['event.participations', 'event.originPollOption', 'event.parentEvent.originPollOption', 'options.responses', 'options.event', 'withdrawals'];
 
     /**
      * @param  array<int, GroupMemberData>  $members

@@ -57,7 +57,7 @@ class EventShowData extends Data
      */
     public static function forUser(Event $event, User $user): self
     {
-        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents.participations', 'rosters.items.claims', 'polls.options.responses', 'comments.user');
+        $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents.participations', 'rosters.items.claims', 'polls.options.responses', 'polls.withdrawals', 'comments.user');
 
         $statuses = $event->participations->keyBy('user_id');
         $participants = $event->group->members

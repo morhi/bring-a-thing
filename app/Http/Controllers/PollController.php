@@ -7,6 +7,7 @@ use App\Actions\Polls\CreatePollOptions;
 use App\Actions\Polls\FixPollOptions;
 use App\Actions\Polls\SendFixedDatesMail;
 use App\Actions\Polls\UpdatePoll;
+use App\Actions\Polls\WithdrawFromPoll;
 use App\Data\PollFormData;
 use App\Data\PollShowData;
 use App\Enums\PollGranularity;
@@ -163,6 +164,21 @@ class PollController extends Controller
         DashboardChanged::forGroup($poll->group_id);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.reopened.toast'));
+    }
+
+    /**
+     * Withdraw from the poll: the own responses go and the poll leaves the own dashboard (F-08, F-22).
+     */
+    public function withdraw(Request $request, Poll $poll, WithdrawFromPoll $withdrawFromPoll): RedirectResponse
+    {
+        $this->authorize('withdraw', $poll);
+
+        $withdrawFromPoll->handle($poll, $request->user());
+
+        PollChanged::dispatch($poll->id);
+        DashboardChanged::forGroup($poll->group_id);
+
+        return to_route('dashboard')->with('success', __('ui.poll.withdrawn', ['poll' => $poll->title]));
     }
 
     /**

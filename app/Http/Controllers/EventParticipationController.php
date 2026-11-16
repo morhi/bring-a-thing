@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Events\SetParticipation;
+use App\Actions\Events\WithdrawFromEvent;
 use App\Enums\ParticipationStatus;
 use App\Events\DashboardChanged;
 use App\Events\ParticipationChanged;
@@ -12,6 +13,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class EventParticipationController extends Controller
 {
@@ -48,6 +50,21 @@ class EventParticipationController extends Controller
         DashboardChanged::forGroup($event->group_id);
 
         return back()->with('success', __('ui.event.statusChanged', ['name' => $member->name ?? $member->email]));
+    }
+
+    /**
+     * Withdraw from the event: the own participation goes and the own claims are released (F-11, F-22).
+     */
+    public function withdraw(Request $request, Event $event, WithdrawFromEvent $withdrawFromEvent): RedirectResponse
+    {
+        $this->authorize('withdraw', $event);
+
+        $withdrawFromEvent->handle($event, $request->user());
+
+        ParticipationChanged::dispatch($event->id, $request->user()->id);
+        DashboardChanged::forGroup($event->group_id);
+
+        return to_route('dashboard')->with('success', __('ui.event.withdrawn', ['event' => $event->title]));
     }
 
     /**

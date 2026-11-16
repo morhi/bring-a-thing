@@ -21,6 +21,7 @@ class EventPermissionsData extends Data
         public bool $can_comment,
         public bool $can_manage_invite_link,
         public bool $can_view_group,
+        public bool $can_withdraw,
     ) {}
 
     /**
@@ -34,6 +35,7 @@ class EventPermissionsData extends Data
      * can_manage_invite_link shows the invite link card to managers (F-26).
      * can_view_group is also true for guests who reach the event through a
      * grant; they open the restricted group page (F-26, F-27).
+     * can_withdraw shows "Withdraw" (F-11).
      */
     public static function forUser(Event $event, User $user): self
     {
@@ -49,6 +51,7 @@ class EventPermissionsData extends Data
             can_comment: $user->can('comment', $event),
             can_manage_invite_link: $user->can('manageInviteLink', $event),
             can_view_group: $user->can('view', $event->group),
+            can_withdraw: $user->can('withdraw', $event),
         );
     }
 }

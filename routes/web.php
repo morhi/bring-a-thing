@@ -143,6 +143,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/polls/{poll}', [PollController::class, 'destroy'])->name('polls.destroy');
     Route::post('/polls/{poll}/close', [PollController::class, 'close'])->name('polls.close');
     Route::delete('/polls/{poll}/close', [PollController::class, 'reopen'])->name('polls.reopen');
+    Route::delete('/polls/{poll}/withdraw', [PollController::class, 'withdraw'])->name('polls.withdraw');
 
     Route::post('/polls/{poll}/options', [PollOptionController::class, 'store'])->name('polls.options.store');
     Route::delete('/polls/{poll}/options/{option}', [PollOptionController::class, 'destroy'])->name('polls.options.destroy');
@@ -165,6 +166,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
     Route::put('/events/{event}/participation', [EventParticipationController::class, 'update'])->name('events.participation.update');
+    Route::delete('/events/{event}/participation', [EventParticipationController::class, 'withdraw'])->name('events.withdraw');
     Route::put('/events/{event}/participants/{member}', [EventParticipationController::class, 'updateFor'])->name('events.participants.update');
     Route::delete('/events/{event}/participants/{member}', [EventParticipationController::class, 'destroy'])->name('events.participants.destroy');
 });

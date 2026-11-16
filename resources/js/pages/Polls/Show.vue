@@ -6,6 +6,7 @@ import {
     CalendarDays,
     Check,
     ChevronRight,
+    LogOut,
     Settings,
     Sparkles,
     Table2,
@@ -25,6 +26,7 @@ import {
     edit as editPoll,
     fix as fixPoll,
     reopen as reopenPoll,
+    withdraw as withdrawFromPoll,
 } from '@/actions/App/Http/Controllers/PollController';
 import { store as storeResponse } from '@/actions/App/Http/Controllers/PollResponseController';
 import { dashboard } from '@/routes';
@@ -46,6 +48,16 @@ import type {
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -227,6 +239,20 @@ function reopen(): void {
     });
 }
 
+// Withdrawing (F-08): the poll is gone for this person afterwards, so live reloads stop
+const withdrawOpen = ref(false);
+const withdrawing = ref(false);
+
+function withdraw(): void {
+    withdrawing.value = true;
+    router.delete(withdrawFromPoll(poll.value.slug).url, {
+        onError: (errors) => {
+            withdrawing.value = false;
+            showRequestError(errors);
+        },
+    });
+}
+
 // Fixing dates (F-09)
 const fixOpen = ref(false);
 const selected = ref<string[]>([]);
@@ -321,6 +347,10 @@ useEcho<{ deleted?: boolean }>(
     `poll.${props.page.poll.id}`,
     ['.poll.changed', '.poll.response.updated', '.poll.option.fixed'],
     (payload) => {
+        if (withdrawing.value) {
+            return;
+        }
+
         if (payload.deleted) {
             router.visit(backLink.value?.href ?? dashboard().url);
 
@@ -417,7 +447,11 @@ const buttonClass = 'h-(--control-height) px-4';
                     </div>
                 </div>
                 <div
-                    v-if="permissions.can_edit || permissions.can_fix"
+                    v-if="
+                        permissions.can_edit ||
+                        permissions.can_fix ||
+                        permissions.can_withdraw
+                    "
                     class="flex flex-wrap gap-2.5"
                     data-feature="F-08"
                 >
@@ -463,6 +497,17 @@ const buttonClass = 'h-(--control-height) px-4';
                             <Settings aria-hidden="true" />
                             {{ t('poll.edit.title') }}
                         </Link>
+                    </Button>
+                    <Button
+                        v-if="permissions.can_withdraw"
+                        type="button"
+                        variant="ghost"
+                        size="lg"
+                        :class="buttonClass"
+                        @click="withdrawOpen = true"
+                    >
+                        <LogOut aria-hidden="true" />
+                        {{ t('poll.withdraw') }}
                     </Button>
                 </div>
             </div>
@@ -844,5 +889,28 @@ const buttonClass = 'h-(--control-height) px-4';
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <AlertDialog v-model:open="withdrawOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('poll.withdraw.title', { poll: poll.title })
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('poll.withdraw.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="withdraw()"
+                        >{{ t('poll.withdraw') }}</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

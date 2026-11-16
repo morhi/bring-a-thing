@@ -108,6 +108,34 @@ class Poll extends Model
     }
 
     /**
+     * The people who withdrew from the poll; they leave its audience (F-08).
+     */
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(PollWithdrawal::class);
+    }
+
+    /**
+     * Whether the user withdrew from the poll (F-08).
+     */
+    public function hasWithdrawn(User $user): bool
+    {
+        if ($this->relationLoaded('withdrawals')) {
+            return $this->withdrawals->contains('user_id', $user->getKey());
+        }
+
+        return $this->withdrawals()->where('user_id', $user->getKey())->exists();
+    }
+
+    /**
+     * Whether an event was fixed from one of the poll's options (F-09).
+     */
+    public function hasFixedOption(): bool
+    {
+        return $this->fixedEvents()->exists();
+    }
+
+    /**
      * Whether this is a date finder poll, the only type with a best option and fixing (F-07).
      */
     public function isDateFinder(): bool
@@ -146,10 +174,15 @@ class Poll extends Model
      *
      * Besides the audience within the group, a grant on the poll itself
      * opens it. A grant reaching a follow-up poll through its source event
-     * follows the follow-up rule instead: only with "accepted".
+     * follows the follow-up rule instead: only with "accepted". A person
+     * who withdrew loses the poll altogether (F-08).
      */
     public function isOpenTo(User $user): bool
     {
+        if ($this->hasWithdrawn($user)) {
+            return false;
+        }
+
         if ($this->group->hasMember($user) && $this->includesMember($user)) {
             return true;
         }
@@ -186,6 +219,7 @@ class Poll extends Model
      *
      * Holders of a grant on the poll itself always do; holders reaching a
      * follow-up poll through its source event only with "accepted".
+     * Holders who withdrew are left out (F-08).
      *
      * @return EloquentCollection<int, User>
      */
@@ -195,7 +229,7 @@ class Poll extends Model
             return $this->resolvedGuests;
         }
 
-        $this->loadMissing('group.members');
+        $this->loadMissing('group.members', 'withdrawals');
 
         $direct = $this->holdersOf([['poll', $this->getKey()]]);
         $throughEvent = $this->event_id === null
@@ -206,6 +240,7 @@ class Poll extends Model
             ->concat($throughEvent)
             ->unique('id')
             ->reject(fn (User $guest) => $this->group->members->contains('id', $guest->getKey()))
+            ->reject(fn (User $guest) => $this->hasWithdrawn($guest))
             ->values();
     }
 
@@ -224,10 +259,15 @@ class Poll extends Model
      * accepted participants of the source event, the poll's organizer and
      * the event's managers (its organizer, group owner and admins) do. The
      * organizer role lapses with the membership, so a member who left keeps
-     * no access to their follow-up polls.
+     * no access to their follow-up polls. A member who withdrew from the
+     * poll drops out of it (F-08).
      */
     public function includesMember(User $user): bool
     {
+        if ($this->hasWithdrawn($user)) {
+            return false;
+        }
+
         if ($this->event_id === null) {
             return true;
         }
@@ -250,11 +290,12 @@ class Poll extends Model
      * for everyone, follow-up polls only for the poll's organizer, the
      * accepted participants and managers of the source event. Every rule
      * requires current group membership, so organizer_id alone grants nothing.
+     * Polls the user withdrew from are left out (F-08).
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
     {
-        $query->where(fn (Builder $query) => $query
+        $query->notWithdrawnBy($user)->where(fn (Builder $query) => $query
             ->where(fn (Builder $query) => $query
                 ->whereHas('group.members', fn (Builder $member) => $member->whereKey($user->getKey()))
                 ->where(fn (Builder $query) => $query
@@ -277,12 +318,13 @@ class Poll extends Model
      * Limit the query to polls the user reaches through a grant, mirroring isOpenTo() (F-26, F-27).
      *
      * A grant on the poll opens it; one reaching a follow-up poll through
-     * its source event only with "accepted".
+     * its source event only with "accepted". Polls the user withdrew from
+     * are left out (F-08).
      */
     #[Scope]
     protected function reachableThroughGrants(Builder $query, User $user): void
     {
-        $query->where(fn (Builder $query) => $query
+        $query->notWithdrawnBy($user)->where(fn (Builder $query) => $query
             ->whereIn('polls.id', AccessGrant::idsFor($user, 'poll'))
             ->orWhereHas('event', fn (Builder $event) => $event
                 ->reachableThroughGrants($user)
@@ -292,22 +334,34 @@ class Poll extends Model
     }
 
     /**
+     * Limit the query to polls the user has not withdrawn from (F-08).
+     */
+    #[Scope]
+    protected function notWithdrawnBy(Builder $query, User $user): void
+    {
+        $query->whereDoesntHave('withdrawals', fn (Builder $withdrawal) => $withdrawal->where('user_id', $user->getKey()));
+    }
+
+    /**
      * The people who currently belong to the poll's audience: group members and guests with a grant (F-06, F-12, F-26, F-27).
      *
-     * Works on the loaded members and participations, so it costs no query
-     * per member; includesMember() is the single-user counterpart.
+     * Works on the loaded members, participations and withdrawals, so it
+     * costs no query per member; includesMember() is the single-user
+     * counterpart. Members who withdrew are left out (F-08).
      *
      * @return Collection<int, User>
      */
     public function audience(): Collection
     {
-        $this->loadMissing('group.members', 'event.participations');
+        $this->loadMissing('group.members', 'event.participations', 'withdrawals');
+
+        $members = $this->group->members->reject(fn (User $member) => $this->hasWithdrawn($member));
 
         if ($this->event_id === null) {
-            return $this->group->members->toBase()->concat($this->guests())->values();
+            return $members->toBase()->concat($this->guests())->values();
         }
 
-        return $this->group->members
+        return $members
             ->filter(fn (User $member) => $member->getKey() === $this->organizer_id || $this->event->admitsToFollowUpPolls($member))
             ->toBase()
             ->concat($this->guests())

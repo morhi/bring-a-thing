@@ -3,7 +3,6 @@
 namespace App\Actions\Events;
 
 use App\Enums\ParticipationStatus;
-use App\Events\ClaimChanged;
 use App\Models\Event;
 use App\Models\EventParticipation;
 use App\Models\RosterItemClaim;
@@ -13,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class SetParticipation
 {
+    public function __construct(private ReleaseEventClaims $releaseClaims) {}
+
     /**
      * Set a person's participation status on the event (F-11).
      *
@@ -36,10 +37,7 @@ class SetParticipation
         }
 
         return DB::transaction(function () use ($event, $person, $status, $claims) {
-            $claims->each(function (RosterItemClaim $claim) {
-                $claim->delete();
-                ClaimChanged::dispatch($claim->rosterItem->roster_id, $claim->roster_item_id, $claim->user_id);
-            });
+            $this->releaseClaims->handle($claims);
 
             return $event->participations()->updateOrCreate(
                 ['user_id' => $person->getKey()],

@@ -181,6 +181,7 @@ can_create_list: boolean,
 can_comment: boolean,
 can_manage_invite_link: boolean,
 can_view_group: boolean,
+can_withdraw: boolean,
 };
 export type EventShowData = {
 event: App.Data.EventData,
@@ -420,6 +421,7 @@ can_close: boolean,
 can_reopen: boolean,
 can_manage_invite_link: boolean,
 can_view_group: boolean,
+can_withdraw: boolean,
 };
 export type PollRespondentData = {
 user_id: number,
