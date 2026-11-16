@@ -16,6 +16,10 @@ import {
     regenerate as regenerateInviteLink,
     store as storeInviteLink,
 } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
+import {
+    accept as acceptMembershipRequest,
+    decline as declineMembershipRequest,
+} from '@/actions/App/Http/Controllers/GroupMembershipRequestController';
 import FormField from '@/components/app/form-field.vue';
 import InviteLinkCard from '@/components/app/invite-link-card.vue';
 import InviteField from '@/components/app/invite-field.vue';
@@ -148,6 +152,32 @@ function confirmDelete(): void {
     });
 }
 
+// Membership requests of guests, resolved by the owner (F-03)
+function requestName(request: App.Data.GroupMembershipRequestData): string {
+    return request.name || request.email || t('common.noName');
+}
+
+function acceptRequest(request: App.Data.GroupMembershipRequestData): void {
+    router.post(
+        acceptMembershipRequest({
+            group: props.page.slug,
+            requester: request.id,
+        }).url,
+        {},
+        visitOptions,
+    );
+}
+
+function declineRequest(request: App.Data.GroupMembershipRequestData): void {
+    router.delete(
+        declineMembershipRequest({
+            group: props.page.slug,
+            requester: request.id,
+        }).url,
+        visitOptions,
+    );
+}
+
 // Invitations, same component as on the group page (F-04, F-05)
 const invites = ref<InviteSelection[]>([]);
 const inviteForm = useForm({
@@ -199,6 +229,61 @@ const buttonClass = 'h-(--control-height) px-4';
             <h1 class="text-h1">{{ t('groupSettings.title') }}</h1>
             <p class="text-fg-muted text-lg break-words">{{ page.name }}</p>
         </header>
+
+        <SectionBox
+            v-if="page.membership_requests.length"
+            id="gs-requests-title"
+            :title="t('groupSettings.requests')"
+            :count="page.membership_requests.length"
+            data-feature="F-03"
+        >
+            <template #action>
+                <p class="text-fg-soft text-sm">
+                    {{ t('groupSettings.requests.hint') }}
+                </p>
+            </template>
+            <SectionBoxItem class="p-5 sm:p-6">
+                <ul class="flex flex-col">
+                    <li
+                        v-for="request in page.membership_requests"
+                        :key="request.id"
+                        class="flex flex-wrap items-center gap-3 py-2.5"
+                    >
+                        <UserAvatar
+                            :name="request.name"
+                            :email="request.email"
+                        />
+                        <span class="flex min-w-0 flex-[1_1_160px] flex-col">
+                            <span class="font-semibold break-words">{{
+                                requestName(request)
+                            }}</span>
+                            <span
+                                v-if="request.email"
+                                class="text-fg-soft truncate text-[13px]"
+                                >{{ request.email }}</span
+                            >
+                        </span>
+                        <span class="ml-auto flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                @click="acceptRequest(request)"
+                            >
+                                {{ t('groupSettings.requests.accept') }}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="declineRequest(request)"
+                            >
+                                {{ t('groupSettings.requests.decline') }}
+                            </Button>
+                        </span>
+                    </li>
+                </ul>
+            </SectionBoxItem>
+        </SectionBox>
 
         <SectionBox
             id="gs-name-title"

@@ -114,6 +114,33 @@ class GroupPolicy
     }
 
     /**
+     * Determine whether the user can ask for membership (F-03).
+     *
+     * Only a guest who reaches the group through a grant, and only once
+     * while the request is pending.
+     */
+    public function requestMembership(User $user, Group $group): bool
+    {
+        if ($group->hasMember($user)) {
+            return false;
+        }
+
+        if ($this->view($user, $group)->denied()) {
+            return false;
+        }
+
+        return ! $group->membershipRequests()->where('user_id', $user->getKey())->exists();
+    }
+
+    /**
+     * Determine whether the user can accept or decline membership requests (F-03: owner only).
+     */
+    public function resolveMembershipRequest(User $user, Group $group): bool
+    {
+        return $group->owner_id === $user->getKey();
+    }
+
+    /**
      * Determine whether the user can change the given member's admin status.
      *
      * Owner-only: admins cannot promote or demote other admins, and the

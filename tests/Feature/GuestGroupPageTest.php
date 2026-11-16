@@ -106,7 +106,7 @@ it('F-26: the restricted page carries no members, settings, invite link or creat
         ->has('page.members', 0)
         ->where('page.invite_link', null)
         ->has('page.friends', 0)
-        ->where('page.permissions', ['can_manage_settings' => false, 'can_invite' => false, 'can_create' => false, 'can_leave' => false]));
+        ->where('page.permissions', ['can_manage_settings' => false, 'can_invite' => false, 'can_create' => false, 'can_leave' => false, 'can_request_membership' => true, 'has_pending_membership_request' => false]));
     $json = guestPageJson($response);
 
     foreach (['Olivia Owner', 'olivia.owner@example.test', 'Max Member', 'max.member@example.test', $group->fresh()->invite_token] as $hidden) {
@@ -168,7 +168,7 @@ it('F-26: joining as a member turns the restricted page into the full page', fun
         ->where('page.is_guest', false)
         ->where('page.own_role', 'member')
         ->has('page.members', 3)
-        ->where('page.permissions', ['can_manage_settings' => false, 'can_invite' => false, 'can_create' => true, 'can_leave' => true]));
+        ->where('page.permissions', ['can_manage_settings' => false, 'can_invite' => false, 'can_create' => true, 'can_leave' => true, 'can_request_membership' => false, 'has_pending_membership_request' => false]));
 });
 
 it('F-26: the restricted page needs no additional queries for more grants and items', function () {

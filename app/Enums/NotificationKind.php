@@ -22,6 +22,7 @@ enum NotificationKind: string
     case Comment = 'comment';
     case ClaimedFor = 'claimed_for';
     case Released = 'released';
+    case GroupMembershipRequested = 'group_membership_requested';
 
     /**
      * The interface translation key that phrases this kind, e.g. "notif.claimedFor".

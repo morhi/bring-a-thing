@@ -15,6 +15,7 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupInviteLinkController;
 use App\Http\Controllers\GroupJoinController;
+use App\Http\Controllers\GroupMembershipRequestController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ListsController;
 use App\Http\Controllers\NotificationController;
@@ -102,6 +103,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'update'])->name('groups.invite-link.update');
     Route::post('/groups/{group}/invite-link/regenerate', [GroupInviteLinkController::class, 'regenerate'])->name('groups.invite-link.regenerate');
     Route::delete('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'destroy'])->name('groups.invite-link.destroy');
+    Route::post('/groups/{group}/membership-request', [GroupMembershipRequestController::class, 'store'])->name('groups.membership-request.store');
+    Route::post('/groups/{group}/membership-requests/{requester}', [GroupMembershipRequestController::class, 'accept'])->name('groups.membership-requests.accept');
+    Route::delete('/groups/{group}/membership-requests/{requester}', [GroupMembershipRequestController::class, 'decline'])->name('groups.membership-requests.decline');
     Route::delete('/groups/{group}/leave', [GroupController::class, 'leave'])->name('groups.leave');
     Route::patch('/groups/{group}/members/{member}', [GroupController::class, 'updateMemberRole'])->name('groups.members.update');
     Route::delete('/groups/{group}/members/{member}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');

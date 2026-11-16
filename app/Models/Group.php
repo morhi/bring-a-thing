@@ -70,6 +70,14 @@ class Group extends Model
     }
 
     /**
+     * The guests' pending requests for membership (F-03).
+     */
+    public function membershipRequests(): HasMany
+    {
+        return $this->hasMany(GroupMembershipRequest::class);
+    }
+
+    /**
      * The rosters attached to the group.
      */
     public function rosters(): HasMany

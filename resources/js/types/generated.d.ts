@@ -264,11 +264,18 @@ role: App.Enums.GroupRole,
 is_pending: boolean,
 joined_via_link: boolean,
 };
+export type GroupMembershipRequestData = {
+id: number,
+name: string | null,
+email: string | null,
+};
 export type GroupPermissionsData = {
 can_manage_settings: boolean,
 can_invite: boolean,
 can_create: boolean,
 can_leave: boolean,
+can_request_membership: boolean,
+has_pending_membership_request: boolean,
 };
 export type GroupPollData = {
 slug: string,
@@ -289,6 +296,7 @@ members: App.Data.GroupMemberData[],
 invite_link: App.Data.GroupInviteLinkData,
 permissions: App.Data.GroupSettingsPermissionsData,
 friends: App.Data.InviteFriendData[],
+membership_requests: App.Data.GroupMembershipRequestData[],
 poll_count: number,
 event_count: number,
 list_count: number,
@@ -600,7 +608,7 @@ export type GroupJoinMethod = 'invite' | 'link';
 export type GroupRole = 'owner' | 'admin' | 'member';
 export type Locale = 'en' | 'de';
 export type LoginLinkError = 'expired' | 'invalid';
-export type NotificationKind = 'invited' | 'new_poll' | 'new_event' | 'fixed' | 'moved' | 'comment' | 'claimed_for' | 'released';
+export type NotificationKind = 'invited' | 'new_poll' | 'new_event' | 'fixed' | 'moved' | 'comment' | 'claimed_for' | 'released' | 'group_membership_requested';
 export type ParticipationStatus = 'accepted' | 'pending' | 'declined';
 export type PollGranularity = 'day' | 'hour';
 export type PollResponseStatus = 'yes' | 'no' | 'maybe';

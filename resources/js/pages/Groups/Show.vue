@@ -8,7 +8,9 @@ import {
     ListChecks,
     LogOut,
     Plus,
+    Send,
     Settings,
+    UserPlus,
     Vote,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
@@ -23,6 +25,7 @@ import {
     leave as leaveGroup,
 } from '@/actions/App/Http/Controllers/GroupController';
 import { store as storeInviteLink } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
+import { store as storeMembershipRequest } from '@/actions/App/Http/Controllers/GroupMembershipRequestController';
 import {
     create as createPoll,
     show as showPoll,
@@ -213,6 +216,25 @@ function copyFailed(url: string): void {
     });
 }
 
+const requestingMembership = ref(false);
+
+function requestMembership(): void {
+    router.post(
+        storeMembershipRequest(props.page.slug).url,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (requestingMembership.value = true),
+            onFinish: () => (requestingMembership.value = false),
+            onError: (errors) => {
+                toast.error(
+                    Object.values(errors)[0] ?? t('group.requestFailed'),
+                );
+            },
+        },
+    );
+}
+
 const leaveOpen = ref(false);
 
 function leave(): void {
@@ -306,6 +328,31 @@ const rowClass =
                             <Settings aria-hidden="true" />
                             {{ t('group.settings') }}
                         </Link>
+                    </Button>
+                    <Button
+                        v-if="page.permissions.can_request_membership"
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        data-feature="F-03"
+                        :disabled="requestingMembership"
+                        @click="requestMembership()"
+                    >
+                        <UserPlus aria-hidden="true" />
+                        {{ t('group.requestMembership') }}
+                    </Button>
+                    <Button
+                        v-else-if="
+                            page.permissions.has_pending_membership_request
+                        "
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        data-feature="F-03"
+                        disabled
+                    >
+                        <Send aria-hidden="true" />
+                        {{ t('group.requestMembership.sent') }}
                     </Button>
                     <Button
                         v-if="page.permissions.can_leave"

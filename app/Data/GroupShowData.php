@@ -97,7 +97,7 @@ class GroupShowData extends Data
             polls: self::pollRows($group, $polls),
             events: self::eventRows($events, $user),
             lists: $lists->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all(),
-            permissions: GroupPermissionsData::forGuest(),
+            permissions: GroupPermissionsData::forGuest($group, $user),
             invite_link: null,
             friends: [],
         );

@@ -54,6 +54,16 @@ const entries: App.Data.NotificationData[] = [
         created_at: earlier(80),
     },
     {
+        id: 'e',
+        kind: 'group_membership_requested',
+        key: 'notif.groupMembershipRequested',
+        params: { ...params, name: 'Mia Frei', group: 'Brass band' },
+        text: '',
+        url: '#',
+        read_at: earlier(2),
+        created_at: earlier(150),
+    },
+    {
         id: 'd',
         kind: 'comment',
         key: 'notif.comment',

@@ -7,6 +7,7 @@ import {
     MessageSquare,
     Minus,
     Sparkles,
+    UserPlus,
     Users,
     Vote,
 } from '@lucide/vue';
@@ -74,6 +75,7 @@ const icons: Record<App.Enums.NotificationKind, Component> = {
     comment: MessageSquare,
     claimed_for: Check,
     released: Minus,
+    group_membership_requested: UserPlus,
 };
 
 const showSkeleton = computed(

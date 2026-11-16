@@ -13,6 +13,8 @@ class GroupPermissionsData extends Data
         public bool $can_invite,
         public bool $can_create,
         public bool $can_leave,
+        public bool $can_request_membership,
+        public bool $has_pending_membership_request,
     ) {}
 
     /**
@@ -27,14 +29,25 @@ class GroupPermissionsData extends Data
             can_invite: $user->can('invite', $group),
             can_create: true,
             can_leave: $user->can('leave', $group),
+            can_request_membership: false,
+            has_pending_membership_request: false,
         );
     }
 
     /**
-     * Deny every group page action to a link guest (F-26, F-27).
+     * Deny every group page action to a link guest, except asking for membership (F-03, F-26, F-27).
+     *
+     * A pending request replaces the action with a "Request sent" state.
      */
-    public static function forGuest(): self
+    public static function forGuest(Group $group, User $user): self
     {
-        return new self(can_manage_settings: false, can_invite: false, can_create: false, can_leave: false);
+        return new self(
+            can_manage_settings: false,
+            can_invite: false,
+            can_create: false,
+            can_leave: false,
+            can_request_membership: $user->can('requestMembership', $group),
+            has_pending_membership_request: $group->membershipRequests()->where('user_id', $user->getKey())->exists(),
+        );
     }
 }

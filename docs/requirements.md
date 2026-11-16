@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.20
+- **Version:** 1.21
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -85,12 +85,15 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A new group is created on its own page with name and invitations (F-04). Inviting can be skipped and done later.
 - Deleting a group deletes all its polls, events and lists after a confirmation.
 - Members and admins leave a group with "Leave group" in the group page header, after a confirmation. The owner cannot leave. Leaving ends the membership only; participations, claims and responses stay.
+- A guest of the group (F-26, F-27) asks for regular membership with "Request membership" in the group page header. The button then shows "Request sent" and cannot be used again. The owner gets a bell notification (F-23) and accepts or declines the request in the group settings. Accepting makes the guest a member; declining removes the request and the guest stays a guest. Only the owner resolves requests.
 
 **Acceptance criteria:**
 - An admin sees no action to delete the group and no action to change roles, and cannot switch the group option.
 - After deleting a group, its lists are no longer reachable.
 - A member or admin who leaves a group lands on the dashboard with a confirmation message and no longer reaches the group.
 - The owner and a link guest see no "Leave group" action, and leaving is refused for them.
+- A guest who requests membership sees "Request sent"; a second request is refused and stores nothing. A member sees no request action.
+- The owner sees the pending requests in the group settings and accepts or declines each; an admin cannot resolve them. An accepted guest is a member and the request is gone.
 
 #### F-04 Inviting members (Core)
 
@@ -404,7 +407,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Learn what has happened without checking everything.
 
 **Rules:**
-- A bell in the header shows in-app notifications for: invitation to a group, new poll, new event, fixed date, moved event, new comment in a list with one's own claim, claim or release by another person on one's behalf.
+- A bell in the header shows in-app notifications for: invitation to a group, new poll, new event, fixed date, moved event, new comment in a list with one's own claim, claim or release by another person on one's behalf, membership request of a guest (to the group owner).
 - New notifications appear live. The person marks them as read.
 - The app sends no emails for these, except the summary email for fixed dates (F-30).
 
@@ -553,7 +556,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **Without groups:** virtual group page with the person's own lists without group (F-29).
 - **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list". Link guests see a restricted version with the group name and only the items they may open, without members, settings, invite link and create actions (F-26, F-27).
-- **Group settings:** name, invite link, option, roles, delete (F-03, F-04).
+- **Group settings:** name, invite link, option, membership requests, roles, delete (F-03, F-04).
 - **Poll:** response grid, best option, fix dates (F-06, F-07, F-09).
 - **Poll edit:** the "New poll" page in edit mode with the same components: title, options, close, delete (F-08).
 - **Event:** key details, participation with one's own accept or decline, lists, follow-up polls, child events, edit (F-10 to F-12).
@@ -581,6 +584,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Friend:** account (required), befriended account (required), display name (text).
 - **Group:** name (text, required), owner (account, required).
 - **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
+- **Membership request:** group, account (both required). At most one per account and group; removed when the owner accepts or declines (F-03).
 - **Poll:** group (required), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
 - **Poll option:** poll (required), date (required), start and end (time, required for time slots), label (text), fixed (yes/no).
 - **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
