@@ -20,7 +20,7 @@ class FixedDatesMail extends Mailable implements ShouldQueue
      *
      * @param  Collection<int, Event>  $events  in calendar order
      */
-    public function __construct(public string $pollTitle, public string $url, public Collection $events) {}
+    public function __construct(protected string $pollTitle, public string $url, public Collection $events) {}
 
     /**
      * Get the message envelope.
@@ -28,8 +28,28 @@ class FixedDatesMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('Dates fixed: :title', ['title' => $this->pollTitle]),
+            subject: __('Dates fixed: :title', ['title' => $this->singleLineTitle()]),
         );
+    }
+
+    /**
+     * Collapse the poll title to one line.
+     *
+     * Newlines would let a title inject extra markdown blocks or subject headers.
+     */
+    private function singleLineTitle(): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', $this->pollTitle));
+    }
+
+    /**
+     * Escape markdown control characters of the poll title.
+     *
+     * The title is user input rendered inside a markdown template, so links and formatting must stay literal.
+     */
+    private function markdownSafeTitle(): string
+    {
+        return (string) preg_replace('/([\\\\`*_{}\[\]()#+\-.!<>|~])/', '\\\\$1', $this->singleLineTitle());
     }
 
     /**
@@ -40,7 +60,7 @@ class FixedDatesMail extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.polls.dates-fixed',
             with: [
-                'pollTitle' => $this->pollTitle,
+                'pollTitle' => $this->markdownSafeTitle(),
                 'url' => $this->url,
                 'events' => $this->events,
             ],

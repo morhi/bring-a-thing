@@ -234,3 +234,12 @@ it('F-30: a participant who may not view the event gets no mail', function () {
     Mail::assertQueuedCount(1);
     expect(fixedMailRecipients())->toBe([$stayed->email]);
 });
+
+it('F-30: a poll title cannot inject markdown or extra lines into the mail', function () {
+    $mail = new FixedDatesMail("Gig\n\n[Verify your account](https://evil.example)", 'https://app.example/polls/x', collect());
+
+    $html = $mail->render();
+
+    expect($html)->not->toContain('href="https://evil.example"')
+        ->and($mail->envelope()->subject)->not->toContain("\n");
+});
