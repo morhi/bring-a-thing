@@ -6,6 +6,7 @@ import {
     ChevronRight,
     Grid3x3,
     ListChecks,
+    LogOut,
     Plus,
     Settings,
     Vote,
@@ -19,6 +20,7 @@ import {
 import {
     edit as editGroup,
     invite as inviteMembers,
+    leave as leaveGroup,
 } from '@/actions/App/Http/Controllers/GroupController';
 import { store as storeInviteLink } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
 import {
@@ -38,6 +40,16 @@ import ProgressBar from '@/components/app/progress-bar.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
@@ -201,6 +213,16 @@ function copyFailed(url: string): void {
     });
 }
 
+const leaveOpen = ref(false);
+
+function leave(): void {
+    router.delete(leaveGroup(props.page.slug).url, {
+        onError: (errors) => {
+            toast.error(Object.values(errors)[0] ?? t('group.requestFailed'));
+        },
+    });
+}
+
 const buttonClass = 'h-(--control-height) px-4';
 const rowClass =
     'flex items-center gap-3.5 sm:px-[22px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring max-[560px]:flex-wrap';
@@ -272,18 +294,31 @@ const rowClass =
                         {{ t('group.guest.notice', { group: page.name }) }}
                     </p>
                 </div>
-                <Button
-                    v-if="page.permissions.can_manage_settings"
-                    as-child
-                    variant="ghost"
-                    size="sm"
-                    data-feature="F-03"
-                >
-                    <Link :href="editGroup(page.slug).url">
-                        <Settings aria-hidden="true" />
-                        {{ t('group.settings') }}
-                    </Link>
-                </Button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <Button
+                        v-if="page.permissions.can_manage_settings"
+                        as-child
+                        variant="ghost"
+                        size="sm"
+                        data-feature="F-03"
+                    >
+                        <Link :href="editGroup(page.slug).url">
+                            <Settings aria-hidden="true" />
+                            {{ t('group.settings') }}
+                        </Link>
+                    </Button>
+                    <Button
+                        v-if="page.permissions.can_leave"
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        data-feature="F-03"
+                        @click="leaveOpen = true"
+                    >
+                        <LogOut aria-hidden="true" />
+                        {{ t('group.leave') }}
+                    </Button>
+                </div>
             </div>
             <div
                 v-if="page.permissions.can_create"
@@ -896,5 +931,26 @@ const rowClass =
                 </SectionBox>
             </aside>
         </div>
+
+        <AlertDialog v-model:open="leaveOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('group.leave.title', { group: page.name })
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('group.leave.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" @click="leave()">{{
+                        t('group.leave')
+                    }}</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

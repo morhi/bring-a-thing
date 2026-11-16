@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'update'])->name('groups.invite-link.update');
     Route::post('/groups/{group}/invite-link/regenerate', [GroupInviteLinkController::class, 'regenerate'])->name('groups.invite-link.regenerate');
     Route::delete('/groups/{group}/invite-link', [GroupInviteLinkController::class, 'destroy'])->name('groups.invite-link.destroy');
+    Route::delete('/groups/{group}/leave', [GroupController::class, 'leave'])->name('groups.leave');
     Route::patch('/groups/{group}/members/{member}', [GroupController::class, 'updateMemberRole'])->name('groups.members.update');
     Route::delete('/groups/{group}/members/{member}', [GroupController::class, 'removeMember'])->name('groups.members.destroy');
 

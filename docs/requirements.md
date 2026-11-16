@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.19
+- **Version:** 1.20
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -84,10 +84,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The group has the option "Members can set the participation status for others", off by default. Only the owner switches it. Owners and admins can always set the status themselves.
 - A new group is created on its own page with name and invitations (F-04). Inviting can be skipped and done later.
 - Deleting a group deletes all its polls, events and lists after a confirmation.
+- Members and admins leave a group with "Leave group" in the group page header, after a confirmation. The owner cannot leave. Leaving ends the membership only; participations, claims and responses stay.
 
 **Acceptance criteria:**
 - An admin sees no action to delete the group and no action to change roles, and cannot switch the group option.
 - After deleting a group, its lists are no longer reachable.
+- A member or admin who leaves a group lands on the dashboard with a confirmation message and no longer reaches the group.
+- The owner and a link guest see no "Leave group" action, and leaving is refused for them.
 
 #### F-04 Inviting members (Core)
 

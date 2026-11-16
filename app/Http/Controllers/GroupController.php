@@ -140,6 +140,18 @@ class GroupController extends Controller
     }
 
     /**
+     * Leave the group. The owner cannot leave; participations, claims and responses stay (F-03).
+     */
+    public function leave(Request $request, Group $group): RedirectResponse
+    {
+        $this->authorize('leave', $group);
+
+        $group->members()->detach($request->user());
+
+        return to_route('dashboard')->with('success', __('ui.group.left', ['group' => $group->name]));
+    }
+
+    /**
      * Change a member's role (admin or member). The owner's role cannot be changed.
      */
     public function updateMemberRole(UpdateGroupMemberRoleRequest $request, Group $group, User $member): RedirectResponse

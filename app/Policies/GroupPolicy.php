@@ -104,6 +104,16 @@ class GroupPolicy
     }
 
     /**
+     * Determine whether the user can leave the group (F-03).
+     *
+     * Members leave on their own; the owner cannot, because a group always has an owner in v1.
+     */
+    public function leave(User $user, Group $group): bool
+    {
+        return $group->hasMember($user) && $group->owner_id !== $user->getKey();
+    }
+
+    /**
      * Determine whether the user can change the given member's admin status.
      *
      * Owner-only: admins cannot promote or demote other admins, and the

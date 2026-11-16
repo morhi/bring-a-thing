@@ -268,6 +268,7 @@ export type GroupPermissionsData = {
 can_manage_settings: boolean,
 can_invite: boolean,
 can_create: boolean,
+can_leave: boolean,
 };
 export type GroupPollData = {
 slug: string,

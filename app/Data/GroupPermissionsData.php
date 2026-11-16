@@ -12,6 +12,7 @@ class GroupPermissionsData extends Data
         public bool $can_manage_settings,
         public bool $can_invite,
         public bool $can_create,
+        public bool $can_leave,
     ) {}
 
     /**
@@ -25,6 +26,7 @@ class GroupPermissionsData extends Data
             can_manage_settings: $group->isAtLeastAdmin($user),
             can_invite: $user->can('invite', $group),
             can_create: true,
+            can_leave: $user->can('leave', $group),
         );
     }
 
@@ -33,6 +35,6 @@ class GroupPermissionsData extends Data
      */
     public static function forGuest(): self
     {
-        return new self(can_manage_settings: false, can_invite: false, can_create: false);
+        return new self(can_manage_settings: false, can_invite: false, can_create: false, can_leave: false);
     }
 }
