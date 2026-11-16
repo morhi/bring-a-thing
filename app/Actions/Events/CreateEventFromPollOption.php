@@ -15,7 +15,8 @@ class CreateEventFromPollOption
     /**
      * Create the event for one fixed poll option and derive its participation from the responses (F-09).
      *
-     * The event takes the poll's title and the option's date and time. Yes
+     * The event takes the poll's group, standalone for a standalone poll
+     * (F-29), the poll's title and the option's date and time. Yes
      * becomes "accepted", maybe becomes "pending", and no or no response
      * leaves the person without a participation status. Nobody is accepted
      * automatically, so a poll without responses yields an event without

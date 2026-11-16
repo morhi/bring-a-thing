@@ -5,19 +5,18 @@ import { computed, ref } from 'vue';
 import {
     show as showEvent,
     store as storeEvent,
+    storeAny as storeAnyEvent,
     update as updateEvent,
 } from '@/actions/App/Http/Controllers/EventController';
 import { show as showGroup } from '@/actions/App/Http/Controllers/GroupController';
+import ChoiceGroup from '@/components/app/choice-group.vue';
+import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import DatePicker from '@/components/app/date-picker.vue';
 import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
 import TimePicker from '@/components/app/time-picker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -51,17 +50,35 @@ const moved = computed(
             eventForm.starts_at !== props.form.event?.starts_at),
 );
 
-// Opened outside a group (F-10): the group comes from a select, and the event posts to that group
+// Opened outside a group (F-10, F-29): the placement is standalone or any own group, and the event posts to events.store-any
 const groupChoices = computed(() => props.form.groups);
-const chosenGroup = ref('');
-const groupError = ref<string | null>(null);
+const placement = ref('standalone');
+
+const placementOptions = computed<ChoiceOption[]>(() => [
+    {
+        value: 'standalone',
+        title: t('newList.standalone'),
+        hint: t('newList.standaloneHint'),
+    },
+    ...(groupChoices.value ?? []).map((group) => ({
+        value: `group-${group.id}`,
+        title: t('newList.inGroup', { group: group.title }),
+        hint: t('newList.inGroupHint'),
+    })),
+]);
+
+const placementError = computed(
+    () =>
+        (eventForm.errors as Record<string, string | undefined>).group_id ??
+        null,
+);
 
 const backHref = computed(() => {
     if (props.form.event) {
         return showEvent(props.form.event.slug).url;
     }
 
-    return groupChoices.value
+    return groupChoices.value || !props.form.group_slug
         ? dashboard().url
         : showGroup(props.form.group_slug).url;
 });
@@ -70,7 +87,7 @@ const backLabel = computed(() => {
         return t('nav.backTo', { name: props.form.event.title });
     }
 
-    return groupChoices.value
+    return groupChoices.value || !props.form.group_name
         ? t('nav.backToDashboard')
         : t('event.back', { group: props.form.group_name });
 });
@@ -94,16 +111,26 @@ function submit(): void {
         return;
     }
 
-    if (groupChoices.value && !chosenGroup.value) {
-        groupError.value = t('newCreate.groupRequired');
+    if (groupChoices.value) {
+        const chosen = placement.value.startsWith('group-')
+            ? Number(placement.value.slice(6))
+            : null;
+
+        eventForm
+            .transform((data) => ({ ...data, group_id: chosen }))
+            .post(storeAnyEvent().url, options);
 
         return;
     }
 
-    eventForm.post(
-        storeEvent(chosenGroup.value || props.form.group_slug).url,
-        options,
-    );
+    // A standalone sub-event posts to store-any without a group; the parent decides its audience
+    if (!props.form.group_slug) {
+        eventForm.post(storeAnyEvent().url, options);
+
+        return;
+    }
+
+    eventForm.post(storeEvent(props.form.group_slug).url, options);
 }
 
 const inputClass =
@@ -129,32 +156,18 @@ const buttonClass = 'h-(--control-height) px-4';
         >
             <FormField
                 v-if="groupChoices"
-                :label="t('newCreate.group')"
-                control="event-group"
-                required
-                :error="groupError"
+                :label="t('newEvent.where')"
+                control="event-where"
+                group
+                :error="placementError"
             >
-                <template #default="{ describedBy, invalid }">
-                    <NativeSelect
-                        id="event-group"
-                        v-model="chosenGroup"
-                        required
-                        class="w-full max-w-(--field-max-width)"
-                        :aria-describedby="describedBy"
-                        :aria-invalid="invalid || undefined"
-                        @change="groupError = null"
-                    >
-                        <NativeSelectOption value="">{{
-                            t('newCreate.groupPlaceholder')
-                        }}</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="group in groupChoices"
-                            :key="group.id"
-                            :value="group.slug"
-                            >{{ group.title }}</NativeSelectOption
-                        >
-                    </NativeSelect>
-                </template>
+                <ChoiceGroup
+                    v-model="placement"
+                    name="event-where"
+                    :aria-label="t('newEvent.where')"
+                    :options="placementOptions"
+                    :invalid="!!placementError"
+                />
             </FormField>
 
             <FormField

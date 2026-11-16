@@ -501,23 +501,29 @@ it('F-22: a revoked grant or a grant of another person gives no guest group', fu
     'grant held by another user' => [fn ($event) => grantOn($event, User::factory()->create())],
 ]);
 
-it('F-22: the card "Without groups" depends on own groupless lists only', function (Closure $setup, ?array $expected) {
+it('F-22: the card "Without groups" depends on own standalone lists, polls and events only', function (Closure $setup, ?array $expected) {
     [$group, $owner] = dashboardGroup();
     $person = User::factory()->create();
     $setup($group, $owner, $person);
 
     $this->actingAs($person)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->where('withoutGroup', $expected));
 })->with([
-    'own groupless list only' => [fn ($group, User $owner, User $person) => dashboardList($person), ['lists_count' => 1]],
+    'own groupless list only' => [fn ($group, User $owner, User $person) => dashboardList($person), ['lists_count' => 1, 'polls_count' => 0, 'events_count' => 0]],
+    'own standalone poll only' => [fn ($group, User $owner, User $person) => dashboardPoll(null, $person, 1), ['lists_count' => 0, 'polls_count' => 1, 'events_count' => 0]],
+    'own standalone event only' => [fn ($group, User $owner, User $person) => dashboardEvent(null, $person), ['lists_count' => 0, 'polls_count' => 0, 'events_count' => 1]],
     'grants only' => [function ($group, User $owner, User $person) {
         grantOn(dashboardEvent($group, $owner), $person);
         grantOn(dashboardPoll($group, $owner, 1), $person);
+    }, null],
+    'grants on standalone items of another person' => [function ($group, User $owner, User $person) {
+        grantOn(dashboardEvent(null, $owner), $person);
+        grantOn(dashboardPoll(null, $owner, 1), $person);
     }, null],
     'own list plus grants' => [function ($group, User $owner, User $person) {
         dashboardList($person);
         grantOn(dashboardEvent($group, $owner), $person);
         grantOn(dashboardPoll($group, $owner, 1), $person);
-    }, ['lists_count' => 1]],
+    }, ['lists_count' => 1, 'polls_count' => 0, 'events_count' => 0]],
     'foreign groupless list with only a claim' => [fn ($group, User $owner, User $person) => dashboardList($owner, [], $person), null],
 ]);
 

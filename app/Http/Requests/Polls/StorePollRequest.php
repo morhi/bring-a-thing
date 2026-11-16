@@ -4,6 +4,7 @@ namespace App\Http\Requests\Polls;
 
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Models\Group;
 use App\Models\Poll;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,10 +16,34 @@ class StorePollRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Creating in a group needs its membership; a standalone poll anybody may create (F-06, F-29).
      */
     public function authorize(): bool
     {
-        return $this->user()->can('createForGroup', [Poll::class, $this->route('group')]);
+        $group = $this->group();
+
+        if ($group !== null) {
+            return $this->user()->can('createForGroup', [Poll::class, $group]);
+        }
+
+        return $this->user()->can('create', Poll::class);
+    }
+
+    /**
+     * The group the poll goes into: the route's group, or the optional group_id input of polls.store-any; null for a standalone poll.
+     */
+    public function group(): ?Group
+    {
+        $group = $this->route('group');
+
+        if ($group instanceof Group) {
+            return $group;
+        }
+
+        $groupId = $this->integer('group_id');
+
+        return $groupId ? Group::query()->find($groupId) : null;
     }
 
     /**
@@ -37,6 +62,7 @@ class StorePollRequest extends FormRequest
         $usesExplicitOptions = $this->usesExplicitOptions();
 
         return [
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
             'title' => ['required', 'string', 'max:255'],
             'type' => ['required', new Enum(PollType::class)],
             'granularity' => ['required', new Enum(PollGranularity::class)],

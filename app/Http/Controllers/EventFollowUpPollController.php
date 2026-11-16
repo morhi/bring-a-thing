@@ -53,7 +53,7 @@ class EventFollowUpPollController extends Controller
         );
 
         EventUpdated::dispatch($event->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 

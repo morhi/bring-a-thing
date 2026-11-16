@@ -10,6 +10,14 @@ use Illuminate\Auth\Access\Response;
 class EventPolicy
 {
     /**
+     * Determine whether the user can create a standalone event, outside any group (F-10, F-29).
+     */
+    public function create(User $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the user can create an event directly in the given group (F-10).
      */
     public function createForGroup(User $user, Group $group): bool
@@ -76,10 +84,12 @@ class EventPolicy
      * Accepted participants and the event's managers can, so an event
      * without acceptances still gets follow-up polls (section 8). Child
      * events never offer them: there is only one level of child events.
+     * Grant holders never create them; on a standalone event that leaves
+     * its organizer (F-29).
      */
     public function createFollowUpPoll(User $user, Event $event): Response
     {
-        if (! $event->group->hasMember($user)) {
+        if (! $event->hasInsider($user)) {
             return $this->denyForGuest($user, $event);
         }
 
@@ -102,7 +112,7 @@ class EventPolicy
      */
     public function createSubEvent(User $user, Event $parent): Response
     {
-        if (! $parent->group->hasMember($user)) {
+        if (! $parent->hasInsider($user)) {
             return $this->denyForGuest($user, $parent);
         }
 
@@ -161,6 +171,10 @@ class EventPolicy
 
         if ($event->isManagedBy($user)) {
             return true;
+        }
+
+        if ($event->group_id === null) {
+            return false;
         }
 
         return $event->group->members_can_set_status && $event->group->hasMember($user);

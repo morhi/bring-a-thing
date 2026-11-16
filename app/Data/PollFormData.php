@@ -21,8 +21,8 @@ class PollFormData extends Data
      * @param  array<int, RosterParentData>|null  $groups  Set on the page opened outside a group: the groups to pick from.
      */
     public function __construct(
-        public string $group_slug,
-        public string $group_name,
+        public ?string $group_slug,
+        public ?string $group_name,
         public int $member_count,
         public ?EventSummaryData $source_event,
         public ?PollData $poll,
@@ -40,14 +40,16 @@ class PollFormData extends Data
      * feeds the audience note; for a follow-up poll it counts the poll's
      * audience and source_event names the event (F-12). today is the
      * server date, before which the option calendar takes no options.
+     * A standalone poll has no group: group_slug and group_name are null
+     * and member_count counts the poll's audience (F-29).
      */
-    public static function forGroup(Group $group, ?Poll $poll = null): self
+    public static function forGroup(?Group $group, ?Poll $poll = null): self
     {
         if ($poll?->event !== null) {
             return new self(
                 ...self::calendarDefaults(),
-                group_slug: $group->slug,
-                group_name: $group->name,
+                group_slug: $group?->slug,
+                group_name: $group?->name,
                 member_count: $poll->audience()->count(),
                 source_event: EventSummaryData::fromEvent($poll->event),
                 poll: PollData::fromPoll($poll),
@@ -56,18 +58,20 @@ class PollFormData extends Data
 
         return new self(
             ...self::calendarDefaults(),
-            group_slug: $group->slug,
-            group_name: $group->name,
-            member_count: $group->members()->count(),
+            group_slug: $group?->slug,
+            group_name: $group?->name,
+            member_count: $group?->members()->count() ?? $poll?->audience()->count() ?? 1,
             source_event: null,
             poll: $poll ? PollData::fromPoll($poll) : null,
         );
     }
 
     /**
-     * Build the "New poll" page opened outside a group, offering every group of the user (F-06).
+     * Build the "New poll" page opened outside a group, offering every group of the user (F-06, F-29).
      *
-     * Creating is allowed in every group the user is a member of, the same set as the group page's create buttons.
+     * Creating is allowed in every group the user is a member of, the same
+     * set as the group page's create buttons, or standalone without a group;
+     * the form posts to polls.store-any with an optional group_id.
      */
     public static function forCreate(User $user): self
     {
@@ -92,8 +96,8 @@ class PollFormData extends Data
     {
         return new self(
             ...self::calendarDefaults(),
-            group_slug: $event->group->slug,
-            group_name: $event->group->name,
+            group_slug: $event->group?->slug,
+            group_name: $event->group?->name,
             member_count: $event->followUpAudience()->count(),
             source_event: EventSummaryData::fromEvent($event),
             poll: null,

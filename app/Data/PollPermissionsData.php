@@ -43,7 +43,7 @@ class PollPermissionsData extends Data
             can_close: $isOpen && $canEdit && $poll->canCloseWithoutFixing(),
             can_reopen: ! $isOpen && $canEdit,
             can_manage_invite_link: $user->can('manageInviteLink', $poll),
-            can_view_group: $user->can('view', $poll->group),
+            can_view_group: $poll->group !== null && $user->can('view', $poll->group),
             can_withdraw: $user->can('withdraw', $poll),
         );
     }

@@ -28,6 +28,7 @@ import {
 import {
     destroy as destroyEvent,
     create as createEvent,
+    createWithoutGroup as createEventAny,
     edit as editEvent,
     show as showEvent,
 } from '@/actions/App/Http/Controllers/EventController';
@@ -77,6 +78,7 @@ import {
 } from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 defineOptions({ layout: AppLayout });
 
@@ -418,7 +420,11 @@ useEcho<{ deleted?: boolean }>(
     ],
     (payload) => {
         if (payload.deleted) {
-            router.visit(showGroup(props.page.event.group_slug).url);
+            router.visit(
+                props.page.event.group_slug
+                    ? showGroup(props.page.event.group_slug).url
+                    : dashboard().url,
+            );
 
             return;
         }
@@ -441,12 +447,24 @@ const badgeLinkClass =
     <div class="flex flex-col gap-10">
         <header class="flex flex-col gap-[18px]" data-feature="F-10">
             <Link
-                v-if="permissions.can_view_group"
+                v-if="
+                    permissions.can_view_group &&
+                    event.group_slug &&
+                    event.group_name
+                "
                 :href="showGroup(event.group_slug).url"
                 class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
                 {{ t('event.back', { group: event.group_name }) }}
+            </Link>
+            <Link
+                v-else-if="!event.group_slug"
+                :href="dashboard().url"
+                class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
+            >
+                <ArrowLeft class="size-4" aria-hidden="true" />
+                {{ t('nav.backToDashboard') }}
             </Link>
             <div class="flex flex-wrap items-start gap-x-5 gap-y-4">
                 <DateBlock :date="event.date" :fixed="isFixed" size="lg" />
@@ -528,7 +546,9 @@ const badgeLinkClass =
                             {{ event.location }}
                         </span>
                         <Link
-                            v-if="permissions.can_view_group"
+                            v-if="
+                                permissions.can_view_group && event.group_slug
+                            "
                             :href="showGroup(event.group_slug).url"
                             class="text-primary hover:text-primary-hover inline-flex min-h-6 items-center gap-1.5 font-semibold underline decoration-1 underline-offset-[3px]"
                         >
@@ -540,7 +560,7 @@ const badgeLinkClass =
                             class="inline-flex min-h-6 items-center gap-1.5 font-semibold"
                         >
                             <Users class="size-4" aria-hidden="true" />
-                            {{ event.group_name }}
+                            {{ event.group_name ?? t('newList.standalone') }}
                         </span>
                         <span>{{
                             t('event.organizer', {
@@ -584,9 +604,14 @@ const badgeLinkClass =
                     >
                         <Link
                             :href="
-                                createEvent(event.group_slug, {
-                                    query: { parent_event_id: event.id },
-                                }).url
+                                (event.group_slug
+                                    ? createEvent(event.group_slug, {
+                                          query: { parent_event_id: event.id },
+                                      })
+                                    : createEventAny({
+                                          query: { parent_event_id: event.id },
+                                      })
+                                ).url
                             "
                         >
                             <Plus aria-hidden="true" />

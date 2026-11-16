@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.23
+- **Version:** 1.24
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -23,13 +23,13 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 ## 4. Users and roles
 
 - **Guest:** person without login who holds a share link. Sees the shared list without other people's email addresses. Claiming or adding opens a login on the same page (F-19).
-- **Account:** any logged-in person, including a shadow account (F-01). Creates groups and standalone lists and manages their own friends.
+- **Account:** any logged-in person, including a shadow account (F-01). Creates groups, standalone lists, standalone polls and standalone events (F-29) and manages their own friends.
 - **Group owner:** creator of a group. May do everything in the group, including deleting it and granting or revoking the admin role.
 - **Group admin:** member appointed by the owner. Invites and removes members (not the owner), edits all polls, events and lists of the group, adds items regardless of F-14 and claims items for others. May not delete the group, change admin roles or switch the group option (F-03).
 - **Member:** sees all polls and events of the group and the group lists, responds to polls, accepts or declines events, comments and claims items.
-- **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events.
+- **Organizer:** whoever creates a poll or an event. Edits, closes and fixes dates like an admin, but only for their own polls and events. For a standalone poll or event (F-29) the organizer is the only person who manages it.
 - **List owner:** whoever creates a list. Manages settings, items, custom fields and the share link of that list.
-- **Link guest:** account that joined an event or poll through its invite link without group membership (F-26, F-27). Has the rights of a member for that event or poll and its sub-entities only and never manages them. Sees the item's group only as a restricted guest group page (F-22, F-26, F-27), never its members or other items.
+- **Link guest:** account that joined an event or poll through its invite link without group membership (F-26, F-27). Has the rights of a member for that event or poll and its sub-entities only and never manages them. Sees the item's group only as a restricted guest group page (F-22, F-26, F-27), never its members or other items. A standalone item has no group to show.
 - **Participants:** members and link guests with the participation status "accepted" or "pending" for an event. Only they see the lists of that event (F-11, F-13). Only participants with "accepted" see and create its follow-up polls (F-12).
 
 ## 5. Features
@@ -137,14 +137,14 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Find the right date among several proposals.
 
 **Rules:**
-- Members create a poll in a group. The respondents are all group members, except for a follow-up poll (F-12).
+- Members create a poll in a group. The respondents are all group members, except for a follow-up poll (F-12). Any account also creates a standalone poll without a group; its respondents are the organizer and the people who joined through its invite link (F-27, F-29).
 - The poll works by day or with time slots. Each option consists of a date. With time slots it also has start and end. Every option can carry an optional label (for example "Lunch" or "Room free until 22:00"), and the grid header shows it on one line. Several slots on the same day are possible.
 - With two or more slots, "Use this time for all" applies one slot's start and end to all other slots. Locked options (F-08) keep their time.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
 - Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
-- A poll can also be created from outside a group ("New poll" at /polls/new): the page has a required group select with the user's own groups, and the poll is created in the chosen group. Without a group the form shows an error.
+- A poll can also be created from outside a group ("New poll" at /polls/new): the placement picker offers "Standalone" and the user's own groups, and the poll is created in the chosen group or standalone. A group the person is not a member of is refused.
 - A "Table / Calendar" toggle switches the view. The calendar shows a week grid for a time-slot poll and a month grid for a by-day poll. Options can be answered in both views, and the tab order follows the options chronologically.
 
 **Acceptance criteria:**
@@ -154,6 +154,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
 - An option with a label shows it in the grid header.
 - On the page opened outside a group, a member of two groups picks one and the poll is created in that group; only the member's own groups are offered.
+- A poll created as "Standalone" has no group; picking a group the person is not a member of is refused and creates nothing.
 - In an edited poll, "Use this time for all" leaves options with answers unchanged.
 - An answer chosen with the arrow keys is saved right away and shown after a reload.
 - The calendar view of a time-slot poll shows a week grid and of a by-day poll a month grid; options can be answered there, and tabbing moves through them in chronological order.
@@ -211,21 +212,23 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Track a fixed date with acceptances and declines, also without a prior poll.
 
 **Rules:**
-- An event belongs to a group and has a title, description, location, start (date, optional time) and an optional end.
+- An event belongs to a group, or is standalone without one (F-29), and has a title, description, location, start (date, optional time) and an optional end.
 - An event results from fixing a date (F-09) or is created directly: a member creates it and thereby asks all group members to accept or decline. This replaces a poll with only one date.
-- For a directly created event, every member starts as "pending". The organizer is "accepted".
+- For a directly created event, every member starts as "pending". The organizer is "accepted". A standalone event starts with the organizer alone as "accepted"; others join through its invite link (F-26). Only its organizer manages it, and nobody else sets statuses for others.
 - Organizer, owner and admins edit and delete the event. Deleting removes its lists, follow-up polls and child events after a confirmation.
 - When the date or time changes, the app resets all acceptances to "pending", because the acceptance applied to the old date.
 - The event shows acceptances, pending responses and declines with counts, its lists, follow-up polls and child events.
-- Organizer, owner and admins of an event add a sub-event directly under it with "Add sub-event", without a follow-up poll. The sub-event is an event of the same group with the source event as parent. Its participants start as the source event's participants ("accepted" and "pending") with "pending", and the organizer is "accepted". A child event has no sub-events of its own.
+- Organizer, owner and admins of an event add a sub-event directly under it with "Add sub-event", without a follow-up poll. The sub-event is an event of the same group, or standalone under a standalone event, with the source event as parent. Its participants start as the source event's participants ("accepted" and "pending") with "pending", and the organizer is "accepted". A child event has no sub-events of its own.
 - An event whose start has passed counts as past. There is no other status.
-- An event can also be created from outside a group ("New event" at /events/new): the page has a required group select with the user's own groups, and the event is created in the chosen group. Without a group the form shows an error.
+- An event can also be created from outside a group ("New event" at /events/new): the placement picker offers "Standalone" and the user's own groups, and the event is created in the chosen group or standalone. A group the person is not a member of is refused.
 
 **Acceptance criteria:**
 - A directly created event in a group with five members shows one accepted organizer and four pending responses.
 - After moving the event from 12.03. to 19.03., all acceptances are "pending" again.
 - Deleting an event with a list also removes the list.
 - On the page opened outside a group, a member of two groups picks one and the event is created in that group; only the member's own groups are offered.
+- An event created as "Standalone" has no group; picking a group the person is not a member of is refused and creates nothing.
+- A sub-event of a standalone event is created only by its organizer and only under a standalone parent.
 - A manager who adds a sub-event to an event with three participants gets a child event with those three participants. A plain member and a child event do not offer "Add sub-event".
 
 #### F-11 Participation (Core)
@@ -257,6 +260,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Fixing dates follows F-09, and the new events attach to the source event.
 - Child events do not offer follow-up polls. Follow-up polls exist only on events without a parent event.
 - Child events also arise from "Add sub-event" (F-10). Both kinds sit in the source event under the child events, one level deep.
+- Follow-up polls, sub-events and events fixed from a poll take the group of their source; under a standalone poll or event they are standalone too (F-29).
 
 **Acceptance criteria:**
 - A group member without acceptance sees the follow-up poll neither in the group nor on the dashboard.
@@ -264,6 +268,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A person who accepts after the follow-up poll was created can respond to it.
 - An event fixed from a follow-up poll appears in the source event under the child events.
 - A child event shows no "New follow-up poll" action.
+- A follow-up poll and a sub-event of a standalone event, and an event fixed from a standalone poll, are standalone.
 
 #### F-13 Lists (Core)
 
@@ -373,6 +378,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A comment on an event appears only on that event.
 - Cmd+Enter in the comment field sends the comment.
 - A member who is neither author, group owner nor admin sees no delete action on an event comment.
+- On a standalone event only the author deletes a comment, not the organizer.
 
 #### F-21 Live updates (Secondary)
 
@@ -384,6 +390,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Acceptance criteria:**
 - When a person claims an item, a second open session shows the claim within 2 seconds.
+- A change to a standalone poll or event refreshes the dashboards of its organizer and the people with access through its link only.
 
 #### F-22 Dashboard (Core)
 
@@ -393,10 +400,11 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The dashboard shows these sections in this order:
   1. "Waiting for you": open polls without a complete response and events with the status "pending". When nothing waits, the section shrinks to one slim line.
   2. "Übernahmen": one's own claims (things and tasks) on upcoming lists. The section is collapsible.
-  3. "Events": upcoming events, full width, compact rows, with one's own acceptance, plus a link "All events" (F-32) and a button "New event" that leads to the group selection for a new event.
-  4. "Polls": open polls the person may see, each with the own status "answered", "partly answered" or "not answered", plus a link "All polls" (F-31) and a button "New poll" that leads to the group selection for a new poll.
+  3. "Events": upcoming events, full width, compact rows, with one's own acceptance, plus a link "All events" (F-32) and a button "New event" that leads to the placement picker ("Standalone" or one of the own groups) for a new event.
+  4. "Polls": open polls the person may see, each with the own status "answered", "partly answered" or "not answered", plus a link "All polls" (F-31) and a button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
   5. "Lists": active lists the person may open, plus a link "All lists" (F-28) and a button "New list". Past lists are missing; event lists show only while the event is not past.
-  6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one list without a group.
+  6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one list, poll or event without a group.
+- The sections show the person's own standalone polls and events (F-29) like those of a group, without a group name.
 - Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
 - A poll the person withdrew from (F-08) is missing from every section and from the open poll count of its group card. An event they withdrew from (F-11) is missing from "Waiting for you" and the upcoming events.
@@ -412,7 +420,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - After joining one event of a group through its link, the group shows under "Groups" with the guest mark and the count 1 for events and 0 for polls and lists the person may not open.
 - A group with three polls of which the person may open one shows the poll count 1 on the guest card.
 - After the person joins the group as a member (F-04), the guest mark disappears from its card and the group shows its full counts.
-- Without an own list without a group, the card "Without groups" is missing.
+- Without an own list, poll or event without a group, the card "Without groups" is missing.
+- An own standalone poll and event appear under "Polls" and "Events" for the organizer and for nobody outside its link.
 - After withdrawing from a poll, it is missing from "Waiting for you", from the current polls and from the open poll count of its group card.
 
 #### F-23 Notifications (Secondary)
@@ -427,6 +436,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Acceptance criteria:**
 - After fixing a date, the bell shows an unread notification to every accepted person.
 - "Mark all as read" sets the counter to zero.
+- Creating a standalone poll or event notifies no group member.
 
 #### F-24 Interface language (Secondary)
 
@@ -453,7 +463,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The header carries a search field in the middle; on narrow screens it shows as a search icon. Cmd+K on Mac and Ctrl+K elsewhere opens and closes the palette, Esc closes it.
 - Without input, the palette shows the quick actions "New group", "New list", "Dashboard", "Settings" and "Friends". Typing filters them.
 - From two letters on, the palette also searches the titles of groups, polls, events and lists, grouped by type with a heading. Each type shows at most five results.
-- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, the events and polls reached through an invite link (F-26, F-27) with their group as guest group, and the lists by the rules of F-13.
+- Results only contain records the person may open: their groups, the polls and events of those groups by the rules of F-06, F-10 and F-12, their own standalone polls and events (F-29), the events and polls reached through an invite link (F-26, F-27) with their group as guest group, and the lists by the rules of F-13.
 - The arrow keys move through the entries and Enter opens the selected one. While searching, the palette shows a loading state; without results it says so.
 
 **Acceptance criteria:**
@@ -463,6 +473,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A poll, event or list of a group the person is not a member of never appears, unless the person reached it through an invite link or by the rules of F-13.
 - An event list or follow-up poll appears only once the person takes part in the event.
 - With seven matching polls, the palette shows five.
+- An own standalone poll and event appear for the organizer and for nobody else without a link.
 
 #### F-26 Event invite link (Secondary)
 
@@ -473,7 +484,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The link is always open. A logged-in account joins with one click. A guest joins with a name only, or with an email (plus a name for a new account) and a login link. The join page warns that a name-only account loses access at logout.
 - Joining grants access to the event, its child events, its follow-up polls and its lists, without group membership. Follow-up polls and lists follow the participation rules of F-11 to F-13 as for members.
 - A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, never see the group's other items or its members, and see the group only as the restricted group page.
-- The event shows link guests among its participants. The event belongs to its real group, which the link guest sees as a guest group under "Groups" (F-22). Their events and polls appear in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
+- The event shows link guests among its participants. The event belongs to its real group, which the link guest sees as a guest group under "Groups" (F-22). A standalone event (F-29) has no group: only its organizer and its link guests open it, and it shows no guest group. Their events and polls appear in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
 
 **Acceptance criteria:**
 - A member without the manager role cannot create, regenerate or revoke the link.
@@ -488,6 +499,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An owner or admin who invites the link guest as a member (F-04) turns the guest into a member; the guest mark disappears and the full group page opens.
 - After revoking or regenerating, the old link shows "Not found".
 - A link guest can accept the event but not edit it.
+- A standalone event shows "Not found" to everyone except its organizer and its link guests; a link guest opens it after joining, without edit rights.
 
 #### F-27 Poll invite link (Secondary)
 
@@ -499,6 +511,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Joining grants access to the poll, to the events fixed from it (F-09) and their child events, and to follow-up polls and lists under the same participation rules as in F-26 (F-11 to F-13). A link guest belongs to the poll's respondents and counts in totals and the best option.
 - A link guest answers the poll but never edits, closes or fixes it, and sees the group only as the restricted group page (F-26).
 - A person who withdrew from the poll (F-08) and joins again through its link is back in the audience and opens the poll.
+- A standalone poll (F-29) has no group: only its organizer and its link guests open it, and it shows no guest group.
 
 **Acceptance criteria:**
 - A logged-in account without group membership answers the poll right after joining through the link.
@@ -508,6 +521,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The poll and its fixed events appear on the restricted group page of their group (F-26), in the dashboard sections of F-22 and in search.
 - The restricted group page shows the poll and its fixed events, and no other poll or event of the group.
 - A member who withdrew from the poll and joins through its link opens the poll again.
+- A standalone poll shows "Not found" to everyone except its organizer and its link guests; a link guest opens it after joining, without edit rights.
 
 #### F-28 All lists (Secondary)
 
@@ -526,18 +540,22 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-29 Without groups (Secondary)
 
-**User goal:** Reach one's own lists that belong to no group.
+**User goal:** Reach one's own lists, polls and events that belong to no group.
 
 **Rules:**
-- The dashboard shows the virtual group "Without groups" as a card in the groups section (F-22). It appears only when the person owns at least one list without a group. It appears nowhere else: not in group pickers, and polls and events without a group still do not exist.
-- Its page lists only the person's own lists without a group. Items reached through invite links (F-26, F-27) do not appear there; they belong to their real group.
+- Lists, polls and events can be standalone, without a group. A standalone poll or event is visible only to its organizer and to people who joined through its invite link (F-26, F-27); only the organizer manages it.
+- The dashboard shows the virtual group "Without groups" as a card in the groups section (F-22). It appears only when the person owns at least one list, poll or event without a group. It appears nowhere else: the placement picker when creating a poll, event or list offers "Standalone", not "Without groups".
+- Its page lists only the person's own standalone lists, polls and events, follow-up polls and child events excluded. Items reached through invite links (F-26, F-27) do not appear there, also not standalone ones of other people.
+- Deleting a standalone poll or event returns to the dashboard.
 - Hidden items stay "Not found".
 
 **Acceptance criteria:**
 - A list of the person without a group appears on the page "Without groups"; a list of another person does not.
-- Without an own list without a group, the dashboard shows no card "Without groups".
+- An own standalone poll and event appear on the page "Without groups"; a standalone poll or event of another person joined through its link does not.
+- Without an own list, poll or event without a group, the dashboard shows no card "Without groups".
 - After joining an event through its link, the event does not appear on the page "Without groups".
-- The group pickers when creating a poll, event or list do not offer "Without groups".
+- The placement picker when creating a poll, event or list offers "Standalone" and the person's own groups, never "Without groups".
+- Deleting a standalone poll or event leads to the dashboard with a confirmation message.
 - Opening an item of a revoked or unreached link shows "Not found".
 
 #### F-30 Email on fixed dates (Secondary)
@@ -565,9 +583,9 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Find any poll one may open, also closed ones, in one place and start a new poll from there.
 
 **Rules:**
-- The page "Polls" shows the polls the person may open by the rules of F-06 and F-22: polls they withdrew from (F-08) and follow-up polls (F-12) are left out. The default is open polls.
+- The page "Polls" shows the polls the person may open by the rules of F-06 and F-22, including their own standalone polls (F-29): polls they withdrew from (F-08) and follow-up polls (F-12) are left out. The default is open polls.
 - Filters: "Unanswered" (the person answered none or only some options), "My polls only" (the person organizes the poll), and a switch between open and all polls, which adds closed ones.
-- Filters combine. The page has a button "New poll" that leads to the group selection for a new poll.
+- Filters combine. The page has a button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
 - Polls the person may not open never appear.
 
 **Acceptance criteria:**
@@ -576,21 +594,23 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - "My polls only" hides a poll that another person organizes.
 - A poll of a group the person is not a member of, a poll the person withdrew from and a follow-up poll never appear.
 - Active filters combine with AND.
+- An own standalone poll appears; a standalone poll of another person without a link does not.
 
 #### F-32 All events (Secondary)
 
 **User goal:** Find every event one takes part in, also past ones, in one place and start a new one from there.
 
 **Rules:**
-- The page "All events" shows the events the person may open by the rules of F-22 (events of their groups and events reached through an invite link) and where their participation is "accepted" or "pending". Withdrawn and declined events and child events do not appear.
+- The page "All events" shows the events the person may open by the rules of F-22 (events of their groups, their own standalone events (F-29) and events reached through an invite link) and where their participation is "accepted" or "pending". Withdrawn and declined events and child events do not appear.
 - Filters: "My events only" (the person accepted), and a switch between upcoming and all events. The default is upcoming.
-- The button "New event" leads to the group selection for creating an event.
+- The button "New event" leads to the placement picker ("Standalone" or one of the own groups) for creating an event.
 
 **Acceptance criteria:**
 - Events of a group the person is not a member of never appear.
 - A past event appears only after switching to "all".
 - "My events only" hides an event the person has not accepted yet.
 - An event the person declined or withdrew from, and a child event, does not appear.
+- An own standalone event appears; a standalone event of another person without a link does not.
 
 ## 6. Structure
 
@@ -602,7 +622,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **All lists:** table of all lists the person may open, with filters (F-28).
 - **All polls:** list of all polls the person may open, with filters and the button "New poll" (F-31).
 - **All events:** list of all events the person may open, with filters and the button "New event" (F-32).
-- **Without groups:** virtual group page with the person's own lists without group (F-29).
+- **Without groups:** virtual group page with the person's own lists, polls and events without group (F-29).
 - **New group:** name and invitations (F-03, F-04).
 - **Group:** members with invite (F-04), polls, upcoming and past events, group lists, actions "New poll", "New event" and "New list". Link guests see a restricted version with the group name and only the items they may open, without members, settings, invite link and create actions (F-26, F-27).
 - **Group settings:** name, invite link, option, membership requests, roles, delete (F-03, F-04).
@@ -634,11 +654,11 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Group:** name (text, required), owner (account, required).
 - **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
 - **Membership request:** group, account (both required). At most one per account and group; removed when the owner accepts or declines (F-03).
-- **Poll:** group (required), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
+- **Poll:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
 - **Poll option:** poll (required), date (required), start and end (time, required for time slots), label (text), fixed (yes/no).
 - **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
 - **Poll withdrawal:** poll, account (both required). At most one per account and poll (F-08).
-- **Event:** group (required), organizer (account, required), title (text, required), description (text), location (text), start (date, required; time optional), end (date and time, optional), origin (poll option, optional), parent event (optional, one level).
+- **Event:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), description (text), location (text), start (date, required; time optional), end (date and time, optional), origin (poll option, optional), parent event (optional, one level).
 - **Participation:** event, account, status (choice: accepted, pending, declined, required). At most one participation per account and event.
 - **List:** title (text, required), description (text), owner (account, required), group or event (each optional, at most one), date (date), members can add items (yes/no), share link (text, optional), attendance day (option of an attendance poll, optional).
 - **Item:** list (required), name (text, required), quantity (number, optional), unit (text), notes (text), date (date), attendance day (optional), custom field values.
@@ -691,7 +711,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - Costs, fees and splitting expenses
 - Setlists and other occasion-specific content
 - Native apps
-- Polls without a group and poll responses without an account; an invite link guest always gets an account, if only with a name (F-26, F-27)
+- Poll responses without an account; an invite link guest always gets an account, if only with a name (F-26, F-27)
 - Recurring events and automatically recurring lists (duplication only)
 - Emails other than the login email, including reminders
 - Status fields for lists and items; past is derived from the date

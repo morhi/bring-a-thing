@@ -10,6 +10,14 @@ use Illuminate\Auth\Access\Response;
 class PollPolicy
 {
     /**
+     * Determine whether the user can create a standalone poll, outside any group (F-06, F-29).
+     */
+    public function create(User $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the user can create a poll attached to the given group.
      */
     public function createForGroup(User $user, Group $group): bool
@@ -59,9 +67,15 @@ class PollPolicy
 
     /**
      * Determine whether the user can edit the poll: organizer, group owner and admins (F-08).
+     *
+     * A standalone poll has only its organizer as editor (F-29).
      */
     public function update(User $user, Poll $poll): bool
     {
+        if ($poll->group_id === null) {
+            return $poll->organizer_id === $user->getKey();
+        }
+
         if ($poll->organizer_id === $user->getKey() && $poll->group->hasMember($user)) {
             return true;
         }

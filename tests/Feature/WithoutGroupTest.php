@@ -21,12 +21,12 @@ it('F-29: a guest is sent to the login', function () {
     $this->get(route('without-group.show'))->assertRedirect(route('login'));
 });
 
-it('F-29: a person without own groupless lists sees the empty state', function () {
+it('F-29: a person without own standalone lists, polls and events sees the empty state', function () {
     $this->actingAs(User::factory()->create())->get(route('without-group.show'))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('WithoutGroup/Show')
         ->has('lists', 0)
-        ->missing('events')
-        ->missing('polls'));
+        ->has('events', 0)
+        ->has('polls', 0));
 });
 
 it('F-29: Without groups holds only own groupless lists', function () {

@@ -21,9 +21,10 @@ class EventsIndexData extends Data
     /**
      * Build the page "All events" with the events the person takes part in, narrowed by the filters (F-32).
      *
-     * Visibility follows the dashboard (F-22): events of the person's groups
-     * and events reached through a grant. Only events with an accepted or
-     * pending participation count, so withdrawn and declined events stay out,
+     * Visibility follows the dashboard (F-22): events of the person's groups,
+     * own standalone events (F-29) and events reached through a grant. Only
+     * events with an accepted or pending participation count, so withdrawn
+     * and declined events stay out,
      * and child events belong to their source event. Without "all", past
      * events are left out.
      */
@@ -35,6 +36,7 @@ class EventsIndexData extends Data
             ->whereNull('parent_event_id')
             ->where(fn (Builder $query) => $query
                 ->whereIn('group_id', $user->groups()->select('groups.id'))
+                ->orWhere(fn (Builder $query) => $query->standaloneOrganizedBy($user))
                 ->orWhere(fn (Builder $query) => $query->reachableThroughGrants($user)))
             ->whereHas('participations', fn (Builder $query) => $query
                 ->where('user_id', $user->getKey())

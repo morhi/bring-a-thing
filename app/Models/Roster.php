@@ -226,6 +226,9 @@ class Roster extends Model
                     ->orWhere(fn (Builder $event) => $event
                         ->where('organizer_id', $userId)
                         ->whereHas('group.members', $isMember))
+                    ->orWhere(fn (Builder $event) => $event
+                        ->whereNull('group_id')
+                        ->where('organizer_id', $userId))
                     ->orWhereHas('group', fn (Builder $group) => $group
                         ->where('owner_id', $userId)
                         ->orWhereHas('members', fn (Builder $member) => $member

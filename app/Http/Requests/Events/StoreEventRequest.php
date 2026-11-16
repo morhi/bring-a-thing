@@ -4,7 +4,10 @@ namespace App\Http\Requests\Events;
 
 use App\Models\Event;
 use App\Models\Group;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -16,7 +19,12 @@ class StoreEventRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        if (! $this->user()->can('createForGroup', [Event::class, $this->route('group')])) {
+        $group = $this->group();
+        $allowed = $group !== null
+            ? $this->user()->can('createForGroup', [Event::class, $group])
+            : $this->user()->can('create', Event::class);
+
+        if (! $allowed) {
             return false;
         }
 
@@ -27,7 +35,26 @@ class StoreEventRequest extends FormRequest
     }
 
     /**
-     * The parent event of a sub-event (F-10, F-12), when it exists in the route's group.
+     * The group the event goes into: the route's group, or the optional group_id input of events.store-any; null for a standalone event (F-10, F-29).
+     */
+    public function group(): ?Group
+    {
+        $group = $this->route('group');
+
+        if ($group instanceof Group) {
+            return $group;
+        }
+
+        $groupId = $this->integer('group_id');
+
+        return $groupId ? Group::query()->find($groupId) : null;
+    }
+
+    /**
+     * The parent event of a sub-event (F-10, F-12), when it exists in the same group, or is standalone for a standalone sub-event.
+     *
+     * A parent the user may not open counts as missing, so another person's
+     * standalone event fails like an unknown id (section 8).
      */
     public function parentEvent(): ?Event
     {
@@ -35,12 +62,33 @@ class StoreEventRequest extends FormRequest
             return null;
         }
 
-        /** @var Group $group */
-        $group = $this->route('group');
-
-        return Event::query()
-            ->where('group_id', $group->getKey())
+        $parent = Event::query()
+            ->where(fn (EloquentBuilder $query) => $this->constrainToGroup($query))
             ->find((int) $this->input('parent_event_id'));
+
+        if ($parent === null || ! $this->user()->can('view', $parent)) {
+            return null;
+        }
+
+        return $parent;
+    }
+
+    /**
+     * Limit a query on events to the request's group, or to standalone events without one.
+     *
+     * @param  EloquentBuilder<Event>|QueryBuilder  $query
+     */
+    private function constrainToGroup(EloquentBuilder|QueryBuilder $query): void
+    {
+        $group = $this->group();
+
+        if ($group === null) {
+            $query->whereNull('group_id');
+
+            return;
+        }
+
+        $query->where('group_id', $group->getKey());
     }
 
     /**
@@ -66,16 +114,22 @@ class StoreEventRequest extends FormRequest
     }
 
     /**
-     * The rule for the optional parent of a sub-event; it must lie in the route's group (F-10, F-12).
+     * The rules for the optional group and parent of a sub-event; the parent must lie in the same group, or be standalone too (F-10, F-12, F-29).
      *
      * @return array<string, array<mixed>>
      */
     protected function parentRules(): array
     {
-        /** @var Group $group */
-        $group = $this->route('group');
-
-        return ['parent_event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('group_id', $group->getKey())]];
+        return [
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+            'parent_event_id' => [
+                'bail',
+                'nullable',
+                'integer',
+                Rule::exists('events', 'id')->where(fn (QueryBuilder $query) => $this->constrainToGroup($query)),
+                fn (string $attribute, mixed $value, Closure $fail) => $this->parentEvent() === null ? $fail('validation.exists')->translate() : null,
+            ],
+        ];
     }
 
     /**

@@ -174,6 +174,19 @@ function groupCounts(
     return [{ value: group.member_count, label: 'word.members' }, ...counts];
 }
 
+// Lists, polls and events without a group, as one counted phrase each
+const withoutGroupCounts = computed(() => {
+    if (!props.withoutGroup) {
+        return [];
+    }
+
+    return [
+        tc('dash.withoutGroup.lists', props.withoutGroup.lists_count),
+        tc('dash.withoutGroup.polls', props.withoutGroup.polls_count),
+        tc('dash.withoutGroup.events', props.withoutGroup.events_count),
+    ];
+});
+
 function weekdayDate(date: string): string {
     return formatDate(date, locale.value, {
         weekday: 'short',
@@ -197,7 +210,7 @@ function waitingMeta(item: App.Data.DashboardWaitingData): string {
               })
             : t('dash.waiting.pollMetaNone');
 
-        return `${item.group_name} · ${answered}`;
+        return `${item.group_name ?? t('newList.standalone')} · ${answered}`;
     }
 
     const day = item.date
@@ -212,7 +225,7 @@ function waitingMeta(item: App.Data.DashboardWaitingData): string {
         accepted: item.accepted_count ?? 0,
     });
 
-    return `${item.group_name} · ${day}${item.starts_at ? `, ${item.starts_at}` : ''} · ${accepted}`;
+    return `${item.group_name ?? t('newList.standalone')} · ${day}${item.starts_at ? `, ${item.starts_at}` : ''} · ${accepted}`;
 }
 
 function waitingFeature(item: App.Data.DashboardWaitingData): string {
@@ -519,7 +532,7 @@ function acceptedPeople(
                             >
                             <span
                                 class="text-fg-muted col-span-2 min-w-0 truncate text-sm @[760px]:col-span-1"
-                                >{{ event.group_name
+                                >{{ event.group_name ?? t('newList.standalone')
                                 }}<template v-if="event.location">
                                     · {{ event.location }}</template
                                 ></span
@@ -708,12 +721,15 @@ function acceptedPeople(
                                     t('dash.withoutGroup.text')
                                 }}</span>
                             </span>
-                            <span class="text-fg-muted text-sm tabular-nums">{{
-                                tc(
-                                    'dash.withoutGroup.lists',
-                                    withoutGroup.lists_count,
-                                )
-                            }}</span>
+                            <span
+                                class="text-fg-muted flex flex-wrap gap-x-4 gap-y-1 text-sm"
+                            >
+                                <span
+                                    v-for="count in withoutGroupCounts"
+                                    :key="count"
+                                    >{{ count }}</span
+                                >
+                            </span>
                         </SectionBoxItem>
                     </li>
                 </ul>

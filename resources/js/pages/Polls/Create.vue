@@ -12,6 +12,7 @@ import {
     reopen as reopenPoll,
     show as showPoll,
     store as storePoll,
+    storeAny as storeAnyPoll,
     update as updatePoll,
 } from '@/actions/App/Http/Controllers/PollController';
 import ChoiceGroup from '@/components/app/choice-group.vue';
@@ -37,10 +38,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
@@ -176,7 +173,7 @@ const back = computed(() => {
         };
     }
 
-    if (groupChoices.value) {
+    if (groupChoices.value || !props.form.group_slug) {
         return { href: dashboard().url, name: null };
     }
 
@@ -215,11 +212,35 @@ const optionsHint = computed(() => {
     return editing.value ? t('poll.edit.optionsHint') : null;
 });
 
-// Opened outside a group (F-06): the group comes from a select, and the poll posts to that group
+// Opened outside a group (F-06, F-29): the placement is standalone or any own group, and the poll posts to polls.store-any
 const groupChoices = computed(() => props.form.groups);
-const chosenGroup = ref('');
+const placement = ref('standalone');
 const pollForm = useForm({ title: poll.value?.title ?? '' });
-const groupError = ref<string | null>(null);
+
+const placementOptions = computed<ChoiceOption[]>(() => [
+    {
+        value: 'standalone',
+        title: t('newList.standalone'),
+        hint: t('newList.standaloneHint'),
+    },
+    ...(groupChoices.value ?? []).map((group) => ({
+        value: `group-${group.id}`,
+        title: t('newList.inGroup', { group: group.title }),
+        hint: t('newList.inGroupHint'),
+    })),
+]);
+
+const placementError = computed(
+    () =>
+        (pollForm.errors as Record<string, string | undefined>).group_id ??
+        null,
+);
+
+function chosenGroupId(): number | null {
+    return placement.value.startsWith('group-')
+        ? Number(placement.value.slice(6))
+        : null;
+}
 const optionsError = ref<string | null>(null);
 
 const optionsServerError = computed(() => {
@@ -243,20 +264,6 @@ function optionRows(withSlug: boolean): Record<string, string | null>[] {
 
 function save(): void {
     optionsError.value = null;
-    groupError.value = null;
-
-    if (groupChoices.value && !chosenGroup.value) {
-        groupError.value = t('newCreate.groupRequired');
-    }
-
-    if (groupError.value && !pollForm.title.trim()) {
-        pollForm.setError('title', t('newPoll.titleRequired'));
-    }
-
-    if (groupError.value) {
-        return;
-    }
-
     if (!closed.value && options.value.length === 0) {
         optionsError.value = t('newPoll.optionsRequired');
 
@@ -277,15 +284,24 @@ function save(): void {
     pollForm
         .transform((data) => ({
             ...data,
+            ...(groupChoices.value ? { group_id: chosenGroupId() } : {}),
             type: type.value,
             granularity: mode.value === 'slots' ? 'hour' : 'day',
             options: optionRows(false),
         }))
-        .post(
-            sourceEvent.value
-                ? storeFollowUpPoll(sourceEvent.value.slug).url
-                : storePoll(chosenGroup.value || props.form.group_slug).url,
-        );
+        .post(createUrl());
+}
+
+function createUrl(): string {
+    if (sourceEvent.value) {
+        return storeFollowUpPoll(sourceEvent.value.slug).url;
+    }
+
+    if (groupChoices.value || !props.form.group_slug) {
+        return storeAnyPoll().url;
+    }
+
+    return storePoll(props.form.group_slug).url;
 }
 
 // A closed poll keeps its options (F-08), so only the title is sent then
@@ -386,36 +402,22 @@ const inputClass =
         >
             <FormField
                 v-if="groupChoices"
-                :label="t('newCreate.group')"
-                control="poll-group"
-                required
-                :error="groupError"
+                :label="t('newPoll.where')"
+                control="poll-where"
+                group
+                :error="placementError"
             >
-                <template #default="{ describedBy, invalid }">
-                    <NativeSelect
-                        id="poll-group"
-                        v-model="chosenGroup"
-                        required
-                        class="w-full max-w-(--field-max-width)"
-                        :aria-describedby="describedBy"
-                        :aria-invalid="invalid || undefined"
-                        @change="groupError = null"
-                    >
-                        <NativeSelectOption value="">{{
-                            t('newCreate.groupPlaceholder')
-                        }}</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="group in groupChoices"
-                            :key="group.id"
-                            :value="group.slug"
-                            >{{ group.title }}</NativeSelectOption
-                        >
-                    </NativeSelect>
-                </template>
+                <ChoiceGroup
+                    v-model="placement"
+                    name="poll-where"
+                    :aria-label="t('newPoll.where')"
+                    :options="placementOptions"
+                    :invalid="!!placementError"
+                />
             </FormField>
 
             <div
-                v-if="!groupChoices"
+                v-if="!groupChoices && (sourceEvent || form.group_name)"
                 class="bg-primary-soft text-primary-soft-fg flex items-center gap-3 rounded-md px-3.5 py-3 text-sm"
                 :data-feature="sourceEvent ? 'F-12' : 'F-06'"
             >
@@ -425,7 +427,9 @@ const inputClass =
                         t('newPoll.audienceEvent', { event: sourceEvent.title })
                     }}</b>
                     <b v-else class="font-semibold">{{
-                        t('newPoll.audienceGroup', { group: form.group_name })
+                        t('newPoll.audienceGroup', {
+                            group: form.group_name ?? '',
+                        })
                     }}</b>
                     <span>{{
                         sourceEvent

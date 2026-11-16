@@ -2,7 +2,10 @@
 
 namespace App\Events;
 
+use App\Models\Event;
 use App\Models\Group;
+use App\Models\Poll;
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -19,7 +22,7 @@ class DashboardChanged implements ShouldBroadcast, ShouldDispatchAfterCommit
      * @param  array<int, int>  $userIds
      */
     public function __construct(
-        public int $groupId,
+        public ?int $groupId,
         public array $userIds,
     ) {}
 
@@ -38,6 +41,37 @@ class DashboardChanged implements ShouldBroadcast, ShouldDispatchAfterCommit
         }
 
         self::dispatch($group->getKey(), $group->members()->pluck('users.id')->map(fn ($id) => (int) $id)->all());
+    }
+
+    /**
+     * Dispatch the event to everyone whose dashboard shows the poll or event (F-21, F-22, F-29).
+     */
+    public static function forItem(Poll|Event $item): void
+    {
+        self::dispatch($item->group_id, self::recipientsOf($item));
+    }
+
+    /**
+     * The people whose dashboards show the poll or event: the group's members, or for a standalone item its organizer, grant holders and participants (F-29).
+     *
+     * Callers that delete the item resolve them first, so the change still
+     * reaches the people whose dashboards showed it.
+     *
+     * @return array<int, int>
+     */
+    public static function recipientsOf(Poll|Event $item): array
+    {
+        if ($item->group_id !== null) {
+            return Group::query()->find($item->group_id)?->members()->pluck('users.id')->map(fn ($id) => (int) $id)->all() ?? [];
+        }
+
+        $people = $item->insiders()->toBase()->concat($item->guests());
+
+        if ($item instanceof Event) {
+            $people = $people->concat($item->participations()->with('user')->get()->pluck('user')->filter());
+        }
+
+        return $people->map(fn (User $person) => (int) $person->getKey())->unique()->values()->all();
     }
 
     /**
@@ -69,7 +103,7 @@ class DashboardChanged implements ShouldBroadcast, ShouldDispatchAfterCommit
     /**
      * Get the data to broadcast: ids only, the dashboard reloads its own props.
      *
-     * @return array{group_id: int}
+     * @return array{group_id: int|null}
      */
     public function broadcastWith(): array
     {

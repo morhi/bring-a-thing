@@ -22,8 +22,8 @@ class PollData extends Data
         public bool $uses_time_slots,
         public bool $is_closed,
         public ?string $closed_at,
-        public string $group_slug,
-        public string $group_name,
+        public ?string $group_slug,
+        public ?string $group_name,
         public int $organizer_id,
         public ?string $organizer_name,
         public ?EventSummaryData $source_event,
@@ -36,6 +36,7 @@ class PollData extends Data
      * granularity "day" is the "by day" mode and "hour" the "time slots"
      * mode; uses_time_slots states the same as a flag. source_event is set
      * for a follow-up poll (F-12). id names the broadcast channels (F-21).
+     * group_slug and group_name are null for a standalone poll (F-29).
      */
     public static function fromPoll(Poll $poll): self
     {
@@ -52,8 +53,8 @@ class PollData extends Data
             uses_time_slots: $poll->granularity === PollGranularity::Hour,
             is_closed: $poll->isClosed(),
             closed_at: $poll->closed_at?->toIso8601String(),
-            group_slug: $poll->group->slug,
-            group_name: $poll->group->name,
+            group_slug: $poll->group?->slug,
+            group_name: $poll->group?->name,
             organizer_id: $poll->organizer_id,
             organizer_name: $poll->organizer?->name,
             source_event: $poll->event ? EventSummaryData::fromEvent($poll->event) : null,

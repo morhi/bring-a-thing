@@ -158,7 +158,7 @@ function acceptedPeople(
                                 event.title
                             }}</span>
                             <span class="text-fg-muted truncate text-sm"
-                                >{{ event.group_name
+                                >{{ event.group_name ?? t('newList.standalone')
                                 }}<template v-if="event.location">
                                     · {{ event.location }}</template
                                 ></span
@@ -210,9 +210,14 @@ function acceptedPeople(
                             </td>
                             <td class="text-fg-muted py-3 pr-4">
                                 <span
-                                    :title="event.group_name"
+                                    :title="
+                                        event.group_name ??
+                                        t('newList.standalone')
+                                    "
                                     class="block max-w-56 truncate whitespace-nowrap"
-                                    >{{ event.group_name
+                                    >{{
+                                        event.group_name ??
+                                        t('newList.standalone')
                                     }}<template v-if="event.location">
                                         · {{ event.location }}</template
                                     ></span

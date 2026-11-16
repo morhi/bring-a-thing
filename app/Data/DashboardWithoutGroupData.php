@@ -8,5 +8,7 @@ class DashboardWithoutGroupData extends Data
 {
     public function __construct(
         public int $lists_count,
+        public int $polls_count,
+        public int $events_count,
     ) {}
 }

@@ -22,7 +22,7 @@ class PollOptionController extends Controller
         $poll->options()->create($request->safe()->only(['date', 'starts_at', 'ends_at', 'label']));
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         return back()->with('success', __('ui.poll.option.added'));
     }
@@ -46,7 +46,7 @@ class PollOptionController extends Controller
         $option->delete();
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         return back()->with('success', __('ui.poll.option.removed'));
     }

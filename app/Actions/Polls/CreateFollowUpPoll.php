@@ -16,7 +16,8 @@ class CreateFollowUpPoll
     /**
      * Create a date finder or attendance poll within the event (F-12).
      *
-     * The poll belongs to the event's group and keeps the event as its
+     * The poll belongs to the event's group, or stays standalone with a
+     * standalone event (F-29), and keeps the event as its
      * source, which limits its audience to the event's accepted
      * participants and managers, and attaches dates fixed from it to the
      * event as child events (F-09).

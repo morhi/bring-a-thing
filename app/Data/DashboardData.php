@@ -41,7 +41,7 @@ class DashboardData extends Data
      * each part loads its relations up front, so the query count does not
      * grow with the data. Past events and lists are left out. Groups hold
      * member groups and guest groups by name; the virtual group "Without
-     * groups" only shows with an own groupless list (F-29).
+     * groups" only shows with an own groupless list, poll or event (F-29).
      */
     public static function forUser(User $user): self
     {
@@ -186,7 +186,8 @@ class DashboardData extends Data
     /**
      * The upcoming events of the person's groups where they have the given status (F-10, F-11).
      *
-     * Includes events reached through a grant (F-26, F-27). Loads the
+     * Includes own standalone events (F-29) and events reached through a
+     * grant (F-26, F-27). Loads the
      * accepted participations, which fill the avatar stack and the accepted count.
      *
      * @param  array<int, int>  $groupIds
@@ -198,6 +199,7 @@ class DashboardData extends Data
             ->upcoming()
             ->where(fn (Builder $query) => $query
                 ->whereIn('group_id', $groupIds)
+                ->orWhere(fn (Builder $query) => $query->standaloneOrganizedBy($user))
                 ->orWhere(fn (Builder $query) => $query->reachableThroughGrants($user)))
             ->whereHas('participations', fn (Builder $query) => $query
                 ->where('user_id', $user->getKey())

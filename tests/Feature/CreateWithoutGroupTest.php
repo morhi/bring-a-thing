@@ -78,4 +78,48 @@ foreach (['poll' => ['F-06', 'Polls/Create'], 'event' => ['F-10', 'Events/Create
 
         expect($model::query()->count())->toBe(0);
     });
+
+    it("{$feature}: creates a standalone {$kind} through the store route without a group", function () use ($kind) {
+        [$user] = memberOfTwoGroups();
+        [$input, $model] = createWithoutGroupInput($kind);
+
+        $response = $this->actingAs($user)->post(route("{$kind}s.store-any"), $input)->assertSessionHasNoErrors();
+
+        $item = $model::query()->where('title', 'Where to?')->firstOrFail();
+        $response->assertRedirect(route("{$kind}s.show", $item))->assertSessionHas('success');
+        expect($item->group_id)->toBeNull()
+            ->and($item->organizer_id)->toBe($user->id);
+        $this->actingAs($user)->get(route("{$kind}s.show", $item))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where("page.{$kind}.group_slug", null)->where("page.{$kind}.group_name", null));
+    });
+
+    it("{$feature}: the store route without a group creates in a group only with its membership", function (Closure $pickGroup, ?int $status) use ($kind) {
+        [$user, $first, , $foreign] = memberOfTwoGroups();
+        [$input, $model] = createWithoutGroupInput($kind);
+        $group = $pickGroup($first, $foreign);
+
+        $response = $this->actingAs($user)->post(route("{$kind}s.store-any"), [...$input, 'group_id' => $group?->id ?? 999999]);
+
+        if ($status !== null) {
+            $response->assertStatus($status);
+            expect($model::query()->count())->toBe(0);
+
+            return;
+        }
+
+        $response->assertSessionHasErrors('group_id');
+        expect($model::query()->count())->toBe(0);
+    })->with([
+        'foreign group' => [fn ($first, $foreign) => $foreign, 403],
+        'missing group' => [fn () => null, null],
+    ]);
+
+    it("{$feature}: the store route without a group creates in an own group", function () use ($kind) {
+        [$user, $first] = memberOfTwoGroups();
+        [$input, $model] = createWithoutGroupInput($kind);
+
+        $this->actingAs($user)->post(route("{$kind}s.store-any"), [...$input, 'group_id' => $first->id])->assertSessionHasNoErrors();
+
+        expect($model::query()->where('title', 'Where to?')->firstOrFail()->group_id)->toBe($first->id);
+    });
 }

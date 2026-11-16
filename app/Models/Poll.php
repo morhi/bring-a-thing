@@ -31,7 +31,7 @@ use Illuminate\Support\Collection;
  * @property PollType $type
  * @property PollGranularity $granularity
  * @property int $organizer_id
- * @property int $group_id
+ * @property int|null $group_id
  * @property int|null $event_id
  * @property CarbonImmutable|null $closed_at
  * @property string|null $invite_token
@@ -77,7 +77,7 @@ class Poll extends Model
     }
 
     /**
-     * The group this poll is attached to.
+     * The group this poll is attached to; null for a standalone poll.
      *
      * @return BelongsTo<Group, $this>
      */
@@ -185,7 +185,8 @@ class Poll extends Model
     /**
      * Whether the user may see and answer the poll (F-06, F-12, F-26, F-27).
      *
-     * Besides the audience within the group, a grant on the poll itself
+     * Besides the audience within the group, or the organizer's circle of a
+     * standalone poll (F-29), a grant on the poll itself
      * opens it. A grant reaching a follow-up poll through its source event
      * follows the follow-up rule instead: only with "accepted". A person
      * who withdrew loses the poll altogether (F-08).
@@ -196,7 +197,9 @@ class Poll extends Model
             return false;
         }
 
-        if ($this->group->hasMember($user) && $this->includesMember($user)) {
+        $isInsider = $this->group_id === null || $this->group->hasMember($user);
+
+        if ($isInsider && $this->includesMember($user)) {
             return true;
         }
 
@@ -228,7 +231,7 @@ class Poll extends Model
     }
 
     /**
-     * The grant holders outside the group who belong to the poll's audience (F-26, F-27).
+     * The grant holders outside the group, or beside the organizer of a standalone poll, who belong to the poll's audience (F-26, F-27).
      *
      * Holders of a grant on the poll itself always do; holders reaching a
      * follow-up poll through its source event only with "accepted".
@@ -242,7 +245,8 @@ class Poll extends Model
             return $this->resolvedGuests;
         }
 
-        $this->loadMissing('group.members', 'withdrawals');
+        $this->loadMissing('withdrawals');
+        $insiders = $this->insiders();
 
         $direct = $this->holdersOf([['poll', $this->getKey()]]);
         $throughEvent = $this->event_id === null
@@ -252,9 +256,27 @@ class Poll extends Model
         return $this->resolvedGuests = $direct
             ->concat($throughEvent)
             ->unique('id')
-            ->reject(fn (User $guest) => $this->group->members->contains('id', $guest->getKey()))
+            ->reject(fn (User $guest) => $insiders->contains('id', $guest->getKey()))
             ->reject(fn (User $guest) => $this->hasWithdrawn($guest))
             ->values();
+    }
+
+    /**
+     * The people inside the poll's circle without a grant: the group members, or for a standalone poll its organizer and the source event's organizer (F-29).
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public function insiders(): EloquentCollection
+    {
+        if ($this->group_id !== null) {
+            $this->loadMissing('group.members');
+
+            return $this->group->members;
+        }
+
+        $this->loadMissing('organizer', 'event.organizer');
+
+        return new EloquentCollection(array_filter([$this->organizer, $this->event?->organizer]))->unique('id')->values();
     }
 
     /**
@@ -273,7 +295,9 @@ class Poll extends Model
      * the event's managers (its organizer, group owner and admins) do. The
      * organizer role lapses with the membership, so a member who left keeps
      * no access to their follow-up polls. A member who withdrew from the
-     * poll drops out of it (F-08).
+     * poll drops out of it (F-08). A standalone poll has no members: only
+     * its organizer belongs to it this way, and on a follow-up poll also
+     * the accepted participants and the managers of the source event (F-29).
      */
     public function includesMember(User $user): bool
     {
@@ -281,11 +305,15 @@ class Poll extends Model
             return false;
         }
 
+        if ($this->group_id === null && $this->event_id === null) {
+            return $this->organizer_id === $user->getKey();
+        }
+
         if ($this->event_id === null) {
             return true;
         }
 
-        if (! $this->group->hasMember($user)) {
+        if ($this->group_id !== null && ! $this->group->hasMember($user)) {
             return false;
         }
 
@@ -303,7 +331,9 @@ class Poll extends Model
      * for everyone, follow-up polls only for the poll's organizer, the
      * accepted participants and managers of the source event. Every rule
      * requires current group membership, so organizer_id alone grants nothing.
-     * Polls the user withdrew from are left out (F-08).
+     * A standalone poll shows to its organizer and, as a follow-up poll, to
+     * the source event's organizer (F-29). Polls the user withdrew from are
+     * left out (F-08).
      *
      * @param  Builder<Poll>  $query
      */
@@ -326,6 +356,7 @@ class Poll extends Model
                         ->orWhereHas('members', fn (Builder $member) => $member
                             ->whereKey($user->getKey())
                             ->whereIn('group_user.role', [GroupRole::Owner, GroupRole::Admin])))))
+            ->orWhere(fn (Builder $query) => $query->standaloneOrganizedBy($user))
             ->orWhere(fn (Builder $query) => $query->reachableThroughGrants($user)));
     }
 
@@ -351,6 +382,19 @@ class Poll extends Model
     }
 
     /**
+     * Limit the query to standalone polls the user organizes, directly or through the source event (F-29).
+     *
+     * @param  Builder<Poll>  $query
+     */
+    #[Scope]
+    protected function standaloneOrganizedBy(Builder $query, User $user): void
+    {
+        $query->whereNull('polls.group_id')->where(fn (Builder $query) => $query
+            ->where('polls.organizer_id', $user->getKey())
+            ->orWhereHas('event', fn (Builder $event) => $event->where('organizer_id', $user->getKey())));
+    }
+
+    /**
      * Limit the query to polls the user has not withdrawn from (F-08).
      *
      * @param  Builder<Poll>  $query
@@ -362,7 +406,7 @@ class Poll extends Model
     }
 
     /**
-     * The people who currently belong to the poll's audience: group members and guests with a grant (F-06, F-12, F-26, F-27).
+     * The people who currently belong to the poll's audience: group members, or the organizer of a standalone poll, and guests with a grant (F-06, F-12, F-26, F-27, F-29).
      *
      * Works on the loaded members, participations and withdrawals, so it
      * costs no query per member; includesMember() is the single-user
@@ -372,9 +416,9 @@ class Poll extends Model
      */
     public function audience(): Collection
     {
-        $this->loadMissing('group.members', 'event.participations', 'withdrawals');
+        $this->loadMissing('event.participations', 'withdrawals');
 
-        $members = $this->group->members->reject(fn (User $member) => $this->hasWithdrawn($member));
+        $members = $this->insiders()->reject(fn (User $member) => $this->hasWithdrawn($member));
 
         if ($this->event_id === null) {
             return $members->toBase()->concat($this->guests())->values();

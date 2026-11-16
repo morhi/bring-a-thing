@@ -50,7 +50,7 @@ class EventPermissionsData extends Data
             can_create_list: $user->can('createForEvent', [Roster::class, $event]),
             can_comment: $user->can('comment', $event),
             can_manage_invite_link: $user->can('manageInviteLink', $event),
-            can_view_group: $user->can('view', $event->group),
+            can_view_group: $event->group !== null && $user->can('view', $event->group),
             can_withdraw: $user->can('withdraw', $event),
         );
     }

@@ -47,9 +47,20 @@ class EventController extends Controller
 
     /**
      * Show the "New event" page with a select over the user's groups, for creating from outside a group (F-10).
+     *
+     * With ?parent_event_id it is the "New event" page for a sub-event of a standalone event (F-29).
      */
     public function createWithoutGroup(Request $request): Response
     {
+        if ($request->filled('parent_event_id')) {
+            $parent = Event::query()->whereNull('group_id')->findOrFail((int) $request->query('parent_event_id'));
+            $this->authorize('createSubEvent', $parent);
+
+            return Inertia::render('Events/Create', [
+                'form' => EventFormData::forGroup(null, parent: $parent),
+            ]);
+        }
+
         return Inertia::render('Events/Create', [
             'form' => EventFormData::forCreate($request->user()),
         ]);
@@ -60,9 +71,25 @@ class EventController extends Controller
      */
     public function store(StoreEventRequest $request, Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
+        return $this->createEvent($request, $group, $createEvent, $sendNotification);
+    }
+
+    /**
+     * Create an event in the group picked by group_id, or standalone without one (F-10, F-29).
+     */
+    public function storeAny(StoreEventRequest $request, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
+    {
+        return $this->createEvent($request, $request->group(), $createEvent, $sendNotification);
+    }
+
+    /**
+     * Create the event, refresh the dashboards and notify the people asked to accept or decline.
+     */
+    private function createEvent(StoreEventRequest $request, ?Group $group, CreateEvent $createEvent, SendInAppNotification $sendNotification): RedirectResponse
+    {
         $event = $createEvent->handle($group, $request->user(), $request->eventAttributes(), $request->parentEvent());
 
-        DashboardChanged::forGroup($group);
+        DashboardChanged::forItem($event);
 
         $sendNotification->handle(new EventCreated($event, $request->user()));
 
@@ -105,7 +132,7 @@ class EventController extends Controller
         $updateEvent->handle($event, $request->eventAttributes());
 
         EventUpdated::dispatch($event->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         if ($event->wasChanged(['date', 'starts_at'])) {
             $sendNotification->handle(new EventMoved($event, $request->user()));
@@ -118,19 +145,26 @@ class EventController extends Controller
 
     /**
      * Delete the event with its lists, follow-up polls and child events.
+     *
+     * A standalone event returns to the dashboard, since it has no group page (F-29).
      */
     public function destroy(Event $event, DeleteEvent $deleteEvent): RedirectResponse
     {
         $this->authorize('delete', $event);
 
         $group = $event->group;
+        $recipients = DashboardChanged::recipientsOf($event);
         $deleteEvent->handle($event);
 
         EventUpdated::dispatch($event->id, deleted: true);
-        DashboardChanged::forGroup($group);
+        DashboardChanged::dispatch($event->group_id, $recipients);
 
         if ($event->parent_event_id !== null) {
             EventUpdated::dispatch($event->parent_event_id);
+        }
+
+        if ($group === null) {
+            return to_route('dashboard')->with('success', __('ui.event.deleted'));
         }
 
         return to_route('groups.show', $group)->with('success', __('ui.event.deleted'));

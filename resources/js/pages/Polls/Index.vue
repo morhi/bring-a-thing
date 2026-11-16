@@ -171,9 +171,15 @@ function setFilter(key: keyof App.Data.PollsFiltersData, value: boolean): void {
                             </td>
                             <td class="text-fg-muted py-3 pr-4">
                                 <span
-                                    :title="poll.group_name"
+                                    :title="
+                                        poll.group_name ??
+                                        t('newList.standalone')
+                                    "
                                     class="block max-w-56 truncate whitespace-nowrap"
-                                    >{{ poll.group_name }}</span
+                                    >{{
+                                        poll.group_name ??
+                                        t('newList.standalone')
+                                    }}</span
                                 >
                             </td>
                             <td

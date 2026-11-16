@@ -12,7 +12,7 @@ class DashboardPollData extends Data
         public string $slug,
         public string $title,
         public DashboardPollStatus $status,
-        public string $group_name,
+        public ?string $group_name,
         public int $answered,
         public int $total,
         public bool $is_closed,
@@ -22,7 +22,8 @@ class DashboardPollData extends Data
      * Build a poll row with the person's own answer status (F-22, F-29).
      *
      * Expects the group and the person's own responses on the options to be
-     * loaded. A poll without options counts as not answered.
+     * loaded. A poll without options counts as not answered; group_name is
+     * null for a standalone poll.
      */
     public static function fromPoll(Poll $poll): self
     {
@@ -33,7 +34,7 @@ class DashboardPollData extends Data
             slug: $poll->slug,
             title: $poll->title,
             status: self::status($answered, $total),
-            group_name: $poll->group->name,
+            group_name: $poll->group?->name,
             answered: $answered,
             total: $total,
             is_closed: $poll->closed_at !== null,

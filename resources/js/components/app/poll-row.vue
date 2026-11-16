@@ -27,7 +27,9 @@ const statusClass: Record<App.Enums.DashboardPollStatus, string> = {
         data-feature="F-06"
     >
         <template #title>{{ poll.title }}</template>
-        <template #context>{{ poll.group_name }}</template>
+        <template #context>{{
+            poll.group_name ?? t('newList.standalone')
+        }}</template>
         <template #count>{{
             t('dash.polls.answered', {
                 answered: poll.answered,

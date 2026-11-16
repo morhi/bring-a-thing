@@ -25,7 +25,7 @@ class CommentPolicy
         $commentable = $comment->commentable;
 
         if ($commentable instanceof Event) {
-            return $commentable->group->isAtLeastAdmin($user);
+            return $commentable->group?->isAtLeastAdmin($user) ?? false;
         }
 
         $roster = $commentable instanceof RosterItem ? $commentable->roster : $commentable;

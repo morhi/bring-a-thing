@@ -44,7 +44,8 @@ class EventShowData extends Data
      * Build the event page for the given member (F-10, F-11).
      *
      * participants lists every group member, with a null status for those
-     * without participation, plus former members who keep a status (F-04).
+     * without participation, plus former members who keep a status (F-04);
+     * a standalone event lists its organizer instead of members (F-29).
      * Lists are only for participants ("accepted" or "pending"), follow-up
      * polls only for their audience: "accepted" and managers (F-12);
      * everyone else gets the key details. follow_up_audience_count feeds
@@ -60,10 +61,11 @@ class EventShowData extends Data
         $event->loadMissing('group.members', 'organizer', 'originPollOption.poll', 'parentEvent', 'participations.user', 'childEvents.participations', 'rosters.items.claims', 'polls.options.responses', 'polls.withdrawals', 'comments.user');
 
         $statuses = $event->participations->keyBy('user_id');
-        $participants = $event->group->members
+        $insiders = $event->insiders();
+        $participants = $insiders
             ->map(fn (User $member) => new ParticipationData($member->id, $member->name, $statuses->get($member->id)?->status))
             ->concat($event->participations
-                ->reject(fn (EventParticipation $participation) => $event->group->members->contains('id', $participation->user_id))
+                ->reject(fn (EventParticipation $participation) => $insiders->contains('id', $participation->user_id))
                 ->map(fn (EventParticipation $participation) => new ParticipationData($participation->user_id, $participation->user?->name, $participation->status)))
             ->concat($event->guests()
                 ->reject(fn (User $guest) => $statuses->has($guest->id))

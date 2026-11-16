@@ -86,11 +86,11 @@ function dashboardGroup(): array
 }
 
 /**
- * Create a poll with the given number of options, answered "yes" on the first few by the user.
+ * Create a poll with the given number of options, answered "yes" on the first few by the user; standalone without a group.
  */
-function dashboardPoll(Group $group, User $organizer, int $options, ?User $user = null, int $answered = 0, array $attributes = []): Poll
+function dashboardPoll(?Group $group, User $organizer, int $options, ?User $user = null, int $answered = 0, array $attributes = []): Poll
 {
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id, ...$attributes]);
+    $poll = Poll::factory()->create(['group_id' => $group?->id, 'organizer_id' => $organizer->id, ...$attributes]);
     $created = PollOption::factory()->count($options)->create(['poll_id' => $poll->id]);
 
     foreach ($created->take($answered) as $option) {
@@ -101,11 +101,11 @@ function dashboardPoll(Group $group, User $organizer, int $options, ?User $user 
 }
 
 /**
- * Create an event in the group with the user's participation status.
+ * Create an event in the group, or standalone without one, with the user's participation status.
  */
-function dashboardEvent(Group $group, User $organizer, ?User $user = null, ?ParticipationStatus $status = null, array $attributes = []): Event
+function dashboardEvent(?Group $group, User $organizer, ?User $user = null, ?ParticipationStatus $status = null, array $attributes = []): Event
 {
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id, ...$attributes]);
+    $event = Event::factory()->create(['group_id' => $group?->id, 'organizer_id' => $organizer->id, ...$attributes]);
 
     if ($user !== null && $status !== null) {
         EventParticipation::factory()->create(['event_id' => $event->id, 'user_id' => $user->id, 'status' => $status]);

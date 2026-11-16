@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
+import { computed } from 'vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import ListRow from '@/components/app/list-row.vue';
+import EventRow from '@/components/app/event-row.vue';
+import PollRow from '@/components/app/poll-row.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -11,9 +14,15 @@ import { dashboard } from '@/routes';
 defineOptions({ layout: AppLayout });
 
 // Mirrors App.Data.WithoutGroupData
-defineProps<{
+const props = defineProps<{
     lists: App.Data.DashboardListData[];
+    polls: App.Data.DashboardPollData[];
+    events: App.Data.DashboardEventData[];
 }>();
+
+const isEmpty = computed(
+    () => !props.lists.length && !props.polls.length && !props.events.length,
+);
 
 const { t } = useI18n();
 </script>
@@ -37,6 +46,34 @@ const { t } = useI18n();
         </header>
 
         <SectionBox
+            v-if="polls.length"
+            id="without-group-polls"
+            :title="t('withoutGroup.polls')"
+            :count="polls.length"
+            data-feature="F-06"
+        >
+            <ul class="divide-border flex min-w-0 flex-col divide-y">
+                <li v-for="poll in polls" :key="poll.slug">
+                    <PollRow :poll="poll" />
+                </li>
+            </ul>
+        </SectionBox>
+
+        <SectionBox
+            v-if="events.length"
+            id="without-group-events"
+            :title="t('withoutGroup.events')"
+            :count="events.length"
+            data-feature="F-10"
+        >
+            <ul class="divide-border flex min-w-0 flex-col divide-y">
+                <li v-for="event in events" :key="event.slug">
+                    <EventRow :event="event" />
+                </li>
+            </ul>
+        </SectionBox>
+
+        <SectionBox
             v-if="lists.length"
             id="without-group-lists"
             :title="t('withoutGroup.lists')"
@@ -50,7 +87,7 @@ const { t } = useI18n();
         </SectionBox>
 
         <EmptyState
-            v-else
+            v-if="isEmpty"
             :title="t('withoutGroup.empty.title')"
             :text="t('withoutGroup.empty.text')"
         />

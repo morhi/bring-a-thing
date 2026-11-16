@@ -32,7 +32,7 @@ class EventParticipationController extends Controller
         $setParticipation->handle($event, $request->user(), $status, $request->user(), $request->boolean('confirm_release'));
 
         ParticipationChanged::dispatch($event->id, $request->user()->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         $message = $status === ParticipationStatus::Accepted ? __('ui.event.acceptedToast') : __('ui.event.declinedToast');
 
@@ -47,7 +47,7 @@ class EventParticipationController extends Controller
         $setParticipation->handle($event, $member, $request->enum('status', ParticipationStatus::class), $request->user());
 
         ParticipationChanged::dispatch($event->id, $member->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         return back()->with('success', __('ui.event.statusChanged', ['name' => $member->name ?? $member->email]));
     }
@@ -62,7 +62,7 @@ class EventParticipationController extends Controller
         $withdrawFromEvent->handle($event, $request->user());
 
         ParticipationChanged::dispatch($event->id, $request->user()->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         return to_route('dashboard')->with('success', __('ui.event.withdrawn', ['event' => $event->title]));
     }
@@ -77,7 +77,7 @@ class EventParticipationController extends Controller
         $event->participations()->where('user_id', $member->getKey())->delete();
 
         ParticipationChanged::dispatch($event->id, $member->id);
-        DashboardChanged::forGroup($event->group_id);
+        DashboardChanged::forItem($event);
 
         return back()->with('success', __('ui.event.removed', ['name' => $member->name ?? $member->email]));
     }

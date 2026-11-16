@@ -141,6 +141,7 @@ Route::middleware('auth')->group(function () {
     // "New" routes sit before the slug routes so {poll} and {event} never capture the segment.
     Route::get('/polls/new', [PollController::class, 'createWithoutGroup'])->name('polls.create-any');
     Route::post('/groups/{group}/polls', [PollController::class, 'store'])->name('polls.store');
+    Route::post('/polls', [PollController::class, 'storeAny'])->name('polls.store-any');
     Route::get('/polls/{poll}', [PollController::class, 'show'])->name('polls.show');
     Route::get('/polls/{poll}/edit', [PollController::class, 'edit'])->name('polls.edit');
     Route::patch('/polls/{poll}', [PollController::class, 'update'])->name('polls.update');
@@ -166,6 +167,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/groups/{group}/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events', [EventsController::class, 'index'])->name('events.index');
     Route::get('/events/new', [EventController::class, 'createWithoutGroup'])->name('events.create-any');
+    Route::post('/events', [EventController::class, 'storeAny'])->name('events.store-any');
     Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::patch('/events/{event}', [EventController::class, 'update'])->name('events.update');

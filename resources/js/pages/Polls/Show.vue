@@ -91,13 +91,17 @@ const backLink = computed(() => {
         };
     }
 
+    if (!poll.value.group_slug) {
+        return { href: dashboard().url, name: null };
+    }
+
     if (!permissions.value.can_view_group) {
         return null;
     }
 
     return {
         href: showGroup(poll.value.group_slug).url,
-        name: poll.value.group_name,
+        name: poll.value.group_name ?? '',
     };
 });
 
@@ -398,7 +402,11 @@ const buttonClass = 'h-(--control-height) px-4';
                 class="text-fg-muted hover:text-fg -my-0.5 inline-flex min-h-6 w-fit items-center gap-1.5 rounded-sm text-sm font-semibold"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
-                {{ t('poll.back', { name: backLink.name }) }}
+                {{
+                    backLink.name === null
+                        ? t('nav.backToDashboard')
+                        : t('poll.back', { name: backLink.name })
+                }}
             </Link>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="flex min-w-0 flex-col gap-2.5">
@@ -420,7 +428,7 @@ const buttonClass = 'h-(--control-height) px-4';
                                 : t('newPoll.mode.day')
                         }}</Badge>
                         <Link
-                            v-if="permissions.can_view_group"
+                            v-if="permissions.can_view_group && poll.group_slug"
                             :href="showGroup(poll.group_slug).url"
                             class="text-primary hover:text-primary-hover inline-flex items-center gap-1.5 rounded-sm font-semibold underline-offset-[3px] hover:underline"
                         >
@@ -432,7 +440,7 @@ const buttonClass = 'h-(--control-height) px-4';
                             class="inline-flex items-center gap-1.5 font-semibold"
                         >
                             <Users class="size-4" aria-hidden="true" />
-                            {{ poll.group_name }}
+                            {{ poll.group_name ?? t('newList.standalone') }}
                         </span>
                         <span class="inline-flex items-center gap-1.5">
                             <UserAvatar :name="poll.organizer_name" size="sm" />

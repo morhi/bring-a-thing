@@ -18,8 +18,8 @@ class EventData extends Data
         public ?string $end_date,
         public ?string $ends_at,
         public bool $is_past,
-        public string $group_slug,
-        public string $group_name,
+        public ?string $group_slug,
+        public ?string $group_name,
         public int $organizer_id,
         public ?string $organizer_name,
         public ?string $origin_poll_slug,
@@ -30,7 +30,8 @@ class EventData extends Data
      * Build the key details of an event (F-10).
      *
      * Dates are Y-m-d and times H:i; is_past is the event's only status.
-     * id names the private broadcast channel event.{id} (F-21).
+     * id names the private broadcast channel event.{id} (F-21). group_slug
+     * and group_name are null for a standalone event (F-29).
      */
     public static function fromEvent(Event $event): self
     {
@@ -45,8 +46,8 @@ class EventData extends Data
             end_date: $event->end_date?->format('Y-m-d'),
             ends_at: EventSummaryData::time($event->ends_at),
             is_past: $event->isPast(),
-            group_slug: $event->group->slug,
-            group_name: $event->group->name,
+            group_slug: $event->group?->slug,
+            group_name: $event->group?->name,
             organizer_id: $event->organizer_id,
             organizer_name: $event->organizer?->name,
             origin_poll_slug: $event->originPollOption?->poll?->slug,

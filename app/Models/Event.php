@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
 /**
  * @property int $id
  * @property string $slug
- * @property int $group_id
+ * @property int|null $group_id
  * @property int $organizer_id
  * @property string $title
  * @property string|null $description
@@ -65,7 +65,7 @@ class Event extends Model
     }
 
     /**
-     * The group this event belongs to.
+     * The group this event belongs to; null for a standalone event.
      *
      * @return BelongsTo<Group, $this>
      */
@@ -227,15 +227,16 @@ class Event extends Model
     /**
      * The people who see and answer the event's follow-up polls (F-12, F-26).
      *
-     * Group members and grant holders follow the same rule: accepted participants and managers.
+     * Group members, or the organizer of a standalone event, and grant
+     * holders follow the same rule: accepted participants and managers.
      *
      * @return Collection<int, User>
      */
     public function followUpAudience(): Collection
     {
-        $this->loadMissing('group.members', 'participations');
+        $this->loadMissing('participations');
 
-        return $this->group->members
+        return $this->insiders()
             ->concat($this->guests())
             ->filter(fn (User $member) => $this->admitsToFollowUpPolls($member))
             ->toBase()
@@ -243,25 +244,66 @@ class Event extends Model
     }
 
     /**
-     * The grant holders outside the group who reach this event through an invite link (F-26, F-27).
+     * The grant holders outside the group, or beside the organizer of a standalone event, who reach this event through an invite link (F-26, F-27).
      *
      * @return EloquentCollection<int, User>
      */
     public function guests(): EloquentCollection
     {
-        $this->loadMissing('group.members');
+        if ($this->resolvedGuests !== null) {
+            return $this->resolvedGuests;
+        }
 
-        return $this->resolvedGuests ??= $this->grantHolders()
-            ->reject(fn (User $holder) => $this->group->members->contains('id', $holder->getKey()))
+        $insiders = $this->insiders();
+
+        return $this->resolvedGuests = $this->grantHolders()
+            ->reject(fn (User $holder) => $insiders->contains('id', $holder->getKey()))
             ->values();
     }
 
     /**
+     * The people inside the event's circle without a grant: the group members, or the organizer of a standalone event (F-29).
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public function insiders(): EloquentCollection
+    {
+        if ($this->group_id !== null) {
+            $this->loadMissing('group.members');
+
+            return $this->group->members;
+        }
+
+        $this->loadMissing('organizer');
+
+        return new EloquentCollection(array_filter([$this->organizer]));
+    }
+
+    /**
+     * Whether the user is inside the event's circle without a grant: a group member, or the organizer of a standalone event (F-29).
+     */
+    public function hasInsider(User $user): bool
+    {
+        if ($this->group_id === null) {
+            return $this->organizer_id === $user->getKey();
+        }
+
+        return $this->group->hasMember($user);
+    }
+
+    /**
      * Whether the user may open the event: a group member or a holder of a grant that covers it (F-10, F-26, F-27).
+     *
+     * A standalone event opens to its organizer, to its parent event's
+     * organizer and to grant holders only (F-29).
      */
     public function admits(User $user): bool
     {
-        if ($this->group->hasMember($user)) {
+        if ($this->hasInsider($user)) {
+            return true;
+        }
+
+        if ($this->group_id === null && $this->parent_event_id !== null && $this->parentEvent?->organizer_id === $user->getKey()) {
             return true;
         }
 
@@ -310,6 +352,19 @@ class Event extends Model
     }
 
     /**
+     * Limit the query to standalone events the user organizes, directly or through the parent event (F-29).
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function standaloneOrganizedBy(Builder $query, User $user): void
+    {
+        $query->whereNull('events.group_id')->where(fn (Builder $query) => $query
+            ->where('events.organizer_id', $user->getKey())
+            ->orWhereHas('parentEvent', fn (Builder $parent) => $parent->where('organizer_id', $user->getKey())));
+    }
+
+    /**
      * The name of the route that shows the event's join page.
      */
     protected function inviteJoinRouteName(): string
@@ -324,7 +379,7 @@ class Event extends Model
      */
     public function admitsToFollowUpPolls(User $member): bool
     {
-        if (in_array($member->getKey(), [$this->organizer_id, $this->group->owner_id], true)) {
+        if (in_array($member->getKey(), [$this->organizer_id, $this->group?->owner_id], true)) {
             return true;
         }
 
@@ -351,9 +406,15 @@ class Event extends Model
 
     /**
      * Whether the user is the organizer or a group owner or admin, who edit and manage the event.
+     *
+     * A standalone event has only its organizer as manager (F-29).
      */
     public function isManagedBy(User $user): bool
     {
+        if ($this->group_id === null) {
+            return $this->organizer_id === $user->getKey();
+        }
+
         // The organizer role lapses with the membership, so a removed member keeps no rights.
         if ($this->organizer_id === $user->getKey() && $this->group->hasMember($user)) {
             return true;

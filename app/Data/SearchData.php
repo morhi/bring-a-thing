@@ -40,7 +40,8 @@ class SearchData extends Data
      * Every type follows the same visibility as its page: groups by
      * membership, polls through Poll::visibleTo(), events by group
      * membership and lists through the roster policy. Polls, events and
-     * their lists reached through a grant (F-26, F-27) count as well.
+     * their lists reached through a grant (F-26, F-27) count as well, and
+     * so do the person's own standalone polls and events (F-29).
      * Types without a match are left out.
      */
     public static function forUser(User $user, string $query): self
@@ -62,13 +63,13 @@ class SearchData extends Data
             self::section('polls', self::polls($user, $query)->map(fn (Poll $poll) => new SearchResultData(
                 id: 'poll:'.$poll->slug,
                 title: $poll->title,
-                context: $poll->group->name,
+                context: $poll->group->name ?? __('ui.newList.standalone'),
                 url: route('polls.show', $poll),
             ))),
             self::section('events', self::events($user, $groupIds, $query)->map(fn (Event $event) => new SearchResultData(
                 id: 'event:'.$event->slug,
                 title: $event->title,
-                context: self::formatDate($event->date, $locale).' · '.$event->group->name,
+                context: self::formatDate($event->date, $locale).' · '.($event->group->name ?? __('ui.newList.standalone')),
                 url: route('events.show', $event),
             ))),
             self::section('lists', self::rosters($user, $groupIds, $query)->map(fn (Roster $roster) => new SearchResultData(
@@ -128,7 +129,7 @@ class SearchData extends Data
     }
 
     /**
-     * The events of the person's groups or reached through a grant whose title matches, latest date first (F-10, F-26, F-27).
+     * The events of the person's groups, their own standalone events or those reached through a grant whose title matches, latest date first (F-10, F-26, F-27, F-29).
      *
      * @param  array<int, int>  $groupIds
      * @return Collection<int, Event>
@@ -138,6 +139,7 @@ class SearchData extends Data
         return Event::query()
             ->where(fn (Builder $scope) => $scope
                 ->whereIn('group_id', $groupIds)
+                ->orWhere(fn (Builder $standalone) => $standalone->standaloneOrganizedBy($user))
                 ->orWhere(fn (Builder $grants) => $grants->reachableThroughGrants($user)))
             ->where(self::matches('events.title', $query))
             ->with('group')
@@ -166,6 +168,7 @@ class SearchData extends Data
                 ->orWhereIn('group_id', $groupIds)
                 ->orWhereHas('event', fn (Builder $event) => $event->whereIn('group_id', $groupIds))
                 ->orWhereHas('event', fn (Builder $event) => $event->reachableThroughGrants($user))
+                ->orWhereHas('event', fn (Builder $event) => $event->standaloneOrganizedBy($user))
                 ->orWhereHas('items.claims', fn (Builder $claim) => $claim->where('user_id', $user->getKey())))
             ->with(['group', 'event.group']);
 

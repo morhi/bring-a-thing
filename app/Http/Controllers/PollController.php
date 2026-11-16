@@ -62,13 +62,29 @@ class PollController extends Controller
      */
     public function store(StorePollRequest $request, Group $group, CreatePollOptions $createOptions, SendInAppNotification $sendNotification): RedirectResponse
     {
+        return $this->createPoll($request, $group, $createOptions, $sendNotification);
+    }
+
+    /**
+     * Create a new poll in the group picked by group_id, or standalone without one (F-06, F-29).
+     */
+    public function storeAny(StorePollRequest $request, CreatePollOptions $createOptions, SendInAppNotification $sendNotification): RedirectResponse
+    {
+        return $this->createPoll($request, $request->group(), $createOptions, $sendNotification);
+    }
+
+    /**
+     * Create the poll with its options, refresh the dashboards and notify the audience.
+     */
+    private function createPoll(StorePollRequest $request, ?Group $group, CreatePollOptions $createOptions, SendInAppNotification $sendNotification): RedirectResponse
+    {
         $poll = Poll::query()->make([
             'title' => $request->string('title')->value(),
         ]);
         $poll->type = $request->enum('type', PollType::class);
         $poll->granularity = $request->enum('granularity', PollGranularity::class);
         $poll->organizer_id = $request->user()->getKey();
-        $poll->group_id = $group->getKey();
+        $poll->group_id = $group?->getKey();
         $poll->save();
 
         $createOptions->handle(
@@ -79,7 +95,7 @@ class PollController extends Controller
             $request->input('ends_on'),
         );
 
-        DashboardChanged::forGroup($group);
+        DashboardChanged::forItem($poll);
 
         $sendNotification->handle(new PollCreated($poll, $request->user()));
 
@@ -123,7 +139,7 @@ class PollController extends Controller
         );
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         return to_route('polls.show', $poll)->with('success', __('ui.poll.settings.saved'));
     }
@@ -136,7 +152,7 @@ class PollController extends Controller
         $poll->close();
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.closed.toast'));
     }
@@ -149,7 +165,7 @@ class PollController extends Controller
         $events = $fixPollOptions->handle($poll, $request->selectedOptions());
 
         OptionFixed::dispatch($poll->id, $events->pluck('origin_poll_option_id')->all(), $events->pluck('id')->all());
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         if ($poll->event_id !== null) {
             EventUpdated::dispatch($poll->event_id);
@@ -171,7 +187,7 @@ class PollController extends Controller
         $poll->reopen();
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::forItem($poll);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.reopened.toast'));
     }
@@ -183,16 +199,20 @@ class PollController extends Controller
     {
         $this->authorize('withdraw', $poll);
 
+        // Resolved before withdrawing, since a standalone poll's circle no longer holds the person afterwards.
+        $recipients = DashboardChanged::recipientsOf($poll);
         $withdrawFromPoll->handle($poll, $request->user());
 
         PollChanged::dispatch($poll->id);
-        DashboardChanged::forGroup($poll->group_id);
+        DashboardChanged::dispatch($poll->group_id, $recipients);
 
         return to_route('dashboard')->with('success', __('ui.poll.withdrawn', ['poll' => $poll->title]));
     }
 
     /**
      * Delete the poll, its options, and every response on them; a follow-up poll returns to its event.
+     *
+     * A standalone poll returns to the dashboard, since it has no group page (F-29).
      */
     public function destroy(Poll $poll): RedirectResponse
     {
@@ -200,15 +220,20 @@ class PollController extends Controller
 
         $group = $poll->group;
         $event = $poll->event;
+        $recipients = DashboardChanged::recipientsOf($poll);
         $poll->delete();
 
         PollChanged::dispatch($poll->id, deleted: true);
-        DashboardChanged::forGroup($group);
+        DashboardChanged::dispatch($poll->group_id, $recipients);
 
         if ($event !== null) {
             EventUpdated::dispatch($event->id);
 
             return to_route('events.show', $event)->with('success', __('ui.poll.settings.deleted'));
+        }
+
+        if ($group === null) {
+            return to_route('dashboard')->with('success', __('ui.poll.settings.deleted'));
         }
 
         return to_route('groups.show', $group)->with('success', __('ui.poll.settings.deleted'));

@@ -13,8 +13,8 @@ class DashboardEventData extends Data
     public function __construct(
         public string $slug,
         public string $title,
-        public string $group_slug,
-        public string $group_name,
+        public ?string $group_slug,
+        public ?string $group_name,
         public string $date,
         public ?string $starts_at,
         public ?string $location,
@@ -25,6 +25,7 @@ class DashboardEventData extends Data
     /**
      * Build an upcoming event the person accepted (F-22).
      *
+     * Group slug and name are null for a standalone event (F-29).
      * Expects group and the accepted participations with their users to be
      * loaded; accepted_names holds the first five for the avatar stack.
      */
@@ -33,8 +34,8 @@ class DashboardEventData extends Data
         return new self(
             slug: $event->slug,
             title: $event->title,
-            group_slug: $event->group->slug,
-            group_name: $event->group->name,
+            group_slug: $event->group?->slug,
+            group_name: $event->group?->name,
             date: $event->date->format('Y-m-d'),
             starts_at: EventSummaryData::time($event->starts_at),
             location: $event->location,
