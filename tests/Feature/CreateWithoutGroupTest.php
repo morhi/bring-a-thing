@@ -61,7 +61,7 @@ foreach (['poll' => ['F-06', 'Polls/Create'], 'event' => ['F-10', 'Events/Create
                     && ! collect($groups)->pluck('slug')->contains($foreign->slug)));
     });
 
-    it("{$feature}: creates in the chosen group when posting from the create page outside a group", function () use ($kind) {
+    it("{$feature}: creates in the group of the group-bound store route", function () use ($kind) {
         [$user, , $second] = memberOfTwoGroups();
         [$input, $model] = createWithoutGroupInput($kind);
 
@@ -70,7 +70,7 @@ foreach (['poll' => ['F-06', 'Polls/Create'], 'event' => ['F-10', 'Events/Create
         expect($model::query()->where('title', 'Where to?')->firstOrFail()->group_id)->toBe($second->id);
     });
 
-    it("{$feature}: rejects a group the user is not a member of when posting from the create page outside a group", function () use ($kind) {
+    it("{$feature}: rejects a group-bound store route of a group the user is not a member of", function () use ($kind) {
         [$user, , , $foreign] = memberOfTwoGroups();
         [$input, $model] = createWithoutGroupInput($kind);
 
