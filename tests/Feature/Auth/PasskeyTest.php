@@ -140,3 +140,14 @@ it('F-19: ignores an invalid pending claim on a passkey login', function () {
     expect($response->getData(true))->toBe(['redirect' => route('dashboard')])
         ->and(session()->has(StorePendingSharedClaim::ACTIONS_KEY))->toBeFalse();
 });
+
+it('F-02: binds the passkey relying party to a host outside the APP_URL domain', function () {
+    config(['app.url' => 'https://www.example.test', 'passkeys.relying_party_id' => 'www.example.test']);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession([EnsureRecentLogin::SESSION_KEY => now()->timestamp])
+        ->getJson('https://example.test/user/passkeys/options')
+        ->assertOk()
+        ->assertJsonPath('options.rp.id', 'example.test');
+});
