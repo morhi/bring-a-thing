@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Notifications\SendInAppNotification;
 use App\Actions\Polls\CreatePollOptions;
 use App\Actions\Polls\FixPollOptions;
+use App\Actions\Polls\SendFixedDatesMail;
 use App\Actions\Polls\UpdatePoll;
 use App\Data\PollFormData;
 use App\Data\PollShowData;
@@ -132,7 +133,7 @@ class PollController extends Controller
     /**
      * Fix the selected options as events and close the poll (F-09).
      */
-    public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions, SendInAppNotification $sendNotification): RedirectResponse
+    public function fix(FixPollRequest $request, Poll $poll, FixPollOptions $fixPollOptions, SendInAppNotification $sendNotification, SendFixedDatesMail $sendMail): RedirectResponse
     {
         $events = $fixPollOptions->handle($poll, $request->selectedOptions());
 
@@ -144,6 +145,7 @@ class PollController extends Controller
         }
 
         $events->each(fn (Event $event) => $sendNotification->handle(new DateFixed($event, $request->user())));
+        $sendMail->handle($poll, $events, $request->user());
 
         return to_route('polls.show', $poll)->with('success', trans_choice('ui.poll.fix.fixed', $events->count()));
     }

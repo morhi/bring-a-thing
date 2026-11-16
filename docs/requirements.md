@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.18
+- **Version:** 1.19
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -47,7 +47,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
 - A passkey is optional and can be saved in the settings (F-02). The start page offers a "Log in with passkey" button that logs in without entering an email. The login link and the password stay available.
-- The login email is the only email the app sends.
+- Besides the login email, the app sends only the summary email for fixed dates (F-30).
 
 **Acceptance criteria:**
 - A new email address receives a login link after entering email and name, and the link leads to the dashboard.
@@ -403,7 +403,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - A bell in the header shows in-app notifications for: invitation to a group, new poll, new event, fixed date, moved event, new comment in a list with one's own claim, claim or release by another person on one's behalf.
 - New notifications appear live. The person marks them as read.
-- The app sends no emails for these.
+- The app sends no emails for these, except the summary email for fixed dates (F-30).
 
 **Acceptance criteria:**
 - After fixing a date, the bell shows an unread notification to every accepted person.
@@ -518,6 +518,26 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - After joining an event through its link, the event does not appear on the page "Without groups".
 - The group pickers when creating a poll, event or list do not offer "Without groups".
 - Opening an item of a revoked or unreached link shows "Not found".
+
+#### F-30 Email on fixed dates (Secondary)
+
+**User goal:** Learn the final date without opening the app.
+
+**Rules:**
+- When an organizer fixes one or more dates of a date finder (F-09), the app queues one summary email per recipient that lists all fixed dates in calendar order, however many dates were fixed.
+- Recipients are the accepted and pending participants (F-09) with an email address. The person who fixed the dates gets no email, and neither does a person who may not view the event (section 8).
+- People without an email address are skipped. Without a remaining recipient, no email is sent.
+- The email is in the recipient's interface language (F-24) and links to the poll. The bell notification (F-23) stays as is.
+- A rejected fixing sends no email.
+
+**Acceptance criteria:**
+- After fixing one date, each accepted and pending participant with an email receives one email; declined, unanswered people and the acting person receive none.
+- After fixing three dates, each recipient receives one email that lists all three dates in calendar order.
+- A participant without an email address receives nothing and fixing still succeeds.
+- Fixing a date with no recipient left sends no email.
+- A recipient with language German receives the email in German, one with English in English.
+- A closed poll, an option of another poll, an already fixed option or a missing permission sends no email.
+- A participant who left the group before the fixing receives no email.
 
 ## 6. Structure
 
