@@ -81,7 +81,7 @@ class StorePollRequest extends FormRequest
             }
 
             $key = implode('|', [
-                date('Y-m-d', strtotime((string) $row['date'])),
+                date('Y-m-d', (int) strtotime((string) $row['date'])),
                 substr((string) ($row['starts_at'] ?? ''), 0, 5),
                 substr((string) ($row['ends_at'] ?? ''), 0, 5),
             ]);

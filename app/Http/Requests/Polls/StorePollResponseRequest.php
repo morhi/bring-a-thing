@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Polls;
 
 use App\Enums\PollResponseStatus;
+use App\Models\Poll;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -40,7 +41,10 @@ class StorePollResponseRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            if ($this->route('poll')->isClosed()) {
+            /** @var Poll $poll */
+            $poll = $this->route('poll');
+
+            if ($poll->isClosed()) {
                 $validator->errors()->add('status', 'This poll is closed.');
             }
         });

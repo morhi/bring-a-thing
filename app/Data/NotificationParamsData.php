@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Date;
 use Spatie\LaravelData\Data;
 
@@ -66,7 +67,10 @@ class NotificationParamsData extends Data
             return $date;
         }
 
-        return $carbon->locale($locale)->translatedFormat($locale === 'de' ? 'd.m.Y' : 'j M Y');
+        /** @var CarbonInterface $localized */
+        $localized = $carbon->locale($locale);
+
+        return $localized->translatedFormat($locale === 'de' ? 'd.m.Y' : 'j M Y');
     }
 
     /**

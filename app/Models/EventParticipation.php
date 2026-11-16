@@ -38,6 +38,8 @@ class EventParticipation extends Model
 
     /**
      * The event this participation belongs to.
+     *
+     * @return BelongsTo<Event, $this>
      */
     public function event(): BelongsTo
     {
@@ -46,6 +48,8 @@ class EventParticipation extends Model
 
     /**
      * The person taking part.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

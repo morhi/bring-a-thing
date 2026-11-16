@@ -66,6 +66,8 @@ class Event extends Model
 
     /**
      * The group this event belongs to.
+     *
+     * @return BelongsTo<Group, $this>
      */
     public function group(): BelongsTo
     {
@@ -74,6 +76,8 @@ class Event extends Model
 
     /**
      * The user who created the event directly or fixed it from a poll.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function organizer(): BelongsTo
     {
@@ -82,6 +86,8 @@ class Event extends Model
 
     /**
      * The poll option this event was fixed from (F-09), if any.
+     *
+     * @return BelongsTo<PollOption, $this>
      */
     public function originPollOption(): BelongsTo
     {
@@ -90,6 +96,8 @@ class Event extends Model
 
     /**
      * The source event of a follow-up poll this event was fixed from (F-12), if any.
+     *
+     * @return BelongsTo<Event, $this>
      */
     public function parentEvent(): BelongsTo
     {
@@ -98,6 +106,8 @@ class Event extends Model
 
     /**
      * The events fixed from this event's follow-up polls (one level only).
+     *
+     * @return HasMany<Event, $this>
      */
     public function childEvents(): HasMany
     {
@@ -106,6 +116,8 @@ class Event extends Model
 
     /**
      * Every participation status recorded for this event.
+     *
+     * @return HasMany<EventParticipation, $this>
      */
     public function participations(): HasMany
     {
@@ -114,6 +126,8 @@ class Event extends Model
 
     /**
      * The lists attached to this event.
+     *
+     * @return HasMany<Roster, $this>
      */
     public function rosters(): HasMany
     {
@@ -122,6 +136,8 @@ class Event extends Model
 
     /**
      * The follow-up polls created within this event (F-12).
+     *
+     * @return HasMany<Poll, $this>
      */
     public function polls(): HasMany
     {
@@ -130,6 +146,8 @@ class Event extends Model
 
     /**
      * The event's own comment thread, oldest first (F-20).
+     *
+     * @return MorphMany<Comment, $this>
      */
     public function comments(): MorphMany
     {
@@ -167,6 +185,8 @@ class Event extends Model
      * Limit the query to events that have not started, mirroring isPast() (F-22).
      *
      * An event without a time stays current for its whole day.
+     *
+     * @param  Builder<Event>  $query
      */
     #[Scope]
     protected function upcoming(Builder $query): void
@@ -273,6 +293,8 @@ class Event extends Model
 
     /**
      * Limit the query to events the user reaches through a grant, mirroring grantSources() (F-26, F-27).
+     *
+     * @param  Builder<Event>  $query
      */
     #[Scope]
     protected function reachableThroughGrants(Builder $query, User $user): void

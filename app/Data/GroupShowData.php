@@ -50,7 +50,10 @@ class GroupShowData extends Data
     {
         $group->load([
             'members',
-            'polls' => fn (HasMany $polls) => $polls->visibleTo($user)->with(self::POLL_RELATIONS)->latest(),
+            'polls' => function (HasMany $polls) use ($user) {
+                /** @var HasMany<Poll, Group> $polls */
+                return $polls->visibleTo($user)->with(self::POLL_RELATIONS)->latest();
+            },
             'events' => fn (HasMany $events) => $events->with('participations'),
             'rosters' => fn (HasMany $rosters) => $rosters->whereNull('event_id')->with('items.claims')->latest(),
         ]);

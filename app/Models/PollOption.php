@@ -44,6 +44,8 @@ class PollOption extends Model
 
     /**
      * The poll this option belongs to.
+     *
+     * @return BelongsTo<Poll, $this>
      */
     public function poll(): BelongsTo
     {
@@ -52,6 +54,8 @@ class PollOption extends Model
 
     /**
      * The members' responses to this option.
+     *
+     * @return HasMany<PollResponse, $this>
      */
     public function responses(): HasMany
     {
@@ -60,6 +64,8 @@ class PollOption extends Model
 
     /**
      * The event fixed from this option (F-09), if any.
+     *
+     * @return HasOne<Event, $this>
      */
     public function event(): HasOne
     {

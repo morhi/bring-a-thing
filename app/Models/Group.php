@@ -29,6 +29,9 @@ use Illuminate\Support\Str;
  * @property bool $members_can_set_status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read GroupMember|null $pivot
+ * @property-read int $open_polls_count
+ * @property-read int $upcoming_events_count
  */
 #[Fillable(['name', 'invite_link_locked', 'members_can_set_status'])]
 #[Hidden(['invite_token'])]
@@ -52,6 +55,8 @@ class Group extends Model
 
     /**
      * The user who created and owns the group.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function owner(): BelongsTo
     {
@@ -60,6 +65,8 @@ class Group extends Model
 
     /**
      * The users belonging to the group, including the owner.
+     *
+     * @return BelongsToMany<User, $this, GroupMember>
      */
     public function members(): BelongsToMany
     {
@@ -71,6 +78,8 @@ class Group extends Model
 
     /**
      * The guests' pending requests for membership (F-03).
+     *
+     * @return HasMany<GroupMembershipRequest, $this>
      */
     public function membershipRequests(): HasMany
     {
@@ -79,6 +88,8 @@ class Group extends Model
 
     /**
      * The rosters attached to the group.
+     *
+     * @return HasMany<Roster, $this>
      */
     public function rosters(): HasMany
     {
@@ -87,6 +98,8 @@ class Group extends Model
 
     /**
      * The polls attached to the group.
+     *
+     * @return HasMany<Poll, $this>
      */
     public function polls(): HasMany
     {
@@ -95,6 +108,8 @@ class Group extends Model
 
     /**
      * The events of the group, including events fixed from polls.
+     *
+     * @return HasMany<Event, $this>
      */
     public function events(): HasMany
     {
@@ -129,6 +144,8 @@ class Group extends Model
      *
      * Lists need no branch of their own: a guest only reaches the lists of
      * events reached this way.
+     *
+     * @param  Builder<Group>  $query
      */
     #[Scope]
     protected function reachableThroughGrants(Builder $query, User $user): void

@@ -85,6 +85,7 @@ class CompletePendingSharedClaim
      */
     private function completeClaim(Roster $roster, array $intent, User $user): array
     {
+        /** @var RosterItem|null $item */
         $item = RosterItem::query()->where('roster_id', $roster->getKey())->find($intent['item_id'] ?? null);
 
         if (! $item) {

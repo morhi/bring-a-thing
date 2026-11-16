@@ -26,6 +26,8 @@ class GroupMembershipRequest extends Model
 
     /**
      * The group the person asks to join.
+     *
+     * @return BelongsTo<Group, $this>
      */
     public function group(): BelongsTo
     {
@@ -34,6 +36,8 @@ class GroupMembershipRequest extends Model
 
     /**
      * The guest who asks.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

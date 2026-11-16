@@ -45,7 +45,7 @@ class FriendController extends Controller
         $this->authorize('delete', $friend);
 
         $account = $friend->friendUser;
-        $name = $friend->name ?? $account?->name ?? $account?->email ?? '';
+        $name = $friend->name ?? $account->name ?? $account->email ?? '';
 
         $friend->delete();
 

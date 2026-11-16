@@ -54,6 +54,8 @@ class RosterItem extends Model
 
     /**
      * The roster this item belongs to.
+     *
+     * @return BelongsTo<Roster, $this>
      */
     public function roster(): BelongsTo
     {
@@ -62,6 +64,8 @@ class RosterItem extends Model
 
     /**
      * The claims members have made on this item.
+     *
+     * @return HasMany<RosterItemClaim, $this>
      */
     public function claims(): HasMany
     {
@@ -70,6 +74,8 @@ class RosterItem extends Model
 
     /**
      * The custom field values set on this item.
+     *
+     * @return HasMany<RosterItemCustomFieldValue, $this>
      */
     public function customFieldValues(): HasMany
     {
@@ -81,6 +87,8 @@ class RosterItem extends Model
      *
      * Overrides the roster's own link when set, mirroring the date-override
      * pattern used by isPast().
+     *
+     * @return BelongsTo<PollOption, $this>
      */
     public function attendancePollOption(): BelongsTo
     {
@@ -89,6 +97,8 @@ class RosterItem extends Model
 
     /**
      * The item's own comment thread.
+     *
+     * @return MorphMany<Comment, $this>
      */
     public function comments(): MorphMany
     {
@@ -99,6 +109,8 @@ class RosterItem extends Model
      * The attendance-poll day that gates claims on this item: its own link, or its roster's.
      *
      * Mirrors the item-overrides-roster fallback used by isPast().
+     *
+     * @return Attribute<PollOption|null, never>
      */
     protected function effectiveAttendancePollOption(): Attribute
     {
@@ -124,6 +136,8 @@ class RosterItem extends Model
      *
      * "Past" vs. "upcoming" has no explicit status field; it is always derived
      * from whichever date applies, per docs/requirements.md.
+     *
+     * @return Attribute<bool|null, never>
      */
     protected function isPast(): Attribute
     {

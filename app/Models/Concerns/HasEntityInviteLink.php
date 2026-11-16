@@ -40,6 +40,8 @@ trait HasEntityInviteLink
 
     /**
      * The grants given directly on this entity through its invite link.
+     *
+     * @return MorphMany<AccessGrant, $this>
      */
     public function accessGrants(): MorphMany
     {
@@ -110,12 +112,15 @@ trait HasEntityInviteLink
 
         $keys = collect($sources)->map(fn (array $source) => implode(':', $source));
 
-        return $this->preloadedGrants
+        /** @var Collection<int, User> $holders */
+        $holders = $this->preloadedGrants
             ->filter(fn (AccessGrant $grant) => $keys->contains($grant->accessible_type.':'.$grant->accessible_id))
             ->map(fn (AccessGrant $grant) => $grant->user)
             ->unique('id')
             ->sortBy('id')
             ->values();
+
+        return $holders;
     }
 
     /**

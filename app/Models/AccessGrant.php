@@ -36,6 +36,8 @@ class AccessGrant extends Model
 
     /**
      * The person who holds access to the entity.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -44,10 +46,15 @@ class AccessGrant extends Model
 
     /**
      * The event or poll the grant opens (F-26, F-27).
+     *
+     * @return MorphTo<Event|Poll, $this>
      */
     public function accessible(): MorphTo
     {
-        return $this->morphTo();
+        /** @var MorphTo<Event|Poll, $this> $relation */
+        $relation = $this->morphTo();
+
+        return $relation;
     }
 
     /**

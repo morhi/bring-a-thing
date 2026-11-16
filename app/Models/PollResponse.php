@@ -33,6 +33,8 @@ class PollResponse extends Model
 
     /**
      * The option this response is for.
+     *
+     * @return BelongsTo<PollOption, $this>
      */
     public function option(): BelongsTo
     {
@@ -41,6 +43,8 @@ class PollResponse extends Model
 
     /**
      * The member who submitted this response.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

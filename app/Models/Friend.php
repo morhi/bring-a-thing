@@ -27,6 +27,8 @@ class Friend extends Model
 
     /**
      * The user this friend entry belongs to.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -35,6 +37,8 @@ class Friend extends Model
 
     /**
      * The referenced user account.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function friendUser(): BelongsTo
     {

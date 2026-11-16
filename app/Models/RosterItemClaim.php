@@ -37,6 +37,8 @@ class RosterItemClaim extends Model
 
     /**
      * The item this claim is on.
+     *
+     * @return BelongsTo<RosterItem, $this>
      */
     public function rosterItem(): BelongsTo
     {
@@ -45,6 +47,8 @@ class RosterItemClaim extends Model
 
     /**
      * The member who made the claim.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

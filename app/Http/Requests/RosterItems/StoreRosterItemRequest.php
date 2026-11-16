@@ -4,6 +4,7 @@ namespace App\Http\Requests\RosterItems;
 
 use App\Enums\PollType;
 use App\Models\PollOption;
+use App\Models\Roster;
 use App\Models\RosterItem;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,7 +48,9 @@ class StoreRosterItemRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $validFieldIds = $this->route('roster')->customFields()->pluck('id')->all();
+            /** @var Roster $roster */
+            $roster = $this->route('roster');
+            $validFieldIds = $roster->customFields()->pluck('id')->all();
 
             foreach (array_keys($this->input('custom_fields', [])) as $customFieldId) {
                 if (! in_array((int) $customFieldId, $validFieldIds, true)) {
@@ -61,8 +64,9 @@ class StoreRosterItemRequest extends FormRequest
                 return;
             }
 
+            /** @var PollOption|null $option */
             $option = PollOption::query()->with('poll')->find($optionId);
-            $groupId = $this->route('roster')->group_id;
+            $groupId = $roster->group_id;
 
             if ($option === null || $option->poll->type !== PollType::Attendance || $option->poll->group_id !== $groupId || ! $option->poll->isOpenTo($this->user())) {
                 $validator->errors()->add('attendance_poll_option_id', 'Invalid attendance day.');

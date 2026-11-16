@@ -26,6 +26,8 @@ class PollWithdrawal extends Model
 
     /**
      * The poll the person withdrew from.
+     *
+     * @return BelongsTo<Poll, $this>
      */
     public function poll(): BelongsTo
     {
@@ -34,6 +36,8 @@ class PollWithdrawal extends Model
 
     /**
      * The person who withdrew.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

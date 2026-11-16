@@ -27,6 +27,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read GroupMember|null $pivot
  */
 #[Fillable(['name', 'email', 'language', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -69,6 +70,8 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 
     /**
      * The groups the user belongs to, including groups they own.
+     *
+     * @return BelongsToMany<Group, $this, GroupMember>
      */
     public function groups(): BelongsToMany
     {
@@ -80,6 +83,8 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 
     /**
      * The standalone rosters the user owns (not attached to a group).
+     *
+     * @return HasMany<Roster, $this>
      */
     public function standaloneRosters(): HasMany
     {
@@ -88,6 +93,8 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 
     /**
      * The friend entries this user has saved, for easier re-referencing of previously invited accounts.
+     *
+     * @return HasMany<Friend, $this>
      */
     public function friends(): HasMany
     {
@@ -96,6 +103,8 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 
     /**
      * The events and polls this user reaches through an invite link without group membership (F-26, F-27).
+     *
+     * @return HasMany<AccessGrant, $this>
      */
     public function accessGrants(): HasMany
     {

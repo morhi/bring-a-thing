@@ -3,6 +3,7 @@
 namespace App\Http\Requests\CustomFields;
 
 use App\Models\CustomField;
+use App\Models\Roster;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,12 +25,15 @@ class StoreCustomFieldRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Roster $roster */
+        $roster = $this->route('roster');
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('custom_fields', 'name')->where('roster_id', $this->route('roster')->id),
+                Rule::unique('custom_fields', 'name')->where('roster_id', $roster->id),
             ],
         ];
     }

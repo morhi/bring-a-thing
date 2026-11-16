@@ -91,7 +91,7 @@ class UpdatePollRequest extends FormRequest
             }
 
             $key = implode('|', [
-                date('Y-m-d', strtotime((string) $row['date'])),
+                date('Y-m-d', (int) strtotime((string) $row['date'])),
                 substr((string) ($row['starts_at'] ?? ''), 0, 5),
                 substr((string) ($row['ends_at'] ?? ''), 0, 5),
             ]);
@@ -158,7 +158,7 @@ class UpdatePollRequest extends FormRequest
     {
         $time = fn (?string $value) => $value === null || $value === '' ? null : substr($value, 0, 5);
 
-        return $option->date->format('Y-m-d') !== date('Y-m-d', strtotime((string) $row['date']))
+        return $option->date->format('Y-m-d') !== date('Y-m-d', (int) strtotime((string) $row['date']))
             || $time($option->starts_at) !== $time($row['starts_at'] ?? null)
             || $time($option->ends_at) !== $time($row['ends_at'] ?? null);
     }
@@ -168,6 +168,9 @@ class UpdatePollRequest extends FormRequest
      */
     private function poll(): Poll
     {
-        return $this->route('poll');
+        /** @var Poll $poll */
+        $poll = $this->route('poll');
+
+        return $poll;
     }
 }

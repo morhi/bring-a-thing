@@ -48,8 +48,14 @@ class DashboardData extends Data
         $groups = $user->groups()
             ->withCount([
                 'members',
-                'polls as open_polls_count' => fn (Builder $query) => $query->whereNull('closed_at')->visibleTo($user),
-                'events as upcoming_events_count' => fn (Builder $query) => $query->upcoming(),
+                'polls as open_polls_count' => function (Builder $query) use ($user) {
+                    /** @var Builder<Poll> $query */
+                    return $query->whereNull('closed_at')->visibleTo($user);
+                },
+                'events as upcoming_events_count' => function (Builder $query) {
+                    /** @var Builder<Event> $query */
+                    return $query->upcoming();
+                },
             ])
             ->get();
         $groupIds = $groups->modelKeys();
@@ -99,8 +105,14 @@ class DashboardData extends Data
             ->whereKeyNot($memberGroupIds)
             ->reachableThroughGrants($user)
             ->withCount([
-                'polls as open_polls_count' => fn (Builder $query) => $query->whereNull('closed_at')->reachableThroughGrants($user),
-                'events as upcoming_events_count' => fn (Builder $query) => $query->upcoming()->reachableThroughGrants($user),
+                'polls as open_polls_count' => function (Builder $query) use ($user) {
+                    /** @var Builder<Poll> $query */
+                    return $query->whereNull('closed_at')->reachableThroughGrants($user);
+                },
+                'events as upcoming_events_count' => function (Builder $query) use ($user) {
+                    /** @var Builder<Event> $query */
+                    return $query->upcoming()->reachableThroughGrants($user);
+                },
             ])
             ->get();
     }
@@ -132,7 +144,7 @@ class DashboardData extends Data
                 ->orWhereIn('event_id', Event::query()->select('id')->whereIn('group_id', $guestGroupIds)->reachableThroughGrants($user)))
             ->addSelect(['event_group_id' => Event::query()->select('group_id')->whereColumn('events.id', 'rosters.event_id')])
             ->get()
-            ->countBy(fn (Roster $roster) => $roster->group_id ?? $roster->event_group_id);
+            ->countBy(fn (Roster $roster): int => $roster->group_id ?? (int) $roster->event_group_id);
     }
 
     /**

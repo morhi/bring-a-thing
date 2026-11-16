@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Events;
 
 use App\Models\Event;
+use App\Models\Group;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,8 +35,11 @@ class StoreEventRequest extends FormRequest
             return null;
         }
 
+        /** @var Group $group */
+        $group = $this->route('group');
+
         return Event::query()
-            ->where('group_id', $this->route('group')->getKey())
+            ->where('group_id', $group->getKey())
             ->find((int) $this->input('parent_event_id'));
     }
 
@@ -68,7 +72,10 @@ class StoreEventRequest extends FormRequest
      */
     protected function parentRules(): array
     {
-        return ['parent_event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('group_id', $this->route('group')->getKey())]];
+        /** @var Group $group */
+        $group = $this->route('group');
+
+        return ['parent_event_id' => ['nullable', 'integer', Rule::exists('events', 'id')->where('group_id', $group->getKey())]];
     }
 
     /**
@@ -104,16 +111,19 @@ class StoreEventRequest extends FormRequest
     /**
      * The validated event attributes, with empty optional fields as null.
      *
-     * @return array<string, mixed>
+     * @return array{title: string, description: string|null, location: string|null, date: string, starts_at: string|null, end_date: string|null, ends_at: string|null}
      */
     public function eventAttributes(): array
     {
-        return $this->safe()->only(['title', 'description', 'location', 'date', 'starts_at', 'end_date', 'ends_at']) + [
+        /** @var array{title: string, description: string|null, location: string|null, date: string, starts_at: string|null, end_date: string|null, ends_at: string|null} $attributes */
+        $attributes = $this->safe()->only(['title', 'description', 'location', 'date', 'starts_at', 'end_date', 'ends_at']) + [
             'description' => null,
             'location' => null,
             'starts_at' => null,
             'end_date' => null,
             'ends_at' => null,
         ];
+
+        return $attributes;
     }
 }

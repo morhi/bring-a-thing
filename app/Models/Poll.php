@@ -9,6 +9,7 @@ use App\Enums\PollResponseStatus;
 use App\Enums\PollType;
 use App\Models\Concerns\HasEntityInviteLink;
 use App\Models\Concerns\HasSlug;
+use Carbon\CarbonImmutable;
 use Database\Factories\PollFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -32,7 +33,7 @@ use Illuminate\Support\Collection;
  * @property int $organizer_id
  * @property int $group_id
  * @property int|null $event_id
- * @property Carbon|null $closed_at
+ * @property CarbonImmutable|null $closed_at
  * @property string|null $invite_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -67,6 +68,8 @@ class Poll extends Model
 
     /**
      * The user who created and organizes the poll.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function organizer(): BelongsTo
     {
@@ -75,6 +78,8 @@ class Poll extends Model
 
     /**
      * The group this poll is attached to.
+     *
+     * @return BelongsTo<Group, $this>
      */
     public function group(): BelongsTo
     {
@@ -83,6 +88,8 @@ class Poll extends Model
 
     /**
      * The source event of a follow-up poll (F-12), if any.
+     *
+     * @return BelongsTo<Event, $this>
      */
     public function event(): BelongsTo
     {
@@ -91,6 +98,8 @@ class Poll extends Model
 
     /**
      * The candidate days or slots, in calendar order.
+     *
+     * @return HasMany<PollOption, $this>
      */
     public function options(): HasMany
     {
@@ -99,6 +108,8 @@ class Poll extends Model
 
     /**
      * The events fixed from this poll's options (F-09).
+     *
+     * @return HasManyThrough<Event, PollOption, $this>
      */
     public function fixedEvents(): HasManyThrough
     {
@@ -109,6 +120,8 @@ class Poll extends Model
 
     /**
      * The people who withdrew from the poll; they leave its audience (F-08).
+     *
+     * @return HasMany<PollWithdrawal, $this>
      */
     public function withdrawals(): HasMany
     {
@@ -291,6 +304,8 @@ class Poll extends Model
      * accepted participants and managers of the source event. Every rule
      * requires current group membership, so organizer_id alone grants nothing.
      * Polls the user withdrew from are left out (F-08).
+     *
+     * @param  Builder<Poll>  $query
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
@@ -320,6 +335,8 @@ class Poll extends Model
      * A grant on the poll opens it; one reaching a follow-up poll through
      * its source event only with "accepted". Polls the user withdrew from
      * are left out (F-08).
+     *
+     * @param  Builder<Poll>  $query
      */
     #[Scope]
     protected function reachableThroughGrants(Builder $query, User $user): void
@@ -335,6 +352,8 @@ class Poll extends Model
 
     /**
      * Limit the query to polls the user has not withdrawn from (F-08).
+     *
+     * @param  Builder<Poll>  $query
      */
     #[Scope]
     protected function notWithdrawnBy(Builder $query, User $user): void

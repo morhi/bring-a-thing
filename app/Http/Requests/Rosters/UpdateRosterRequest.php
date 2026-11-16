@@ -4,6 +4,7 @@ namespace App\Http\Requests\Rosters;
 
 use App\Enums\PollType;
 use App\Models\PollOption;
+use App\Models\Roster;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -49,8 +50,11 @@ class UpdateRosterRequest extends FormRequest
                 return;
             }
 
+            /** @var PollOption|null $option */
             $option = PollOption::query()->with('poll')->find($optionId);
-            $groupId = $this->route('roster')->group_id;
+            /** @var Roster $roster */
+            $roster = $this->route('roster');
+            $groupId = $roster->group_id;
 
             if ($option === null || $option->poll->type !== PollType::Attendance || $option->poll->group_id !== $groupId || ! $option->poll->isOpenTo($this->user())) {
                 $validator->errors()->add('attendance_poll_option_id', 'Invalid attendance day.');

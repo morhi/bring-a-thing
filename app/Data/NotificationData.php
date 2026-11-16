@@ -81,7 +81,7 @@ class NotificationData extends Data
     public static function collectFor(Collection $notifications): array
     {
         $slugs = $notifications
-            ->groupBy(fn (DatabaseNotification $notification) => $notification->data['subject_type'] ?? '')
+            ->groupBy(fn (DatabaseNotification $notification): string => (string) ($notification->data['subject_type'] ?? ''))
             ->map(fn (Collection $group, string $type) => self::slugsOf($type, $group->pluck('data.subject_id')->filter()->all()));
 
         return $notifications

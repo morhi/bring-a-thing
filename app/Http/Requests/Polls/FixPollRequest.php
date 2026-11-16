@@ -79,6 +79,9 @@ class FixPollRequest extends FormRequest
      */
     private function poll(): Poll
     {
-        return $this->route('poll');
+        /** @var Poll $poll */
+        $poll = $this->route('poll');
+
+        return $poll;
     }
 }

@@ -31,6 +31,7 @@ use Illuminate\Support\Str;
  * @property int|null $attendance_poll_option_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read int|null $event_group_id
  */
 #[Fillable(['title', 'description', 'date', 'members_can_add_items', 'attendance_poll_option_id'])]
 class Roster extends Model
@@ -53,6 +54,8 @@ class Roster extends Model
 
     /**
      * The user who created and owns the list.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function owner(): BelongsTo
     {
@@ -61,6 +64,8 @@ class Roster extends Model
 
     /**
      * The group the list is attached to, if any.
+     *
+     * @return BelongsTo<Group, $this>
      */
     public function group(): BelongsTo
     {
@@ -69,6 +74,8 @@ class Roster extends Model
 
     /**
      * The event the list is attached to, if any.
+     *
+     * @return BelongsTo<Event, $this>
      */
     public function event(): BelongsTo
     {
@@ -77,6 +84,8 @@ class Roster extends Model
 
     /**
      * The items on this roster.
+     *
+     * @return HasMany<RosterItem, $this>
      */
     public function items(): HasMany
     {
@@ -85,6 +94,8 @@ class Roster extends Model
 
     /**
      * The custom fields defined on this roster.
+     *
+     * @return HasMany<CustomField, $this>
      */
     public function customFields(): HasMany
     {
@@ -96,6 +107,8 @@ class Roster extends Model
      *
      * Gates claim eligibility on this day's attendance (see RosterItem::attendancePollOption()),
      * unless an item overrides it with its own link.
+     *
+     * @return BelongsTo<PollOption, $this>
      */
     public function attendancePollOption(): BelongsTo
     {
@@ -104,6 +117,8 @@ class Roster extends Model
 
     /**
      * The list-level comment thread.
+     *
+     * @return MorphMany<Comment, $this>
      */
     public function comments(): MorphMany
     {
@@ -191,6 +206,8 @@ class Roster extends Model
      * Event lists need a participation ("accepted" or "pending") or the
      * event's management; group lists need membership; standalone lists
      * need ownership or a claim. The owner always sees the list.
+     *
+     * @param  Builder<Roster>  $query
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
@@ -228,6 +245,8 @@ class Roster extends Model
 
     /**
      * Limit the query to active lists: not past by date, and for event lists an event that has not started (F-22, F-28).
+     *
+     * @param  Builder<Roster>  $query
      */
     #[Scope]
     protected function active(Builder $query): void
@@ -239,6 +258,8 @@ class Roster extends Model
 
     /**
      * Limit the query to lists the user owns or holds a claim on ("My lists", F-28).
+     *
+     * @param  Builder<Roster>  $query
      */
     #[Scope]
     protected function ownOrClaimedBy(Builder $query, User $user): void
@@ -250,6 +271,8 @@ class Roster extends Model
 
     /**
      * Limit the query to lists with at least one task, an item without a quantity (F-14, F-28).
+     *
+     * @param  Builder<Roster>  $query
      */
     #[Scope]
     protected function withTasks(Builder $query): void

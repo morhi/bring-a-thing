@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\CustomFields;
 
+use App\Models\CustomField;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,14 +24,17 @@ class UpdateCustomFieldRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var CustomField $customField */
+        $customField = $this->route('customField');
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
                 Rule::unique('custom_fields', 'name')
-                    ->where('roster_id', $this->route('customField')->roster_id)
-                    ->ignore($this->route('customField')),
+                    ->where('roster_id', $customField->roster_id)
+                    ->ignore($customField),
             ],
         ];
     }

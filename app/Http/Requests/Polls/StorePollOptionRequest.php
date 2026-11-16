@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Polls;
 
 use App\Enums\PollGranularity;
+use App\Models\Poll;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -27,7 +28,9 @@ class StorePollOptionRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isHourGranularity = $this->route('poll')->granularity === PollGranularity::Hour;
+        /** @var Poll $poll */
+        $poll = $this->route('poll');
+        $isHourGranularity = $poll->granularity === PollGranularity::Hour;
 
         return [
             'date' => ['required', 'date'],
@@ -47,7 +50,10 @@ class StorePollOptionRequest extends FormRequest
                 $validator->errors()->add('ends_at', 'The end time must be after the start time.');
             }
 
-            if ($this->route('poll')->isClosed()) {
+            /** @var Poll $poll */
+            $poll = $this->route('poll');
+
+            if ($poll->isClosed()) {
                 $validator->errors()->add('date', 'This poll is closed.');
             }
         });

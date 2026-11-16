@@ -27,10 +27,15 @@ class Comment extends Model
 
     /**
      * The roster, roster item or event this comment is on (exactly one, F-20).
+     *
+     * @return MorphTo<Roster|RosterItem|Event, $this>
      */
     public function commentable(): MorphTo
     {
-        return $this->morphTo();
+        /** @var MorphTo<Roster|RosterItem|Event, $this> $relation */
+        $relation = $this->morphTo();
+
+        return $relation;
     }
 
     /**
@@ -56,6 +61,8 @@ class Comment extends Model
 
     /**
      * The member who posted the comment.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

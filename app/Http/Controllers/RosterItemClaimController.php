@@ -37,7 +37,7 @@ class RosterItemClaimController extends Controller
      */
     public function destroy(UnclaimRosterItemRequest $request, Roster $roster, RosterItem $item, SendInAppNotification $sendNotification): RedirectResponse
     {
-        $targetId = $request->filled('user_id') ? $request->integer('user_id') : $request->user()->getKey();
+        $targetId = $request->filled('user_id') ? $request->integer('user_id') : $request->user()->id;
 
         $released = $item->claims()->where('user_id', $targetId)->delete();
 

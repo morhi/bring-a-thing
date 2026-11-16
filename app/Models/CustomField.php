@@ -27,6 +27,8 @@ class CustomField extends Model
 
     /**
      * The roster this custom field is defined on.
+     *
+     * @return BelongsTo<Roster, $this>
      */
     public function roster(): BelongsTo
     {
@@ -35,6 +37,8 @@ class CustomField extends Model
 
     /**
      * The per-item values recorded for this field.
+     *
+     * @return HasMany<RosterItemCustomFieldValue, $this>
      */
     public function values(): HasMany
     {
