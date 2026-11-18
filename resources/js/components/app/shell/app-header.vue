@@ -51,20 +51,20 @@ defineExpose({ focusBell: () => bell.value?.focus() });
     >
         <div
             :class="[
-                'content-width flex items-center gap-2 sm:gap-4',
+                'content-width flex items-center gap-2 sm:grid sm:grid-cols-[minmax(10.5rem,1fr)_minmax(0,25rem)_minmax(10.5rem,1fr)] sm:gap-4',
                 variant === 'website' ? 'min-h-[72px]' : 'min-h-16',
             ]"
         >
-            <div class="sm:flex-1">
+            <div class="sm:min-w-0">
                 <Wordmark :href="homeHref" class="shrink-0" />
             </div>
 
-            <!-- Search field centered on the viewport from sm (equal-width side columns), an icon next to the bell below -->
-            <div class="flex flex-1 justify-end sm:flex-none sm:justify-center">
+            <!-- Search field centered on the viewport from sm (grid: equal side columns of at least 10.5rem to fit the wordmark, middle column capped at 25rem), an icon next to the bell below -->
+            <div class="flex flex-1 justify-end sm:min-w-0 sm:justify-center">
                 <CommandPalette v-if="isApp" />
             </div>
 
-            <div class="flex items-center gap-1.5 sm:flex-1 sm:justify-end">
+            <div class="flex items-center gap-1.5 sm:min-w-0 sm:justify-end">
                 <!-- Signed in, language and theme live in the account menu; guests get them inline, or in the menu button below lg -->
                 <div v-if="!isApp" class="hidden items-center gap-1.5 lg:flex">
                     <LanguageSwitch />

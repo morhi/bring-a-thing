@@ -202,7 +202,7 @@ const labelClass = 'text-fg-muted px-3 pt-3 pb-1 text-xs font-semibold';
 <template>
     <button
         type="button"
-        class="border-border-strong bg-surface-raised text-fg-muted hover:border-fg-soft focus-visible:outline-focus-ring hidden h-9 w-full max-w-sm items-center gap-2 rounded-full border px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex"
+        class="border-border-strong bg-surface-raised text-fg-muted hover:border-fg-soft focus-visible:outline-focus-ring hidden h-9 w-full items-center gap-2 rounded-full border px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex"
         aria-haspopup="dialog"
         :aria-expanded="open"
         :aria-keyshortcuts="shortcutAria"
