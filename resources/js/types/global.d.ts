@@ -24,6 +24,7 @@ declare module '@inertiajs/core' {
                 error: string | null;
             };
             locale: 'en' | 'de';
+            credentialHint: App.Enums.CredentialHint | null;
             translations: Record<string, string>;
             [key: string]: unknown;
         };

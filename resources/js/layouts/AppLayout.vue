@@ -4,6 +4,7 @@ import { ref, useTemplateRef } from 'vue';
 import 'vue-sonner/style.css';
 import FlashToasts from '@/components/FlashToasts.vue';
 import AppHeader from '@/components/app/shell/app-header.vue';
+import CredentialHintBanner from '@/components/app/shell/credential-hint-banner.vue';
 import ConnectionNote from '@/components/app/shell/connection-note.vue';
 import NotificationsPanel from '@/components/app/shell/notifications-panel.vue';
 import SiteFooter from '@/components/app/shell/site-footer.vue';
@@ -75,6 +76,10 @@ function openNotification(entry: App.Data.NotificationData): void {
                 />
             </template>
         </AppHeader>
+        <CredentialHintBanner
+            v-if="page.props.credentialHint && page.component !== 'Settings'"
+            :hint="page.props.credentialHint"
+        />
         <main
             id="main"
             tabindex="-1"

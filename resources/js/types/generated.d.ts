@@ -587,6 +587,7 @@ locale: App.Enums.Locale,
 flash: App.Data.SharedFlashData,
 notifications: App.Data.SharedNotificationsData,
 reverb: App.Data.SharedReverbData | null,
+credentialHint: App.Enums.CredentialHint | null,
 };
 export type SharedReverbData = {
 key: string,
@@ -627,6 +628,7 @@ events: App.Data.DashboardEventData[],
 };
 }
 namespace Enums {
+export type CredentialHint = 'email' | 'no_email';
 export type DashboardPollStatus = 'answered' | 'partial' | 'unanswered';
 export type DashboardWaitingKind = 'poll' | 'event';
 export type GroupJoinMethod = 'invite' | 'link';

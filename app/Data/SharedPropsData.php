@@ -2,7 +2,9 @@
 
 namespace App\Data;
 
+use App\Enums\CredentialHint;
 use App\Enums\Locale;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Spatie\LaravelData\Data;
 
@@ -15,6 +17,7 @@ class SharedPropsData extends Data
         public SharedFlashData $flash,
         public SharedNotificationsData $notifications,
         public ?SharedReverbData $reverb,
+        public ?CredentialHint $credentialHint,
     ) {}
 
     /**
@@ -34,6 +37,25 @@ class SharedPropsData extends Data
             ),
             notifications: SharedNotificationsData::forUser($user),
             reverb: SharedReverbData::fromConfig(),
+            credentialHint: self::credentialHintFor($user),
         );
+    }
+
+    /**
+     * Pick the hint to set a password or passkey (F-02); null when none applies.
+     *
+     * Cheap checks come first so dismissed and password accounts cost no passkey query.
+     */
+    private static function credentialHintFor(?User $user): ?CredentialHint
+    {
+        if (! $user || $user->credential_hint_dismissed_at || $user->password) {
+            return null;
+        }
+
+        if ($user->passkeys()->exists()) {
+            return null;
+        }
+
+        return $user->email ? CredentialHint::Email : CredentialHint::NoEmail;
     }
 }
