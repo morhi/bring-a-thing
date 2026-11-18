@@ -4,25 +4,135 @@ import {
     registrationOptions,
     store,
 } from '@/routes/passkey';
+import { t } from '@/lib/i18n';
 
 export type PasskeyLoginExtras = Record<string, unknown>;
 
 /**
- * Whether the browser can create and use passkeys from the server's JSON options (F-01).
+ * Whether the browser can run passkey ceremonies at all (F-01).
+ *
+ * The JSON helpers are optional: older browsers get the base64url fallbacks below.
  */
 export function supportsPasskeys(): boolean {
     return (
         typeof window !== 'undefined' &&
         'PublicKeyCredential' in window &&
-        typeof PublicKeyCredential.parseCreationOptionsFromJSON === 'function'
+        window.isSecureContext
     );
+}
+
+function errorName(error: unknown): string | null {
+    return error instanceof DOMException ? error.name : null;
 }
 
 /**
  * Whether an error only means the person dismissed the browser's passkey prompt.
  */
 export function isPasskeyCancelled(error: unknown): boolean {
-    return error instanceof DOMException && error.name === 'NotAllowedError';
+    return errorName(error) === 'NotAllowedError';
+}
+
+/**
+ * Whether the device already holds a passkey for this account.
+ */
+export function isPasskeyDuplicate(error: unknown): boolean {
+    return errorName(error) === 'InvalidStateError';
+}
+
+function toBuffer(value: string): ArrayBuffer {
+    const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
+    const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
+
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0)).buffer;
+}
+
+function toBase64url(buffer: ArrayBuffer | null): string | null {
+    if (buffer === null) {
+        return null;
+    }
+
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replaceAll('+', '-')
+        .replaceAll('/', '_')
+        .replaceAll('=', '');
+}
+
+function creationOptions(
+    options: PublicKeyCredentialCreationOptionsJSON,
+): PublicKeyCredentialCreationOptions {
+    if (
+        typeof PublicKeyCredential.parseCreationOptionsFromJSON === 'function'
+    ) {
+        return PublicKeyCredential.parseCreationOptionsFromJSON(options);
+    }
+
+    return {
+        ...options,
+        challenge: toBuffer(options.challenge),
+        user: { ...options.user, id: toBuffer(options.user.id) },
+        excludeCredentials: options.excludeCredentials?.map((entry) => ({
+            ...entry,
+            id: toBuffer(entry.id),
+        })),
+    } as unknown as PublicKeyCredentialCreationOptions;
+}
+
+function requestOptions(
+    options: PublicKeyCredentialRequestOptionsJSON,
+): PublicKeyCredentialRequestOptions {
+    if (typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function') {
+        return PublicKeyCredential.parseRequestOptionsFromJSON(options);
+    }
+
+    return {
+        ...options,
+        challenge: toBuffer(options.challenge),
+        allowCredentials: options.allowCredentials?.map((entry) => ({
+            ...entry,
+            id: toBuffer(entry.id),
+        })),
+    } as unknown as PublicKeyCredentialRequestOptions;
+}
+
+function credentialJson(credential: PublicKeyCredential): unknown {
+    if (typeof credential.toJSON === 'function') {
+        return credential.toJSON();
+    }
+
+    const response = credential.response;
+    const base = { clientDataJSON: toBase64url(response.clientDataJSON) };
+
+    return {
+        id: credential.id,
+        rawId: toBase64url(credential.rawId),
+        type: credential.type,
+        authenticatorAttachment: credential.authenticatorAttachment,
+        clientExtensionResults: credential.getClientExtensionResults(),
+        response:
+            response instanceof AuthenticatorAttestationResponse
+                ? {
+                      ...base,
+                      attestationObject: toBase64url(
+                          response.attestationObject,
+                      ),
+                      transports: response.getTransports?.() ?? [],
+                  }
+                : {
+                      ...base,
+                      authenticatorData: toBase64url(
+                          (response as AuthenticatorAssertionResponse)
+                              .authenticatorData,
+                      ),
+                      signature: toBase64url(
+                          (response as AuthenticatorAssertionResponse)
+                              .signature,
+                      ),
+                      userHandle: toBase64url(
+                          (response as AuthenticatorAssertionResponse)
+                              .userHandle,
+                      ),
+                  },
+    };
 }
 
 function xsrfToken(): string {
@@ -32,6 +142,11 @@ function xsrfToken(): string {
 
     return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
 }
+
+/**
+ * The session or CSRF token expired, so the request can only be retried.
+ */
+export class PasskeyPageExpiredError extends Error {}
 
 async function request<T>(
     url: string,
@@ -48,6 +163,10 @@ async function request<T>(
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
+
+    if (response.status === 419) {
+        throw new PasskeyPageExpiredError(t('error.pageExpired'));
+    }
 
     if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
@@ -69,7 +188,7 @@ export async function registerPasskey(name: string): Promise<void> {
     }>(registrationOptions().url, 'GET');
 
     const credential = (await navigator.credentials.create({
-        publicKey: PublicKeyCredential.parseCreationOptionsFromJSON(options),
+        publicKey: creationOptions(options),
     })) as PublicKeyCredential | null;
 
     if (!credential) {
@@ -78,7 +197,7 @@ export async function registerPasskey(name: string): Promise<void> {
 
     await request(store().url, 'POST', {
         name,
-        credential: credential.toJSON(),
+        credential: credentialJson(credential),
     });
 }
 
@@ -96,7 +215,7 @@ export async function loginWithPasskey(
     }>(loginOptions().url, 'GET');
 
     const credential = (await navigator.credentials.get({
-        publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options),
+        publicKey: requestOptions(options),
     })) as PublicKeyCredential | null;
 
     if (!credential) {
@@ -106,7 +225,7 @@ export async function loginWithPasskey(
     const { redirect } = await request<{ redirect: string }>(
         login().url,
         'POST',
-        { ...extras, credential: credential.toJSON(), remember: true },
+        { ...extras, credential: credentialJson(credential), remember: true },
     );
 
     return redirect;

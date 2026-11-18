@@ -4,9 +4,7 @@ use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Middleware\EnsureRecentLogin;
 use App\Http\Responses\PasskeyLoginResponse;
 use App\Models\User;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('F-02: lists the saved passkeys on the settings page', function () {
@@ -22,11 +20,10 @@ it('F-02: lists the saved passkeys on the settings page', function () {
             ->where('settings.passkeys.0.last_used_at', null));
 });
 
-it('F-02: offers passkey registration to an account without a password', function () {
-    $user = User::factory()->create(['password' => null]);
+it('F-02: offers passkey registration to a guest without email, password or passkey, without a recent login', function () {
+    $user = User::factory()->create(['email' => null, 'password' => null]);
 
     $this->actingAs($user)
-        ->withSession([EnsureRecentLogin::SESSION_KEY => now()->timestamp])
         ->getJson(route('passkey.registration-options'))
         ->assertOk()
         ->assertJsonStructure(['options' => ['challenge', 'rp', 'user']]);
@@ -81,39 +78,17 @@ it('F-01: sends a passkey login to the dashboard', function () {
     expect($response->getData(true))->toBe(['redirect' => route('dashboard')]);
 });
 
-it('F-02: blocks passkey changes when the login is older than 15 minutes', function () {
+it('F-02: G-4 a blocked passkey removal redirects back with the message', function () {
     $user = User::factory()->create();
     $passkey = createPasskeyFor($user);
-    $stale = [EnsureRecentLogin::SESSION_KEY => now()->subMinutes(16)->timestamp];
 
-    $this->actingAs($user)->withSession($stale)
-        ->getJson(route('passkey.registration-options'))
-        ->assertForbidden();
-
-    $this->actingAs($user)->withSession($stale)
+    $this->actingAs($user)
+        ->withSession([EnsureRecentLogin::SESSION_KEY => now()->subMinutes(16)->timestamp])
         ->delete(route('passkey.destroy', $passkey))
         ->assertRedirect()
-        ->assertSessionHas('error');
+        ->assertSessionHas('error', __('ui.settings.passkeys.recentLogin', ['minutes' => 15]));
 
     expect($user->passkeys()->count())->toBe(1);
-});
-
-it('F-02: records the login time when a session logs in', function () {
-    $user = User::factory()->create(['password' => 'correct-password']);
-
-    $this->post(route('login.password'), ['email' => $user->email, 'password' => 'correct-password']);
-
-    expect(session(EnsureRecentLogin::SESSION_KEY))->toBeGreaterThanOrEqual(now()->subMinute()->timestamp);
-});
-
-it('F-02: does not record a login time when the remember cookie restores the session', function () {
-    $user = User::factory()->create();
-    $guard = Auth::guard('web');
-    (new ReflectionProperty($guard, 'viaRemember'))->setValue($guard, true);
-
-    event(new Login('web', $user, true));
-
-    expect(session()->has(EnsureRecentLogin::SESSION_KEY))->toBeFalse();
 });
 
 it('F-19: ignores an invalid pending claim on a passkey login', function () {

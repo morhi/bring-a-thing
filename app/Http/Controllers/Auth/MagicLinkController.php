@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Access\GrantEntityAccess;
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
+use App\Actions\Auth\StartLoginWindow;
 use App\Actions\Groups\JoinGroupViaLink;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
@@ -102,6 +103,7 @@ class MagicLinkController extends Controller
         CompletePendingSharedClaim $completePendingSharedClaim,
         JoinGroupViaLink $joinGroup,
         GrantEntityAccess $grantAccess,
+        StartLoginWindow $startLoginWindow,
     ): RedirectResponse {
         if (! URL::hasValidSignature($request)) {
             $error = URL::hasCorrectSignature($request) ? LoginLinkError::Expired : LoginLinkError::Invalid;
@@ -115,6 +117,7 @@ class MagicLinkController extends Controller
         }
 
         Auth::login($user, remember: true);
+        $startLoginWindow->handle();
 
         if ($redirect = $completePendingSharedClaim->handle($request, $user)) {
             return $redirect;

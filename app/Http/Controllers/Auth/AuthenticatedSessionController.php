@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\StartLoginWindow;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Controllers\Controller;
@@ -23,6 +24,7 @@ class AuthenticatedSessionController extends Controller
         LoginWithPasswordRequest $request,
         CompletePendingSharedClaim $completePendingSharedClaim,
         StorePendingSharedClaim $storePendingSharedClaim,
+        StartLoginWindow $startLoginWindow,
     ): RedirectResponse {
         if (! Auth::attempt($request->only('email', 'password'), remember: true)) {
             throw ValidationException::withMessages([
@@ -31,6 +33,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         $request->session()->regenerate();
+        $startLoginWindow->handle();
 
         $storePendingSharedClaim->handle(
             $request,

@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
 import {
     isPasskeyCancelled,
+    isPasskeyDuplicate,
     registerPasskey,
     supportsPasskeys,
 } from '@/composables/use-passkeys';
@@ -120,14 +121,20 @@ async function addPasskey(): Promise<void> {
         toast.success(t('settings.passkeys.added'), { duration: 4000 });
         router.reload({ only: ['settings'] });
     } catch (error) {
-        if (!isPasskeyCancelled(error)) {
-            toast.error(
-                error instanceof Error && error.message
-                    ? error.message
-                    : t('settings.passkeys.failed'),
-                { duration: 6000 },
-            );
+        if (isPasskeyCancelled(error)) {
+            toast.info(t('settings.passkeys.cancelled'), { duration: 6000 });
+
+            return;
         }
+
+        toast.error(
+            isPasskeyDuplicate(error)
+                ? t('settings.passkeys.alreadyRegistered')
+                : error instanceof Error && error.message
+                  ? error.message
+                  : t('settings.passkeys.failed'),
+            { duration: 6000 },
+        );
     } finally {
         savingPasskey.value = false;
     }

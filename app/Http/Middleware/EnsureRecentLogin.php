@@ -16,10 +16,18 @@ class EnsureRecentLogin
      * Block passkey changes unless the session logged in recently (F-02).
      *
      * A stolen or unattended session must not be able to plant a passkey
-     * that outlives it, and accounts without a password cannot confirm one.
+     * that outlives it. A guest with no email, password or passkey is let
+     * through: it could not log in again after being told to log out.
+     * Accounts with an email keep the window, a login link reopens it.
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        if ($user !== null && $user->email === null && $user->password === null && ! $user->passkeys()->exists()) {
+            return $next($request);
+        }
+
         $loggedInAt = (int) $request->session()->get(self::SESSION_KEY, 0);
 
         if ($loggedInAt >= now()->subMinutes(self::MAX_AGE_MINUTES)->timestamp) {

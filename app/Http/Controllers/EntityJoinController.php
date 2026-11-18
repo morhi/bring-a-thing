@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Access\GrantEntityAccess;
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
+use App\Actions\Auth\StartLoginWindow;
 use App\Data\EntityJoinData;
 use App\Http\Requests\Access\JoinEntityRequest;
 use App\Models\Event;
@@ -118,6 +119,7 @@ class EntityJoinController extends Controller
         $grantAccess->handle($entity, $user);
 
         Auth::login($user, remember: true);
+        app(StartLoginWindow::class)->handle();
         $request->session()->regenerate();
 
         return to_route($showRoute, $entity)->with('success', __('ui.entityJoin.joined'));

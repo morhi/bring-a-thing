@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Actions\Auth\StartLoginWindow;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,7 @@ class PasskeyLoginResponse implements PasskeyLoginResponseContract
 {
     public function __construct(
         private readonly CompletePendingSharedClaim $completePendingSharedClaim,
+        private readonly StartLoginWindow $startLoginWindow,
         private readonly StorePendingSharedClaim $storePendingSharedClaim,
     ) {}
 
@@ -24,6 +26,8 @@ class PasskeyLoginResponse implements PasskeyLoginResponseContract
      */
     public function toResponse($request): JsonResponse
     {
+        $this->startLoginWindow->handle();
+
         $claim = Validator::make($request->all(), [
             'pending_claim_roster_token' => ['nullable', 'string'],
             'pending_claim_item_id' => ['nullable', 'integer'],

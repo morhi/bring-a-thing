@@ -6,28 +6,6 @@ use App\Models\Event;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
-
-/**
- * Assert that a request carrying only the remember cookie reaches a protected route as the user.
- */
-function assertRestoredFrom(string $recaller, User $user, string $url): void
-{
-    test()->withUnencryptedCookie(Auth::guard()->getRecallerName(), $recaller)
-        ->get($url)
-        ->assertOk();
-
-    test()->assertAuthenticatedAs($user);
-    expect(Auth::viaRemember())->toBeTrue();
-}
-
-function loginViaLink(User $user): string
-{
-    $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
-
-    return recallerFrom(test()->get($url));
-}
 
 it('F-01: R-1 a login link logs the user back in from the remember cookie after the session is gone', function (bool $passwordless) {
     $user = $passwordless ? User::factory()->shadow()->create() : User::factory()->create();

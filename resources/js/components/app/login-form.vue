@@ -2,6 +2,7 @@
 import { router, useForm } from '@inertiajs/vue3';
 import { CheckIcon, ClockIcon, KeyRoundIcon, MailIcon } from '@lucide/vue';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import { store as loginWithPassword } from '@/actions/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import {
     needsName as lookupEmail,
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
 import {
     isPasskeyCancelled,
+    PasskeyPageExpiredError,
     loginWithPasskey,
     supportsPasskeys,
 } from '@/composables/use-passkeys';
@@ -196,9 +198,18 @@ async function submitPasskey(): Promise<void> {
 
         router.visit(redirect);
     } catch (error) {
-        if (!isPasskeyCancelled(error)) {
-            form.setError('email', t('welcome.login.passkeyFailed'));
+        if (isPasskeyCancelled(error)) {
+            toast.info(t('welcome.login.passkeyCancelled'), { duration: 6000 });
+
+            return;
         }
+
+        form.setError(
+            'email',
+            error instanceof PasskeyPageExpiredError
+                ? error.message
+                : t('welcome.login.passkeyFailed'),
+        );
     } finally {
         passkeyBusy.value = false;
     }

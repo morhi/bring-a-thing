@@ -16,6 +16,7 @@ use Illuminate\Contracts\Encryption\Encrypter;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passkeys\Passkey;
 use Tests\TestCase;
@@ -180,4 +181,49 @@ function realCsrf(): void
             return false;
         }
     });
+}
+
+/**
+ * Assert that a request carrying only the remember cookie reaches a protected route as the user.
+ */
+function assertRestoredFrom(string $recaller, User $user, string $url): void
+{
+    test()->withUnencryptedCookie(Auth::guard()->getRecallerName(), $recaller)
+        ->get($url)
+        ->assertOk();
+
+    test()->assertAuthenticatedAs($user);
+    expect(Auth::viaRemember())->toBeTrue();
+}
+
+/**
+ * Log the user in through a signed login link and return the remember cookie it set.
+ */
+function loginViaLink(User $user): string
+{
+    $url = URL::temporarySignedRoute('login.consume', now()->addMinutes(30), ['user' => $user->id]);
+
+    return recallerFrom(test()->get($url));
+}
+
+/**
+ * Build a remember cookie that still finds the user but no longer matches the password hash.
+ *
+ * The guard stays a guest yet reports viaRemember(), as a cookie left over from an old login does.
+ */
+function staleRecallerFor(User $user): string
+{
+    $recaller = loginViaLink($user);
+    dropSession();
+    $user->update(['password' => 'changed-pw']);
+
+    return $recaller;
+}
+
+/**
+ * Assert the session passes the recent-login gate of the passkey routes.
+ */
+function assertWindowOpen(): void
+{
+    test()->getJson(route('passkey.registration-options'))->assertOk();
 }
