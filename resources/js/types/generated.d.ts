@@ -370,6 +370,11 @@ list: string | null,
 item: string | null,
 date: string | null,
 };
+export type OperatorData = {
+name: string | null,
+address: string | null,
+email: string | null,
+};
 export type ParticipationData = {
 user_id: number,
 name: string | null,

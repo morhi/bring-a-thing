@@ -19,6 +19,7 @@ use App\Http\Controllers\GroupInviteLinkController;
 use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\GroupMembershipRequestController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PollController;
@@ -42,6 +43,10 @@ use App\Http\Controllers\WithoutGroupController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('welcome');
+
+// Public legal pages, reachable from the footer without an account.
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/legal-notice', [LegalController::class, 'notice'])->name('legal-notice');
 
 // No standalone login page: the welcome page's hero form is the single
 // entry point. This name only exists because Laravel's auth middleware
