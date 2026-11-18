@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.24
+- **Version:** 1.25
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -47,6 +47,9 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
 - A passkey is optional and can be saved in the settings (F-02). The start page offers a "Log in with passkey" button that logs in without entering an email. The login link and the password stay available.
+- Every login is remembered on the device: login link, password, passkey and the name-only join of an invite link, also for accounts without a password. A session that ended after idle time is restored silently from the remember cookie. The password login always remembers and has no checkbox.
+- Setting or changing the password keeps the current device logged in (F-02).
+- A request with an expired page token after a long idle time shows a notice and returns to the page instead of an error page.
 - Besides the login email, the app sends only the summary email for fixed dates (F-30).
 
 **Acceptance criteria:**
@@ -57,6 +60,10 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An account without a password shows no password field.
 - A guest can request passkey login options on the start page, and a passkey login without a credential does not log in.
 - After a passkey login, the person lands on the dashboard, or back on the shared list when a claim is pending (F-19).
+- A person who logged in through a login link and has no password is logged in again from the remember cookie after the session is gone.
+- A person who logged in with email and password and entered nothing else is logged in again the same way.
+- An account without a password cannot log in with a password, and the app shows the normal login failure.
+- An Inertia request with an expired page token goes back to the page with a notice.
 
 #### F-02 Account and settings (Secondary)
 
@@ -65,9 +72,20 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - The settings contain name, set or change password, saved passkeys, and logout. Common practice applies.
 - Passkeys: the person saves a passkey under a name of their choice, sees each one with its creation and last-use date, and removes it after a confirmation. Saving needs no password, so accounts that only use the login link can add one. A passkey belongs to one account and cannot be removed by another.
+- Hint: an account without a password and without a passkey sees a dismissible hint beneath the header on every app page except the settings. It recommends setting a password or saving a passkey. For an account without an email it recommends a passkey or adding an email. Dismissing hides the hint for good on all devices of that account.
+- Passkey gate: saving or removing a passkey needs a login younger than 15 minutes for every account, except one without password, passkey and email, which saves its first passkey at any time. A login through login link, password, passkey or the name-only join of an invite link starts the 15 minutes, and a session restored from the remember cookie does not.
+- Setting or changing the password keeps the current device logged in and does not start the 15 minutes.
 
 **Acceptance criteria:**
 - After setting a password, login with email and password succeeds.
+- After setting a password, the current device stays logged in and the 15 minutes do not start.
+- An account without a password and without a passkey sees the hint with the password or passkey recommendation; an account without an email sees the variant with passkey or email.
+- An account with a password, an account with a passkey and a guest see no hint.
+- Dismissing the hint stores the dismissal on the account, and the hint stays hidden afterwards.
+- Saving a passkey works right after a login through login link, password, passkey and the name-only join.
+- On a session restored from the remember cookie, an account without password, passkey and email saves its first passkey.
+- On a session restored from the remember cookie, an account with a password, a passkey or an email is refused and sees the next step.
+- A login older than 15 minutes blocks saving and removing a passkey, except for an account without password, passkey and email, and removing shows the message.
 - The settings list the saved passkeys of the account.
 - An account without a password can start saving a passkey.
 - Removing a passkey deletes it and shows a confirmation message.
@@ -489,6 +507,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Acceptance criteria:**
 - A member without the manager role cannot create, regenerate or revoke the link.
 - A guest who joins with a name only lands on the event and stays logged in on this browser.
+- A guest who joined with a name only stays logged in after the session ended.
 - A guest who joins with an email gets access only after following the login link.
 - A link guest opens a child event, and after accepting the event its follow-up polls and lists.
 - A link guest sees no sibling event, neither on the restricted group page nor by direct address (it shows "Not found").
@@ -703,6 +722,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Accessibility:** WCAG 2.2 level AA, including the response grid.
 - **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice on the start page.
 - **Volume:** groups up to 50 members, polls up to 60 options, lists up to 200 items. Expected usage: about 5 groups per account and about 5 polls, events and lists each per group per year. Pages load in under 1 second, live updates appear in under 2 seconds.
+- **Hosting:** the app runs on https under bringathing.com behind one TLS-terminating proxy. Production forces https and the host of APP_URL for generated links, and the session cookie is secure. By default only the connecting proxy is trusted for client IPs. Passkeys are bound to the host of APP_URL. The www host must redirect to the apex host at the proxy or DNS level.
 
 ## 10. Out of scope
 
@@ -720,4 +740,4 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 
 ## 11. Open questions
 
-No open questions.
+- **Logout on one device:** logging out ends the remembered login of the account on its other devices as well, because the account holds a single remember token. Per-device tokens would avoid this (F-01).
