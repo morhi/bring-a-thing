@@ -77,7 +77,7 @@ return [
             'encryption_key' => env('MERCURE_ENCRYPTION_KEY'),
             'claims' => [
                 'iss' => env('MERCURE_JWT_ISSUER'),
-                'client_id' => env('APP_NAME'),
+                'client_id' => 'Bring a Thing',
             ],
             'cookie_name' => env('MERCURE_COOKIE_NAME'),
             'subscribe_expiration' => (int) env('MERCURE_SUBSCRIBE_EXPIRATION', 5),

@@ -6,7 +6,8 @@ import { createApp, h, watchEffect } from 'vue';
 import { configureEcho } from '@laravel/echo-vue';
 import { locale, t, tc } from '@/lib/i18n';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The Blade <title> renders config('app.name'); read it before Inertia rewrites the title.
+const appName = document.title;
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
