@@ -13,6 +13,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Passkeys\Contracts\PasskeyDeletedResponse as PasskeyDeletedResponseContract;
@@ -35,6 +36,21 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureHttps();
+    }
+
+    /**
+     * Force https and the configured host in production so signed links match the public URL.
+     */
+    protected function configureHttps(): void
+    {
+        if (! app()->isProduction()) {
+            return;
+        }
+
+        URL::forceHttps(true);
+        // A forwarded or spoofed Host header must not end up in emailed login links.
+        URL::forceRootUrl(config('app.url'));
     }
 
     /**
