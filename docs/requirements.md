@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.25
+- **Version:** 1.26
 - **Approved:** 26.10.2026
 
 ## 2. Goal
@@ -50,7 +50,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Every login is remembered on the device: login link, password, passkey and the name-only join of an invite link, also for accounts without a password. A session that ended after idle time is restored silently from the remember cookie. The password login always remembers and has no checkbox.
 - Setting or changing the password keeps the current device logged in (F-02).
 - A request with an expired page token after a long idle time shows a notice and returns to the page instead of an error page.
-- Besides the login email, the app sends only the summary email for fixed dates (F-30).
+- The app sends only three kinds of emails: the login link, the link that confirms an email address and the summary email for fixed dates (F-30).
 
 **Acceptance criteria:**
 - A new email address receives a login link after entering email and name, and the link leads to the dashboard.
@@ -631,6 +631,26 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An event the person declined or withdrew from, and a child event, does not appear.
 - An own standalone event appears; a standalone event of another person without a link does not.
 
+#### F-33 Privacy policy and legal notice (Secondary)
+
+**User goal:** Learn who runs the app and how it handles personal data, without logging in.
+
+**Rules:**
+- The privacy policy at /privacy and the legal notice at /legal-notice are public. Guests see them in the website layout, logged-in accounts in the app layout.
+- The site footer links to both pages, so the start page links to both.
+- Both texts exist in English and German and follow the language switch (F-24). They use formal legal language, and the German text uses the formal address. The German pages are titled "Impressum" and "Datenschutzerklärung".
+- The operator's name has a configured default, the site owner. Address and email come from the configuration only (LEGAL_OPERATOR_NAME, LEGAL_OPERATOR_ADDRESS, LEGAL_OPERATOR_EMAIL). The legal notice shows only the values that are set. The privacy policy names the operator's email as contact when it is configured, otherwise it refers to the operator named in the legal notice.
+- The privacy policy is short and has seven blocks: controller, personal data processed, purpose and legal basis, recipients, cookies and local storage, retention and deletion, and data subject rights under the revFADP and GDPR including the complaint to the Swiss FDPIC or the local authority.
+- The data covered are email, name, language, the password stored only as a hash, for each passkey its public key, the name the person gave it and the date of last use, entered content, and the email address or name that other people enter about a person when they invite them or add them as a friend. Technical data are the IP address and browser details in login sessions and server logs.
+- The policy names the only three kinds of emails: login link, email address confirmation link and the summary of fixed dates (F-30). Cookies and browser storage are strictly necessary, with no tracking and no third-party content. Browser storage consists of the theme setting and the technical page state of the framework, both strictly necessary.
+- The policy states who sees what: other users of the person's groups, lists, polls and events and people who hold a share or invite link see the person's name, while only group owners and admins see email addresses.
+- Data stays while the account exists, and hosting and email providers process it on behalf of the operator. Because the app has no account deletion yet, a person asks for deletion by email to the operator.
+
+**Acceptance criteria:**
+- A guest and a logged-in account can open the privacy policy and the legal notice.
+- Both pages receive the operator's name, address and email from the configuration.
+- With no operator details configured, both pages still open and receive no operator details.
+
 ## 6. Structure
 
 **Navigation:** header with logo (leads to the dashboard), search and quick actions (F-25), notifications (F-23) and user menu (settings, friends, logout). There is no permanent sidebar; groups, events and lists link to each other on their pages.
@@ -655,6 +675,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - **New event:** title, date, time, location, description, audience note (F-10).
 - **New list:** title, description, date, placement, add setting (F-13, F-14).
 - **Settings** and **Friends:** F-02, F-05, language switch (F-24).
+- **Privacy policy** and **Legal notice:** public pages at /privacy and /legal-notice, linked from the site footer (F-33).
 
 Editing items happens in a dialog. Creating a group, a poll, an event or a list has its own page, reached from the group, the event or the dashboard, with a cancel action that returns to where the person came from.
 
@@ -720,7 +741,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Language:** English and German (F-24). Dates follow the active language: 15.10.2026 in German, 15 Oct 2026 in English. Times in 24-hour format in both.
 - **Devices:** mobile first from 375 px width for all functions, desktop up to 1440 px without functional differences. No horizontal scrolling except in the poll's response grid.
 - **Accessibility:** WCAG 2.2 level AA, including the response grid.
-- **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice on the start page.
+- **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice as public pages (F-33).
 - **Volume:** groups up to 50 members, polls up to 60 options, lists up to 200 items. Expected usage: about 5 groups per account and about 5 polls, events and lists each per group per year. Pages load in under 1 second, live updates appear in under 2 seconds.
 - **Hosting:** the app runs on https under bringathing.com behind one TLS-terminating proxy. Production forces https and the host of APP_URL for generated links, and the session cookie is secure. By default only the connecting proxy is trusted for client IPs. Passkeys are bound to the host of APP_URL. The www host must redirect to the apex host at the proxy or DNS level.
 
@@ -733,7 +754,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - Native apps
 - Poll responses without an account; an invite link guest always gets an account, if only with a name (F-26, F-27)
 - Recurring events and automatically recurring lists (duplication only)
-- Emails other than the login email, including reminders
+- Emails other than the login link, the email address confirmation link and the summary of fixed dates (F-30), including reminders
 - Status fields for lists and items; past is derived from the date
 - More than one level of child events
 - **Later:** QR codes for share and invite links, automatic deletion of old polls and lists, list expiry after the event, Excel export of poll results, event participation and list items.
@@ -741,3 +762,4 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 ## 11. Open questions
 
 - **Logout on one device:** logging out ends the remembered login of the account on its other devices as well, because the account holds a single remember token. Per-device tokens would avoid this (F-01).
+- **Account deletion by the person themselves:** the privacy policy sends deletion requests to the operator by email because the app has no self-service account deletion (F-33).
