@@ -8,8 +8,11 @@ use App\Http\Requests\AddAccountEmailRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\User;
+use Illuminate\Auth\SessionGuard;
+use Illuminate\Events\NullDispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -92,6 +95,9 @@ class SettingsController extends Controller
 
     /**
      * Set or change the user's password.
+     *
+     * The remember cookie embeds the password hash, so it is re-issued to keep
+     * the current device logged in (F-02).
      */
     public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
@@ -101,6 +107,29 @@ class SettingsController extends Controller
             'password' => $request->string('password')->value(),
         ]);
 
+        $this->reissueRememberCookie($request->user());
+
         return back()->with('success', __($hadPassword ? 'ui.settings.password.changeDone' : 'ui.settings.password.setDone'));
+    }
+
+    /**
+     * Re-issue the remember cookie for the current device without a Login event.
+     *
+     * Listeners of Login would start the passkey re-authentication window and
+     * accept pending group invitations, neither of which a password change proves.
+     */
+    private function reissueRememberCookie(User $user): void
+    {
+        /** @var SessionGuard $guard */
+        $guard = Auth::guard();
+        $events = $guard->getDispatcher();
+
+        $guard->setDispatcher(new NullDispatcher($events));
+
+        try {
+            $guard->login($user, true);
+        } finally {
+            $guard->setDispatcher($events);
+        }
     }
 }

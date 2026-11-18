@@ -8,19 +8,6 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Testing\AssertableInertia as Assert;
-use Laravel\Passkeys\Passkey;
-
-/**
- * Store a passkey row for the user without running a WebAuthn ceremony.
- */
-function createPasskeyFor(User $user, string $name = 'MacBook'): Passkey
-{
-    return $user->passkeys()->forceCreate([
-        'name' => $name,
-        'credential_id' => fake()->unique()->sha1(),
-        'credential' => ['type' => 'public-key'],
-    ]);
-}
 
 it('F-02: lists the saved passkeys on the settings page', function () {
     $user = User::factory()->create();

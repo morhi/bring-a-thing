@@ -12,7 +12,12 @@ use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\RosterItemClaim;
 use App\Models\User;
+use Illuminate\Contracts\Encryption\Encrypter;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Testing\TestResponse;
+use Laravel\Passkeys\Passkey;
 use Tests\TestCase;
 
 /*
@@ -128,4 +133,51 @@ function dashboardList(User $owner, array $attributes = [], ?User $claimer = nul
     }
 
     return $roster;
+}
+
+/**
+ * Store a passkey row for the user without running a WebAuthn ceremony.
+ */
+function createPasskeyFor(User $user, string $name = 'MacBook'): Passkey
+{
+    return $user->passkeys()->forceCreate([
+        'name' => $name,
+        'credential_id' => fake()->unique()->sha1(),
+        'credential' => ['type' => 'public-key'],
+    ]);
+}
+
+/**
+ * Read the remember cookie from a response, in the form a browser would send it back.
+ */
+function recallerFrom(TestResponse $response): string
+{
+    $cookie = $response->getCookie(Auth::guard()->getRecallerName(), decrypt: false);
+
+    expect($cookie)->not->toBeNull();
+
+    return $cookie->getValue();
+}
+
+/**
+ * Forget the session and the resolved guard user, so only a remember cookie can log the next request in.
+ */
+function dropSession(): void
+{
+    app('session.store')->flush();
+    Auth::forgetGuards();
+}
+
+/**
+ * Enforce the CSRF token check, which the framework skips while running unit tests.
+ */
+function realCsrf(): void
+{
+    app()->bind(PreventRequestForgery::class, fn ($app) => new class($app, $app->make(Encrypter::class)) extends PreventRequestForgery
+    {
+        protected function runningUnitTests(): bool
+        {
+            return false;
+        }
+    });
 }

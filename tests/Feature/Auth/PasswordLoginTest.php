@@ -3,6 +3,7 @@
 use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 it('logs in a user with a correct password', function () {
     $user = User::factory()->create(['password' => 'correct-password']);
@@ -28,7 +29,7 @@ it('rejects a login with an incorrect password', function () {
     $this->assertGuest();
 });
 
-it('rejects a password login for a user who has no password set', function () {
+it('F-01: rejects a password login for a user who has no password set', function () {
     $user = User::factory()->shadow()->create();
 
     $response = $this->post(route('login.password'), [
@@ -38,6 +39,7 @@ it('rejects a password login for a user who has no password set', function () {
 
     $response->assertInvalid('email');
     $this->assertGuest();
+    $response->assertCookieMissing(Auth::guard()->getRecallerName());
 });
 
 it('stashes and completes a pending shared-list claim submitted from the login dialog on a password login', function () {

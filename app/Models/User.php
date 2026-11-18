@@ -37,6 +37,11 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
     use HasFactory, Notifiable, PasskeyAuthenticatable;
 
     /**
+     * Well-formed bcrypt string no password can match, used for accounts without a password.
+     */
+    private const UNUSABLE_PASSWORD_HASH = '$2y$12$.....................................................';
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -46,7 +51,20 @@ class User extends Authenticatable implements HasLocalePreference, PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'credential_hint_dismissed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The hash the auth guards compare against.
+     *
+     * The session guard refuses to restore a user from the remember cookie
+     * when this is not a string, which logged out every passwordless account
+     * (F-01). The fallback is never stored and matches no input.
+     */
+    public function getAuthPassword(): string
+    {
+        return $this->password ?? self::UNUSABLE_PASSWORD_HASH;
     }
 
     /**

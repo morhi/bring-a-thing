@@ -24,7 +24,7 @@ class AuthenticatedSessionController extends Controller
         CompletePendingSharedClaim $completePendingSharedClaim,
         StorePendingSharedClaim $storePendingSharedClaim,
     ): RedirectResponse {
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (! Auth::attempt($request->only('email', 'password'), remember: true)) {
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
