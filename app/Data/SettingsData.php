@@ -23,6 +23,7 @@ class SettingsData extends Data
         public array $languages,
         public int $password_min_length,
         public array $passkeys,
+        public ?string $calendar_feed_url,
     ) {}
 
     /**
@@ -42,6 +43,7 @@ class SettingsData extends Data
             languages: Locale::cases(),
             password_min_length: (int) (Password::default()->appliedRules()['min'] ?? 8),
             passkeys: $user->passkeys()->oldest()->get()->map(PasskeyData::fromPasskey(...))->all(),
+            calendar_feed_url: $user->calendarFeedUrl(),
         );
     }
 }

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\MagicLinkController;
+use App\Http\Controllers\CalendarFeedController;
+use App\Http\Controllers\CalendarFeedSettingsController;
 use App\Http\Controllers\CredentialHintController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
@@ -86,6 +88,8 @@ Route::get('/join/event/{token}', [EntityJoinController::class, 'showEvent'])->n
 Route::post('/join/event/{token}', [EntityJoinController::class, 'storeEvent'])->name('events.join.store');
 Route::get('/join/poll/{token}', [EntityJoinController::class, 'showPoll'])->name('polls.join.show');
 Route::post('/join/poll/{token}', [EntityJoinController::class, 'storePoll'])->name('polls.join.store');
+// Calendar feed: open to anyone with the secret token, like shared list links (F-34).
+Route::get('/calendar/{token}.ics', CalendarFeedController::class)->name('calendar.feed');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -238,4 +242,11 @@ Route::middleware('auth')->group(function () {
 // Command palette search (F-25): JSON for the header palette, scoped to what the account may see.
 Route::middleware('auth')->group(function () {
     Route::get('/search', SearchController::class)->name('search');
+});
+
+// Calendar feed management in the account settings (F-34).
+Route::middleware('auth')->group(function () {
+    Route::post('/settings/calendar', [CalendarFeedSettingsController::class, 'store'])->name('settings.calendar.store');
+    Route::put('/settings/calendar', [CalendarFeedSettingsController::class, 'update'])->name('settings.calendar.update');
+    Route::delete('/settings/calendar', [CalendarFeedSettingsController::class, 'destroy'])->name('settings.calendar.destroy');
 });

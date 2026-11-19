@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia as Assert;
 
 it('redirects guests away from the settings page', function () {
     $response = $this->get(route('settings.edit'));
@@ -110,4 +111,19 @@ it('F-02: after setting a password, login with email and password succeeds', fun
     $this->post(route('login.password'), ['email' => 'pw@example.com', 'password' => 'a-new-password'])
         ->assertRedirect(route('dashboard'));
     $this->assertAuthenticatedAs($user);
+});
+
+it('F-34: settings page exposes the feed url, null when the feed is off', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('settings.edit'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Settings')
+            ->where('settings.calendar_feed_url', null));
+
+    $user->enableCalendarFeed();
+
+    $this->actingAs($user)->get(route('settings.edit'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('settings.calendar_feed_url', $user->calendarFeedUrl()));
 });

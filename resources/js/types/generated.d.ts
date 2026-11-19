@@ -570,6 +570,7 @@ has_password: boolean,
 languages: App.Enums.Locale[],
 password_min_length: number,
 passkeys: App.Data.PasskeyData[],
+calendar_feed_url: string | null,
 };
 export type SharedAuthData = {
 user: App.Data.SharedUserData | null,

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\PasskeyAuthenticatable;
 
@@ -25,16 +26,62 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
  * @property Carbon|null $email_verified_at
  * @property string|null $password
  * @property string|null $remember_token
+ * @property string|null $calendar_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read GroupMember|null $pivot
  */
 #[Fillable(['name', 'email', 'language', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'calendar_token'])]
 class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable;
+
+    /**
+     * Turn on the calendar feed, generating a token first if none exists yet.
+     */
+    public function enableCalendarFeed(): string
+    {
+        if ($this->calendar_token === null) {
+            $this->calendar_token = Str::random(32);
+            $this->save();
+        }
+
+        return $this->calendar_token;
+    }
+
+    /**
+     * Replace the calendar token with a new one, invalidating any previously subscribed link.
+     */
+    public function regenerateCalendarToken(): string
+    {
+        $this->calendar_token = Str::random(32);
+        $this->save();
+
+        return $this->calendar_token;
+    }
+
+    /**
+     * Turn off the calendar feed.
+     */
+    public function disableCalendarFeed(): void
+    {
+        $this->calendar_token = null;
+        $this->save();
+    }
+
+    /**
+     * The absolute subscription URL, or null while the feed is off.
+     */
+    public function calendarFeedUrl(): ?string
+    {
+        if ($this->calendar_token === null) {
+            return null;
+        }
+
+        return route('calendar.feed', ['token' => $this->calendar_token]);
+    }
 
     /**
      * Well-formed bcrypt string no password can match, used for accounts without a password.
