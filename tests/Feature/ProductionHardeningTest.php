@@ -3,6 +3,7 @@
 use App\Mail\MagicLinkMail;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\Process\Process;
@@ -90,6 +91,27 @@ it('F-01: in production URLs are forced to https, elsewhere they are not', funct
     'testing' => ['testing', 'http'],
     'local' => ['local', 'http'],
 ]);
+
+it('F-01: in production the generated frontend routes stay relative to the current host', function () {
+    $path = storage_path('framework/testing/wayfinder-'.uniqid());
+
+    // Artisan dispatches the command events only through its real entry point, so a child process runs it.
+    $process = new Process([PHP_BINARY, 'artisan', 'wayfinder:generate', '--path='.$path], base_path(), [
+        'APP_ENV' => 'production',
+        'APP_URL' => 'https://bringathing.com',
+    ]);
+
+    try {
+        $process->mustRun();
+
+        $generated = collect(File::allFiles($path))->map(fn ($file) => $file->getContents())->implode("\n");
+    } finally {
+        File::deleteDirectory($path);
+    }
+
+    expect($generated)->toContain("url: '/login'")
+        ->and($generated)->not->toContain('bringathing.com');
+});
 
 it('F-01: the session cookie secure default depends on the environment', function (string $env, ?string $override, bool $expected) {
     // A child process keeps the env override out of this process, where the Env repository is immutable.
