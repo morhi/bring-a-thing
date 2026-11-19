@@ -1,48 +1,11 @@
 <?php
 
-use App\Enums\GroupRole;
 use App\Enums\ParticipationStatus;
 use App\Enums\PollResponseStatus;
 use App\Models\Event;
-use App\Models\Group;
 use App\Models\Poll;
 use App\Models\PollOption;
-use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-
-/**
- * Create a group with an owner and the given number of plain members, and a date finder poll by the owner.
- *
- * @return array{0: Group, 1: User, 2: array<int, User>, 3: Poll}
- */
-function pollGroup(int $memberCount = 2, array $pollAttributes = []): array
-{
-    $owner = User::factory()->create();
-    $group = Group::factory()->create(['owner_id' => $owner->id]);
-    $group->addMember($owner, GroupRole::Owner, now());
-
-    $members = User::factory()->count($memberCount)->create()->all();
-
-    foreach ($members as $member) {
-        $group->addMember($member, GroupRole::Member, now());
-    }
-
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, ...$pollAttributes]);
-
-    return [$group, $owner, $members, $poll];
-}
-
-/**
- * Record answers on an option, one per given user.
- *
- * @param  array<int, User>  $users
- */
-function answerOption(PollOption $option, array $users, PollResponseStatus $status): void
-{
-    foreach ($users as $user) {
-        $option->responses()->create(['user_id' => $user->id, 'status' => $status]);
-    }
-}
 
 it('F-06: a poll with three time slots on the same date shows three separate columns', function () {
     [, $owner, , $poll] = pollGroup(pollAttributes: ['granularity' => 'hour']);

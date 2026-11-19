@@ -365,6 +365,20 @@ class Event extends Model
     }
 
     /**
+     * Limit the query to events the user may open: their groups', their own standalone events and those reached through a grant (F-22, F-26, F-29).
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        $query->where(fn (Builder $query) => $query
+            ->whereIn('events.group_id', $user->groups()->select('groups.id'))
+            ->orWhere(fn (Builder $query) => $query->standaloneOrganizedBy($user))
+            ->orWhere(fn (Builder $query) => $query->reachableThroughGrants($user)));
+    }
+
+    /**
      * The name of the route that shows the event's join page.
      */
     protected function inviteJoinRouteName(): string
