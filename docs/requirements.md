@@ -4,8 +4,8 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.26
-- **Approved:** 26.10.2026
+- **Version:** 1.27
+- **Approved:** 19.11.2026
 
 ## 2. Goal
 
@@ -641,7 +641,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Both texts exist in English and German and follow the language switch (F-24). They use formal legal language, and the German text uses the formal address. The German pages are titled "Impressum" and "Datenschutzerklärung".
 - The operator's name has a configured default, the site owner. Address and email come from the configuration only (LEGAL_OPERATOR_NAME, LEGAL_OPERATOR_ADDRESS, LEGAL_OPERATOR_EMAIL). The legal notice shows only the values that are set. The privacy policy names the operator's email as contact when it is configured, otherwise it refers to the operator named in the legal notice.
 - The privacy policy is short and has seven blocks: controller, personal data processed, purpose and legal basis, recipients, cookies and local storage, retention and deletion, and data subject rights under the revFADP and GDPR including the complaint to the Swiss FDPIC or the local authority.
-- The data covered are email, name, language, the password stored only as a hash, for each passkey its public key, the name the person gave it and the date of last use, entered content, and the email address or name that other people enter about a person when they invite them or add them as a friend. Technical data are the IP address and browser details in login sessions and server logs.
+- The data covered are email, name, language, the password stored only as a hash, for each passkey its public key, the name the person gave it and the date of last use, the personal calendar feed link (F-34), entered content, and the email address or name that other people enter about a person when they invite them or add them as a friend. Technical data are the IP address and browser details in login sessions and server logs.
 - The policy names the only three kinds of emails: login link, email address confirmation link and the summary of fixed dates (F-30). Cookies and browser storage are strictly necessary, with no tracking and no third-party content. Browser storage consists of the theme setting and the technical page state of the framework, both strictly necessary.
 - The policy states who sees what: other users of the person's groups, lists, polls and events and people who hold a share or invite link see the person's name, while only group owners and admins see email addresses.
 - Data stays while the account exists, and hosting and email providers process it on behalf of the operator. Because the app has no account deletion yet, a person asks for deletion by email to the operator.
@@ -650,6 +650,25 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A guest and a logged-in account can open the privacy policy and the legal notice.
 - Both pages receive the operator's name, address and email from the configuration.
 - With no operator details configured, both pages still open and receive no operator details.
+
+#### F-34 Calendar feed (Secondary)
+
+**User goal:** See own events and reserved poll dates in the personal calendar app.
+
+**Rules:**
+- In the settings, the person turns on a personal feed link, copies it or subscribes through a webcal link, regenerates it (the old link stops working) and turns it off.
+- The feed works without login. Anyone with the link reads its content, so the settings hint says to keep the link private.
+- Events the person can see with participation "accepted" appear as confirmed, and events with participation "pending" appear as tentative. Child events count like other events.
+- Each option of an open poll that the person answered "yes" or "maybe" appears as a tentative entry titled "Reserved: {poll title}" (German "Reserviert: {poll title}") as long as the option is not fixed. This applies to date finder and attendance polls. Closing the poll, fixing the option or withdrawing from the poll removes the entry.
+- Times are local wall-clock times. Options and events without a start time appear as all-day entries. Entry texts follow the person's language (F-24).
+
+**Acceptance criteria:**
+- An unknown or revoked link returns 404, and after regenerating, the old link returns 404.
+- An accepted event appears as confirmed, a pending one as tentative, and a declined one does not appear.
+- An event the person no longer has access to does not appear.
+- A "yes" option and a "maybe" option of an open poll appear as reserved, and a "no" option does not.
+- Closing the poll or fixing the option removes the reserved entry. The fixed event appears instead when the person accepted it or has it pending.
+- An option without a time appears as an all-day entry.
 
 ## 6. Structure
 
@@ -689,7 +708,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 
 ## 7. Data
 
-- **Account:** email (text, required, unique), name (text, required from the first login), password (optional), language (choice: English, German, required).
+- **Account:** email (text, required, unique), name (text, required from the first login), password (optional), language (choice: English, German, required), calendar feed link (text, optional, F-34).
 - **Friend:** account (required), befriended account (required), display name (text).
 - **Group:** name (text, required), owner (account, required).
 - **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
@@ -747,7 +766,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 
 ## 10. Out of scope
 
-- Calendar synchronization and calendar export
+- Two-way calendar synchronization and importing from calendars
 - Chat beyond comments
 - Costs, fees and splitting expenses
 - Setlists and other occasion-specific content
