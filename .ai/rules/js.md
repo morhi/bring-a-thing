@@ -14,7 +14,7 @@ When a backend event overrides `broadcastAs()` with a custom name (e.g. `item.sa
 ## Every mutating request must surface its validation errors somewhere
 Two valid patterns, pick based on whether there's a form:
 1. Real forms: use `useForm()` and bind `form.errors.<field>` under each input (`:invalid="!!form.errors.x"` + `<small>{{ form.errors.x }}</small>`). Errors populate reactively; no extra wiring needed. See Login.vue, Rosters/Edit.vue.
-2. Non-form/inline actions (buttons that call `router.post/patch/delete` directly, e.g. claim/unclaim, quick toggles): there is no errors bag bound to any input, so a validation failure (422) is otherwise silently swallowed — the button just does nothing with no feedback. These MUST pass an `onError` callback that shows a toast, e.g. `onError: (errors) => toast.error(Object.values(errors)[0], { duration: 6000 })` with `toast` from `vue-sonner`. See `components/app/invite-link-card.vue`'s `showRequestError`.
+2. Non-form/inline actions (buttons that call `router.post/patch/delete` directly, e.g. claim/unclaim, quick toggles): there is no errors bag bound to any input, so a validation failure (422) is otherwise silently swallowed — the button just does nothing with no feedback. These MUST pass an `onError` callback that shows a toast, e.g. `onError: (errors) => toast.error(Object.values(errors)[0], { duration: 6000 })` with `toast` from `vue-sonner`. See `components/app/link-panel.vue`'s `showRequestError`.
 
 Never assume "request completed" without checking that failure has a visible UI path — a request that changes nothing and shows nothing is a bug, not "it must have worked."
 

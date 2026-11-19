@@ -10,7 +10,7 @@ Content width lives in one place: `AppLayout.vue`'s `<main>` wraps `<slot />` in
 
 Any page nested one level below a top-level entity page (edit/settings-style pages, e.g. `Groups/Edit.vue`) must show an explicit back-link to its parent entity at the top of the content (icon + parent name, `<ArrowLeft />` from `@primeicons/vue/arrow-left`), not rely solely on an in-form "Cancel" button — that was reported as unintuitive. Top-level pages (e.g. `Groups/Show.vue`) rely on the persistent app-name/logo link in `AppLayout.vue`'s header for going back to the dashboard.
 
-Every destructive action (delete, remove-member, etc.) must confirm via the `AlertDialog` components (`resources/js/components/ui/alert-dialog`) before firing the request — never wire a destructive button straight to the request. See `Groups/Edit.vue` (`confirmRemove`) and `components/app/invite-link-card.vue` for the pattern.
+Every destructive action (delete, remove-member, etc.) must confirm via the `AlertDialog` components (`resources/js/components/ui/alert-dialog`) before firing the request — never wire a destructive button straight to the request. See `Groups/Edit.vue` (`confirmRemove`) and `components/app/link-panel.vue` for the pattern.
 
 ## Section boxes span full width; only form controls get an inner max-w
 A page's section "boxes" (the `bg-white dark:bg-surface-900 rounded-lg ... shadow-sm` card divs) must NOT get their own `max-w-*`; they should fill the full width of AppLayout's max-w-7xl container, like Dashboard's Groups list or Groups/Show's Members card.
