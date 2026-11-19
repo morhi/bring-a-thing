@@ -725,7 +725,7 @@ return [
     'settings.calendar.none' => 'No calendar link yet.',
     'settings.calendar.create' => 'Enable calendar feed',
     'settings.calendar.subscribe' => 'Subscribe',
-    'settings.calendar.regenerateTitle' => 'Create a new calendar link?',
+    'settings.calendar.regenerateTitle' => 'Regenerate the calendar link?',
     'settings.calendar.regenerateText' => 'The current link stops working. Subscribe again with the new link.',
     'settings.calendar.revokeTitle' => 'Turn off the calendar feed?',
     'settings.calendar.revoke' => 'Turn off',

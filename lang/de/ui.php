@@ -725,7 +725,7 @@ return [
     'settings.calendar.none' => 'Noch kein Kalenderlink.',
     'settings.calendar.create' => 'Kalender-Feed aktivieren',
     'settings.calendar.subscribe' => 'Abonnieren',
-    'settings.calendar.regenerateTitle' => 'Neuen Kalenderlink erstellen?',
+    'settings.calendar.regenerateTitle' => 'Kalenderlink neu erzeugen?',
     'settings.calendar.regenerateText' => 'Der aktuelle Link funktioniert nicht mehr. Abonniere den Kalender mit dem neuen Link erneut.',
     'settings.calendar.revokeTitle' => 'Kalender-Feed ausschalten?',
     'settings.calendar.revoke' => 'Ausschalten',

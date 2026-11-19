@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
+    CalendarPlus,
     KeyRoundIcon,
     LogOutIcon,
     MailIcon,
@@ -10,6 +11,11 @@ import {
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
+    destroy as disableCalendarFeed,
+    store as enableCalendarFeed,
+    update as regenerateCalendarFeed,
+} from '@/actions/App/Http/Controllers/CalendarFeedSettingsController';
+import {
     addEmail,
     updatePassword,
     updateProfile,
@@ -17,6 +23,7 @@ import {
 import ChoiceGroup from '@/components/app/choice-group.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
+import LinkPanel from '@/components/app/link-panel.vue';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
@@ -66,6 +73,15 @@ const removeOpen = ref(false);
 
 // A name-only joiner has no email yet and adds one through a confirmation link (F-01)
 const hasEmail = computed(() => props.settings.email !== null);
+
+// Calendar apps subscribe through the webcal scheme, so swap it in for the https link
+const calendarSubscribeUrl = computed(
+    () =>
+        props.settings.calendar_feed_url?.replace(
+            /^https?:\/\//,
+            'webcal://',
+        ) ?? null,
+);
 
 const languageOptions = computed<ChoiceOption[]>(() =>
     props.settings.languages.map((language) => ({
@@ -560,6 +576,53 @@ function logOut(): void {
                     </div>
                 </form>
             </div>
+        </section>
+
+        <section
+            :class="sectionClass"
+            aria-labelledby="settings-calendar-title"
+            data-feature="F-34"
+        >
+            <div class="flex min-w-0 flex-col gap-1.5">
+                <h2 id="settings-calendar-title" class="text-h2">
+                    {{ t('settings.calendar') }}
+                </h2>
+                <p class="text-fg-muted text-[15px]">
+                    {{ t('settings.calendar.text') }}
+                </p>
+            </div>
+
+            <LinkPanel
+                id="settings-calendar"
+                :url="settings.calendar_feed_url"
+                :create-url="enableCalendarFeed.url()"
+                :regenerate-url="regenerateCalendarFeed.url()"
+                regenerate-method="put"
+                :revoke-url="disableCalendarFeed.url()"
+                :texts="{
+                    none: t('settings.calendar.none'),
+                    create: t('settings.calendar.create'),
+                    revoke: t('settings.calendar.revoke'),
+                    revokeTitle: t('settings.calendar.revokeTitle'),
+                    revokeText: t('settings.calendar.revokeText'),
+                    regenerateTitle: t('settings.calendar.regenerateTitle'),
+                    regenerateText: t('settings.calendar.regenerateText'),
+                }"
+            >
+                <template #actions>
+                    <Button
+                        v-if="calendarSubscribeUrl"
+                        as-child
+                        variant="ghost"
+                        size="lg"
+                    >
+                        <a :href="calendarSubscribeUrl">
+                            <CalendarPlus aria-hidden="true" />
+                            {{ t('settings.calendar.subscribe') }}
+                        </a>
+                    </Button>
+                </template>
+            </LinkPanel>
         </section>
 
         <section
