@@ -60,6 +60,7 @@ it('F-26: the restricted page names a parent event only when the guest may open 
     $guest = User::factory()->create();
     $parent = dashboardEvent($group, $owner, $guest, ParticipationStatus::Accepted, ['title' => 'Hidden parent']);
     $child = dashboardEvent($group, $owner, null, null, ['parent_event_id' => $parent->id, 'title' => 'Opened child', 'date' => $parent->date->copy()->addDay()->format('Y-m-d')]);
+    // A join through the child's link also grants the parent (F-26), so this state is built directly
     grantOn($child, $guest);
 
     $response = $this->actingAs($guest)->get(route('groups.show', $group))->assertOk();
@@ -74,6 +75,19 @@ it('F-26: the restricted page names a parent event only when the guest may open 
     $this->actingAs($guest)->get(route('groups.show', $group))->assertInertia(fn (Assert $page) => $page
         ->has('page.events', 2)
         ->where('page.events', fn ($events) => collect($events)->firstWhere('title', 'Opened child')['parent_event_title'] === 'Hidden parent'));
+});
+
+it('F-26: after a real join through the child event link the page names the parent event', function () {
+    [$group, $owner] = dashboardGroup();
+    $parent = dashboardEvent($group, $owner, null, null, ['title' => 'Parent event']);
+    $child = dashboardEvent($group, $owner, null, null, ['parent_event_id' => $parent->id, 'title' => 'Opened child']);
+    $guest = User::factory()->create();
+
+    $this->actingAs($guest)->post(route('events.join.store', $child->enableInviteLink()));
+
+    $this->get(route('groups.show', $group))->assertInertia(fn (Assert $page) => $page
+        ->has('page.events', 2)
+        ->where('page.events', fn ($events) => collect($events)->firstWhere('title', 'Opened child')['parent_event_title'] === 'Parent event'));
 });
 
 it('F-27: a poll link guest sees the poll, its fixed event and that event\'s child event', function () {
@@ -149,7 +163,7 @@ it('F-26: hidden items never reach the props', function (Closure $hide) {
 
     expect(guestPageJson($response))->not->toContain('Secret hidden item');
 })->with([
-    'sibling event' => [fn ($group, User $owner, string $title) => dashboardEvent($group, $owner, null, null, ['title' => $title])],
+    'event outside the granted chain' => [fn ($group, User $owner, string $title) => dashboardEvent($group, $owner, null, null, ['title' => $title])],
     'sibling poll' => [fn ($group, User $owner, string $title) => dashboardPoll($group, $owner, 1, null, 0, ['title' => $title])],
     'group list' => [fn ($group, User $owner, string $title) => dashboardList($owner, ['group_id' => $group->id, 'title' => $title])],
     'follow-up poll of a sibling event' => [fn ($group, User $owner, string $title) => dashboardPoll($group, $owner, 1, null, 0, ['title' => $title, 'event_id' => dashboardEvent($group, $owner)->id])],

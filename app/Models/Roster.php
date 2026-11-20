@@ -310,10 +310,11 @@ class Roster extends Model
     /**
      * Whether a logged-in visitor of the share link is a group member kept out of this event list (F-13, F-19).
      *
-     * The share link lets people outside the group take part. A member of
-     * the event's group or a guest with a grant on the event (F-26, F-27)
-     * stays bound to the participation rules instead, so
-     * the link is no way around a decline or a missing participation.
+     * The share link lets people outside the group take part, including
+     * guests with a grant on the event (F-19, F-26, F-27): the login through
+     * the link grants that access itself, so a grant is no reason to hide the
+     * list. A member of the event's group stays bound to the participation
+     * rules instead, so the link is no way around a decline.
      */
     public function excludesShareLinkVisitor(User $user): bool
     {
@@ -325,7 +326,7 @@ class Roster extends Model
             return false;
         }
 
-        return $this->event->admits($user);
+        return $this->event->hasInsider($user);
     }
 
     /**
@@ -339,7 +340,7 @@ class Roster extends Model
             return true;
         }
 
-        if (! $this->event->admits($user)) {
+        if (! $this->event->hasInsider($user)) {
             return true;
         }
 

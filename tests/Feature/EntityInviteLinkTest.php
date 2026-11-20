@@ -85,9 +85,51 @@ it('F-26: members without a manager role and guests may not manage invite links'
         $this->actingAs($user)->post(route('events.invite-link.regenerate', $event))->assertForbidden();
         $this->actingAs($user)->delete(route('events.invite-link.destroy', $event))->assertForbidden();
         $this->actingAs($user)->post(route('polls.invite-link.store', $poll))->assertForbidden();
-        $this->actingAs($user)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $page->where('page.invite_link', null));
     }
 });
+
+it('F-26 F-27: the Share dialog data reaches only managers of a group event or poll', function (string $role, bool $sees) {
+    [$group, $owner, $member] = linkGroup();
+    $admin = User::factory()->create();
+    $group->addMember($admin, GroupRole::Admin, now());
+    $organizer = User::factory()->create();
+    $group->addMember($organizer, GroupRole::Member, now());
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id]);
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id]);
+    $eventToken = $event->enableInviteLink();
+    $pollToken = $poll->enableInviteLink();
+    $guest = User::factory()->create();
+    grantOn($event, $guest);
+    grantOn($poll, $guest);
+    $user = ['organizer' => $organizer, 'owner' => $owner, 'admin' => $admin, 'member' => $member, 'guest' => $guest][$role];
+
+    $this->actingAs($user)->get(route('events.show', $event))->assertInertia(fn (Assert $page) => $sees
+        ? $page->where('page.invite_link.url', route('events.join.show', $eventToken))->where('page.permissions.can_manage_invite_link', true)
+        : $page->where('page.invite_link', null)->where('page.permissions.can_manage_invite_link', false));
+    $this->actingAs($user)->get(route('polls.show', $poll))->assertInertia(fn (Assert $page) => $sees
+        ? $page->where('page.invite_link.url', route('polls.join.show', $pollToken))->where('page.permissions.can_manage_invite_link', true)
+        : $page->where('page.invite_link', null)->where('page.permissions.can_manage_invite_link', false));
+})->with([['organizer', true], ['owner', true], ['admin', true], ['member', false], ['guest', false]]);
+
+it('F-26 F-27: a standalone event or poll gives the Share dialog data to its organizer only', function (bool $isOrganizer) {
+    $organizer = User::factory()->create();
+    $event = Event::factory()->create(['group_id' => null, 'organizer_id' => $organizer->id]);
+    $poll = Poll::factory()->create(['group_id' => null, 'organizer_id' => $organizer->id]);
+    $event->enableInviteLink();
+    $poll->enableInviteLink();
+    $user = $isOrganizer ? $organizer : User::factory()->create();
+
+    if (! $isOrganizer) {
+        grantOn($event, $user);
+        grantOn($poll, $user);
+    }
+
+    foreach (['events.show' => $event, 'polls.show' => $poll] as $route => $entity) {
+        $this->actingAs($user)->get(route($route, $entity))->assertInertia(fn (Assert $page) => $isOrganizer
+            ? $page->where('page.invite_link.url', fn ($url) => $url !== null)
+            : $page->where('page.invite_link', null));
+    }
+})->with([[true], [false]]);
 
 it('F-26: a guest joins an event with a name only and stays logged in', function () {
     [$group, $owner] = linkGroup();
@@ -111,6 +153,7 @@ it('F-26: a guest joins an event with a name only and stays logged in', function
     expect($guest->email)->toBeNull();
     $this->assertAuthenticatedAs($guest);
     expect($event->grantsAccessTo($guest))->toBeTrue();
+    expect(grantSet($guest))->toBe(grantKey($event));
     expect($group->hasMember($guest))->toBeFalse();
     $this->get(route('events.show', $event))->assertOk();
 });
@@ -137,6 +180,7 @@ it('F-26: a guest who joins with an email gets access only after the login link'
     $joiner = User::query()->where('email', 'mail@example.com')->firstOrFail();
     $this->assertGuest();
     expect($event->grantsAccessTo($joiner))->toBeFalse();
+    expect(AccessGrant::query()->count())->toBe(0);
 
     $url = null;
     Mail::assertQueued(MagicLinkMail::class, function (MagicLinkMail $mail) use (&$url) {
@@ -151,46 +195,29 @@ it('F-26: a guest who joins with an email gets access only after the login link'
     expect($event->grantsAccessTo($joiner))->toBeTrue();
 });
 
-it('F-26: an account with a password or passkey logs in on the join page and lands on the event with access', function () {
+it('F-26/F-27: an account with a password or passkey logs in on the join page and lands on the item with access', function (string $kind) {
     [$group, $owner] = linkGroup();
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
-    $token = $event->enableInviteLink();
+    $entity = $kind === 'event'
+        ? Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id])
+        : Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $token = $entity->enableInviteLink();
+    $showRoute = $kind === 'event' ? 'events.show' : 'polls.show';
     $withPassword = User::factory()->create();
     $withPasskey = User::factory()->create();
 
-    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', 'join_event' => $token])
-        ->assertRedirect(route('events.show', $event))
+    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', "join_{$kind}" => $token])
+        ->assertRedirect(route($showRoute, $entity))
         ->assertSessionHas('success', 'You have access now');
 
-    $request = Request::create(route('passkey.login'), 'POST', ['join_event' => $token]);
+    $request = Request::create(route('passkey.login'), 'POST', ["join_{$kind}" => $token]);
     $request->setUserResolver(fn () => $withPasskey);
     $request->setLaravelSession(app('session.store'));
     $response = app(PasskeyLoginResponse::class)->toResponse($request);
 
-    expect($response->getData(true))->toBe(['redirect' => route('events.show', $event)]);
-    expect($event->grantsAccessTo($withPassword))->toBeTrue();
-    expect($event->grantsAccessTo($withPasskey))->toBeTrue();
-});
-
-it('F-27: an account with a password or passkey logs in on the poll\'s join page and lands on the poll with access', function () {
-    [$group, $owner] = linkGroup();
-    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
-    $token = $poll->enableInviteLink();
-    $withPassword = User::factory()->create();
-    $withPasskey = User::factory()->create();
-
-    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', 'join_poll' => $token])
-        ->assertRedirect(route('polls.show', $poll));
-
-    $request = Request::create(route('passkey.login'), 'POST', ['join_poll' => $token]);
-    $request->setUserResolver(fn () => $withPasskey);
-    $request->setLaravelSession(app('session.store'));
-    $response = app(PasskeyLoginResponse::class)->toResponse($request);
-
-    expect($response->getData(true))->toBe(['redirect' => route('polls.show', $poll)]);
-    expect($poll->isOpenTo($withPassword))->toBeTrue();
-    expect($poll->isOpenTo($withPasskey))->toBeTrue();
-});
+    expect($response->getData(true))->toBe(['redirect' => route($showRoute, $entity)]);
+    expect(grantSet($withPassword))->toBe(grantKey($entity));
+    expect(grantSet($withPasskey))->toBe(grantKey($entity));
+})->with(['event', 'poll']);
 
 it('F-26: a password login with a revoked event invite token lands on the dashboard', function () {
     [$group, $owner] = linkGroup();
@@ -203,6 +230,7 @@ it('F-26: a password login with a revoked event invite token lands on the dashbo
         ->assertRedirect(route('dashboard'));
 
     expect($event->grantsAccessTo($user))->toBeFalse();
+    expect(AccessGrant::query()->count())->toBe(0);
 });
 
 it('F-27: a logged-in account joins a poll with one click and may answer it but not edit it', function () {
@@ -267,7 +295,7 @@ it('F-26: a manager sets the status of a guest, who shows among the participants
     expect($event->fresh()->statusOf($guest))->toBe(ParticipationStatus::Pending);
 });
 
-it('F-26: an event grant covers child events, accepted follow-up polls and lists, but not siblings or the group', function () {
+it('F-26: an event grant covers child events, accepted follow-up polls and lists, but no event outside the granted ancestor chain or the group', function () {
     [$group, $owner] = linkGroup();
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $child = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'parent_event_id' => $event->id]);

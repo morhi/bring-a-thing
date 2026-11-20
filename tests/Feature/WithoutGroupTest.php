@@ -71,7 +71,7 @@ it('F-29: items of the person\'s own groups are not on the page', function () {
     expect(withoutGroupSlugs($member))->toBe([]);
 });
 
-it('F-26/F-27: joining through the invite link ends in a guest group', function (Closure $create, string $joinRoute, string $section) {
+it('F-26/F-27: joining through the invite link ends in a guest group', function (Closure $create, string $joinRoute, string $section, int $count) {
     [$group, $owner] = dashboardGroup();
     $item = $create($group, $owner);
 
@@ -84,12 +84,14 @@ it('F-26/F-27: joining through the invite link ends in a guest group', function 
         ->where('withoutGroup', null));
     $this->get(route('groups.show', $group))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->where('page.is_guest', true)
-        ->has("page.{$section}", 1)
-        ->where("page.{$section}.0.slug", $item->slug));
+        ->has("page.{$section}", $count)
+        ->where("page.{$section}", fn ($entries) => collect($entries)->pluck('slug')->contains($item->slug)));
     $this->get(route('without-group.show'))->assertInertia(fn (Assert $page) => $page->has('lists', 0));
 })->with([
-    'event link' => [fn ($group, User $owner) => dashboardEvent($group, $owner), 'events.join.store', 'events'],
-    'poll link' => [fn ($group, User $owner) => dashboardPoll($group, $owner, 1), 'polls.join.store', 'polls'],
+    'event link' => [fn ($group, User $owner) => dashboardEvent($group, $owner), 'events.join.store', 'events', 1],
+    'poll link' => [fn ($group, User $owner) => dashboardPoll($group, $owner, 1), 'polls.join.store', 'polls', 1],
+    'child event link' => [fn ($group, User $owner) => dashboardEvent($group, $owner, null, null, ['parent_event_id' => dashboardEvent($group, $owner)->id]), 'events.join.store', 'events', 2],
+    'follow-up poll link' => [fn ($group, User $owner) => dashboardPoll($group, $owner, 1, null, 0, ['event_id' => dashboardEvent($group, $owner)->id]), 'polls.join.store', 'polls', 1],
 ]);
 
 it('F-29: the page needs no additional queries for more lists', function () {

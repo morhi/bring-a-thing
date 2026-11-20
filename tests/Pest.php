@@ -3,6 +3,7 @@
 use App\Enums\GroupRole;
 use App\Enums\ParticipationStatus;
 use App\Enums\PollResponseStatus;
+use App\Models\AccessGrant;
 use App\Models\Event;
 use App\Models\EventParticipation;
 use App\Models\Group;
@@ -260,4 +261,63 @@ function staleRecallerFor(User $user): string
 function assertWindowOpen(): void
 {
     test()->getJson(route('passkey.registration-options'))->assertOk();
+}
+
+/**
+ * Build the chain poll -> event fixed from it -> child event, follow-up poll of the fixed event.
+ *
+ * @return array<string, Event|Poll|null>
+ */
+function linkChain(?User $owner = null, bool $standalone = false): array
+{
+    [$group, $groupOwner] = dashboardGroup();
+    $owner ??= $groupOwner;
+    $groupId = $standalone ? null : $group->id;
+
+    $poll = Poll::factory()->create(['group_id' => $groupId, 'organizer_id' => $owner->id, 'title' => 'Chain poll']);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+    $fixed = Event::factory()->create(['group_id' => $groupId, 'organizer_id' => $owner->id, 'origin_poll_option_id' => $option->id, 'title' => 'Chain fixed']);
+    $child = Event::factory()->create(['group_id' => $groupId, 'organizer_id' => $owner->id, 'parent_event_id' => $fixed->id, 'title' => 'Chain child']);
+    $followUp = Poll::factory()->create(['group_id' => $groupId, 'organizer_id' => $owner->id, 'event_id' => $fixed->id, 'title' => 'Chain follow-up']);
+    $other = Event::factory()->create(['group_id' => $groupId, 'organizer_id' => $owner->id, 'title' => 'Chain other']);
+
+    return compact('group', 'poll', 'option', 'fixed', 'child', 'followUp', 'other');
+}
+
+/**
+ * The user's grants as sorted "type:id" strings.
+ *
+ * @return array<int, string>
+ */
+function grantSet(User $user): array
+{
+    $set = AccessGrant::query()->where('user_id', $user->id)->get()
+        ->map(fn (AccessGrant $grant) => $grant->accessible_type.':'.$grant->accessible_id)->all();
+    sort($set);
+
+    return $set;
+}
+
+/**
+ * The "type:id" strings of the given items, sorted like grantSet().
+ *
+ * @return array<int, string>
+ */
+function grantKey(Event|Poll ...$items): array
+{
+    $set = array_map(fn ($item) => ($item instanceof Event ? 'event' : 'poll').':'.$item->id, $items);
+    sort($set);
+
+    return $set;
+}
+
+/**
+ * Stash a claim on the list through its share link as an anonymous visitor.
+ */
+function stashListClaim(Roster $roster, RosterItem $item): string
+{
+    $from = route('shared-rosters.show', $roster->share_token);
+    test()->from($from)->post(route('shared-rosters.items.claim.store', [$roster->share_token, $item]));
+
+    return $from;
 }

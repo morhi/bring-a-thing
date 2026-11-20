@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Access\GrantEntityAccess;
 use App\Actions\Sharing\AddSharedRosterItem;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Http\Requests\SharedRosters\StoreSharedRosterItemRequest;
@@ -19,7 +20,7 @@ class SharedRosterItemController extends Controller
      * next to any pending claims, and is added automatically after they log
      * in on the same page (see CompletePendingSharedClaim, F-19).
      */
-    public function store(StoreSharedRosterItemRequest $request, string $token, AddSharedRosterItem $addItem, StorePendingSharedClaim $pendingActions): RedirectResponse
+    public function store(StoreSharedRosterItemRequest $request, string $token, AddSharedRosterItem $addItem, StorePendingSharedClaim $pendingActions, GrantEntityAccess $grantAccess): RedirectResponse
     {
         $roster = Roster::query()->where('share_token', $token)->firstOrFail();
 
@@ -37,6 +38,10 @@ class SharedRosterItemController extends Controller
         abort_if($roster->excludesShareLinkVisitor($user), 404);
 
         $addItem->handle($roster, $draft);
+
+        if ($roster->event_id !== null) {
+            $grantAccess->handle($roster->event, $user);
+        }
 
         return back()->with('success', __('ui.list.item.added'));
     }

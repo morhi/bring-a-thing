@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Access\GrantEntityAccess;
 use App\Actions\RosterItems\ClaimRosterItem;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Events\ClaimChanged;
@@ -22,7 +23,7 @@ class SharedRosterClaimController extends Controller
      * claiming from a shared link never requires joining the list's group.
      * Members of an event's group stay bound to the participation rules (F-13, F-15).
      */
-    public function store(ClaimSharedRosterItemRequest $request, string $token, RosterItem $item, ClaimRosterItem $claimItem, StorePendingSharedClaim $pendingActions): RedirectResponse
+    public function store(ClaimSharedRosterItemRequest $request, string $token, RosterItem $item, ClaimRosterItem $claimItem, StorePendingSharedClaim $pendingActions, GrantEntityAccess $grantAccess): RedirectResponse
     {
         $roster = Roster::query()->where('share_token', $token)->firstOrFail();
         abort_unless($item->roster_id === $roster->getKey(), 404);
@@ -38,6 +39,11 @@ class SharedRosterClaimController extends Controller
 
             $claimItem->handle($item, $user, $quantity);
             ClaimChanged::dispatch($roster->id, $item->id, $user->id);
+
+            // After the claim, because a grant would make the person answer to the event's participation rules
+            if ($roster->event_id !== null) {
+                $grantAccess->handle($roster->event, $user);
+            }
 
             return back()->with('success', __('ui.list.claim.saved'));
         }

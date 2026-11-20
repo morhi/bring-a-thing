@@ -2,6 +2,7 @@
 
 namespace App\Actions\Sharing;
 
+use App\Actions\Access\GrantEntityAccess;
 use App\Actions\RosterItems\ClaimRosterItem;
 use App\Events\ClaimChanged;
 use App\Models\Roster;
@@ -17,6 +18,7 @@ class CompletePendingSharedClaim
         private readonly ClaimRosterItem $claimItem,
         private readonly AddSharedRosterItem $addItem,
         private readonly StorePendingSharedClaim $pendingActions,
+        private readonly GrantEntityAccess $grantAccess,
     ) {}
 
     /**
@@ -45,9 +47,14 @@ class CompletePendingSharedClaim
             }
 
             $lastRoster = $roster;
+
             $result = ($action['kind'] ?? null) === 'add'
                 ? $this->completeAdd($roster, $action, $user)
                 : $this->completeClaim($roster, $action, $user);
+
+            // After the action, because a grant would make the person answer to the event's participation rules.
+            // The login itself earns the access, whether or not the action succeeded.
+            $this->grantTopmostParent($roster, $user);
 
             if (isset($result['success'])) {
                 $completed[] = $result['success'];
@@ -75,6 +82,20 @@ class CompletePendingSharedClaim
         }
 
         return $redirect;
+    }
+
+    /**
+     * Grant the event of the list and its topmost parent after a login through the share link (F-19).
+     *
+     * A list without an event grants nothing beyond itself.
+     */
+    private function grantTopmostParent(Roster $roster, User $user): void
+    {
+        if ($roster->event_id === null) {
+            return;
+        }
+
+        $this->grantAccess->handle($roster->event, $user);
     }
 
     /**
