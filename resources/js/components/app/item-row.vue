@@ -30,6 +30,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import LinkifiedText from '@/components/app/linkified-text.vue';
 import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
 
@@ -153,7 +154,7 @@ const hasMenu = computed(() => showAddComment.value || props.canEdit);
                     v-if="item.notes"
                     class="text-fg-muted text-[15px] break-words"
                 >
-                    {{ item.notes }}
+                    <LinkifiedText :text="item.notes" />
                 </p>
                 <dl
                     v-if="item.fields?.length"

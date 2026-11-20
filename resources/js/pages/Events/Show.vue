@@ -76,6 +76,7 @@ import {
     NativeSelect,
     NativeSelectOption,
 } from '@/components/ui/native-select';
+import LinkifiedText from '@/components/app/linkified-text.vue';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
@@ -572,7 +573,7 @@ const badgeLinkClass =
                         v-if="event.description"
                         class="max-w-[65ch] text-[17px] break-words whitespace-pre-line"
                     >
-                        {{ event.description }}
+                        <LinkifiedText :text="event.description" />
                     </p>
                 </div>
                 <div

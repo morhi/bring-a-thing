@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import LinkifiedText from '@/components/app/linkified-text.vue';
 import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
 
@@ -177,7 +178,7 @@ function confirmDelete() {
                     <p
                         class="text-[15px] [overflow-wrap:anywhere] whitespace-pre-wrap"
                     >
-                        {{ comment.body }}
+                        <LinkifiedText :text="comment.body" />
                     </p>
                 </div>
             </li>

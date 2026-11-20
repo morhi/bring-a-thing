@@ -84,6 +84,7 @@ import {
     NativeSelectOption,
 } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import LinkifiedText from '@/components/app/linkified-text.vue';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
@@ -518,7 +519,7 @@ const inputClass =
                         v-if="roster.description"
                         class="text-fg-muted max-w-[65ch] text-[17px] break-words whitespace-pre-line"
                     >
-                        {{ roster.description }}
+                        <LinkifiedText :text="roster.description" />
                     </p>
                     <div class="flex flex-wrap items-center gap-2">
                         <span v-if="listDate" :class="chipClass">

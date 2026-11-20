@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import LinkifiedText from '@/components/app/linkified-text.vue';
 import { useI18n } from '@/composables/use-i18n';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
 import { groupItemsByDate, itemFields, relativeDay } from '@/lib/roster-items';
@@ -225,7 +226,7 @@ const inputClass =
                         v-if="roster.description"
                         class="text-fg-muted max-w-[65ch] text-[17px] break-words whitespace-pre-line"
                     >
-                        {{ roster.description }}
+                        <LinkifiedText :text="roster.description" />
                     </p>
                     <div
                         v-if="listDate && roster.date"
