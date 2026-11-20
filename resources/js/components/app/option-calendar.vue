@@ -43,7 +43,11 @@ const props = withDefaults(
     { today: () => toIso(new Date()), defaultSlot: null, disabled: false },
 );
 
-const emit = defineEmits<{ 'update:modelValue': [options: OptionDraft[]] }>();
+const emit = defineEmits<{
+    'update:modelValue': [options: OptionDraft[]];
+    // Options with answers lose them on removal, so the page confirms first (F-08)
+    'request-remove': [index: number, option: OptionDraft];
+}>();
 
 const { t, locale } = useI18n();
 
@@ -124,7 +128,9 @@ const monthCells = computed(() => {
 
         if (locked) {
             spoken.push(
-                option?.fixed ? t('group.polls.fixed') : t('cal.locked'),
+                option?.fixed
+                    ? t('group.polls.fixed')
+                    : t('cal.lockedRemovable'),
             );
         }
 
@@ -136,6 +142,7 @@ const monthCells = computed(() => {
             today: value === props.today,
             selected: !!option,
             locked,
+            fixed: !!option?.fixed,
             label: option?.label ?? '',
             spoken: spoken.join(', '),
         };
@@ -224,7 +231,25 @@ function setDay(
 let paint: boolean | null = null;
 let lastPainted: string | null = null;
 
+// An answered day keeps its date, but a click asks to remove it with its answers (F-08)
+function requestDayRemoval(value: string): boolean {
+    const index = props.modelValue.findIndex((entry) => entry.date === value);
+    const option = props.modelValue[index];
+
+    if (props.disabled || !option?.locked || option.fixed) {
+        return false;
+    }
+
+    emit('request-remove', index, option);
+
+    return true;
+}
+
 function dayPointerDown(cell: MonthCell, event: PointerEvent): void {
+    if (event.button === 0 && requestDayRemoval(cell.value)) {
+        return;
+    }
+
     if (event.button !== 0 || !canToggle(cell.value)) {
         return;
     }
@@ -349,6 +374,11 @@ function dayKey(cell: MonthCell, event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         activeDay.value = cell.value;
+
+        if (requestDayRemoval(cell.value)) {
+            return;
+        }
+
         emit('update:modelValue', setDay(cell.value, !cell.selected));
 
         return;
@@ -489,7 +519,13 @@ function addSlot(day: string): void {
 function removeAt(index: number): void {
     const option = props.modelValue[index];
 
-    if (props.disabled || !option || isFrozen(option)) {
+    if (props.disabled || !option || option.fixed) {
+        return;
+    }
+
+    if (option.locked) {
+        emit('request-remove', index, option);
+
         return;
     }
 
@@ -819,7 +855,8 @@ function gridPointerUp(): void {
                                     'shadow-[inset_0_0_0_1.5px_var(--border-strong)]',
                                 cell.selected &&
                                     'border-primary bg-primary text-primary-fg enabled:hover:border-primary-hover enabled:hover:bg-primary-hover',
-                                cell.locked && 'cursor-not-allowed',
+                                cell.locked && !cell.fixed && 'cursor-pointer',
+                                cell.fixed && 'cursor-not-allowed',
                             )
                         "
                         @pointerdown.prevent="dayPointerDown(cell, $event)"
@@ -828,7 +865,7 @@ function gridPointerUp(): void {
                         <span>{{ cell.day }}</span>
                         <Lock
                             v-if="cell.locked"
-                            class="absolute top-1 right-1 size-2.5"
+                            class="absolute top-0.5 right-0.5 size-2 sm:top-1 sm:right-1 sm:size-2.5"
                             aria-hidden="true"
                         />
                         <span
@@ -978,7 +1015,7 @@ function gridPointerUp(): void {
                                 entry.option.label
                             }}</span>
                             <button
-                                v-if="!isFrozen(entry.option) && !disabled"
+                                v-if="!entry.option.fixed && !disabled"
                                 type="button"
                                 data-slot-remove
                                 class="bg-primary text-primary-fg absolute top-0.5 right-0.5 grid size-[18px] place-items-center rounded-[5px] p-0 opacity-0 transition-opacity duration-(--duration-fast) group-hover:opacity-100 focus-visible:opacity-100"

@@ -46,7 +46,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ form: App.Data.PollFormData }>();
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 // The same page serves "New poll", "Follow-up poll" and, with a poll, "Edit poll" (F-06, F-08, F-12)
 const poll = computed(() => props.form.poll);
@@ -433,12 +433,14 @@ const inputClass =
                     }}</b>
                     <span>{{
                         sourceEvent
-                            ? t('newPoll.audienceEventCount', {
-                                  n: form.member_count,
-                              })
-                            : t('newPoll.audienceGroupCount', {
-                                  n: form.member_count,
-                              })
+                            ? tc(
+                                  'newPoll.audienceEventCount',
+                                  form.member_count,
+                              )
+                            : tc(
+                                  'newPoll.audienceGroupCount',
+                                  form.member_count,
+                              )
                     }}</span>
                 </span>
             </div>
@@ -544,6 +546,7 @@ const inputClass =
                     :mode="mode"
                     :today="form.today"
                     :default-slot="defaultSlot"
+                    @request-remove="requestRemove"
                 />
             </FormField>
 
@@ -607,9 +610,10 @@ const inputClass =
                     t('poll.settings.removeTitle')
                 }}</AlertDialogTitle>
                 <AlertDialogDescription>{{
-                    t('poll.settings.removeConfirm', {
-                        n: removing?.option.answerCount ?? 0,
-                    })
+                    tc(
+                        'poll.settings.removeConfirm',
+                        removing?.option.answerCount ?? 0,
+                    )
                 }}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
