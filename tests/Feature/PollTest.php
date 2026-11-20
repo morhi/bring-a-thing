@@ -165,41 +165,51 @@ it('lets a member record and update their response to an option', function () {
     expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Maybe);
 });
 
-it('F-06: sets yes on every option for the respondent and overwrites earlier answers', function () {
+it('F-06: fills only the open options of the respondent with the chosen status', function () {
     [$group, $owner, $member] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $options = PollOption::factory()->count(3)->create(['poll_id' => $poll->id]);
     $options[0]->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::No]);
-    $options[1]->responses()->create(['user_id' => $owner->id, 'status' => PollResponseStatus::Maybe]);
+    $options[1]->responses()->create(['user_id' => $owner->id, 'status' => PollResponseStatus::Yes]);
 
-    $this->actingAs($member)->post(route('polls.responses.yes-to-all', $poll))
-        ->assertSessionHas('success', 'Answered yes to every option');
+    $this->actingAs($member)->post(route('polls.responses.fill-open', $poll), ['status' => 'maybe'])
+        ->assertSessionHas('success', 'Set 2 open options to Maybe');
 
-    foreach ($options as $option) {
-        expect($option->responses()->where('user_id', $member->id)->count())->toBe(1);
-        expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Yes);
-    }
-    expect($options[1]->responses()->where('user_id', $owner->id)->value('status'))->toBe(PollResponseStatus::Maybe);
+    $statuses = $options->map(fn (PollOption $option) => $option->responses()->where('user_id', $member->id)->sole()->status);
+    expect($statuses->all())->toBe([PollResponseStatus::No, PollResponseStatus::Maybe, PollResponseStatus::Maybe]);
+    expect($options[1]->responses()->where('user_id', $owner->id)->value('status'))->toBe(PollResponseStatus::Yes);
 });
 
-it('F-06: refuses yes to all on a closed poll', function () {
+it('F-06: reports when every option already has an answer', function () {
+    [$group, $owner, $member] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+    $option->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::No]);
+
+    $this->actingAs($member)->post(route('polls.responses.fill-open', $poll), ['status' => 'yes'])
+        ->assertSessionHas('error', 'Every option already has an answer');
+
+    expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::No);
+});
+
+it('F-06: refuses filling open options on a closed poll', function () {
     [$group, $owner, $member] = createGroupWithMembers();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
     $poll->close();
 
-    $this->actingAs($member)->post(route('polls.responses.yes-to-all', $poll))->assertSessionHasErrors('status');
+    $this->actingAs($member)->post(route('polls.responses.fill-open', $poll), ['status' => 'yes'])->assertSessionHasErrors('status');
 
     expect($option->responses()->count())->toBe(0);
 });
 
-it('F-06: refuses yes to all for someone outside the audience', function () {
+it('F-06: refuses filling open options for someone outside the audience', function () {
     [$group, $owner] = createGroupWithMembers();
     $outsider = User::factory()->create();
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $option = PollOption::factory()->create(['poll_id' => $poll->id]);
 
-    $this->actingAs($outsider)->post(route('polls.responses.yes-to-all', $poll))->assertNotFound();
+    $this->actingAs($outsider)->post(route('polls.responses.fill-open', $poll), ['status' => 'yes'])->assertNotFound();
 
     expect($option->responses()->count())->toBe(0);
 });

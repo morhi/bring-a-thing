@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Polls\AnswerAllOptionsYes;
+use App\Actions\Polls\FillOpenOptions;
 use App\Enums\PollResponseStatus;
 use App\Events\DashboardChanged;
 use App\Events\PollResponseUpdated;
+use App\Http\Requests\Polls\FillOpenPollOptionsRequest;
 use App\Http\Requests\Polls\StorePollResponseRequest;
-use App\Http\Requests\Polls\StorePollYesToAllRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
 use Illuminate\Http\RedirectResponse;
@@ -36,11 +36,16 @@ class PollResponseController extends Controller
     }
 
     /**
-     * Answer yes to every option of the poll for the current user (F-06).
+     * Answer every option the current user has not answered yet with one status (F-06).
      */
-    public function storeYesToAll(StorePollYesToAllRequest $request, Poll $poll, AnswerAllOptionsYes $answerAllOptionsYes): RedirectResponse
+    public function fillOpen(FillOpenPollOptionsRequest $request, Poll $poll, FillOpenOptions $fillOpenOptions): RedirectResponse
     {
-        $optionIds = $answerAllOptionsYes->handle($poll, $request->user());
+        $status = $request->enum('status', PollResponseStatus::class);
+        $optionIds = $fillOpenOptions->handle($poll, $request->user(), $status);
+
+        if ($optionIds === []) {
+            return back()->with('error', __('ui.poll.answer.noneOpen'));
+        }
 
         foreach ($optionIds as $optionId) {
             PollResponseUpdated::dispatch($poll->id, $optionId, $request->user()->id);
@@ -48,6 +53,9 @@ class PollResponseController extends Controller
 
         DashboardChanged::dispatch($poll->group_id, [$request->user()->id]);
 
-        return back()->with('success', __('ui.poll.answer.allSaved'));
+        return back()->with('success', trans_choice('ui.poll.answer.filled', count($optionIds), [
+            'n' => count($optionIds),
+            'status' => __('ui.poll.answer.'.$status->value),
+        ]));
     }
 }

@@ -5,6 +5,7 @@ import {
     ArrowLeft,
     CalendarDays,
     Check,
+    ChevronDown,
     ChevronRight,
     LogOut,
     Settings,
@@ -29,8 +30,8 @@ import {
     withdraw as withdrawFromPoll,
 } from '@/actions/App/Http/Controllers/PollController';
 import {
+    fillOpen,
     store as storeResponse,
-    storeYesToAll,
 } from '@/actions/App/Http/Controllers/PollResponseController';
 import { dashboard } from '@/routes';
 import AvatarStack from '@/components/app/avatar-stack.vue';
@@ -71,6 +72,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 
@@ -185,11 +193,23 @@ const rows = computed<PollGridParticipant[]>(() => {
     }));
 });
 
-const isRespondent = computed(() =>
-    props.page.respondents.some(
+const ownRespondent = computed(() =>
+    props.page.respondents.find(
         (respondent) => respondent.user_id === currentUserId.value,
     ),
 );
+const isRespondent = computed(() => ownRespondent.value !== undefined);
+const hasOpenOptions = computed(() =>
+    poll.value.options.some(
+        (option) => !(option.slug in (ownRespondent.value?.answers ?? {})),
+    ),
+);
+
+const fillChoices: { value: PollAnswer; swatch: string }[] = [
+    { value: 'yes', swatch: 'bg-primary' },
+    { value: 'maybe', swatch: 'bg-warning' },
+    { value: 'no', swatch: 'bg-danger' },
+];
 
 // The calendar sits next to the table so people can hold the options against their own calendar
 type GridView = 'table' | 'calendar';
@@ -231,7 +251,7 @@ function answer(optionId: PollKey, value: PollAnswer): void {
     );
 }
 
-function answerAllYes(): void {
+function fillOpenOptions(value: PollAnswer): void {
     if (!permissions.value.can_respond) {
         toast.error(t('poll.closedNote'));
 
@@ -239,8 +259,8 @@ function answerAllYes(): void {
     }
 
     router.post(
-        storeYesToAll({ poll: poll.value.slug }).url,
-        {},
+        fillOpen({ poll: poll.value.slug }).url,
+        { status: value },
         {
             only: ['page'],
             preserveScroll: true,
@@ -621,18 +641,39 @@ const buttonClass = 'h-(--control-height) px-4';
                         total: page.audience_count,
                     })
                 }}</span>
-                <Button
-                    v-if="permissions.can_respond && isRespondent"
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    class="h-[38px] self-center px-3.5 text-[13px] font-semibold"
-                    :disabled="saving"
-                    @click="answerAllYes"
-                >
-                    <Check class="size-4" aria-hidden="true" />
-                    {{ t('poll.answer.yesToAll') }}
-                </Button>
+                <DropdownMenu v-if="permissions.can_respond && isRespondent">
+                    <DropdownMenuTrigger as-child>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            class="h-[38px] self-center px-3.5 text-[13px] font-semibold"
+                            :disabled="saving || !hasOpenOptions"
+                        >
+                            {{ t('poll.answer.fillOpen') }}
+                            <ChevronDown class="size-4" aria-hidden="true" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="min-w-48">
+                        <DropdownMenuLabel>{{
+                            t('poll.answer.fillOpenWith')
+                        }}</DropdownMenuLabel>
+                        <DropdownMenuItem
+                            v-for="choice in fillChoices"
+                            :key="choice.value"
+                            @select="fillOpenOptions(choice.value)"
+                        >
+                            <span
+                                :class="[
+                                    'size-2.5 shrink-0 rounded-full',
+                                    choice.swatch,
+                                ]"
+                                aria-hidden="true"
+                            />
+                            {{ t(`poll.answer.${choice.value}`) }}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <div
                     class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]"
                     role="group"

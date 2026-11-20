@@ -2,14 +2,16 @@
 
 namespace App\Http\Requests\Polls;
 
+use App\Enums\PollResponseStatus;
 use App\Models\Poll;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Validator;
 
-class StorePollYesToAllRequest extends FormRequest
+class FillOpenPollOptionsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,7 +30,9 @@ class StorePollYesToAllRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [];
+        return [
+            'status' => ['required', new Enum(PollResponseStatus::class)],
+        ];
     }
 
     /**
