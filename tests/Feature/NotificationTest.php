@@ -171,7 +171,7 @@ it('F-23: moving an event notifies the participants who did not decline, editing
 
     expect(notifKinds($first))->toBe([]);
 
-    $this->actingAs($owner)->patch(route('events.update', $event), [...$input, 'date' => '2027-03-19'])->assertSessionHasNoErrors();
+    $this->actingAs($owner)->patch(route('events.update', $event), [...$input, 'date' => '2027-03-19', 'reset_acceptances' => false])->assertSessionHasNoErrors();
 
     expect(notifKinds($first))->toBe(['moved'])
         ->and($first->notifications()->first()->data['params']['date'])->toBe('2027-03-19')

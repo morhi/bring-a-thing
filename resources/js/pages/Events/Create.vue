@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { CalendarDays, TriangleAlert, Users } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import {
+    destroy as destroyEvent,
     show as showEvent,
     store as storeEvent,
     storeAny as storeAnyEvent,
@@ -15,6 +17,17 @@ import DatePicker from '@/components/app/date-picker.vue';
 import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
 import TimePicker from '@/components/app/time-picker.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +39,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ form: App.Data.EventFormData }>();
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 // The same page serves "New event" and, with an event, its edit mode (F-10)
 const editing = computed(() => props.form.event !== null);
@@ -38,11 +51,21 @@ const eventForm = useForm({
     location: props.form.event?.location ?? '',
     date: props.form.event?.date ?? null,
     starts_at: props.form.event?.starts_at ?? null,
-    end_date: props.form.event?.end_date ?? null,
+    end_date: props.form.event?.end_date ?? props.form.event?.date ?? null,
     ends_at: props.form.event?.ends_at ?? null,
 });
 
-// Moving the start resets every acceptance to pending, so the page says so before saving
+// The end date follows the start date until the user picks one by hand (F-10)
+watch(
+    () => eventForm.date,
+    (date, previous) => {
+        if (eventForm.end_date === null || eventForm.end_date === previous) {
+            eventForm.end_date = date;
+        }
+    },
+);
+
+// Moving the start asks whether acceptances reset or stay, so the page says so before saving
 const moved = computed(
     () =>
         editing.value &&
@@ -102,11 +125,42 @@ const subtitle = computed(() => {
         : t('newEvent.sub');
 });
 
+const choiceOpen = ref(false);
+
 function submit(): void {
+    if (moved.value) {
+        choiceOpen.value = true;
+
+        return;
+    }
+
+    send(null);
+}
+
+// Delete lives here, never in the event header (F-10)
+const deleteOpen = ref(false);
+
+function confirmDelete(): void {
+    deleteOpen.value = false;
+    router.delete(destroyEvent(props.form.event!.slug).url, {
+        onError: (errors) =>
+            toast.error(Object.values(errors)[0] ?? t('group.requestFailed')),
+    });
+}
+
+// resetAcceptances is only set when the event really moved; otherwise the server ignores the choice
+function send(resetAcceptances: boolean | null): void {
     const options = { preserveScroll: true };
 
     if (props.form.event) {
-        eventForm.patch(updateEvent(props.form.event.slug).url, options);
+        choiceOpen.value = false;
+        eventForm
+            .transform((data) =>
+                resetAcceptances === null
+                    ? data
+                    : { ...data, reset_acceptances: resetAcceptances },
+            )
+            .patch(updateEvent(props.form.event.slug).url, options);
 
         return;
     }
@@ -230,7 +284,7 @@ const buttonClass = 'h-(--control-height) px-4';
                 <FormField
                     :label="t('newEvent.end')"
                     control="event-end-date"
-                    :hint="t('newEvent.timeHint')"
+                    required
                     :error="eventForm.errors.end_date"
                 >
                     <template #default="{ describedBy, invalid }">
@@ -238,6 +292,7 @@ const buttonClass = 'h-(--control-height) px-4';
                             id="event-end-date"
                             v-model="eventForm.end_date"
                             :min="eventForm.date"
+                            required
                             :described-by="describedBy"
                             :invalid="invalid"
                             @update:model-value="
@@ -334,6 +389,29 @@ const buttonClass = 'h-(--control-height) px-4';
             </div>
         </form>
 
+        <template v-if="editing && form.can_delete && form.delete_counts">
+            <hr class="border-border border-t" />
+            <section
+                class="flex flex-col items-start gap-2.5"
+                aria-labelledby="event-delete-title"
+                data-feature="F-10"
+            >
+                <h2 id="event-delete-title" class="text-h2">
+                    {{ t('event.delete') }}
+                </h2>
+                <p class="text-fg-muted max-w-md text-sm">
+                    {{ t('event.delete.text') }}
+                </p>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    @click="deleteOpen = true"
+                    >{{ t('event.delete') }}</Button
+                >
+            </section>
+        </template>
+
         <template #actions>
             <Button as-child variant="outline" size="lg" :class="buttonClass">
                 <Link :href="backHref">{{ t('dialog.cancel') }}</Link>
@@ -348,5 +426,75 @@ const buttonClass = 'h-(--control-height) px-4';
                 {{ editing ? t('event.edit.save') : t('newEvent.create') }}
             </Button>
         </template>
+
+        <AlertDialog v-if="form.delete_counts" v-model:open="deleteOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('event.delete.title')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.delete.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <ul class="flex flex-wrap gap-2" data-feature="F-10">
+                    <li>
+                        <Badge variant="outline">{{
+                            tc('event.delete.lists', form.delete_counts.lists)
+                        }}</Badge>
+                    </li>
+                    <li>
+                        <Badge variant="outline">{{
+                            tc(
+                                'event.delete.polls',
+                                form.delete_counts.follow_up_polls,
+                            )
+                        }}</Badge>
+                    </li>
+                    <li>
+                        <Badge variant="outline">{{
+                            tc(
+                                'event.delete.children',
+                                form.delete_counts.child_events,
+                            )
+                        }}</Badge>
+                    </li>
+                </ul>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction
+                        variant="destructive"
+                        @click="confirmDelete"
+                        >{{ t('event.delete.confirm') }}</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog v-model:open="choiceOpen">
+            <AlertDialogContent class="data-[size=default]:sm:max-w-lg">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('event.edit.moveTitle')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.edit.moveText')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter class="sm:flex-wrap">
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <Button variant="outline" @click="send(false)">{{
+                        t('event.edit.keepAnswers')
+                    }}</Button>
+                    <Button @click="send(true)">{{
+                        t('event.edit.resetAnswers')
+                    }}</Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </FormPage>
 </template>

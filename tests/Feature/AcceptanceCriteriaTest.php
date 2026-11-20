@@ -188,7 +188,7 @@ it('F-10: moving an event resets acceptances to pending and keeps the claims', f
 
     $this->actingAs($owner)->patch(route('events.update', $event), [
         'title' => $event->title, 'description' => null, 'location' => null,
-        'date' => '2027-03-19', 'starts_at' => null, 'end_date' => null, 'ends_at' => null,
+        'date' => '2027-03-19', 'starts_at' => null, 'end_date' => null, 'ends_at' => null, 'reset_acceptances' => true,
     ])->assertRedirect(route('events.show', $event));
 
     expect($event->participations()->where('user_id', $member->id)->value('status'))->toBe(ParticipationStatus::Pending)

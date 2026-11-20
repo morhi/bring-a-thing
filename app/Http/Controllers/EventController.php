@@ -115,29 +115,29 @@ class EventController extends Controller
     /**
      * Show the "New event" page in edit mode to organizer, owner and admins.
      */
-    public function edit(Event $event): Response
+    public function edit(Request $request, Event $event): Response
     {
         $this->authorize('update', $event);
 
         return Inertia::render('Events/Create', [
-            'form' => EventFormData::forGroup($event->group, $event),
+            'form' => EventFormData::forGroup($event->group, $event, user: $request->user()),
         ]);
     }
 
     /**
-     * Update the event; moving its start resets acceptances to "pending" and notifies the participants (F-23).
+     * Update the event; moving its start notifies the participants (F-23) and, when asked, resets acceptances to "pending".
      */
     public function update(UpdateEventRequest $request, Event $event, UpdateEvent $updateEvent, SendInAppNotification $sendNotification): RedirectResponse
     {
-        $updateEvent->handle($event, $request->eventAttributes());
+        $moved = $updateEvent->handle($event, $request->eventAttributes(), $request->resetsAcceptances());
 
         EventUpdated::dispatch($event->id);
         DashboardChanged::forItem($event);
 
-        if ($event->wasChanged(['date', 'starts_at'])) {
+        if ($moved) {
             $sendNotification->handle(new EventMoved($event, $request->user()));
 
-            return to_route('events.show', $event)->with('success', __('ui.event.edit.reset'));
+            return to_route('events.show', $event)->with('success', __($request->resetsAcceptances() ? 'ui.event.edit.reset' : 'ui.event.edit.movedKept'));
         }
 
         return to_route('events.show', $event)->with('success', __('ui.event.edit.saved'));

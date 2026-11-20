@@ -92,10 +92,20 @@ class StoreEventRequest extends FormRequest
     }
 
     /**
+     * Default an empty end date to the start date, so every event has one (F-10).
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('end_date') && $this->filled('date')) {
+            $this->merge(['end_date' => $this->input('date')]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
-     * The start is a date with an optional time; the optional end needs a
-     * date, and its time is optional too (F-10).
+     * The start is a date with an optional time; the end date is required
+     * (it defaults to the start date), its time is optional (F-10).
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -108,7 +118,7 @@ class StoreEventRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'date' => ['required', 'date_format:Y-m-d'],
             'starts_at' => ['nullable', 'date_format:H:i'],
-            'end_date' => ['nullable', 'required_with:ends_at', 'date_format:Y-m-d', 'after_or_equal:date'],
+            'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:date'],
             'ends_at' => ['nullable', 'date_format:H:i'],
         ];
     }

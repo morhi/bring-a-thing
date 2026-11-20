@@ -34,7 +34,7 @@ class CreateEventFromPollOption
                 'title' => $poll->title,
                 'date' => $option->date->format('Y-m-d'),
                 'starts_at' => $option->starts_at,
-                'end_date' => $option->ends_at === null ? null : $option->date->format('Y-m-d'),
+                'end_date' => $option->date->format('Y-m-d'),
                 'ends_at' => $option->ends_at,
             ]);
             $event->group_id = $poll->group_id;

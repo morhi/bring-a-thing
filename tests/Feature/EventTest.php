@@ -13,6 +13,7 @@ use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\RosterItemClaim;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -82,36 +83,140 @@ it('F-10: a directly created event in a group with five members shows one accept
             ->has('page.participants', 5));
 });
 
-it('F-10: after moving the event from 12.03. to 19.03., all acceptances are pending again', function () {
+it('F-10: after moving the event from 12.03. to 19.03. and choosing reset or keep, acceptances follow the choice and claims stay', function (bool $reset) {
     $this->travelTo('2027-01-10 12:00');
     [$group, $owner, , $members] = eventGroup(2);
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12']);
     EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $owner->id]);
     EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
     EventParticipation::factory()->declined()->create(['event_id' => $event->id, 'user_id' => $members[1]->id]);
+    $item = RosterItem::factory()->create(['roster_id' => Roster::factory()->create(['owner_id' => $owner->id, 'event_id' => $event->id])->id]);
+    RosterItemClaim::factory()->create(['roster_item_id' => $item->id, 'user_id' => $members[0]->id]);
 
     $this->actingAs($owner)
-        ->patch(route('events.update', $event), eventInput(['title' => $event->title, 'date' => '2027-03-19', 'starts_at' => null]))
+        ->patch(route('events.update', $event), eventInput(['title' => $event->title, 'date' => '2027-03-19', 'starts_at' => null, 'reset_acceptances' => $reset]))
         ->assertRedirect(route('events.show', $event))
-        ->assertSessionHas('success', 'Event moved. All acceptances are pending again.');
+        ->assertSessionHas('success', __($reset ? 'ui.event.edit.reset' : 'ui.event.edit.movedKept'));
 
     expect($event->fresh()->date->format('Y-m-d'))->toBe('2027-03-19')
-        ->and($event->participations()->where('status', ParticipationStatus::Accepted)->count())->toBe(0)
-        ->and($event->participations()->where('status', ParticipationStatus::Pending)->count())->toBe(2)
-        ->and($event->participations()->where('status', ParticipationStatus::Declined)->count())->toBe(1);
-});
+        ->and($event->participations()->where('status', ParticipationStatus::Accepted)->count())->toBe($reset ? 0 : 2)
+        ->and($event->participations()->where('status', ParticipationStatus::Pending)->count())->toBe($reset ? 2 : 0)
+        ->and($event->participations()->where('status', ParticipationStatus::Declined)->count())->toBe(1)
+        ->and(RosterItemClaim::query()->count())->toBe(1);
+})->with([[true], [false]]);
 
-it('F-10: changing only the time also resets acceptances, changing the location does not', function () {
+it('F-10: a stored time with seconds equal to the sent time is no move, even when the form says reset', function (?bool $reset) {
+    [$group, $owner, , $members] = eventGroup(1);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '18:00', 'ends_at' => '20:00']);
+    DB::table('events')->where('id', $event->id)->update(['starts_at' => '18:00:00', 'ends_at' => '20:00:00']);
+    $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
+
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput([
+            'date' => $event->date->format('Y-m-d'),
+            'starts_at' => '18:00',
+            'ends_at' => '20:00',
+            'location' => 'Elsewhere',
+            ...($reset === null ? [] : ['reset_acceptances' => $reset]),
+        ]))
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', __('ui.event.edit.saved'));
+
+    expect($participation->fresh()->status)->toBe(ParticipationStatus::Accepted)
+        ->and($event->fresh()->location)->toBe('Elsewhere');
+})->with([[true], [null]]);
+
+it('F-10: changing only the start time needs the choice and resets or keeps accordingly', function (bool $reset) {
     [$group, $owner, , $members] = eventGroup(1);
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '19:00']);
     $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
-    $input = eventInput(['date' => $event->date->format('Y-m-d'), 'starts_at' => '19:00']);
 
-    $this->actingAs($owner)->patch(route('events.update', $event), [...$input, 'location' => 'Elsewhere']);
-    expect($participation->fresh()->status)->toBe(ParticipationStatus::Accepted);
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput(['date' => $event->date->format('Y-m-d'), 'starts_at' => '20:30', 'reset_acceptances' => $reset]))
+        ->assertSessionHasNoErrors();
 
-    $this->actingAs($owner)->patch(route('events.update', $event), [...$input, 'starts_at' => '20:30']);
+    expect($participation->fresh()->status)->toBe($reset ? ParticipationStatus::Pending : ParticipationStatus::Accepted);
+})->with([[true], [false]]);
+
+it('F-10: setting or clearing the start time counts as a move', function (?string $before, ?string $after) {
+    [$group, $owner, , $members] = eventGroup(1);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => $before]);
+    $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
+    $input = eventInput(['date' => $event->date->format('Y-m-d'), 'starts_at' => $after]);
+
+    $this->actingAs($owner)->patch(route('events.update', $event), $input)->assertSessionHasErrors('reset_acceptances');
+
+    $this->actingAs($owner)->patch(route('events.update', $event), [...$input, 'reset_acceptances' => true])->assertSessionHasNoErrors();
+
     expect($participation->fresh()->status)->toBe(ParticipationStatus::Pending);
+})->with([[null, '19:00'], ['19:00', null]]);
+
+it('F-10: moving the event without a valid reset choice is rejected and saves nothing', function (array $choice) {
+    [$group, $owner, , $members] = eventGroup(1);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12']);
+    $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
+
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput(['date' => '2027-03-19', ...$choice]))
+        ->assertSessionHasErrors('reset_acceptances');
+
+    expect($event->fresh()->date->format('Y-m-d'))->toBe('2027-03-12')
+        ->and($participation->fresh()->status)->toBe(ParticipationStatus::Accepted);
+})->with([[[]], [['reset_acceptances' => 'maybe']]]);
+
+it('F-10: changing only the end keeps acceptances without a choice', function () {
+    [$group, $owner, , $members] = eventGroup(1);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12', 'starts_at' => '19:00']);
+    $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
+
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput(['date' => '2027-03-12', 'starts_at' => '19:00', 'end_date' => '2027-03-13', 'ends_at' => '12:00']))
+        ->assertSessionHasNoErrors();
+
+    expect($participation->fresh()->status)->toBe(ParticipationStatus::Accepted)
+        ->and($event->fresh()->end_date->format('Y-m-d'))->toBe('2027-03-13');
+});
+
+it('F-10: an event without a start time keeps its acceptances when only the title changes', function () {
+    [$group, $owner, , $members] = eventGroup(1);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => null]);
+    $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
+
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput(['title' => 'Renamed', 'date' => $event->date->format('Y-m-d'), 'starts_at' => null]))
+        ->assertSessionHasNoErrors();
+
+    expect($participation->fresh()->status)->toBe(ParticipationStatus::Accepted)
+        ->and($event->fresh()->title)->toBe('Renamed');
+});
+
+it('F-10: end date and end time are stored as sent, and an update without end date falls back to the start date', function () {
+    [$group, $owner] = eventGroup(0);
+
+    $this->actingAs($owner)
+        ->post(route('events.store', $group), eventInput(['date' => '2027-03-12', 'starts_at' => '18:00', 'end_date' => '2027-03-12', 'ends_at' => '20:00']))
+        ->assertSessionHasNoErrors();
+    $event = Event::query()->sole();
+
+    expect($event->end_date->format('Y-m-d'))->toBe('2027-03-12')
+        ->and(substr($event->ends_at, 0, 5))->toBe('20:00');
+
+    $this->actingAs($owner)
+        ->patch(route('events.update', $event), eventInput(['date' => '2027-03-12', 'starts_at' => null, 'end_date' => null, 'ends_at' => null, 'reset_acceptances' => true]))
+        ->assertSessionHasNoErrors();
+
+    expect($event->fresh()->end_date->format('Y-m-d'))->toBe('2027-03-12')
+        ->and($event->fresh()->ends_at)->toBeNull();
+});
+
+it('F-10: the edit form hands out times without seconds', function () {
+    [$group, $owner] = eventGroup(0);
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '18:00']);
+    DB::table('events')->where('id', $event->id)->update(['starts_at' => '18:00:00']);
+
+    $this->actingAs($owner)->get(route('events.edit', $event))->assertInertia(fn (Assert $page) => $page
+        ->where('form.event.starts_at', '18:00')
+        ->where('form.event.end_date', $event->date->format('Y-m-d')));
 });
 
 it('F-10: deleting an event with a list also removes the list', function () {
@@ -154,7 +259,10 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
     [$group, $owner, $admin, $members] = eventGroup(2);
     [$organizer, $member] = $members;
     $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $organizer->id]);
-    $input = eventInput(['title' => 'Renamed']);
+    $input = eventInput(['title' => 'Renamed', 'date' => $event->date->format('Y-m-d'), 'starts_at' => null]);
+    Roster::factory()->create(['event_id' => $event->id, 'group_id' => $group->id]);
+    Poll::factory()->create(['event_id' => $event->id, 'group_id' => $group->id, 'organizer_id' => $owner->id]);
+    Event::factory()->create(['parent_event_id' => $event->id, 'group_id' => $group->id, 'organizer_id' => $owner->id]);
 
     $this->actingAs($member)->patch(route('events.update', $event), $input)->assertForbidden();
     $this->actingAs($member)->delete(route('events.destroy', $event))->assertForbidden();
@@ -163,8 +271,7 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page
             ->component('Events/Show')
-            ->where('page.permissions.can_edit', false)
-            ->where('page.permissions.can_delete', false));
+            ->where('page.permissions.can_edit', false));
 
     foreach ([$organizer, $owner, $admin] as $manager) {
         $this->actingAs($manager)->patch(route('events.update', $event), $input)->assertRedirect();
@@ -174,7 +281,9 @@ it('F-10: organizer, owner and admins edit and delete the event, other members d
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Events/Create')
                 ->where('form.event.title', 'Renamed')
-                ->where('form.member_count', 4));
+                ->where('form.member_count', 4)
+                ->where('form.can_delete', true)
+                ->where('form.delete_counts', ['lists' => 1, 'follow_up_polls' => 1, 'child_events' => 1]));
     }
 
     $this->actingAs($admin)->delete(route('events.destroy', $event))->assertRedirect();
@@ -249,6 +358,21 @@ it('F-10: requires a title and a start date, and an end that is not before the s
     expect(Event::query()->sole()->starts_at)->toBeNull();
 });
 
+it('F-10: an empty end date defaults to the start date, an invalid one is rejected', function (mixed $endDate, ?string $stored) {
+    [$group, $owner] = eventGroup(0);
+
+    $this->actingAs($owner)
+        ->post(route('events.store', $group), eventInput(['date' => '2027-03-12', 'end_date' => $endDate]))
+        ->assertSessionHas($stored === null ? 'errors' : 'success');
+
+    expect(Event::query()->first()?->end_date->format('Y-m-d'))->toBe($stored);
+})->with([
+    'missing' => [null, '2027-03-12'],
+    'empty' => ['', '2027-03-12'],
+    'later day' => ['2027-03-14', '2027-03-14'],
+    'before start' => ['2027-03-11', null],
+]);
+
 it('F-10: an event counts as past once its start has passed', function () {
     $this->travelTo('2027-03-12 19:00');
     [$group, $owner] = eventGroup(0);
@@ -315,6 +439,7 @@ it('F-09: creating an event from a poll option derives participation from the re
         ->and($event->date->format('Y-m-d'))->toBe('2027-03-14')
         ->and(substr($event->starts_at, 0, 5))->toBe('19:00')
         ->and(substr($event->ends_at, 0, 5))->toBe('22:00')
+        ->and($event->end_date->format('Y-m-d'))->toBe('2027-03-14')
         ->and($event->organizer_id)->toBe($owner->id)
         ->and($event->origin_poll_option_id)->toBe($option->id)
         ->and($event->parent_event_id)->toBe($source->id)
@@ -339,17 +464,18 @@ it('F-10: a manager creates a sub-event that starts with the parent participants
         ->assertInertia(fn (Assert $page) => $page->where('form.parent_event_id', $parent->id)->where('form.parent_event_title', $parent->title));
 
     $this->actingAs($organizer)
-        ->post(route('events.store', $group), eventInput(['parent_event_id' => $parent->id]))
+        ->post(route('events.store', $group), eventInput(['parent_event_id' => $parent->id, 'date' => '2027-03-12', 'end_date' => '2027-03-13']))
         ->assertRedirect()
         ->assertSessionHas('success', __('ui.newEvent.created'));
 
     $child = Event::query()->where('parent_event_id', $parent->id)->firstOrFail();
 
-    expect($child->participations->pluck('status', 'user_id')->all())->toBe([
-        $owner->id => ParticipationStatus::Pending,
-        $members[0]->id => ParticipationStatus::Pending,
-        $organizer->id => ParticipationStatus::Accepted,
-    ]);
+    expect($child->end_date->format('Y-m-d'))->toBe('2027-03-13')
+        ->and($child->participations->pluck('status', 'user_id')->all())->toBe([
+            $owner->id => ParticipationStatus::Pending,
+            $members[0]->id => ParticipationStatus::Pending,
+            $organizer->id => ParticipationStatus::Accepted,
+        ]);
 });
 
 it('F-12: the event page offers "Add sub-event" only to managers of an event without a parent', function () {

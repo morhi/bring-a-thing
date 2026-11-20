@@ -255,7 +255,7 @@ it('F-08: the "New poll" page is offered to group members', function () {
 it('F-09: fixing three options creates three events with the options\' dates', function () {
     [, $owner, , $poll] = pollGroup();
     $options = collect(['2027-03-03', '2027-03-10', '2027-03-17', '2027-03-24'])
-        ->map(fn (string $date) => PollOption::factory()->create(['poll_id' => $poll->id, 'date' => $date]));
+        ->map(fn (string $date) => PollOption::factory()->create(['poll_id' => $poll->id, 'date' => $date, ...($date === '2027-03-03' ? ['starts_at' => '18:00', 'ends_at' => '20:00'] : [])]));
 
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => $options->take(3)->pluck('slug')->all()])
         ->assertRedirect(route('polls.show', $poll))
@@ -264,6 +264,7 @@ it('F-09: fixing three options creates three events with the options\' dates', f
     $events = Event::query()->where('group_id', $poll->group_id)->orderBy('date')->get();
     expect($events)->toHaveCount(3)
         ->and($events->map(fn (Event $event) => $event->date->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
+        ->and($events->map(fn (Event $event) => $event->end_date->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
         ->and($events->pluck('title')->unique()->all())->toBe([$poll->title])
         ->and($poll->fresh()->isClosed())->toBeTrue();
 

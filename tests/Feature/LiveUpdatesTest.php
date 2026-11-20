@@ -173,6 +173,7 @@ it('broadcasts event edits and deletion on the event channel', function () {
     $this->actingAs($owner)->patch(route('events.update', $event), [
         'title' => 'Moved gig',
         'date' => now()->addMonths(2)->format('Y-m-d'),
+        'reset_acceptances' => true,
     ])->assertSessionHasNoErrors();
     $this->actingAs($owner)->delete(route('events.destroy', $event))->assertRedirect();
 

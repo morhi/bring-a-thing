@@ -27,7 +27,7 @@ class EventFactory extends Factory
             'location' => null,
             'date' => $this->faker->dateTimeBetween('+1 week', '+2 months')->format('Y-m-d'),
             'starts_at' => null,
-            'end_date' => null,
+            'end_date' => fn (array $attributes) => $attributes['date'],
             'ends_at' => null,
         ];
     }

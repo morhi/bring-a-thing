@@ -21,18 +21,24 @@ class EventFormData extends Data
         public ?int $parent_event_id = null,
         public ?string $parent_event_title = null,
         public ?array $groups = null,
+        public bool $can_delete = false,
+        public ?EventDeleteCountsData $delete_counts = null,
     ) {}
 
     /**
      * Build the "New event" page, or the same page in edit mode when an event is given (F-10).
      *
+     * The delete action lives on the edit page: can_delete and delete_counts
+     * (everything the deletion removes) reach whoever may delete the event.
      * member_count feeds the audience note: every member is asked to accept or decline.
      * A standalone event has no group (F-29): group_slug and group_name are
      * null, and member_count counts its participants, or for a new
      * standalone sub-event the parent's participants with the organizer.
      */
-    public static function forGroup(?Group $group, ?Event $event = null, ?Event $parent = null): self
+    public static function forGroup(?Group $group, ?Event $event = null, ?Event $parent = null, ?User $user = null): self
     {
+        $canDelete = $event !== null && $user?->can('delete', $event) === true;
+
         return new self(
             group_slug: $group?->slug,
             group_name: $group?->name,
@@ -40,6 +46,8 @@ class EventFormData extends Data
             event: $event ? EventData::fromEvent($event) : null,
             parent_event_id: $parent?->id,
             parent_event_title: $parent?->title,
+            can_delete: $canDelete,
+            delete_counts: $canDelete ? EventDeleteCountsData::fromEvent($event) : null,
         );
     }
 

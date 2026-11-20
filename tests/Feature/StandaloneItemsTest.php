@@ -70,7 +70,7 @@ foreach (['poll' => 'F-27', 'event' => 'F-26'] as $kind => $feature) {
         grantOn($item, $guest);
         EventFacade::fake([DashboardChanged::class]);
 
-        $this->actingAs($organizer)->patch(route("{$kind}s.update", $item), ['title' => 'Renamed', 'date' => now()->addMonth()->format('Y-m-d')])
+        $this->actingAs($organizer)->patch(route("{$kind}s.update", $item), ['title' => 'Renamed', 'date' => now()->addMonth()->format('Y-m-d'), 'reset_acceptances' => true])
             ->assertSessionHasNoErrors();
 
         EventFacade::assertDispatched(DashboardChanged::class, fn (DashboardChanged $broadcast) => $broadcast->broadcastWith() === ['group_id' => null]
@@ -151,6 +151,7 @@ it('F-12: follow-up polls, sub-events and fixed events of standalone items stay 
     $this->actingAs($organizer)->post(route('events.store-any'), [
         'title' => 'Soundcheck',
         'date' => now()->addWeek()->format('Y-m-d'),
+        'end_date' => now()->addWeek()->addDay()->format('Y-m-d'),
         'parent_event_id' => $event->id,
     ])->assertSessionHasNoErrors();
     $child = Event::query()->where('title', 'Soundcheck')->firstOrFail();
@@ -164,6 +165,7 @@ it('F-12: follow-up polls, sub-events and fixed events of standalone items stay 
         ->and($followUp->event_id)->toBe($event->id)
         ->and($child->group_id)->toBeNull()
         ->and($child->parent_event_id)->toBe($event->id)
+        ->and($child->end_date->format('Y-m-d'))->toBe(now()->addWeek()->addDay()->format('Y-m-d'))
         ->and($child->participations()->pluck('user_id')->all())->toBe([$organizer->id])
         ->and($fixed->group_id)->toBeNull();
     $this->actingAs($guest)->get(route('events.show', $child))->assertOk();

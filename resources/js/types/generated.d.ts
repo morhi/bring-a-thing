@@ -167,6 +167,8 @@ event: App.Data.EventData | null,
 parent_event_id: number | null,
 parent_event_title: string | null,
 groups: App.Data.RosterParentData[] | null,
+can_delete: boolean,
+delete_counts: App.Data.EventDeleteCountsData | null,
 };
 export type EventLinkData = {
 slug: string,
@@ -174,7 +176,6 @@ title: string,
 };
 export type EventPermissionsData = {
 can_edit: boolean,
-can_delete: boolean,
 can_respond: boolean,
 can_set_status_for_others: boolean,
 can_remove_participants: boolean,
@@ -199,7 +200,6 @@ follow_up_polls: App.Data.GroupPollData[],
 follow_up_audience_count: number,
 child_events: App.Data.GroupEventData[],
 comments: App.Data.CommentData[],
-delete_counts: App.Data.EventDeleteCountsData | null,
 permissions: App.Data.EventPermissionsData,
 invite_link: App.Data.EntityInviteLinkData | null,
 };
@@ -306,7 +306,6 @@ slug: string,
 name: string,
 members_can_set_status: boolean,
 members: App.Data.GroupMemberData[],
-invite_link: App.Data.GroupInviteLinkData,
 permissions: App.Data.GroupSettingsPermissionsData,
 friends: App.Data.InviteFriendData[],
 membership_requests: App.Data.GroupMembershipRequestData[],
@@ -500,7 +499,6 @@ attendance_options: App.Data.AttendanceOptionData[],
 can_delete: boolean,
 can_duplicate: boolean,
 can_manage_fields: boolean,
-can_share: boolean,
 };
 export type RosterItemData = {
 id: number,
@@ -537,6 +535,7 @@ can_edit_items: boolean,
 can_claim: boolean,
 needs_acceptance: boolean,
 can_manage_claims: boolean,
+can_share: boolean,
 };
 export type RosterShowData = {
 roster: App.Data.RosterData,

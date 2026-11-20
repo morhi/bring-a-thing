@@ -164,7 +164,7 @@ it('F-34: an event without a start time is all-day with an exclusive end date', 
 
     expect($block)->toContain('DTSTART;VALUE=DATE:20270312')->toContain('DTEND;VALUE=DATE:'.$expectedEnd);
 })->with([
-    'single day' => [null, '20270313'],
+    'single day' => ['2027-03-12', '20270313'],
     'several days' => ['2027-03-14', '20270315'],
 ]);
 
