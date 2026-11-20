@@ -43,7 +43,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - The start page carries a single form for login and registration. The person enters their email and receives a login link by email. If the account has no name yet, the form asks for it. If the account has a password, the person can log in with the password instead.
 - An invitation by email (F-04) creates a shadow account immediately. It appears as a member right away, and the invited person logs in through a login link without registering.
-- A person who joins through an invite link (F-04) enters an email like any other guest and receives a login link; the join completes when they use it. The app creates no account without an email, so nobody loses access after logging out.
+- A person who joins through a group invite link (F-04) logs in like on the start page. With a login link the join completes when they use it, and with a password or passkey it completes at once. The group link creates no account without an email, so nobody loses access after logging out. Event and poll invite links also allow a name-only join (F-26, F-27).
 - The login link is signed and expires.
 - A password is optional and can be set in the settings (F-02). The login link stays available afterwards.
 - A passkey is optional and can be saved in the settings (F-02). The start page offers a "Log in with passkey" button that logs in without entering an email. The login link and the password stay available.
@@ -56,7 +56,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A new email address receives a login link after entering email and name, and the link leads to the dashboard.
 - An expired or altered link shows an error and does not log in.
 - An email address invited twice results in exactly one account.
-- A guest who opens an invite link and enters no email gets a validation error and no account.
+- A guest who opens a group invite link and enters no email gets a validation error and no account.
 - An account without a password shows no password field.
 - A guest can request passkey login options on the start page, and a passkey login without a credential does not log in.
 - After a passkey login, the person lands on the dashboard, or back on the shared list when a claim is pending (F-19).
