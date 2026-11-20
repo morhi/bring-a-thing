@@ -4,6 +4,7 @@ import { Plus } from '@lucide/vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
+import SectionEmptyState from '@/components/app/section-empty-state.vue';
 import { Button } from '@/components/ui/button';
 </script>
 
@@ -14,7 +15,9 @@ import { Button } from '@/components/ui/button';
             One raised container per page section with a divided heading row.
             SectionBoxItem is the tinted level 2 box for rows inside it; as a
             link or button it lifts on hover. Also shows the text-h1 and text-h2
-            heading scale.
+            heading scale. The optional collapsible prop adds an icon-only
+            toggle left of the title that hides the content, and
+            SectionEmptyState is the empty state every dashboard section shows.
         </p>
         <div
             v-for="mode in ['', 'dark']"
@@ -96,6 +99,40 @@ import { Button } from '@/components/ui/button';
                 <EmptyState
                     title="No lists yet"
                     text="Count zero hides the number; the empty state fills the box."
+                />
+            </SectionBox>
+
+            <SectionBox
+                :id="`sb-collapsible-${mode}`"
+                title="Collapsible"
+                :count="2"
+                collapsible
+            >
+                <template #action>
+                    <Button type="button" variant="outline" size="sm">
+                        <Plus aria-hidden="true" />
+                        New event
+                    </Button>
+                </template>
+                <ul class="flex flex-col gap-3">
+                    <SectionBoxItem as="li">
+                        Open on every visit; the toggle hides this content
+                    </SectionBoxItem>
+                    <SectionBoxItem as="li">
+                        Collapsed, only the heading row remains
+                    </SectionBoxItem>
+                </ul>
+            </SectionBox>
+
+            <SectionBox
+                :id="`sb-section-empty-${mode}`"
+                title="Events"
+                :count="0"
+                collapsible
+            >
+                <SectionEmptyState
+                    title="All caught up"
+                    text="The check icon marks a section with nothing left to do."
                 />
             </SectionBox>
 
