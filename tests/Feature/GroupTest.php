@@ -163,6 +163,22 @@ it('F-03: shows polls, upcoming and past events and group lists on the group pag
             ->where('page.permissions.can_invite', true));
 });
 
+it('F-03: names the parent event on a child event of the group page and on no top-level event', function () {
+    $owner = User::factory()->create();
+    $group = Group::factory()->create(['owner_id' => $owner->id]);
+    $group->addMember($owner, GroupRole::Owner, now());
+    $parent = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'title' => 'Salsa Worship Night', 'date' => now()->addWeek()->toDateString(), 'starts_at' => null]);
+    Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'parent_event_id' => $parent->id, 'title' => 'Probe 1', 'date' => now()->addDays(2)->toDateString(), 'starts_at' => null]);
+
+    $this->actingAs($owner)
+        ->get(route('groups.show', $group))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('page.events.0.title', 'Probe 1')
+            ->where('page.events.0.parent_event_title', 'Salsa Worship Night')
+            ->where('page.events.1.title', 'Salsa Worship Night')
+            ->where('page.events.1.parent_event_title', null));
+});
+
 it('F-04: shows member emails to owners and admins only, members see their own email', function () {
     $owner = User::factory()->create(['name' => 'Olga', 'email' => 'olga@example.com']);
     $admin = User::factory()->create(['name' => 'Adam', 'email' => 'adam@example.com']);

@@ -17,6 +17,7 @@ class GroupEventData extends Data
         public ?string $location,
         public bool $is_past,
         public bool $is_from_poll,
+        public ?string $parent_event_title,
         public int $accepted_count,
         public int $pending_count,
         public ?ParticipationStatus $own_status,
@@ -24,8 +25,11 @@ class GroupEventData extends Data
 
     /**
      * Build an event row of the group page with the counts and the user's own status (F-10, F-11).
+     *
+     * parent_event_title names the parent of a child event; the caller passes
+     * null when the person may not open the parent (F-12, F-26).
      */
-    public static function forUser(Event $event, User $user): self
+    public static function forUser(Event $event, User $user, ?string $parentEventTitle = null): self
     {
         return new self(
             slug: $event->slug,
@@ -35,6 +39,7 @@ class GroupEventData extends Data
             location: $event->location,
             is_past: $event->isPast(),
             is_from_poll: $event->origin_poll_option_id !== null,
+            parent_event_title: $parentEventTitle,
             accepted_count: $event->participations->where('status', ParticipationStatus::Accepted)->count(),
             pending_count: $event->participations->where('status', ParticipationStatus::Pending)->count(),
             own_status: $event->statusOf($user),

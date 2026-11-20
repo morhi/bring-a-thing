@@ -694,6 +694,17 @@ const rowClass =
                                                         )
                                                     }}</Badge
                                                 >
+                                                <Badge
+                                                    v-if="
+                                                        event.parent_event_title
+                                                    "
+                                                    class="bg-primary-soft text-primary-soft-fg h-auto font-sans font-normal whitespace-normal"
+                                                    >{{
+                                                        t('event.parent', {
+                                                            event: event.parent_event_title,
+                                                        })
+                                                    }}</Badge
+                                                >
                                             </span>
                                             <span
                                                 class="text-fg-muted flex flex-wrap gap-x-3 gap-y-1.5 text-sm"

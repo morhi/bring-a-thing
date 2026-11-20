@@ -55,6 +55,27 @@ it('F-26: an event link guest opens the group page with the event and its sub-it
     ]);
 });
 
+it('F-26: the restricted page names a parent event only when the guest may open it', function () {
+    [$group, $owner] = dashboardGroup();
+    $guest = User::factory()->create();
+    $parent = dashboardEvent($group, $owner, $guest, ParticipationStatus::Accepted, ['title' => 'Hidden parent']);
+    $child = dashboardEvent($group, $owner, null, null, ['parent_event_id' => $parent->id, 'title' => 'Opened child', 'date' => $parent->date->copy()->addDay()->format('Y-m-d')]);
+    grantOn($child, $guest);
+
+    $response = $this->actingAs($guest)->get(route('groups.show', $group))->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->has('page.events', 1)
+        ->where('page.events.0.title', 'Opened child')
+        ->where('page.events.0.parent_event_title', null));
+    expect(guestPageJson($response))->not->toContain('Hidden parent');
+
+    grantOn($parent, $guest);
+
+    $this->actingAs($guest)->get(route('groups.show', $group))->assertInertia(fn (Assert $page) => $page
+        ->has('page.events', 2)
+        ->where('page.events', fn ($events) => collect($events)->firstWhere('title', 'Opened child')['parent_event_title'] === 'Hidden parent'));
+});
+
 it('F-27: a poll link guest sees the poll, its fixed event and that event\'s child event', function () {
     [$group, $owner] = dashboardGroup();
     $guest = User::factory()->create();

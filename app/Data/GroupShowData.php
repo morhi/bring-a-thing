@@ -132,17 +132,22 @@ class GroupShowData extends Data
     /**
      * Order the event rows: upcoming by start, then past with the most recent first.
      *
+     * The parent title comes from the listed events only, so a link guest
+     * never learns the title of a parent they cannot open (F-26) and no
+     * extra query runs.
+     *
      * @param  Collection<int, Event>  $events
      * @return array<int, GroupEventData>
      */
     private static function eventRows(Collection $events, User $user): array
     {
         [$past, $upcoming] = $events->partition(fn (Event $event) => $event->isPast());
+        $listed = $events->keyBy('id');
         $startOf = fn (Event $event) => $event->date->format('Y-m-d').' '.($event->starts_at ?? '00:00');
 
         return $upcoming->sortBy($startOf)
             ->concat($past->sortByDesc($startOf))
-            ->map(fn (Event $event) => GroupEventData::forUser($event, $user))
+            ->map(fn (Event $event) => GroupEventData::forUser($event, $user, $listed->get($event->parent_event_id)?->title))
             ->values()
             ->all();
     }
