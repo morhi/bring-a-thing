@@ -42,7 +42,7 @@ const backClasses =
             </p>
         </header>
         <div
-            class="box shadow-card flex flex-col gap-4 rounded-3xl px-4 pt-[18px] pb-5 sm:px-8 sm:pt-7 sm:pb-8"
+            class="box shadow-card flex flex-col gap-4 px-4 pt-[18px] pb-5 sm:px-8 sm:pt-7 sm:pb-8"
         >
             <slot />
         </div>
