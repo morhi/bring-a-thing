@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Group;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Models\PollResponse;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -162,6 +163,45 @@ it('lets a member record and update their response to an option', function () {
 
     expect($option->responses()->where('user_id', $member->id)->count())->toBe(1);
     expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Maybe);
+});
+
+it('F-06: sets yes on every option for the respondent and overwrites earlier answers', function () {
+    [$group, $owner, $member] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $options = PollOption::factory()->count(3)->create(['poll_id' => $poll->id]);
+    $options[0]->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::No]);
+    $options[1]->responses()->create(['user_id' => $owner->id, 'status' => PollResponseStatus::Maybe]);
+
+    $this->actingAs($member)->post(route('polls.responses.yes-to-all', $poll))
+        ->assertSessionHas('success', 'Answered yes to every option');
+
+    foreach ($options as $option) {
+        expect($option->responses()->where('user_id', $member->id)->count())->toBe(1);
+        expect($option->responses()->where('user_id', $member->id)->value('status'))->toBe(PollResponseStatus::Yes);
+    }
+    expect($options[1]->responses()->where('user_id', $owner->id)->value('status'))->toBe(PollResponseStatus::Maybe);
+});
+
+it('F-06: refuses yes to all on a closed poll', function () {
+    [$group, $owner, $member] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+    $poll->close();
+
+    $this->actingAs($member)->post(route('polls.responses.yes-to-all', $poll))->assertSessionHasErrors('status');
+
+    expect($option->responses()->count())->toBe(0);
+});
+
+it('F-06: refuses yes to all for someone outside the audience', function () {
+    [$group, $owner] = createGroupWithMembers();
+    $outsider = User::factory()->create();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $option = PollOption::factory()->create(['poll_id' => $poll->id]);
+
+    $this->actingAs($outsider)->post(route('polls.responses.yes-to-all', $poll))->assertNotFound();
+
+    expect($option->responses()->count())->toBe(0);
 });
 
 it('section 8: answers a non-member responding to an option with "Not found"', function () {
@@ -500,6 +540,26 @@ it('F-08: saving the edit page removes the listed options with their answers', f
 
     $this->assertModelMissing($removed);
     expect($kept->fresh()->label)->toBe('Evening');
+});
+
+it('F-08: an organizer removes an option with answers on save and the totals stop counting them', function () {
+    [$group, $owner, $member] = createGroupWithMembers();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $kept = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01']);
+    $answered = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-02']);
+    $kept->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::Yes]);
+    $answered->responses()->create(['user_id' => $member->id, 'status' => PollResponseStatus::Yes]);
+    $answered->responses()->create(['user_id' => $owner->id, 'status' => PollResponseStatus::Maybe]);
+
+    $this->actingAs($owner)->patch(route('polls.update', $poll), [
+        'title' => $poll->title,
+        'options' => [['slug' => $kept->slug, 'date' => '2027-03-01']],
+        'remove' => [$answered->slug],
+    ])->assertSessionHasNoErrors()->assertSessionHas('success');
+
+    $this->assertModelMissing($answered);
+    expect(PollResponse::query()->where('poll_option_id', $answered->id)->count())->toBe(0)
+        ->and(PollResponse::query()->whereIn('poll_option_id', $poll->options()->pluck('id'))->count())->toBe(1);
 });
 
 it('F-09: saving the edit page cannot remove a fixed option', function () {

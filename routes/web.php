@@ -164,6 +164,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/polls/{poll}/options/{option}', [PollOptionController::class, 'destroy'])->name('polls.options.destroy');
 
     Route::post('/polls/{poll}/options/{option}/responses', [PollResponseController::class, 'store'])->name('polls.responses.store');
+    Route::post('/polls/{poll}/responses/yes-to-all', [PollResponseController::class, 'storeYesToAll'])->name('polls.responses.yes-to-all');
 });
 
 // Component catalogue for developers; never registered outside local.

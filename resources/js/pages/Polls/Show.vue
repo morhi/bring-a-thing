@@ -28,7 +28,10 @@ import {
     reopen as reopenPoll,
     withdraw as withdrawFromPoll,
 } from '@/actions/App/Http/Controllers/PollController';
-import { store as storeResponse } from '@/actions/App/Http/Controllers/PollResponseController';
+import {
+    store as storeResponse,
+    storeYesToAll,
+} from '@/actions/App/Http/Controllers/PollResponseController';
 import { dashboard } from '@/routes';
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
@@ -213,6 +216,31 @@ function answer(optionId: PollKey, value: PollAnswer): void {
     router.post(
         storeResponse({ poll: poll.value.slug, option: String(optionId) }).url,
         { status: value },
+        {
+            only: ['page'],
+            preserveScroll: true,
+            preserveState: true,
+            onStart: () => {
+                saving.value = true;
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
+            onError: showRequestError,
+        },
+    );
+}
+
+function answerAllYes(): void {
+    if (!permissions.value.can_respond) {
+        toast.error(t('poll.closedNote'));
+
+        return;
+    }
+
+    router.post(
+        storeYesToAll({ poll: poll.value.slug }).url,
+        {},
         {
             only: ['page'],
             preserveScroll: true,
@@ -593,6 +621,18 @@ const buttonClass = 'h-(--control-height) px-4';
                         total: page.audience_count,
                     })
                 }}</span>
+                <Button
+                    v-if="permissions.can_respond && isRespondent"
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-[38px] self-center px-3.5 text-[13px] font-semibold"
+                    :disabled="saving"
+                    @click="answerAllYes"
+                >
+                    <Check class="size-4" aria-hidden="true" />
+                    {{ t('poll.answer.yesToAll') }}
+                </Button>
                 <div
                     class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]"
                     role="group"

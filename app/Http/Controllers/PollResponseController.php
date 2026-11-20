@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Polls\AnswerAllOptionsYes;
 use App\Enums\PollResponseStatus;
 use App\Events\DashboardChanged;
 use App\Events\PollResponseUpdated;
 use App\Http\Requests\Polls\StorePollResponseRequest;
+use App\Http\Requests\Polls\StorePollYesToAllRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
 use Illuminate\Http\RedirectResponse;
@@ -31,5 +33,21 @@ class PollResponseController extends Controller
         DashboardChanged::dispatch($poll->group_id, [$request->user()->id]);
 
         return back()->with('success', __('ui.poll.answer.saved'));
+    }
+
+    /**
+     * Answer yes to every option of the poll for the current user (F-06).
+     */
+    public function storeYesToAll(StorePollYesToAllRequest $request, Poll $poll, AnswerAllOptionsYes $answerAllOptionsYes): RedirectResponse
+    {
+        $optionIds = $answerAllOptionsYes->handle($poll, $request->user());
+
+        foreach ($optionIds as $optionId) {
+            PollResponseUpdated::dispatch($poll->id, $optionId, $request->user()->id);
+        }
+
+        DashboardChanged::dispatch($poll->group_id, [$request->user()->id]);
+
+        return back()->with('success', __('ui.poll.answer.allSaved'));
     }
 }
