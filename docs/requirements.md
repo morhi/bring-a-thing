@@ -4,8 +4,8 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.27
-- **Approved:** 19.11.2026
+- **Version:** 1.30
+- **Approved:** 20.11.2026
 
 ## 2. Goal
 
@@ -124,7 +124,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Owners and admins remove members. Admins cannot remove the owner.
 - Removing a member ends the membership only. Participations, claims and responses stay.
 - Owners and admins create one invite link per group and share it through any messenger. The "Copy invite link" button creates it on first use.
-- A guest must enter an email (plus a name for a new account) and log in through a login link before joining; the link has no name-only join. A logged-in account with a verified email joins with one click. The member is labeled "Joined via link".
+- The join page shows the regular login (F-01): email with login link, password or passkey. A guest logs in before joining; the link has no name-only join. After a password or passkey login, an account with a verified email joins at once and lands on the group; otherwise the join page asks for the missing email step. A logged-in account with a verified email joins with one click. The member is labeled "Joined via link".
 - A person who joins through the link has the same access as any other member.
 - Owners and admins revoke or regenerate the link in group settings (F-03). The old link then shows "Not found".
 
@@ -137,6 +137,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A guest who enters no email on the join page gets a validation error and is not added.
 - After revoking, the old link shows "Not found".
 - A member without the admin role sees no invite link button.
+- An account with a password or passkey logs in on the join page and lands on the group as a member.
 
 #### F-05 Friends (Secondary)
 
@@ -160,6 +161,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - With two or more slots, "Use this time for all" applies one slot's start and end to all other slots. Locked options (F-08) keep their time.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
 - Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
+- "Yes to all" next to the view toggle sets yes on every option for the person in one step and overwrites their earlier answers, so they only correct the exceptions. It works in the table and the calendar view and is refused on a closed poll and for people outside the audience, like a single answer.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
 - A poll can also be created from outside a group ("New poll" at /polls/new): the placement picker offers "Standalone" and the user's own groups, and the poll is created in the chosen group or standalone. A group the person is not a member of is refused.
@@ -176,6 +178,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - In an edited poll, "Use this time for all" leaves options with answers unchanged.
 - An answer chosen with the arrow keys is saved right away and shown after a reload.
 - The calendar view of a time-slot poll shows a week grid and of a by-day poll a month grid; options can be answered there, and tabbing moves through them in chronological order.
+- A member who answered no on one option and has no answer on two others uses "Yes to all"; all three options then show yes, and the answers of other people stay unchanged. On a closed poll the action is refused.
 
 #### F-07 Attendance poll (Secondary)
 
@@ -237,6 +240,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - When the date or time changes, the app resets all acceptances to "pending", because the acceptance applied to the old date.
 - The event shows acceptances, pending responses and declines with counts, its lists, follow-up polls and child events.
 - Organizer, owner and admins of an event add a sub-event directly under it with "Add sub-event", without a follow-up poll. The sub-event is an event of the same group, or standalone under a standalone event, with the source event as parent. Its participants start as the source event's participants ("accepted" and "pending") with "pending", and the organizer is "accepted". A child event has no sub-events of its own.
+- On the group page, a child event shows the hint "Part of <parent event>" next to its title, and a top-level event shows none. On the restricted group page (F-26) the hint appears only when the parent event is listed there too, so the page never names a parent the guest cannot open.
 - An event whose start has passed counts as past. There is no other status.
 - An event can also be created from outside a group ("New event" at /events/new): the placement picker offers "Standalone" and the user's own groups, and the event is created in the chosen group or standalone. A group the person is not a member of is refused.
 
@@ -248,6 +252,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An event created as "Standalone" has no group; picking a group the person is not a member of is refused and creates nothing.
 - A sub-event of a standalone event is created only by its organizer and only under a standalone parent.
 - A manager who adds a sub-event to an event with three participants gets a child event with those three participants. A plain member and a child event do not offer "Add sub-event".
+- The group page names the parent event on a child event and on no top-level event; the restricted group page carries no parent title the guest may not open.
 
 #### F-11 Participation (Core)
 
@@ -499,7 +504,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Organizer, owner and admins of an event create one invite link per event, regenerate it and revoke it. The old link then shows "Not found". People who already joined keep their access.
-- The link is always open. A logged-in account joins with one click. A guest joins with a name only, or with an email (plus a name for a new account) and a login link. The join page warns that a name-only account loses access at logout.
+- The link is always open. A logged-in account joins with one click. A guest joins with a name only, or logs in through the regular login (F-01): email with login link, password or passkey. A password or passkey login joins at once and lands on the event. The join page warns that a name-only account loses access at logout.
 - Joining grants access to the event, its child events, its follow-up polls and its lists, without group membership. Follow-up polls and lists follow the participation rules of F-11 to F-13 as for members.
 - A link guest accepts or declines, comments, answers follow-up polls and claims items like a member. They never edit or delete, never see the group's other items or its members, and see the group only as the restricted group page.
 - The event shows link guests among its participants. The event belongs to its real group, which the link guest sees as a guest group under "Groups" (F-22). A standalone event (F-29) has no group: only its organizer and its link guests open it, and it shows no guest group. Their events and polls appear in "Waiting for you" and the dashboard sections of F-22 where those rules apply, and in search (F-25).
@@ -519,6 +524,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - After revoking or regenerating, the old link shows "Not found".
 - A link guest can accept the event but not edit it.
 - A standalone event shows "Not found" to everyone except its organizer and its link guests; a link guest opens it after joining, without edit rights.
+- An account with a password or passkey logs in on the join page and lands on the event with access.
 
 #### F-27 Poll invite link (Secondary)
 
@@ -526,7 +532,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 **Rules:**
 - Organizer, owner and admins of a poll create, regenerate and revoke one invite link per poll, as in F-26.
-- Joining follows F-26: one click when logged in, otherwise name only or email with a login link.
+- Joining follows F-26: one click when logged in, otherwise name only or the regular login (F-01) with login link, password or passkey; a password or passkey login joins at once and lands on the poll.
 - Joining grants access to the poll, to the events fixed from it (F-09) and their child events, and to follow-up polls and lists under the same participation rules as in F-26 (F-11 to F-13). A link guest belongs to the poll's respondents and counts in totals and the best option.
 - A link guest answers the poll but never edits, closes or fixes it, and sees the group only as the restricted group page (F-26).
 - A person who withdrew from the poll (F-08) and joins again through its link is back in the audience and opens the poll.
@@ -541,6 +547,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The restricted group page shows the poll and its fixed events, and no other poll or event of the group.
 - A member who withdrew from the poll and joins through its link opens the poll again.
 - A standalone poll shows "Not found" to everyone except its organizer and its link guests; a link guest opens it after joining, without edit rights.
+- An account with a password or passkey logs in on the poll's join page and lands on the poll with access.
 
 #### F-28 All lists (Secondary)
 
@@ -754,6 +761,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 - **Expired login link:** shows a note with the action "Request new link".
 - **Attendance link without an attendance poll in the group:** the field does not appear.
 - **Live update connection lost:** the app shows a note and refreshes after reconnecting.
+- **Link in free text:** a web address (http, https or www) in an event or list description, an item note or a comment shows as a link that opens in a new tab. Sentence punctuation after the address stays outside the link, and other schemes such as javascript: stay plain text.
 
 ## 9. Non-functional requirements
 
