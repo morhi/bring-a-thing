@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.30
+- **Version:** 1.31
 - **Approved:** 20.11.2026
 
 ## 2. Goal
@@ -161,7 +161,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - With two or more slots, "Use this time for all" applies one slot's start and end to all other slots. Locked options (F-08) keep their time.
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
 - Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
-- "Yes to all" next to the view toggle sets yes on every option for the person in one step and overwrites their earlier answers, so they only correct the exceptions. It works in the table and the calendar view and is refused on a closed poll and for people outside the audience, like a single answer.
+- "Fill open" next to the view toggle sets yes, maybe or no on every option the person has not answered yet, in one step. Existing answers stay, so the person marks the exceptions first and fills the rest afterwards. The control is disabled once every option has an answer. It works in the table and the calendar view and is refused on a closed poll and for people outside the audience, like a single answer.
 - The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
 - The mode (by day or time slots) cannot change after creation.
 - A poll can also be created from outside a group ("New poll" at /polls/new): the placement picker offers "Standalone" and the user's own groups, and the poll is created in the chosen group or standalone. A group the person is not a member of is refused.
@@ -178,7 +178,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - In an edited poll, "Use this time for all" leaves options with answers unchanged.
 - An answer chosen with the arrow keys is saved right away and shown after a reload.
 - The calendar view of a time-slot poll shows a week grid and of a by-day poll a month grid; options can be answered there, and tabbing moves through them in chronological order.
-- A member who answered no on one option and has no answer on two others uses "Yes to all"; all three options then show yes, and the answers of other people stay unchanged. On a closed poll the action is refused.
+- A member who answered no on one option and has no answer on two others uses "Fill open" with maybe; the first option still shows no, the two others show maybe, and the answers of other people stay unchanged. On a closed poll the action is refused.
 
 #### F-07 Attendance poll (Secondary)
 
