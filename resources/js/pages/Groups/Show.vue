@@ -24,7 +24,11 @@ import {
     invite as inviteMembers,
     leave as leaveGroup,
 } from '@/actions/App/Http/Controllers/GroupController';
-import { store as storeInviteLink } from '@/actions/App/Http/Controllers/GroupInviteLinkController';
+import {
+    destroy as revokeInviteLink,
+    regenerate as regenerateInviteLink,
+    store as storeInviteLink,
+} from '@/actions/App/Http/Controllers/GroupInviteLinkController';
 import { store as storeMembershipRequest } from '@/actions/App/Http/Controllers/GroupMembershipRequestController';
 import {
     create as createPoll,
@@ -37,6 +41,7 @@ import {
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import InviteField from '@/components/app/invite-field.vue';
+import ShareDialog from '@/components/app/share-dialog.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
@@ -168,7 +173,6 @@ const inviteError = computed(() => {
 
     return key ? (inviteForm.errors as Record<string, string>)[key] : null;
 });
-const inviteField = ref<InstanceType<typeof InviteField> | null>(null);
 
 function sendInvites(): void {
     if (!invites.value.length) {
@@ -185,34 +189,6 @@ function sendInvites(): void {
             invites.value = [];
             inviteForm.reset();
         },
-    });
-}
-
-// "Copy invite link" creates the link on first use, then copies it (F-04)
-function createLink(): void {
-    router.post(
-        storeInviteLink(props.page.slug).url,
-        {},
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                void inviteField.value?.copyLink(
-                    props.page.invite_link?.url ?? null,
-                );
-            },
-            onError: (errors) => {
-                toast.error(
-                    Object.values(errors)[0] ?? t('group.link.copyFailed'),
-                );
-            },
-        },
-    );
-}
-
-function copyFailed(url: string): void {
-    toast.error(t('group.link.copyFailed'), {
-        description: url,
-        duration: 10000,
     });
 }
 
@@ -317,6 +293,18 @@ const rowClass =
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    <ShareDialog
+                        v-if="page.invite_link"
+                        id="group-link"
+                        size="sm"
+                        trigger-class=""
+                        :url="page.invite_link.url"
+                        :create-url="storeInviteLink(page.slug).url"
+                        :regenerate-url="regenerateInviteLink(page.slug).url"
+                        :revoke-url="revokeInviteLink(page.slug).url"
+                        :hint="t('groupSettings.link.hint')"
+                        data-feature="F-04"
+                    />
                     <Button
                         v-if="page.permissions.can_manage_settings"
                         as-child
@@ -430,7 +418,6 @@ const rowClass =
                     </p>
                     <InviteField
                         id="group-invite"
-                        ref="inviteField"
                         v-model="invites"
                         :label="t('group.invite.title')"
                         :hint="t('group.invite.hint')"
@@ -439,12 +426,8 @@ const rowClass =
                         :friends="page.friends"
                         :member-ids="memberIds"
                         :member-emails="memberEmails"
-                        :link="page.invite_link !== null"
-                        :link-url="page.invite_link?.url ?? null"
                         :disabled="inviteForm.processing"
                         @submit="sendInvites"
-                        @create-link="createLink"
-                        @copy-failed="copyFailed"
                     />
                 </SectionBox>
 
@@ -963,7 +946,6 @@ const rowClass =
                     >
                         <InviteField
                             id="group-invite"
-                            ref="inviteField"
                             v-model="invites"
                             :label="t('group.invite.title')"
                             :hint="t('group.invite.hint')"
@@ -972,12 +954,8 @@ const rowClass =
                             :friends="page.friends"
                             :member-ids="memberIds"
                             :member-emails="memberEmails"
-                            :link="page.invite_link !== null"
-                            :link-url="page.invite_link?.url ?? null"
                             :disabled="inviteForm.processing"
                             @submit="sendInvites"
-                            @create-link="createLink"
-                            @copy-failed="copyFailed"
                         />
                     </div>
                     <p

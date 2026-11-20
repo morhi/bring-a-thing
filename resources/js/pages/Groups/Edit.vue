@@ -12,16 +12,10 @@ import {
     updateMemberRole,
 } from '@/actions/App/Http/Controllers/GroupController';
 import {
-    destroy as revokeInviteLink,
-    regenerate as regenerateInviteLink,
-    store as storeInviteLink,
-} from '@/actions/App/Http/Controllers/GroupInviteLinkController';
-import {
     accept as acceptMembershipRequest,
     decline as declineMembershipRequest,
 } from '@/actions/App/Http/Controllers/GroupMembershipRequestController';
 import FormField from '@/components/app/form-field.vue';
-import InviteLinkCard from '@/components/app/invite-link-card.vue';
 import InviteField from '@/components/app/invite-field.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
 import SectionBox from '@/components/app/section-box.vue';
@@ -339,16 +333,6 @@ const buttonClass = 'h-(--control-height) px-4';
                 </p>
             </template>
         </SectionBox>
-
-        <InviteLinkCard
-            id="gs-link"
-            :url="page.invite_link.url"
-            :create-url="storeInviteLink(page.slug).url"
-            :regenerate-url="regenerateInviteLink(page.slug).url"
-            :revoke-url="revokeInviteLink(page.slug).url"
-            :hint="t('groupSettings.link.hint')"
-            data-feature="F-04"
-        />
 
         <SectionBox
             id="gs-options-title"

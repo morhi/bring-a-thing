@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Check, Copy, Link2, Plus, X } from '@lucide/vue';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { Plus, X } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import {
     destroy as destroyField,
@@ -17,11 +17,6 @@ import {
     store as storeRoster,
     update as updateRoster,
 } from '@/actions/App/Http/Controllers/RosterController';
-import {
-    destroy as disableSharing,
-    regenerate as regenerateSharing,
-    store as enableSharing,
-} from '@/actions/App/Http/Controllers/RosterSharingController';
 import ChoiceGroup from '@/components/app/choice-group.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import DatePicker from '@/components/app/date-picker.vue';
@@ -294,67 +289,6 @@ function askRemoveField(field: App.Data.CustomFieldData): void {
     });
 }
 
-// Share link (F-19)
-
-function enableLink(): void {
-    router.post(
-        enableSharing(roster.value!.slug).url,
-        {},
-        { preserveScroll: true, onError: showError },
-    );
-}
-
-function askRegenerate(): void {
-    ask({
-        title: t('list.share.regenerateTitle'),
-        text: t('list.share.regenerateText'),
-        action: t('list.share.regenerate'),
-        danger: false,
-        run: () =>
-            router.post(
-                regenerateSharing(roster.value!.slug).url,
-                {},
-                { preserveScroll: true, onError: showError },
-            ),
-    });
-}
-
-function askDisable(): void {
-    ask({
-        title: t('list.share.disableTitle'),
-        text: t('list.share.disableText'),
-        action: t('list.share.disable'),
-        danger: true,
-        run: () =>
-            router.delete(disableSharing(roster.value!.slug).url, {
-                preserveScroll: true,
-                onError: showError,
-            }),
-    });
-}
-
-const linkCopied = ref(false);
-let linkCopiedTimer: ReturnType<typeof setTimeout> | undefined;
-
-async function copyLink(url: string): Promise<void> {
-    try {
-        await navigator.clipboard.writeText(url);
-    } catch {
-        toast.error(t('list.share.copyFailed'), {
-            description: url,
-            duration: 10000,
-        });
-
-        return;
-    }
-
-    linkCopied.value = true;
-    clearTimeout(linkCopiedTimer);
-    linkCopiedTimer = setTimeout(() => (linkCopied.value = false), 2000);
-}
-
-onBeforeUnmount(() => clearTimeout(linkCopiedTimer));
-
 // Duplicate (F-17) and delete (F-13)
 
 function duplicate(): void {
@@ -603,81 +537,6 @@ const smallInputClass =
                     >
                         {{ fieldForm.errors.name }}
                     </p>
-                </section>
-            </template>
-
-            <template v-if="form.can_share">
-                <Separator />
-                <section
-                    class="flex flex-col items-start gap-2.5"
-                    aria-labelledby="share-title"
-                    data-feature="F-19"
-                >
-                    <h2 id="share-title" class="text-h2">
-                        {{ t('list.share.title') }}
-                    </h2>
-                    <p class="text-fg-muted text-sm">
-                        {{ t('list.share.hint') }}
-                    </p>
-                    <template v-if="roster.share_url">
-                        <div
-                            class="flex w-full max-w-(--field-max-width) flex-wrap items-center gap-2"
-                        >
-                            <Input
-                                :model-value="roster.share_url"
-                                readonly
-                                :aria-label="t('list.share.url')"
-                                :class="smallInputClass"
-                                @focus="
-                                    ($event.target as HTMLInputElement).select()
-                                "
-                            />
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                @click="copyLink(roster.share_url)"
-                            >
-                                <Check v-if="linkCopied" aria-hidden="true" />
-                                <Copy v-else aria-hidden="true" />
-                                {{
-                                    linkCopied
-                                        ? t('list.share.copied')
-                                        : t('list.share.copy')
-                                }}
-                            </Button>
-                            <span class="sr-only" aria-live="polite">{{
-                                linkCopied ? t('list.share.copied') : ''
-                            }}</span>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                @click="askRegenerate"
-                                >{{ t('list.share.regenerate') }}</Button
-                            >
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                @click="askDisable"
-                                >{{ t('list.share.disable') }}</Button
-                            >
-                        </div>
-                    </template>
-                    <Button
-                        v-else
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        class="w-fit"
-                        @click="enableLink"
-                    >
-                        <Link2 aria-hidden="true" />
-                        {{ t('list.share.enable') }}
-                    </Button>
                 </section>
             </template>
 

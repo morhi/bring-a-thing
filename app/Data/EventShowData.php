@@ -35,7 +35,6 @@ class EventShowData extends Data
         public int $follow_up_audience_count,
         public array $child_events,
         public array $comments,
-        public ?EventDeleteCountsData $delete_counts,
         public EventPermissionsData $permissions,
         public ?EntityInviteLinkData $invite_link,
     ) {}
@@ -51,8 +50,7 @@ class EventShowData extends Data
      * everyone else gets the key details. follow_up_audience_count feeds
      * the audience note of "New follow-up poll".
      * own_claims feeds the decline confirmation. comments is the event's
-     * own thread, only for those who may comment (F-20). delete_counts
-     * feeds the delete confirmation, only for those who may delete.
+     * own thread, only for those who may comment (F-20).
      * Guests with a grant on the event (F-26, F-27) join the participants
      * after the group members. invite_link is only set for managers (F-26).
      */
@@ -92,7 +90,6 @@ class EventShowData extends Data
             follow_up_audience_count: $event->followUpAudience()->count(),
             child_events: $event->childEvents->sortBy(fn (Event $child) => $child->date->format('Y-m-d').' '.($child->starts_at ?? '00:00'))->map(fn (Event $child) => GroupEventData::forUser($child, $user))->values()->all(),
             comments: $permissions->can_comment ? $event->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $event), $user))->all() : [],
-            delete_counts: $permissions->can_delete ? EventDeleteCountsData::fromEvent($event) : null,
             permissions: $permissions,
             invite_link: $permissions->can_manage_invite_link ? EntityInviteLinkData::fromEntity($event) : null,
         );

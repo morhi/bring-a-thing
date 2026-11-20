@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
 
 /**
- * Link body shared by the invite link card and the calendar feed settings (F-04, F-26, F-27, F-34).
+ * Link body shared by the share dialog and the calendar feed settings (F-04, F-26, F-27, F-34).
  *
  * Shows the link with copy and extra actions, or the enable button when no
  * link exists. Regenerating and revoking ask for confirmation first.
@@ -44,6 +44,7 @@ type LinkTexts = {
     revoke: string;
     revokeTitle: string;
     revokeText: string;
+    regenerate: string;
     regenerateTitle: string;
     regenerateText: string;
 };
@@ -54,6 +55,7 @@ const text = computed<LinkTexts>(() => ({
     revoke: t('groupSettings.link.revoke'),
     revokeTitle: t('groupSettings.link.revokeTitle'),
     revokeText: t('groupSettings.link.revokeText'),
+    regenerate: t('groupSettings.link.regenerate'),
     regenerateTitle: t('groupSettings.link.regenerateTitle'),
     regenerateText: t('groupSettings.link.regenerateText'),
     ...props.texts,
@@ -127,7 +129,7 @@ function confirmRegenerate(): void {
     ask({
         title: text.value.regenerateTitle,
         text: text.value.regenerateText,
-        action: t('groupSettings.link.regenerate'),
+        action: text.value.regenerate,
         run: () =>
             router.visit(props.regenerateUrl, {
                 ...visitOptions,
@@ -189,7 +191,7 @@ const inputClass =
                     size="lg"
                     @click="confirmRegenerate"
                 >
-                    {{ t('groupSettings.link.regenerate') }}
+                    {{ text.regenerate }}
                 </Button>
                 <Button
                     type="button"

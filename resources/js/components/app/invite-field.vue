@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { CheckIcon, LinkIcon, MailIcon, PlusIcon, XIcon } from '@lucide/vue';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { MailIcon, PlusIcon, XIcon } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
 import FormField from '@/components/app/form-field.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -28,10 +28,8 @@ type Row =
 /**
  * Collect people to invite by friend name or email address as removable chips (F-04, F-05).
  *
- * Makes no requests: the parent passes friends and current members, applies the selection
- * on `submit`, and owns the invite link. Copying works when `linkUrl` is set; without it the
- * button emits `createLink`, and the parent can call the exposed `copyLink()` once the link exists.
- * `linkAvailable` false (group not created yet) disables the button with an explanation.
+ * Makes no requests: the parent passes friends and current members and applies the selection
+ * on `submit`. The invite link lives in the share dialog of the page header.
  */
 const props = withDefaults(
     defineProps<{
@@ -44,9 +42,6 @@ const props = withDefaults(
         memberEmails?: string[];
         maxSuggestions?: number;
         submitLabel?: string | null;
-        link?: boolean;
-        linkUrl?: string | null;
-        linkAvailable?: boolean;
         disabled?: boolean;
     }>(),
     {
@@ -57,9 +52,6 @@ const props = withDefaults(
         memberEmails: () => [],
         maxSuggestions: 4,
         submitLabel: null,
-        link: true,
-        linkUrl: null,
-        linkAvailable: true,
         disabled: false,
     },
 );
@@ -68,9 +60,6 @@ const model = defineModel<InviteSelection[]>({ default: () => [] });
 
 const emit = defineEmits<{
     submit: [];
-    createLink: [];
-    copied: [url: string];
-    copyFailed: [url: string];
 }>();
 
 const { t } = useI18n();
@@ -80,8 +69,6 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const query = ref('');
 const open = ref(false);
 const active = ref(0);
-const copied = ref(false);
-let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
 const listId = computed(() => `${props.id}-list`);
 const selectedIds = computed(() =>
@@ -247,39 +234,6 @@ function onKey(event: KeyboardEvent): void {
 
     pick(row);
 }
-
-async function copyLink(url: string | null = props.linkUrl): Promise<void> {
-    if (!url) {
-        return;
-    }
-
-    try {
-        await navigator.clipboard.writeText(url);
-    } catch {
-        emit('copyFailed', url);
-
-        return;
-    }
-
-    copied.value = true;
-    emit('copied', url);
-    clearTimeout(copiedTimer);
-    copiedTimer = setTimeout(() => (copied.value = false), 2000);
-}
-
-function onLinkClick(): void {
-    if (!props.linkUrl) {
-        emit('createLink');
-
-        return;
-    }
-
-    void copyLink();
-}
-
-onBeforeUnmount(() => clearTimeout(copiedTimer));
-
-defineExpose({ copyLink });
 </script>
 
 <template>
@@ -413,7 +367,7 @@ defineExpose({ copyLink });
             </li>
         </ul>
 
-        <div v-if="submitLabel || link" class="flex flex-wrap gap-2">
+        <div v-if="submitLabel" class="flex flex-wrap gap-2">
             <Button
                 v-if="submitLabel"
                 type="button"
@@ -424,26 +378,6 @@ defineExpose({ copyLink });
             >
                 <PlusIcon aria-hidden="true" /> {{ submitLabel }}
             </Button>
-            <Button
-                v-if="link"
-                type="button"
-                variant="secondary"
-                size="lg"
-                class="h-(--control-height) flex-auto px-4 md:flex-none"
-                :disabled="disabled || !linkAvailable"
-                @click="onLinkClick"
-            >
-                <CheckIcon v-if="copied" aria-hidden="true" />
-                <LinkIcon v-else aria-hidden="true" />
-                {{ copied ? t('group.link.copied') : t('group.link.copy') }}
-            </Button>
-            <span class="sr-only" aria-live="polite">{{
-                copied ? t('group.link.copied') : ''
-            }}</span>
         </div>
-
-        <p v-if="link && !linkAvailable" class="text-fg-soft text-[13px]">
-            {{ t('invite.linkLater') }}
-        </p>
     </div>
 </template>

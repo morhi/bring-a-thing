@@ -59,28 +59,51 @@ it('F-04: lets an admin create the invite link', function () {
     expect($group->fresh()->invite_token)->not->toBeNull();
 });
 
-it('F-04: a member without the admin role sees no invite link button', function () {
+it('F-04: the group page gives the Share dialog its link only to owner and admin', function (string $role, bool $sees) {
+    [$group, $owner] = groupWithOwner(locked: false);
+    $user = $owner;
+
+    if ($role !== 'owner') {
+        $user = User::factory()->create();
+        $group->addMember($user, GroupRole::from($role), now());
+    }
+
+    $this->actingAs($user)
+        ->get(route('groups.show', $group))
+        ->assertInertia(fn (Assert $page) => $sees
+            ? $page->where('page.invite_link.url', route('groups.join.show', $group->invite_token))
+                ->where('page.invite_link.locked', false)
+                ->missing('page.invite_token')
+            : $page->where('page.invite_link', null));
+})->with([['owner', true], ['admin', true], ['member', false]]);
+
+it('F-04: a member without the admin role cannot create, regenerate or revoke the invite link', function () {
     [$group] = groupWithOwner(locked: false);
     $member = User::factory()->create();
     $group->addMember($member, GroupRole::Member, now());
 
-    $this->actingAs($member)
-        ->get(route('groups.show', $group))
-        ->assertInertia(fn (Assert $page) => $page->where('page.invite_link', null));
     $this->actingAs($member)->post(route('groups.invite-link.store', $group))->assertForbidden();
     $this->actingAs($member)->post(route('groups.invite-link.regenerate', $group))->assertForbidden();
     $this->actingAs($member)->delete(route('groups.invite-link.destroy', $group))->assertForbidden();
 });
 
-it('F-04: shows the invite link to owners without exposing the token in the group', function () {
+it('F-04: the Share dialog offers create after revoking and shows a new url after creating or regenerating', function () {
     [$group, $owner] = groupWithOwner(locked: false);
+    $linkUrl = fn () => $this->actingAs($owner)->get(route('groups.show', $group))->inertiaProps('page.invite_link.url');
 
-    $this->actingAs($owner)
-        ->get(route('groups.show', $group))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('page.invite_link.url', route('groups.join.show', $group->invite_token))
-            ->where('page.invite_link.locked', false)
-            ->missing('page.invite_token'));
+    $first = $linkUrl();
+    expect($first)->not->toBeNull();
+
+    $this->actingAs($owner)->post(route('groups.invite-link.regenerate', $group));
+    $second = $linkUrl();
+    expect($second)->not->toBe($first)->not->toBeNull();
+
+    $this->actingAs($owner)->delete(route('groups.invite-link.destroy', $group));
+    expect($linkUrl())->toBeNull();
+    $this->actingAs($owner)->get(route('groups.show', $group))->assertInertia(fn (Assert $page) => $page->has('page.invite_link'));
+
+    $this->actingAs($owner)->post(route('groups.invite-link.store', $group));
+    expect($linkUrl())->not->toBeNull();
 });
 
 it('F-04: a member without the admin role sees no invite form', function () {

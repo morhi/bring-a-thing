@@ -19,7 +19,6 @@ class GroupSettingsData extends Data
         public string $name,
         public bool $members_can_set_status,
         public array $members,
-        public GroupInviteLinkData $invite_link,
         public GroupSettingsPermissionsData $permissions,
         public array $friends,
         public array $membership_requests,
@@ -29,7 +28,7 @@ class GroupSettingsData extends Data
     ) {}
 
     /**
-     * Build the group settings page for an owner or admin (F-03, F-04).
+     * Build the group settings page for an owner or admin (F-03).
      *
      * Pending membership requests reach the owner only, who resolves them (F-03).
      * The counts feed the delete confirmation, which names what goes with the group.
@@ -43,7 +42,6 @@ class GroupSettingsData extends Data
             name: $group->name,
             members_can_set_status: $group->members_can_set_status,
             members: GroupMemberData::listOf($group->members),
-            invite_link: GroupInviteLinkData::fromGroup($group),
             permissions: GroupSettingsPermissionsData::forUser($group, $user),
             friends: InviteFriendData::listFor($user),
             membership_requests: self::requestRows($group, $user),

@@ -90,7 +90,6 @@ const cancelHref = dashboard().url;
                 :hint="t('newGroup.invitesHint')"
                 :error="inviteError"
                 :friends="props.form.friends"
-                :link-available="false"
                 :disabled="groupForm.processing"
             />
         </form>

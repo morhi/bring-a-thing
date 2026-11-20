@@ -28,6 +28,11 @@ import {
 } from '@/actions/App/Http/Controllers/RosterCommentController';
 import { edit as editRoster } from '@/actions/App/Http/Controllers/RosterController';
 import {
+    destroy as disableSharing,
+    regenerate as regenerateSharing,
+    store as enableSharing,
+} from '@/actions/App/Http/Controllers/RosterSharingController';
+import {
     destroy as releaseClaim,
     store as storeClaim,
 } from '@/actions/App/Http/Controllers/RosterItemClaimController';
@@ -55,6 +60,7 @@ import FormField from '@/components/app/form-field.vue';
 import ItemRow from '@/components/app/item-row.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
+import ShareDialog from '@/components/app/share-dialog.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
 import {
@@ -153,6 +159,17 @@ function showError(errors: Record<string, string>): void {
 // Progress and grouping
 
 const items = computed(() => props.page.items);
+
+const shareTexts = {
+    none: t('list.share.none'),
+    create: t('list.share.enable'),
+    revoke: t('list.share.disable'),
+    revokeTitle: t('list.share.disableTitle'),
+    revokeText: t('list.share.disableText'),
+    regenerate: t('list.share.regenerate'),
+    regenerateTitle: t('list.share.regenerateTitle'),
+    regenerateText: t('list.share.regenerateText'),
+};
 const doneCount = computed(
     () => items.value.filter((item) => item.is_fully_claimed).length,
 );
@@ -596,6 +613,18 @@ const inputClass =
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <ShareDialog
+                        v-if="permissions.can_share"
+                        id="list-link"
+                        :url="roster.share_url"
+                        :create-url="enableSharing(roster.slug).url"
+                        :regenerate-url="regenerateSharing(roster.slug).url"
+                        :revoke-url="disableSharing(roster.slug).url"
+                        :hint="t('list.share.hint')"
+                        :texts="shareTexts"
+                        :open-label="t('list.share.open')"
+                        data-feature="F-19"
+                    />
                     <Button
                         v-if="permissions.can_edit"
                         as-child

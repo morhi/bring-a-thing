@@ -26,7 +26,6 @@ class RosterFormData extends Data
         public bool $can_delete,
         public bool $can_duplicate,
         public bool $can_manage_fields,
-        public bool $can_share,
     ) {}
 
     /**
@@ -49,7 +48,6 @@ class RosterFormData extends Data
             can_delete: false,
             can_duplicate: false,
             can_manage_fields: false,
-            can_share: false,
         );
     }
 
@@ -75,7 +73,6 @@ class RosterFormData extends Data
             can_delete: $user->can('delete', $roster),
             can_duplicate: $user->can('duplicate', $roster),
             can_manage_fields: $user->can('create', [CustomField::class, $roster]),
-            can_share: $user->can('update', $roster),
         );
     }
 }

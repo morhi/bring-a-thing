@@ -14,7 +14,6 @@ import {
     MessageSquare,
     Pencil,
     Plus,
-    Trash2,
     Users,
     Vote,
     X,
@@ -26,7 +25,6 @@ import {
     store as storeComment,
 } from '@/actions/App/Http/Controllers/EventCommentController';
 import {
-    destroy as destroyEvent,
     create as createEvent,
     createWithoutGroup as createEventAny,
     edit as editEvent,
@@ -55,7 +53,7 @@ import type { ThreadComment } from '@/components/app/comment-thread.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import { formatDate } from '@/components/app/poll/dates';
-import InviteLinkCard from '@/components/app/invite-link-card.vue';
+import ShareDialog from '@/components/app/share-dialog.vue';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
@@ -85,7 +83,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ page: App.Data.EventShowData }>();
 
-const { t, tc, locale } = useI18n();
+const { t, locale } = useI18n();
 const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 
 const event = computed(() => props.page.event);
@@ -361,15 +359,6 @@ function confirmRemove(): void {
     removeOpen.value = false;
 }
 
-// Delete (F-10)
-
-const deleteOpen = ref(false);
-
-function confirmDelete(): void {
-    router.delete(destroyEvent(event.value.slug).url, { onError: showError });
-    deleteOpen.value = false;
-}
-
 // Withdraw (F-11): removes the own participation and releases the own claims
 
 const withdrawOpen = ref(false);
@@ -579,12 +568,24 @@ const badgeLinkClass =
                 <div
                     v-if="
                         permissions.can_edit ||
-                        permissions.can_delete ||
+                        page.invite_link ||
                         permissions.can_create_sub_event ||
                         permissions.can_withdraw
                     "
                     class="flex w-full flex-wrap gap-2 min-[720px]:ml-auto min-[720px]:w-auto"
                 >
+                    <ShareDialog
+                        v-if="page.invite_link"
+                        id="event-link"
+                        size="default"
+                        :trigger-class="outlineClass"
+                        :url="page.invite_link.url"
+                        :create-url="storeInviteLink(event.slug).url"
+                        :regenerate-url="regenerateInviteLink(event.slug).url"
+                        :revoke-url="revokeInviteLink(event.slug).url"
+                        :hint="t('entityLink.eventHint')"
+                        data-feature="F-26"
+                    />
                     <Button
                         v-if="permissions.can_edit"
                         as-child
@@ -628,14 +629,6 @@ const badgeLinkClass =
                     >
                         <LogOut aria-hidden="true" />
                         {{ t('event.withdraw') }}
-                    </Button>
-                    <Button
-                        v-if="permissions.can_delete"
-                        variant="destructive"
-                        @click="deleteOpen = true"
-                    >
-                        <Trash2 aria-hidden="true" />
-                        {{ t('event.delete') }}
                     </Button>
                 </div>
             </div>
@@ -852,97 +845,6 @@ const badgeLinkClass =
 
         <template v-if="isParticipant">
             <SectionBox
-                id="event-lists-title"
-                :title="t('event.lists')"
-                :count="page.lists.length"
-                data-feature="F-13"
-            >
-                <template
-                    v-if="permissions.can_create_list && page.lists.length"
-                    #action
-                >
-                    <Button
-                        as-child
-                        variant="outline"
-                        size="sm"
-                        :class="outlineClass"
-                    >
-                        <Link
-                            :href="
-                                createList({ query: { event: event.slug } }).url
-                            "
-                        >
-                            <Plus aria-hidden="true" />
-                            {{ t('group.new.list') }}
-                        </Link>
-                    </Button>
-                </template>
-                <ul
-                    v-if="page.lists.length"
-                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
-                >
-                    <li v-for="list in page.lists" :key="list.slug">
-                        <SectionBoxItem
-                            :as="Link"
-                            :href="showList(list.slug).url"
-                            class="flex h-full items-center gap-3.5"
-                        >
-                            <span
-                                class="bg-surface-muted text-fg-muted grid size-10 flex-none place-items-center rounded-[12px]"
-                            >
-                                <ListChecks class="size-5" aria-hidden="true" />
-                            </span>
-                            <span class="flex min-w-0 flex-1 flex-col gap-1">
-                                <span
-                                    class="font-display text-[17px] leading-tight font-[640] break-words"
-                                    >{{ list.title }}</span
-                                >
-                                <span class="text-fg-muted text-sm">{{
-                                    t('dash.lists.claimed', {
-                                        done: list.claimed_count,
-                                        total: list.item_count,
-                                    })
-                                }}</span>
-                                <ProgressBar
-                                    class="mt-1"
-                                    :done="list.claimed_count"
-                                    :total="list.item_count"
-                                    :label="
-                                        t('dash.lists.claimed', {
-                                            done: list.claimed_count,
-                                            total: list.item_count,
-                                        })
-                                    "
-                                />
-                            </span>
-                        </SectionBoxItem>
-                    </li>
-                </ul>
-                <EmptyState
-                    v-else
-                    :title="t('event.lists.empty.title')"
-                    :text="t('event.lists.empty.text')"
-                >
-                    <Button
-                        v-if="permissions.can_create_list"
-                        as-child
-                        size="lg"
-                        variant="secondary"
-                        :class="buttonClass"
-                    >
-                        <Link
-                            :href="
-                                createList({ query: { event: event.slug } }).url
-                            "
-                        >
-                            <Plus aria-hidden="true" />
-                            {{ t('group.new.list') }}
-                        </Link>
-                    </Button>
-                </EmptyState>
-            </SectionBox>
-
-            <SectionBox
                 v-if="!isChild"
                 id="followups-title"
                 :title="t('event.followUps')"
@@ -1153,12 +1055,103 @@ const badgeLinkClass =
                     :text="t('event.children.empty.text')"
                 />
             </SectionBox>
+
+            <SectionBox
+                id="event-lists-title"
+                :title="t('event.lists')"
+                :count="page.lists.length"
+                data-feature="F-13"
+            >
+                <template
+                    v-if="permissions.can_create_list && page.lists.length"
+                    #action
+                >
+                    <Button
+                        as-child
+                        variant="outline"
+                        size="sm"
+                        :class="outlineClass"
+                    >
+                        <Link
+                            :href="
+                                createList({ query: { event: event.slug } }).url
+                            "
+                        >
+                            <Plus aria-hidden="true" />
+                            {{ t('group.new.list') }}
+                        </Link>
+                    </Button>
+                </template>
+                <ul
+                    v-if="page.lists.length"
+                    class="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4"
+                >
+                    <li v-for="list in page.lists" :key="list.slug">
+                        <SectionBoxItem
+                            :as="Link"
+                            :href="showList(list.slug).url"
+                            class="flex h-full items-center gap-3.5"
+                        >
+                            <span
+                                class="bg-surface-muted text-fg-muted grid size-10 flex-none place-items-center rounded-[12px]"
+                            >
+                                <ListChecks class="size-5" aria-hidden="true" />
+                            </span>
+                            <span class="flex min-w-0 flex-1 flex-col gap-1">
+                                <span
+                                    class="font-display text-[17px] leading-tight font-[640] break-words"
+                                    >{{ list.title }}</span
+                                >
+                                <span class="text-fg-muted text-sm">{{
+                                    t('dash.lists.claimed', {
+                                        done: list.claimed_count,
+                                        total: list.item_count,
+                                    })
+                                }}</span>
+                                <ProgressBar
+                                    class="mt-1"
+                                    :done="list.claimed_count"
+                                    :total="list.item_count"
+                                    :label="
+                                        t('dash.lists.claimed', {
+                                            done: list.claimed_count,
+                                            total: list.item_count,
+                                        })
+                                    "
+                                />
+                            </span>
+                        </SectionBoxItem>
+                    </li>
+                </ul>
+                <EmptyState
+                    v-else
+                    :title="t('event.lists.empty.title')"
+                    :text="t('event.lists.empty.text')"
+                >
+                    <Button
+                        v-if="permissions.can_create_list"
+                        as-child
+                        size="lg"
+                        variant="secondary"
+                        :class="buttonClass"
+                    >
+                        <Link
+                            :href="
+                                createList({ query: { event: event.slug } }).url
+                            "
+                        >
+                            <Plus aria-hidden="true" />
+                            {{ t('group.new.list') }}
+                        </Link>
+                    </Button>
+                </EmptyState>
+            </SectionBox>
         </template>
 
         <!-- One heading only: the disclosure button is the section's title, so no SectionBox title row -->
         <section
             v-if="permissions.can_comment"
-            class="box flex flex-col gap-4 rounded-3xl p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:py-6"
+            class="box flex flex-col gap-4 p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:py-6"
             aria-labelledby="event-comments-title"
             data-feature="F-20"
         >
@@ -1199,17 +1192,6 @@ const badgeLinkClass =
                 />
             </div>
         </section>
-
-        <InviteLinkCard
-            v-if="page.invite_link"
-            id="event-link"
-            :url="page.invite_link.url"
-            :create-url="storeInviteLink(event.slug).url"
-            :regenerate-url="regenerateInviteLink(event.slug).url"
-            :revoke-url="revokeInviteLink(event.slug).url"
-            :hint="t('entityLink.eventHint')"
-            data-feature="F-26"
-        />
 
         <AlertDialog v-model:open="declineOpen">
             <AlertDialogContent>
@@ -1320,52 +1302,6 @@ const badgeLinkClass =
                         variant="destructive"
                         @click="confirmRemove"
                         >{{ t('event.removeConfirm') }}</AlertDialogAction
-                    >
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog v-if="page.delete_counts" v-model:open="deleteOpen">
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{{
-                        t('event.delete.title')
-                    }}</AlertDialogTitle>
-                    <AlertDialogDescription>{{
-                        t('event.delete.text')
-                    }}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <ul class="flex flex-wrap gap-2" data-feature="F-10">
-                    <li>
-                        <Badge variant="outline">{{
-                            tc('event.delete.lists', page.delete_counts.lists)
-                        }}</Badge>
-                    </li>
-                    <li>
-                        <Badge variant="outline">{{
-                            tc(
-                                'event.delete.polls',
-                                page.delete_counts.follow_up_polls,
-                            )
-                        }}</Badge>
-                    </li>
-                    <li>
-                        <Badge variant="outline">{{
-                            tc(
-                                'event.delete.children',
-                                page.delete_counts.child_events,
-                            )
-                        }}</Badge>
-                    </li>
-                </ul>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>{{
-                        t('dialog.cancel')
-                    }}</AlertDialogCancel>
-                    <AlertDialogAction
-                        variant="destructive"
-                        @click="confirmDelete"
-                        >{{ t('event.delete.confirm') }}</AlertDialogAction
                     >
                 </AlertDialogFooter>
             </AlertDialogContent>

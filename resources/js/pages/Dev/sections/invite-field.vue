@@ -29,19 +29,10 @@ const groupInvites = ref<InviteSelection[]>([
     },
 ]);
 const settingsInvites = ref<InviteSelection[]>([]);
-const linkUrl = ref<string | null>(null);
 const log = ref<string[]>([]);
-
-const field = ref<InstanceType<typeof InviteField> | null>(null);
 
 function record(entry: string): void {
     log.value = [entry, ...log.value].slice(0, 4);
-}
-
-function createLink(): void {
-    record('createLink');
-    linkUrl.value = 'https://bring-a-thing.test/join/Xk3pQ9';
-    void field.value?.copyLink(linkUrl.value);
 }
 </script>
 
@@ -57,24 +48,20 @@ function createLink(): void {
 
         <div class="box grid grid-cols-1 gap-8 p-6">
             <div class="min-w-0 space-y-2">
-                <h3 class="font-display text-lg">New group (no link yet)</h3>
+                <h3 class="font-display text-lg">New group</h3>
                 <InviteField
                     id="dev-if-create"
                     v-model="createInvites"
                     label="Invite people now"
                     hint="Optional. You can also invite people later from the group page."
                     :friends="friends"
-                    :link-available="false"
                 />
             </div>
 
             <div class="min-w-0 space-y-2">
-                <h3 class="font-display text-lg">
-                    Group page (chips, submit, link created on first click)
-                </h3>
+                <h3 class="font-display text-lg">Group page (chips, submit)</h3>
                 <InviteField
                     id="dev-if-group"
-                    ref="field"
                     v-model="groupInvites"
                     label="Invite someone"
                     hint="They get a login link by email and appear here right away."
@@ -82,11 +69,7 @@ function createLink(): void {
                     :friends="friends"
                     :member-ids="[3]"
                     :member-emails="['ben@example.com', 'eva@example.com']"
-                    :link-url="linkUrl"
                     @submit="record(`submit ${groupInvites.length}`)"
-                    @create-link="createLink"
-                    @copied="(url) => record(`copied ${url}`)"
-                    @copy-failed="(url) => record(`copyFailed ${url}`)"
                 />
                 <p class="text-fg-muted text-sm" aria-live="polite">
                     Events: {{ log.join(', ') || 'none' }}
@@ -94,9 +77,7 @@ function createLink(): void {
             </div>
 
             <div class="min-w-0 space-y-2">
-                <h3 class="font-display text-lg">
-                    Group settings (no link button), error
-                </h3>
+                <h3 class="font-display text-lg">Group settings, error</h3>
                 <InviteField
                     id="dev-if-error"
                     v-model="settingsInvites"
@@ -104,7 +85,6 @@ function createLink(): void {
                     error="This email address is not valid."
                     submit-label="Invite"
                     :friends="friends"
-                    :link="false"
                 />
             </div>
 
@@ -122,7 +102,6 @@ function createLink(): void {
                     label="Invite someone"
                     submit-label="Invite"
                     :friends="friends"
-                    link-url="https://bring-a-thing.test/join/Xk3pQ9"
                     disabled
                 />
             </div>

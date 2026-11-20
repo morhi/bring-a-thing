@@ -34,8 +34,7 @@ it('F-03: an admin sees no action to delete the group or change roles, and canno
             ->where('page.permissions.can_delete', false)
             ->where('page.permissions.can_change_roles', false)
             ->where('page.permissions.can_switch_option', false)
-            ->where('page.permissions.can_rename', false)
-            ->has('page.invite_link'));
+            ->where('page.permissions.can_rename', false));
 
     $this->actingAs($admin)->patch(route('groups.update', $group), ['members_can_set_status' => true])->assertForbidden();
     $this->actingAs($admin)->patch(route('groups.update', $group), ['name' => 'Renamed'])->assertForbidden();

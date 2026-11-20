@@ -11,7 +11,6 @@ class EventPermissionsData extends Data
 {
     public function __construct(
         public bool $can_edit,
-        public bool $can_delete,
         public bool $can_respond,
         public bool $can_set_status_for_others,
         public bool $can_remove_participants,
@@ -32,7 +31,7 @@ class EventPermissionsData extends Data
      * and managers, and only on events without a parent event. can_comment
      * shows the comment thread to participants and managers (F-20).
      * can_create_list follows the list policy: participants and managers (F-13).
-     * can_manage_invite_link shows the invite link card to managers (F-26).
+     * can_manage_invite_link shows the Share button to managers (F-26).
      * can_view_group is also true for guests who reach the event through a
      * grant; they open the restricted group page (F-26, F-27).
      * can_withdraw shows "Withdraw" (F-11).
@@ -41,7 +40,6 @@ class EventPermissionsData extends Data
     {
         return new self(
             can_edit: $user->can('update', $event),
-            can_delete: $user->can('delete', $event),
             can_respond: $user->can('respond', $event),
             can_set_status_for_others: $user->can('setStatusForOthers', $event),
             can_remove_participants: $user->can('removeParticipant', $event),

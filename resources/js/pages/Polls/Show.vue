@@ -37,7 +37,7 @@ import { dashboard } from '@/routes';
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
-import InviteLinkCard from '@/components/app/invite-link-card.vue';
+import ShareDialog from '@/components/app/share-dialog.vue';
 import PollCalendar from '@/components/app/poll-calendar.vue';
 import PollGrid from '@/components/app/poll-grid.vue';
 import { describeOption, formatDate } from '@/components/app/poll/dates';
@@ -506,6 +506,7 @@ const buttonClass = 'h-(--control-height) px-4';
                     v-if="
                         permissions.can_edit ||
                         permissions.can_fix ||
+                        page.invite_link ||
                         permissions.can_withdraw
                     "
                     class="flex flex-wrap gap-2.5"
@@ -554,6 +555,16 @@ const buttonClass = 'h-(--control-height) px-4';
                             {{ t('poll.edit.title') }}
                         </Link>
                     </Button>
+                    <ShareDialog
+                        v-if="page.invite_link"
+                        id="poll-link"
+                        :url="page.invite_link.url"
+                        :create-url="storeInviteLink(poll.slug).url"
+                        :regenerate-url="regenerateInviteLink(poll.slug).url"
+                        :revoke-url="revokeInviteLink(poll.slug).url"
+                        :hint="t('entityLink.pollHint')"
+                        data-feature="F-27"
+                    />
                     <Button
                         v-if="permissions.can_withdraw"
                         type="button"
@@ -794,17 +805,6 @@ const buttonClass = 'h-(--control-height) px-4';
                 </li>
             </ul>
         </SectionBox>
-
-        <InviteLinkCard
-            v-if="page.invite_link"
-            id="poll-link"
-            :url="page.invite_link.url"
-            :create-url="storeInviteLink(poll.slug).url"
-            :regenerate-url="regenerateInviteLink(poll.slug).url"
-            :revoke-url="revokeInviteLink(poll.slug).url"
-            :hint="t('entityLink.pollHint')"
-            data-feature="F-27"
-        />
 
         <Dialog v-model:open="fixOpen">
             <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
