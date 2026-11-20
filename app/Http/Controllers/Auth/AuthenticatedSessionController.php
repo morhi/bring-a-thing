@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\CompletePendingJoin;
 use App\Actions\Auth\StartLoginWindow;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
@@ -18,13 +19,16 @@ class AuthenticatedSessionController extends Controller
      * Log in a user with their password.
      *
      * A pending claim from a shared list link, started before login, is
-     * resumed and takes priority over the default dashboard redirect.
+     * resumed and takes priority over the default dashboard redirect. A
+     * login started on an invite link's join page joins next (F-04, F-26,
+     * F-27); a revoked token falls through to the dashboard.
      */
     public function store(
         LoginWithPasswordRequest $request,
         CompletePendingSharedClaim $completePendingSharedClaim,
         StorePendingSharedClaim $storePendingSharedClaim,
         StartLoginWindow $startLoginWindow,
+        CompletePendingJoin $completePendingJoin,
     ): RedirectResponse {
         if (! Auth::attempt($request->only('email', 'password'), remember: true)) {
             throw ValidationException::withMessages([
@@ -43,6 +47,10 @@ class AuthenticatedSessionController extends Controller
         );
 
         if ($redirect = $completePendingSharedClaim->handle($request, $request->user())) {
+            return $redirect;
+        }
+
+        if ($redirect = $completePendingJoin->handle($request, $request->user())) {
             return $redirect;
         }
 

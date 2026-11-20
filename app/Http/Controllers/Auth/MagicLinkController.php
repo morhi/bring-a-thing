@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Actions\Access\GrantEntityAccess;
+use App\Actions\Auth\CompletePendingJoin;
 use App\Actions\Auth\FindOrCreateUserByEmail;
 use App\Actions\Auth\SendMagicLink;
 use App\Actions\Auth\StartLoginWindow;
-use App\Actions\Groups\JoinGroupViaLink;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
 use App\Enums\LoginLinkError;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RequestMagicLinkRequest;
-use App\Models\Event;
 use App\Models\Group;
-use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -35,12 +32,15 @@ class MagicLinkController extends Controller
      * already waiting once the link is followed. Pending-claim fields, set
      * when this form is opened from a shared list's login dialog, are
      * stashed so the claim completes automatically once the link is used.
+     * An invite token from a join page's login form (F-04, F-26, F-27) goes
+     * into the link, so following it joins; a revoked token is dropped.
      */
     public function store(
         RequestMagicLinkRequest $request,
         FindOrCreateUserByEmail $findOrCreateUser,
         SendMagicLink $sendMagicLink,
         StorePendingSharedClaim $storePendingSharedClaim,
+        CompletePendingJoin $completePendingJoin,
     ): RedirectResponse {
         $user = $findOrCreateUser->handle($request->string('email')->value(), $request->string('name')->value() ?: null);
 
@@ -60,7 +60,14 @@ class MagicLinkController extends Controller
             $request->input('pending_claim_quantity') !== null ? (float) $request->input('pending_claim_quantity') : null,
         );
 
-        $sendMagicLink->handle($user, $roster);
+        $joinTarget = $completePendingJoin->resolve($request);
+
+        $sendMagicLink->handle(
+            $user,
+            $roster,
+            $joinTarget instanceof Group ? $joinTarget : null,
+            $joinTarget instanceof Group ? null : $joinTarget,
+        );
 
         return back()->with('success', __('ui.welcome.login.sentFlash'));
     }
@@ -101,9 +108,8 @@ class MagicLinkController extends Controller
         Request $request,
         User $user,
         CompletePendingSharedClaim $completePendingSharedClaim,
-        JoinGroupViaLink $joinGroup,
-        GrantEntityAccess $grantAccess,
         StartLoginWindow $startLoginWindow,
+        CompletePendingJoin $completePendingJoin,
     ): RedirectResponse {
         if (! URL::hasValidSignature($request)) {
             $error = URL::hasCorrectSignature($request) ? LoginLinkError::Expired : LoginLinkError::Invalid;
@@ -123,34 +129,8 @@ class MagicLinkController extends Controller
             return $redirect;
         }
 
-        $group = $request->filled('join')
-            ? Group::query()->where('invite_token', $request->string('join')->value())->first()
-            : null;
-
-        if ($group !== null) {
-            $joinGroup->handle($group, $user);
-
-            return redirect()->route('groups.show', $group);
-        }
-
-        $event = $request->filled('join_event')
-            ? Event::query()->where('invite_token', $request->string('join_event')->value())->first()
-            : null;
-
-        if ($event !== null) {
-            $grantAccess->handle($event, $user);
-
-            return redirect()->route('events.show', $event);
-        }
-
-        $poll = $request->filled('join_poll')
-            ? Poll::query()->where('invite_token', $request->string('join_poll')->value())->first()
-            : null;
-
-        if ($poll !== null) {
-            $grantAccess->handle($poll, $user);
-
-            return redirect()->route('polls.show', $poll);
+        if ($redirect = $completePendingJoin->handle($request, $user)) {
+            return $redirect;
         }
 
         $roster = Roster::query()->find($request->integer('roster'));

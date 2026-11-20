@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Actions\Auth\CompletePendingJoin;
 use App\Actions\Auth\StartLoginWindow;
 use App\Actions\Sharing\CompletePendingSharedClaim;
 use App\Actions\Sharing\StorePendingSharedClaim;
@@ -15,13 +16,15 @@ class PasskeyLoginResponse implements PasskeyLoginResponseContract
         private readonly CompletePendingSharedClaim $completePendingSharedClaim,
         private readonly StartLoginWindow $startLoginWindow,
         private readonly StorePendingSharedClaim $storePendingSharedClaim,
+        private readonly CompletePendingJoin $completePendingJoin,
     ) {}
 
     /**
      * Answer a passkey login with the URL the browser continues on (F-01).
      *
      * Mirrors the password login: a claim started on a shared list before
-     * the login is completed and takes priority over the dashboard. Invalid
+     * the login is completed and takes priority over the dashboard, then a
+     * join started on an invite link's join page (F-04, F-26, F-27). Invalid
      * claim fields are dropped, as the password login rejects them.
      */
     public function toResponse($request): JsonResponse
@@ -44,6 +47,7 @@ class PasskeyLoginResponse implements PasskeyLoginResponseContract
         }
 
         $redirect = $this->completePendingSharedClaim->handle($request, $request->user())
+            ?? $this->completePendingJoin->handle($request, $request->user())
             ?? redirect()->route('dashboard');
 
         return new JsonResponse(['redirect' => $redirect->getTargetUrl()]);

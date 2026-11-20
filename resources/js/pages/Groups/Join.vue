@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { Check, Mail } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Check } from '@lucide/vue';
+import { computed } from 'vue';
 import { dashboard, welcome } from '@/routes';
 import { store as joinGroup } from '@/actions/App/Http/Controllers/GroupJoinController';
 import { edit as editSettings } from '@/actions/App/Http/Controllers/SettingsController';
 import AvatarStack from '@/components/app/avatar-stack.vue';
-import FormField from '@/components/app/form-field.vue';
+import LoginForm from '@/components/app/login-form.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
 import WebsiteLayout from '@/layouts/WebsiteLayout.vue';
 
@@ -18,6 +17,7 @@ defineOptions({ layout: WebsiteLayout });
  * Join page behind a group's invite link (F-04, F-01).
  *
  * `join` is null for an unknown, revoked or replaced link ("Not found").
+ * A guest logs in through the regular login form, which joins afterwards.
  */
 const props = defineProps<{ join: App.Data.GroupJoinData | null }>();
 
@@ -26,11 +26,8 @@ const page = usePage();
 const userName = computed(() => page.props.auth.user?.name ?? null);
 const loggedIn = computed(() => page.props.auth.user !== null);
 
-const form = useForm({ name: '', email: '' });
-// The guest flow ends on this page: the login link joins on use
-const sentTo = ref<string | null>(null);
-// A new or nameless account also needs a name; the backend says when
-const nameRequested = ref(false);
+// The one-click join reports a missing verified email under `email`
+const form = useForm<{ email?: string }>({});
 
 function submit(): void {
     if (!props.join) {
@@ -40,29 +37,9 @@ function submit(): void {
     form.post(joinGroup(props.join.token).url, {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
-            if (props.join?.is_authenticated) {
-                return;
-            }
-
-            sentTo.value = form.email;
-        },
-        onError: (errors) => {
-            if (errors.name) {
-                nameRequested.value = true;
-            }
-        },
     });
 }
 
-function useOtherEmail(): void {
-    sentTo.value = null;
-    nameRequested.value = false;
-    form.reset();
-}
-
-const inputClass =
-    'bg-control border-control-border hover:border-fg-soft focus-visible:border-primary-ring placeholder:text-fg-soft h-(--control-height) rounded-(--control-radius) px-3.5 text-[15px]';
 const buttonClass = 'h-(--control-height) w-full px-4';
 </script>
 
@@ -166,93 +143,12 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                 </Button>
             </form>
 
-            <div v-else-if="sentTo" class="flex flex-col gap-(--space-stack)">
-                <div
-                    class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-(--radius-md) p-4"
-                    role="status"
-                >
-                    <strong class="font-display text-[17px]">{{
-                        t('welcome.login.sentTitle')
-                    }}</strong>
-                    <span>{{
-                        t('welcome.login.sentText', {
-                            email: sentTo,
-                            minutes: join.link_expires_in_minutes,
-                        })
-                    }}</span>
-                    <span>{{
-                        t('join.sentNote', { group: join.group_name })
-                    }}</span>
-                </div>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="lg"
-                    :class="buttonClass"
-                    @click="useOtherEmail"
-                >
-                    {{ t('welcome.login.again') }}
-                </Button>
-            </div>
-
-            <form
+            <LoginForm
                 v-else
-                novalidate
-                class="flex flex-col gap-(--space-stack)"
-                @submit.prevent="submit"
-            >
-                <FormField
-                    :label="t('welcome.login.email')"
-                    control="join-email"
-                    required
-                    :error="form.errors.email"
-                    :hint="t('welcome.login.note')"
-                >
-                    <template #default="{ describedBy, invalid }">
-                        <Input
-                            id="join-email"
-                            v-model="form.email"
-                            type="email"
-                            autocomplete="email"
-                            required
-                            placeholder="name@example.com"
-                            :aria-describedby="describedBy"
-                            :aria-invalid="invalid || undefined"
-                            :class="inputClass"
-                        />
-                    </template>
-                </FormField>
-                <FormField
-                    v-if="nameRequested"
-                    :label="t('welcome.login.name')"
-                    control="join-name"
-                    required
-                    :error="form.errors.name"
-                    :hint="t('join.nameHint')"
-                >
-                    <template #default="{ describedBy, invalid }">
-                        <Input
-                            id="join-name"
-                            v-model="form.name"
-                            type="text"
-                            autocomplete="name"
-                            required
-                            :aria-describedby="describedBy"
-                            :aria-invalid="invalid || undefined"
-                            :class="inputClass"
-                        />
-                    </template>
-                </FormField>
-                <Button
-                    type="submit"
-                    size="lg"
-                    :class="buttonClass"
-                    :disabled="form.processing"
-                >
-                    <Mail aria-hidden="true" />
-                    {{ t('welcome.login.sendLink') }}
-                </Button>
-            </form>
+                :expires-in-minutes="join.link_expires_in_minutes"
+                :pending-join="{ kind: 'group', token: join.token }"
+                id-prefix="join-login"
+            />
         </div>
     </div>
 </template>

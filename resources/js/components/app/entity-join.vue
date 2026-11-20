@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarDays, Check, Mail, TriangleAlert, User } from '@lucide/vue';
+import { CalendarDays, Check, LogIn, TriangleAlert, User } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import FormField from '@/components/app/form-field.vue';
+import LoginForm from '@/components/app/login-form.vue';
 import { formatDate } from '@/components/app/poll/dates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,8 @@ import { dashboard, welcome } from '@/routes';
  * Join page body behind an event or poll invite link (F-26, F-27).
  *
  * `join` is null for an unknown, revoked or replaced link ("Not found").
- * A guest joins with a name only, or with an email and a login link.
+ * A guest joins with a name only, or logs in through the regular login form,
+ * which grants access afterwards.
  */
 const props = defineProps<{
     join: App.Data.EntityJoinData | null;
@@ -28,13 +30,9 @@ const page = usePage();
 const userName = computed(() => page.props.auth.user?.name ?? null);
 const loggedIn = computed(() => page.props.auth.user !== null);
 
-type Mode = 'email' | 'name';
-const mode = ref<Mode>('email');
-const form = useForm({ name: '', email: '' });
-// The email flow ends on this page: the login link joins on use
-const sentTo = ref<string | null>(null);
-// A new or nameless account also needs a name; the backend says when
-const nameRequested = ref(false);
+type Mode = 'login' | 'name';
+const mode = ref<Mode>('login');
+const form = useForm({ name: '' });
 
 const kindLabel = computed(() => props.kind);
 
@@ -58,37 +56,15 @@ function submit(): void {
         return;
     }
 
-    if (mode.value === 'name') {
-        form.email = '';
-    }
-
     form.post(props.submitUrl(props.join.token), {
         preserveScroll: true,
         preserveState: true,
-        onSuccess: () => {
-            if (props.join?.is_authenticated || mode.value === 'name') {
-                return;
-            }
-
-            sentTo.value = form.email;
-        },
-        onError: (errors) => {
-            if (errors.name && mode.value === 'email') {
-                nameRequested.value = true;
-            }
-        },
     });
 }
 
 function setMode(next: Mode): void {
     mode.value = next;
     form.clearErrors();
-}
-
-function useOtherEmail(): void {
-    sentTo.value = null;
-    nameRequested.value = false;
-    form.reset();
 }
 
 const inputClass =
@@ -175,33 +151,6 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                 </Button>
             </form>
 
-            <div v-else-if="sentTo" class="flex flex-col gap-(--space-stack)">
-                <div
-                    class="bg-primary-soft text-primary-soft-fg flex flex-col gap-2 rounded-(--radius-md) p-4"
-                    role="status"
-                >
-                    <strong class="font-display text-[17px]">{{
-                        t('welcome.login.sentTitle')
-                    }}</strong>
-                    <span>{{
-                        t('welcome.login.sentText', {
-                            email: sentTo,
-                            minutes: join.link_expires_in_minutes,
-                        })
-                    }}</span>
-                    <span>{{ t(`entityJoin.sentNote.${kindLabel}`) }}</span>
-                </div>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="lg"
-                    :class="buttonClass"
-                    @click="useOtherEmail"
-                >
-                    {{ t('welcome.login.again') }}
-                </Button>
-            </div>
-
             <template v-else>
                 <div
                     class="grid grid-cols-2 gap-2"
@@ -211,12 +160,12 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                     <Button
                         type="button"
                         size="lg"
-                        :variant="mode === 'email' ? 'default' : 'outline'"
-                        :aria-pressed="mode === 'email'"
+                        :variant="mode === 'login' ? 'default' : 'outline'"
+                        :aria-pressed="mode === 'login'"
                         class="h-(--control-height) px-4"
-                        @click="setMode('email')"
+                        @click="setMode('login')"
                     >
-                        <Mail aria-hidden="true" />
+                        <LogIn aria-hidden="true" />
                         {{ t('entityJoin.withEmail') }}
                     </Button>
                     <Button
@@ -232,35 +181,20 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                     </Button>
                 </div>
 
+                <LoginForm
+                    v-if="mode === 'login'"
+                    :expires-in-minutes="join.link_expires_in_minutes"
+                    :pending-join="{ kind, token: join.token }"
+                    id-prefix="join-login"
+                />
+
                 <form
+                    v-else
                     novalidate
                     class="flex flex-col gap-(--space-stack)"
                     @submit.prevent="submit"
                 >
                     <FormField
-                        v-if="mode === 'email'"
-                        :label="t('welcome.login.email')"
-                        control="join-email"
-                        required
-                        :error="form.errors.email"
-                        :hint="t('welcome.login.note')"
-                    >
-                        <template #default="{ describedBy, invalid }">
-                            <Input
-                                id="join-email"
-                                v-model="form.email"
-                                type="email"
-                                autocomplete="email"
-                                required
-                                placeholder="name@example.com"
-                                :aria-describedby="describedBy"
-                                :aria-invalid="invalid || undefined"
-                                :class="inputClass"
-                            />
-                        </template>
-                    </FormField>
-                    <FormField
-                        v-if="mode === 'name' || nameRequested"
                         :label="t('welcome.login.name')"
                         control="join-name"
                         required
@@ -281,7 +215,6 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                         </template>
                     </FormField>
                     <div
-                        v-if="mode === 'name'"
                         class="bg-warning-soft text-warning flex items-start gap-2.5 rounded-(--radius-md) p-4 text-sm"
                         role="note"
                     >
@@ -297,13 +230,7 @@ const buttonClass = 'h-(--control-height) w-full px-4';
                         :class="buttonClass"
                         :disabled="form.processing"
                     >
-                        <Mail v-if="mode === 'email'" aria-hidden="true" />
-                        <Check v-else aria-hidden="true" />
-                        {{
-                            mode === 'email'
-                                ? t('welcome.login.sendLink')
-                                : t('join.button')
-                        }}
+                        <Check aria-hidden="true" /> {{ t('join.button') }}
                     </Button>
                 </form>
             </template>

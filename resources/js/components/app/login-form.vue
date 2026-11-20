@@ -25,22 +25,35 @@ export type LoginPendingClaim = {
     quantity: number | null;
 };
 
+export type LoginPendingJoin = {
+    kind: 'group' | 'event' | 'poll';
+    token: string;
+};
+
 /**
  * One form for logging in and signing up with a magic link (F-01).
  *
  * The email decides the next step: an account with a password gets the password
  * field, a new or nameless account gets the name field, everyone else gets the
  * link right away. A passkey logs in without an email. A pending claim from a
- * shared list rides along, so the claim completes after the login (F-19).
+ * shared list rides along, so the claim completes after the login (F-19). A
+ * pending join from an invite link's join page rides along the same way, so
+ * the login joins the group, event or poll (F-04, F-26, F-27).
  */
 const props = withDefaults(
     defineProps<{
         expiresInMinutes: number;
         linkError?: App.Enums.LoginLinkError | null;
         pendingClaim?: LoginPendingClaim | null;
+        pendingJoin?: LoginPendingJoin | null;
         idPrefix?: string;
     }>(),
-    { linkError: null, pendingClaim: null, idPrefix: 'login' },
+    {
+        linkError: null,
+        pendingClaim: null,
+        pendingJoin: null,
+        idPrefix: 'login',
+    },
 );
 
 type Step = 'email' | 'name' | 'password' | 'sent';
@@ -54,6 +67,12 @@ const form = useForm({
     pending_claim_roster_token: props.pendingClaim?.rosterToken ?? '',
     pending_claim_item_id: props.pendingClaim?.itemId ?? null,
     pending_claim_quantity: props.pendingClaim?.quantity ?? null,
+    // Same field names as the magic link's URL, so every login path reads them alike
+    join: props.pendingJoin?.kind === 'group' ? props.pendingJoin.token : '',
+    join_event:
+        props.pendingJoin?.kind === 'event' ? props.pendingJoin.token : '',
+    join_poll:
+        props.pendingJoin?.kind === 'poll' ? props.pendingJoin.token : '',
 });
 
 const step = ref<Step>('email');
@@ -194,6 +213,9 @@ async function submitPasskey(): Promise<void> {
             pending_claim_roster_token: form.pending_claim_roster_token,
             pending_claim_item_id: form.pending_claim_item_id,
             pending_claim_quantity: form.pending_claim_quantity,
+            join: form.join,
+            join_event: form.join_event,
+            join_poll: form.join_poll,
         });
 
         router.visit(redirect);

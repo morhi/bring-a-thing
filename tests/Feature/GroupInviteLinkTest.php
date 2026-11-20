@@ -3,10 +3,12 @@
 use App\Actions\Auth\SendMagicLink;
 use App\Enums\GroupJoinMethod;
 use App\Enums\GroupRole;
+use App\Http\Responses\PasskeyLoginResponse;
 use App\Mail\MagicLinkMail;
 use App\Models\Friend;
 use App\Models\Group;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -249,6 +251,78 @@ it('F-04: asks a logged-in account without an email to add one before joining th
         ->assertInvalid('email');
 
     expect($group->hasMember($nameOnly))->toBeFalse();
+});
+
+it('F-04: an account with a password or passkey logs in on the join page and lands on the group as a member', function () {
+    [$group] = groupWithOwner(locked: true);
+    $withPassword = User::factory()->create();
+    $withPasskey = User::factory()->create();
+
+    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', 'join' => $group->invite_token])
+        ->assertRedirect(route('groups.show', $group))
+        ->assertSessionHas('success', 'You joined the group');
+
+    $request = Request::create(route('passkey.login'), 'POST', ['join' => $group->invite_token]);
+    $request->setUserResolver(fn () => $withPasskey);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(PasskeyLoginResponse::class)->toResponse($request);
+
+    expect($response->getData(true))->toBe(['redirect' => route('groups.show', $group)]);
+    expect($group->members()->whereKey($withPassword->id)->first()?->pivot->joined_via)->toBe(GroupJoinMethod::Link);
+    expect($group->members()->whereKey($withPasskey->id)->first()?->pivot->joined_via)->toBe(GroupJoinMethod::Link);
+});
+
+it('F-04: a password or passkey login without a verified email lands on the join page instead of joining', function () {
+    [$group] = groupWithOwner(locked: true);
+    $unverified = User::factory()->unverified()->create();
+    $nameOnly = User::factory()->create(['email' => null, 'password' => null]);
+
+    $this->post(route('login.password'), ['email' => $unverified->email, 'password' => 'password', 'join' => $group->invite_token])
+        ->assertRedirect(route('groups.join.show', $group->invite_token));
+
+    $request = Request::create(route('passkey.login'), 'POST', ['join' => $group->invite_token]);
+    $request->setUserResolver(fn () => $nameOnly);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(PasskeyLoginResponse::class)->toResponse($request);
+
+    expect($response->getData(true))->toBe(['redirect' => route('groups.join.show', $group->invite_token)]);
+    expect($group->hasMember($unverified))->toBeFalse();
+    expect($group->hasMember($nameOnly))->toBeFalse();
+    $this->get(route('groups.join.show', $group->invite_token))
+        ->assertInertia(fn (Assert $page) => $page->where('join.is_authenticated', true)->where('join.needs_email', true));
+});
+
+it('F-04: a password login with a revoked invite token lands on the dashboard', function () {
+    [$group, $owner] = groupWithOwner(locked: true);
+    $revokedToken = $group->invite_token;
+    $this->actingAs($owner)->delete(route('groups.invite-link.destroy', $group));
+    Auth::logout();
+    $user = User::factory()->create();
+
+    $this->post(route('login.password'), ['email' => $user->email, 'password' => 'password', 'join' => $revokedToken])
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($user);
+    expect($group->hasMember($user))->toBeFalse();
+});
+
+it('F-04: a login link requested through the join page\'s login form joins on use', function () {
+    Mail::fake();
+    [$group] = groupWithOwner(locked: true);
+
+    $this->post(route('magic-link.store'), ['email' => 'form@example.com', 'name' => 'Form Joiner', 'join' => $group->invite_token])
+        ->assertSessionHas('success', 'A login link has been sent to your email address.');
+
+    $url = null;
+    Mail::assertQueued(MagicLinkMail::class, function (MagicLinkMail $mail) use (&$url) {
+        $url = $mail->url;
+
+        return $mail->hasTo('form@example.com');
+    });
+
+    $this->get($url)->assertRedirect(route('groups.show', $group));
+
+    expect($group->hasMember(User::query()->where('email', 'form@example.com')->firstOrFail()))->toBeTrue();
 });
 
 it('F-04: gives a person who joined through the link the same access as any other member', function () {

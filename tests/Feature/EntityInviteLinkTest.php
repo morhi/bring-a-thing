@@ -2,6 +2,7 @@
 
 use App\Enums\GroupRole;
 use App\Enums\ParticipationStatus;
+use App\Http\Responses\PasskeyLoginResponse;
 use App\Mail\MagicLinkMail;
 use App\Models\AccessGrant;
 use App\Models\Event;
@@ -10,6 +11,7 @@ use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\Roster;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -147,6 +149,60 @@ it('F-26: a guest who joins with an email gets access only after the login link'
 
     $this->assertAuthenticatedAs($joiner);
     expect($event->grantsAccessTo($joiner))->toBeTrue();
+});
+
+it('F-26: an account with a password or passkey logs in on the join page and lands on the event with access', function () {
+    [$group, $owner] = linkGroup();
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $token = $event->enableInviteLink();
+    $withPassword = User::factory()->create();
+    $withPasskey = User::factory()->create();
+
+    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', 'join_event' => $token])
+        ->assertRedirect(route('events.show', $event))
+        ->assertSessionHas('success', 'You have access now');
+
+    $request = Request::create(route('passkey.login'), 'POST', ['join_event' => $token]);
+    $request->setUserResolver(fn () => $withPasskey);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(PasskeyLoginResponse::class)->toResponse($request);
+
+    expect($response->getData(true))->toBe(['redirect' => route('events.show', $event)]);
+    expect($event->grantsAccessTo($withPassword))->toBeTrue();
+    expect($event->grantsAccessTo($withPasskey))->toBeTrue();
+});
+
+it('F-27: an account with a password or passkey logs in on the poll\'s join page and lands on the poll with access', function () {
+    [$group, $owner] = linkGroup();
+    $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $token = $poll->enableInviteLink();
+    $withPassword = User::factory()->create();
+    $withPasskey = User::factory()->create();
+
+    $this->post(route('login.password'), ['email' => $withPassword->email, 'password' => 'password', 'join_poll' => $token])
+        ->assertRedirect(route('polls.show', $poll));
+
+    $request = Request::create(route('passkey.login'), 'POST', ['join_poll' => $token]);
+    $request->setUserResolver(fn () => $withPasskey);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(PasskeyLoginResponse::class)->toResponse($request);
+
+    expect($response->getData(true))->toBe(['redirect' => route('polls.show', $poll)]);
+    expect($poll->isOpenTo($withPassword))->toBeTrue();
+    expect($poll->isOpenTo($withPasskey))->toBeTrue();
+});
+
+it('F-26: a password login with a revoked event invite token lands on the dashboard', function () {
+    [$group, $owner] = linkGroup();
+    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $revokedToken = $event->enableInviteLink();
+    $event->forceFill(['invite_token' => null])->save();
+    $user = User::factory()->create();
+
+    $this->post(route('login.password'), ['email' => $user->email, 'password' => 'password', 'join_event' => $revokedToken])
+        ->assertRedirect(route('dashboard'));
+
+    expect($event->grantsAccessTo($user))->toBeFalse();
 });
 
 it('F-27: a logged-in account joins a poll with one click and may answer it but not edit it', function () {
