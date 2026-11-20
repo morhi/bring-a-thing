@@ -83,7 +83,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ page: App.Data.EventShowData }>();
 
-const { t, locale } = useI18n();
+const { t, tc, locale } = useI18n();
 const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 
 const event = computed(() => props.page.event);
@@ -908,9 +908,10 @@ const badgeLinkClass =
                                             : t('group.polls.dateFinder')
                                     }}</span>
                                     <span>{{
-                                        t('group.polls.options', {
-                                            n: poll.option_count,
-                                        })
+                                        tc(
+                                            'group.polls.options',
+                                            poll.option_count,
+                                        )
                                     }}</span>
                                 </span>
                             </span>

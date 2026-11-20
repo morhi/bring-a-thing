@@ -653,7 +653,7 @@ function acceptedPeople(
                                         class="text-fg font-semibold tabular-nums"
                                         >{{ count.value }}</b
                                     >
-                                    {{ t(count.label) }}</span
+                                    {{ tc(count.label, count.value) }}</span
                                 >
                             </span>
                         </SectionBoxItem>

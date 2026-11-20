@@ -274,7 +274,7 @@ const rowClass =
                             ><b class="text-fg font-semibold tabular-nums">{{
                                 openPolls.length
                             }}</b>
-                            {{ t('word.openPolls') }}</span
+                            {{ tc('word.openPolls', openPolls.length) }}</span
                         >
                         <span v-if="upcomingEvents.length"
                             ><b class="text-fg font-semibold tabular-nums">{{
@@ -526,9 +526,10 @@ const rowClass =
                                                           )
                                                 }}</span>
                                                 <span>{{
-                                                    t('group.polls.options', {
-                                                        n: poll.option_count,
-                                                    })
+                                                    tc(
+                                                        'group.polls.options',
+                                                        poll.option_count,
+                                                    )
                                                 }}</span>
                                                 <Badge
                                                     v-if="
