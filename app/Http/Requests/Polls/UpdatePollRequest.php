@@ -5,6 +5,8 @@ namespace App\Http\Requests\Polls;
 use App\Enums\PollGranularity;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Support\WallClock;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -152,15 +154,23 @@ class UpdatePollRequest extends FormRequest
     /**
      * Whether the row moves the option to another date or time.
      *
+     * The row's local times count in the editor's zone, so the same slot
+     * re-entered from another zone keeps its instants (section 9).
+     *
      * @param  array<string, mixed>  $row
      */
     private function changesSchedule(PollOption $option, array $row): bool
     {
-        $time = fn (?string $value) => $value === null || $value === '' ? null : substr($value, 0, 5);
+        $schedule = PollOption::scheduleFrom([
+            'date' => (string) $row['date'],
+            'starts_at' => $row['starts_at'] ?? null,
+            'ends_at' => $row['ends_at'] ?? null,
+        ], WallClock::zoneOf($this->user()));
+        $instant = fn (?CarbonInterface $value) => $value?->copy()->utc()->format('Y-m-d H:i');
 
-        return $option->date->format('Y-m-d') !== date('Y-m-d', (int) strtotime((string) $row['date']))
-            || $time($option->starts_at) !== $time($row['starts_at'] ?? null)
-            || $time($option->ends_at) !== $time($row['ends_at'] ?? null);
+        return $option->date?->format('Y-m-d') !== $schedule['date']
+            || $instant($option->starts_at) !== $instant($schedule['starts_at'])
+            || $instant($option->ends_at) !== $instant($schedule['ends_at']);
     }
 
     /**

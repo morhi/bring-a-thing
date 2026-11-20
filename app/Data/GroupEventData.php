@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Enums\ParticipationStatus;
 use App\Models\Event;
 use App\Models\User;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class GroupEventData extends Data
@@ -12,7 +13,7 @@ class GroupEventData extends Data
     public function __construct(
         public string $slug,
         public string $title,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $location,
         public bool $is_past,
@@ -34,8 +35,8 @@ class GroupEventData extends Data
         return new self(
             slug: $event->slug,
             title: $event->title,
-            date: $event->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($event->starts_at),
+            date: $event->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($event->starts_at),
             location: $event->location,
             is_past: $event->isPast(),
             is_from_poll: $event->origin_poll_option_id !== null,

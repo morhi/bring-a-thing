@@ -53,8 +53,7 @@ class WithoutGroupData extends Data
                 'group',
                 'participations' => fn ($query) => $query->where('status', ParticipationStatus::Accepted)->with('user:id,name')->orderBy('id'),
             ])
-            ->orderByDesc('date')
-            ->orderByDesc('starts_at')
+            ->chronological('desc')
             ->get()
             ->sortBy(fn (Event $event) => $event->isPast() ? 1 : 0)
             ->values()

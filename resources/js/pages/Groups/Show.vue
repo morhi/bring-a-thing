@@ -43,7 +43,7 @@ import EmptyState from '@/components/app/empty-state.vue';
 import InviteField from '@/components/app/invite-field.vue';
 import ShareDialog from '@/components/app/share-dialog.vue';
 import type { InviteSelection } from '@/components/app/invite-field.vue';
-import { formatDate } from '@/components/app/poll/dates';
+import { dayOf, formatDate, timeOf } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
@@ -153,13 +153,13 @@ function pollStatus(poll: App.Data.GroupPollData): {
 }
 
 function eventWhen(event: App.Data.GroupEventData): string {
-    const day = formatDate(event.date, locale.value, {
+    const day = formatDate(dayOf(event), locale.value, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
     });
 
-    return event.starts_at ? `${day}, ${event.starts_at}` : day;
+    return event.starts_at ? `${day}, ${timeOf(event.starts_at)}` : day;
 }
 
 const invites = ref<InviteSelection[]>([]);
@@ -654,7 +654,7 @@ const rowClass =
                                         ]"
                                     >
                                         <DateBlock
-                                            :date="event.date"
+                                            :date="dayOf(event)"
                                             :fixed="
                                                 event.is_from_poll &&
                                                 !event.is_past

@@ -4,13 +4,14 @@ namespace App\Data;
 
 use App\Enums\PollResponseStatus;
 use App\Models\PollOption;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class PollOptionData extends Data
 {
     public function __construct(
         public string $slug,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $ends_at,
         public ?string $label,
@@ -28,7 +29,8 @@ class PollOptionData extends Data
     /**
      * Build one option column with its totals and lock state (F-06, F-08, F-09).
      *
-     * Dates are Y-m-d and times H:i. is_schedule_locked disables the date and
+     * A by-day option has a Y-m-d date, a time slot only ISO 8601 UTC
+     * start and end instants (section 9). is_schedule_locked disables the date and
      * time fields in edit mode: the option has answers or is fixed. A fixed
      * option cannot be removed, and a closed poll allows no option changes.
      * event_slug links a fixed option to its event.
@@ -40,9 +42,9 @@ class PollOptionData extends Data
 
         return new self(
             slug: $option->slug,
-            date: $option->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($option->starts_at),
-            ends_at: EventSummaryData::time($option->ends_at),
+            date: $option->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($option->starts_at),
+            ends_at: WallClock::iso($option->ends_at),
             label: $option->label,
             yes_count: $option->countOf(PollResponseStatus::Yes),
             maybe_count: $option->countOf(PollResponseStatus::Maybe),

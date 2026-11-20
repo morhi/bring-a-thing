@@ -6,6 +6,7 @@ use App\Actions\Auth\SendMagicLink;
 use App\Models\Event;
 use App\Models\Poll;
 use App\Models\User;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class EntityJoinData extends Data
@@ -35,8 +36,8 @@ class EntityJoinData extends Data
             kind: 'event',
             title: $event->title,
             organizer_name: $event->organizer?->name,
-            date: $event->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($event->starts_at),
+            date: $event->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($event->starts_at),
             is_authenticated: $user !== null,
             has_email: $user?->email !== null,
             link_expires_in_minutes: SendMagicLink::EXPIRES_IN_MINUTES,

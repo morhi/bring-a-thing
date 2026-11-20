@@ -25,7 +25,7 @@ class DashboardClaimData extends Data
     {
         $item = $claim->rosterItem;
         $roster = $item->roster;
-        $date = $item->date ?? $roster->date ?? $roster->event?->date;
+        $date = $item->date ?? $roster->date ?? $roster->event?->localDate();
 
         return new self(
             roster_slug: $roster->slug,

@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventParticipation;
 use App\Models\Poll;
 use App\Models\User;
+use App\Support\WallClock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 
@@ -23,7 +24,7 @@ class SendFixedDatesMail
      */
     public function handle(Poll $poll, Collection $events, User $actor): void
     {
-        $sorted = $events->sortBy(fn (Event $event) => $event->date->format('Y-m-d').' '.($event->starts_at ?? '00:00'))->values();
+        $sorted = $events->sortBy(fn (Event $event) => $event->startsAt()->getTimestamp())->values();
 
         $participations = EventParticipation::query()
             ->whereIn('event_id', $events->pluck('id'))
@@ -41,7 +42,7 @@ class SendFixedDatesMail
         foreach ($recipients as $user) {
             Mail::to($user)
                 ->locale($user->language ?? app()->getLocale())
-                ->queue(new FixedDatesMail($poll->title, route('polls.show', $poll), $sorted));
+                ->queue(new FixedDatesMail($poll->title, route('polls.show', $poll), $sorted, WallClock::zoneOf($user)));
         }
     }
 }

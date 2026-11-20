@@ -743,6 +743,13 @@ return [
     'settings.language.enHint' => 'Datumsformat 15 Oct 2026',
     'settings.language.deHint' => 'Datumsformat 15.10.2026',
     'settings.language.note' => 'Was Leute schreiben, etwa Titel und Kommentare, wird nicht übersetzt.',
+    'settings.timezone' => 'Zeitzone',
+    'settings.timezone.text' => 'Termine werden in dieser Zeitzone angezeigt. Sie stammt beim ersten Besuch aus deinem Browser.',
+    'settings.timezone.label' => 'Zeitzone',
+    'settings.timezone.search' => 'Zeitzonen suchen',
+    'settings.timezone.none' => 'Keine Zeitzone passt zu deiner Suche.',
+    'settings.timezone.searchHint' => 'Tippe eine Stadt oder Region ein, z. B. Zürich',
+    'settings.timezone.hint' => 'Zeiten in der ganzen App werden in dieser Zone angezeigt.',
     'settings.logout' => 'Abmelden',
     'settings.logout.text' => 'Meldet dich auf diesem Gerät ab. Beim nächsten Mal nutzt du den Anmeldelink oder dein Passwort.',
     'review.state.noPassword' => 'Noch kein Passwort',
@@ -964,8 +971,8 @@ return [
     'calendar.name' => 'bring a thing',
     'calendar.reserved' => 'Reserviert: :title',
     'calendar.yourAnswer' => 'Deine Antwort: :answer',
-];
     'share.button' => 'Teilen',
     'list.share.none' => 'Noch kein Teilen-Link.',
     'list.share.open' => 'Geteilte Liste öffnen',
     'share.dialogTitle' => 'Teilen',
+];

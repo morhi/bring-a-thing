@@ -7,6 +7,7 @@ use App\Enums\PollType;
 use App\Models\Event;
 use App\Models\Poll;
 use App\Models\User;
+use App\Support\WallClock;
 use Illuminate\Support\Facades\DB;
 
 class CreateFollowUpPoll
@@ -36,7 +37,7 @@ class CreateFollowUpPoll
             $poll->event_id = $event->getKey();
             $poll->save();
 
-            $this->createOptions->handle($poll, $usesExplicitOptions, $options, $startsOn, $endsOn);
+            $this->createOptions->handle($poll, $usesExplicitOptions, $options, $startsOn, $endsOn, WallClock::zoneOf($organizer));
 
             return $poll;
         });

@@ -60,8 +60,9 @@ it('creates a date-finder poll from explicit hour slots', function () {
     $response->assertRedirect();
     $poll = Poll::query()->where('title', 'Call slots')->firstOrFail();
     $option = $poll->options()->firstOrFail();
-    expect($option->starts_at)->toBe('09:00');
-    expect($option->ends_at)->toBe('10:00');
+    expect($option->date)->toBeNull();
+    expect($option->starts_at->format('Y-m-d H:i'))->toBe('2026-10-01 07:00');
+    expect($option->ends_at->format('Y-m-d H:i'))->toBe('2026-10-01 08:00');
     expect($option->label)->toBe('Morning');
 });
 

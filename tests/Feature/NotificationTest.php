@@ -358,3 +358,16 @@ it('F-23: entries created in the same second are paged without skips or repeats'
         ->and($ids->unique())->toHaveCount(25)
         ->and($ids->all())->toBe($first->notifications()->reorder()->orderByDesc('created_at')->orderByDesc('id')->pluck('id')->all());
 });
+
+it('F-23: the date of a timed event is the start day in the recipient\'s time zone', function () {
+    ['group' => $group, 'owner' => $owner, 'first' => $first, 'second' => $second] = notifGroup();
+    $first->update(['timezone' => 'America/New_York']);
+    $second->update(['timezone' => 'Europe/Zurich']);
+    $event = notifEvent($group, $owner, [[$first, ParticipationStatus::Pending], [$second, ParticipationStatus::Pending]], ['date' => null, 'starts_at' => '2027-03-13 02:00:00', 'ends_at' => null]);
+
+    $first->notify(new DateFixed($event, $owner));
+    $second->notify(new DateFixed($event, $owner));
+
+    expect($first->notifications()->firstOrFail()->data['params']['date'])->toBe('2027-03-12')
+        ->and($second->notifications()->firstOrFail()->data['params']['date'])->toBe('2027-03-13');
+});

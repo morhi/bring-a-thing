@@ -743,6 +743,13 @@ return [
     'settings.language.enHint' => 'Date format 15 Oct 2026',
     'settings.language.deHint' => 'Date format 15.10.2026',
     'settings.language.note' => 'Content people write, such as titles and comments, is not translated.',
+    'settings.timezone' => 'Time zone',
+    'settings.timezone.text' => 'Event times are shown in this zone. It is taken from your browser on your first visit.',
+    'settings.timezone.label' => 'Time zone',
+    'settings.timezone.search' => 'Search time zones',
+    'settings.timezone.none' => 'No time zone matches your search.',
+    'settings.timezone.searchHint' => 'Type a city or region, e.g. Zurich',
+    'settings.timezone.hint' => 'Times across the app show in this zone.',
     'settings.logout' => 'Log out',
     'settings.logout.text' => 'Logs you out on this device. Next time, use the login link or your password.',
     'review.state.noPassword' => 'No password yet',
@@ -964,8 +971,8 @@ return [
     'calendar.name' => 'bring a thing',
     'calendar.reserved' => 'Reserved: :title',
     'calendar.yourAnswer' => 'Your answer: :answer',
-];
     'share.button' => 'Share',
     'list.share.none' => 'No share link yet.',
     'list.share.open' => 'Open shared list',
     'share.dialogTitle' => 'Share',
+];

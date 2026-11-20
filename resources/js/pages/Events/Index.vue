@@ -9,7 +9,7 @@ import { index as eventsIndex } from '@/actions/App/Http/Controllers/EventsContr
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import type { AvatarStackPerson } from '@/components/app/avatar-stack.vue';
 import EmptyState from '@/components/app/empty-state.vue';
-import { formatDate } from '@/components/app/poll/dates';
+import { dayOf, formatDate, timeOf } from '@/components/app/poll/dates';
 import SectionBox from '@/components/app/section-box.vue';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
@@ -57,6 +57,10 @@ function setFilter(
 }
 
 function shortDate(date: string): string {
+    if (!date) {
+        return '';
+    }
+
     return formatDate(date, locale.value, {
         weekday: 'short',
         day: 'numeric',
@@ -148,10 +152,10 @@ function acceptedPeople(
                         >
                             <span class="text-fg-muted text-sm tabular-nums">
                                 <span class="text-fg font-semibold">{{
-                                    shortDate(event.date)
+                                    shortDate(dayOf(event))
                                 }}</span>
                                 <template v-if="event.starts_at">
-                                    · {{ event.starts_at }}</template
+                                    · {{ timeOf(event.starts_at) }}</template
                                 >
                             </span>
                             <span class="text-fg font-semibold break-words">{{
@@ -195,10 +199,10 @@ function acceptedPeople(
                                 class="text-fg-muted py-3 pr-4 whitespace-nowrap tabular-nums"
                             >
                                 <span class="text-fg font-semibold">{{
-                                    shortDate(event.date)
+                                    shortDate(dayOf(event))
                                 }}</span>
                                 <template v-if="event.starts_at">
-                                    · {{ event.starts_at }}</template
+                                    · {{ timeOf(event.starts_at) }}</template
                                 >
                             </td>
                             <td class="py-3 pr-4">

@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Poll;
 use App\Models\Roster;
 use App\Models\User;
+use App\Support\WallClock;
 use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
@@ -69,7 +70,7 @@ class SearchData extends Data
             self::section('events', self::events($user, $groupIds, $query)->map(fn (Event $event) => new SearchResultData(
                 id: 'event:'.$event->slug,
                 title: $event->title,
-                context: self::formatDate($event->date, $locale).' · '.($event->group->name ?? __('ui.newList.standalone')),
+                context: self::formatDate($event->localDate(WallClock::zoneOf($user)), $locale).' · '.($event->group->name ?? __('ui.newList.standalone')),
                 url: route('events.show', $event),
             ))),
             self::section('lists', self::rosters($user, $groupIds, $query)->map(fn (Roster $roster) => new SearchResultData(
@@ -143,7 +144,7 @@ class SearchData extends Data
                 ->orWhere(fn (Builder $grants) => $grants->reachableThroughGrants($user)))
             ->where(self::matches('events.title', $query))
             ->with('group')
-            ->orderByDesc('date')
+            ->chronological('desc')
             ->orderByDesc('id')
             ->limit(self::LIMIT)
             ->get();

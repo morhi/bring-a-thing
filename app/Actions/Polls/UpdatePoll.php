@@ -18,11 +18,12 @@ class UpdatePoll
      * time changes on locked options, so their label is the only change left.
      *
      * @param  array<int, array{slug?: string|null, date: string, starts_at?: string|null, ends_at?: string|null, label?: string|null}>|null  $options
+     *                                                                                                                                                  Row times are local to $zone, the editing person's zone (section 9).
      * @param  array<int, string>  $remove
      */
-    public function handle(Poll $poll, string $title, ?array $options, array $remove = []): void
+    public function handle(Poll $poll, string $title, ?array $options, array $remove, string $zone): void
     {
-        DB::transaction(function () use ($poll, $title, $options, $remove) {
+        DB::transaction(function () use ($poll, $title, $options, $remove, $zone) {
             $poll->update(['title' => $title]);
 
             if ($remove !== []) {
@@ -37,9 +38,7 @@ class UpdatePoll
 
             foreach ($options as $row) {
                 $attributes = [
-                    'date' => $row['date'],
-                    'starts_at' => $row['starts_at'] ?? null,
-                    'ends_at' => $row['ends_at'] ?? null,
+                    ...PollOption::scheduleFrom($row, $zone),
                     'label' => $row['label'] ?? null,
                 ];
 

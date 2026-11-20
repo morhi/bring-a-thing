@@ -4,7 +4,7 @@ import { CalendarDays, Check, LogIn, TriangleAlert, User } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import FormField from '@/components/app/form-field.vue';
 import LoginForm from '@/components/app/login-form.vue';
-import { formatDate } from '@/components/app/poll/dates';
+import { dayOf, formatDate, timeOf } from '@/components/app/poll/dates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
@@ -37,18 +37,22 @@ const form = useForm({ name: '' });
 const kindLabel = computed(() => props.kind);
 
 const whenText = computed(() => {
-    if (!props.join?.date) {
+    const date = props.join ? dayOf(props.join) : null;
+
+    if (!props.join || !date) {
         return null;
     }
 
-    const day = formatDate(props.join.date, locale.value, {
+    const day = formatDate(date, locale.value, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
         year: 'numeric',
     });
 
-    return props.join.starts_at ? `${day}, ${props.join.starts_at}` : day;
+    return props.join.starts_at
+        ? `${day}, ${timeOf(props.join.starts_at)}`
+        : day;
 });
 
 function submit(): void {

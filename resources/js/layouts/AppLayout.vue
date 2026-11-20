@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
-import { ref, useTemplateRef } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { ref, useTemplateRef, watch } from 'vue';
 import 'vue-sonner/style.css';
 import FlashToasts from '@/components/FlashToasts.vue';
 import AppHeader from '@/components/app/shell/app-header.vue';
@@ -12,10 +12,34 @@ import SkipLink from '@/components/app/shell/skip-link.vue';
 import { useConnectionLost } from '@/components/app/shell/use-connection-lost';
 import { useNotifications } from '@/components/app/shell/use-notifications';
 import { Toaster } from '@/components/ui/sonner';
+import { updateTimezone } from '@/actions/App/Http/Controllers/SettingsController';
 
 const page = usePage();
 const { lost } = useConnectionLost();
 const notifications = useNotifications(lost);
+
+// An account without a zone takes the browser's, once per page load (F-02)
+let timezoneSent = false;
+
+watch(
+    () => page.props.auth.user,
+    (user) => {
+        if (!user || user.timezone !== null || timezoneSent) {
+            return;
+        }
+
+        timezoneSent = true;
+        router.patch(
+            updateTimezone.url(),
+            {
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                detected: true,
+            },
+            { preserveScroll: true, preserveState: true },
+        );
+    },
+    { immediate: true },
+);
 
 const header = useTemplateRef<InstanceType<typeof AppHeader>>('header');
 const notificationsOpen = ref(false);

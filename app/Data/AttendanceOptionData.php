@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\User;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class AttendanceOptionData extends Data
@@ -14,7 +15,7 @@ class AttendanceOptionData extends Data
     public function __construct(
         public int $id,
         public string $poll_title,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $label,
     ) {}
@@ -41,8 +42,8 @@ class AttendanceOptionData extends Data
             ->flatMap(fn (Poll $poll) => $poll->options->map(fn (PollOption $option) => new self(
                 id: $option->id,
                 poll_title: $poll->title,
-                date: $option->date->format('Y-m-d'),
-                starts_at: EventSummaryData::time($option->starts_at),
+                date: $option->date?->format('Y-m-d'),
+                starts_at: WallClock::iso($option->starts_at),
                 label: $option->label,
             )))
             ->values()

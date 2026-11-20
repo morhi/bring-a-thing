@@ -7,7 +7,9 @@ use App\Enums\PollResponseStatus;
 use App\Models\Event;
 use App\Models\PollResponse;
 use App\Models\User;
+use App\Support\WallClock;
 use Carbon\CarbonInterface;
+use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
@@ -15,14 +17,16 @@ use Illuminate\Support\Facades\App;
 use Spatie\IcalendarGenerator\Components\Calendar;
 use Spatie\IcalendarGenerator\Components\Event as CalendarEvent;
 use Spatie\IcalendarGenerator\Enums\EventStatus;
+use Spatie\IcalendarGenerator\Properties\TextProperty;
 
 class BuildCalendarFeed
 {
     /**
      * Build the ICS feed of the user's events and reserved poll options (F-34).
      *
-     * Texts follow the user's language. Times are floating, without a
-     * timezone, so calendar apps show them as entered.
+     * Texts follow the user's language. Timed entries carry the user's time
+     * zone with a VTIMEZONE component, and the calendar declares it as
+     * X-WR-TIMEZONE; all-day entries stay plain dates.
      */
     public function handle(User $user): string
     {
@@ -41,14 +45,16 @@ class BuildCalendarFeed
      */
     private function build(User $user): string
     {
-        $calendar = Calendar::create(__('ui.calendar.name'))->withoutTimezone();
+        $zone = WallClock::zoneOf($user);
+        $calendar = Calendar::create(__('ui.calendar.name'));
+        $calendar->appendProperty(TextProperty::create('X-WR-TIMEZONE', $zone));
 
         foreach ($this->events($user) as $event) {
-            $calendar->event($this->eventEntry($event, $user));
+            $calendar->event($this->eventEntry($event, $user, $zone));
         }
 
         foreach ($this->reservedResponses($user) as $response) {
-            $calendar->event($this->reservedEntry($response));
+            $calendar->event($this->reservedEntry($response, $zone));
         }
 
         return $calendar->get();
@@ -67,7 +73,7 @@ class BuildCalendarFeed
                 ->where('user_id', $user->getKey())
                 ->whereIn('status', [ParticipationStatus::Accepted, ParticipationStatus::Pending]))
             ->with(['participations' => fn ($query) => $query->where('user_id', $user->getKey())])
-            ->orderBy('date')
+            ->chronological()
             ->get();
     }
 
@@ -91,7 +97,7 @@ class BuildCalendarFeed
     /**
      * Map an event to a calendar entry, confirmed when accepted and tentative when pending.
      */
-    private function eventEntry(Event $event, User $user): CalendarEvent
+    private function eventEntry(Event $event, User $user, string $zone): CalendarEvent
     {
         $entry = CalendarEvent::create($event->title)
             ->uniqueIdentifier('event-'.$event->slug.'@'.$this->host())
@@ -103,13 +109,13 @@ class BuildCalendarFeed
             $entry->address($event->location);
         }
 
-        return $this->withTimes($entry, $event->date, $event->starts_at, $event->end_date ?? $event->date, $event->ends_at);
+        return $this->withTimes($entry, $event->date, $event->starts_at, $event->end_date, $event->ends_at, $zone);
     }
 
     /**
      * Map an answered poll option to a tentative "Reserved" entry.
      */
-    private function reservedEntry(PollResponse $response): CalendarEvent
+    private function reservedEntry(PollResponse $response, string $zone): CalendarEvent
     {
         $option = $response->option;
         $poll = $option->poll;
@@ -122,30 +128,51 @@ class BuildCalendarFeed
             ->url(route('polls.show', $poll))
             ->description(__('ui.calendar.yourAnswer', ['answer' => $answer])."\n\n".route('polls.show', $poll));
 
-        return $this->withTimes($entry, $option->date, $option->starts_at, $option->date, $option->ends_at);
+        return $this->withTimes($entry, $option->date, $option->starts_at, $option->date, $option->ends_at, $zone);
     }
 
     /**
-     * Set all-day dates with an exclusive end, or floating start and end times.
+     * Set all-day dates with an exclusive end, or start and end times in the person's zone (F-34).
      */
-    private function withTimes(CalendarEvent $entry, CarbonInterface $date, ?string $startsAt, CarbonInterface $endDate, ?string $endsAt): CalendarEvent
+    private function withTimes(CalendarEvent $entry, ?CarbonInterface $date, ?CarbonInterface $startsAt, ?CarbonInterface $endDate, ?CarbonInterface $endsAt, string $zone): CalendarEvent
     {
-        if ($startsAt === null) {
-            return $entry->fullDay()->startsAt($date->copy()->startOfDay())->endsAt($endDate->copy()->addDay()->startOfDay());
+        $start = $startsAt?->copy()->setTimezone($zone);
+        $end = $endsAt?->copy()->setTimezone($zone);
+        $startDay = $date ?? $start;
+        $endDay = $endDate ?? $end ?? $startDay;
+
+        if ($start === null) {
+            return $entry->fullDay()->startsAt($this->floating($startDay))->endsAt($this->floating($endDay)->addDay());
         }
 
-        $entry->startsAt(Carbon::parse($date->format('Y-m-d').' '.$startsAt));
+        $entry->startsAt($this->zoned($start));
 
-        if ($endsAt === null && $endDate->isSameDay($date)) {
+        if ($end === null && $endDay->format('Y-m-d') === $start->format('Y-m-d')) {
             return $entry;
         }
 
         // A multi-day span without an end time ends after its last day, so it is not cut to the first.
-        if ($endsAt === null) {
-            return $entry->endsAt($endDate->copy()->addDay()->startOfDay());
+        if ($end === null) {
+            return $entry->endsAt(Carbon::parse($endDay->format('Y-m-d'), $zone)->addDay()->toDateTimeImmutable());
         }
 
-        return $entry->endsAt(Carbon::parse($endDate->format('Y-m-d').' '.$endsAt));
+        return $entry->endsAt($this->zoned($end));
+    }
+
+    /**
+     * The wall-clock day as a zone-less moment, written as a plain date.
+     */
+    private function floating(CarbonInterface $moment): Carbon
+    {
+        return Carbon::parse($moment->format('Y-m-d'));
+    }
+
+    /**
+     * The instant in its zone, so the library writes it with a TZID.
+     */
+    private function zoned(CarbonInterface $moment): DateTimeImmutable
+    {
+        return $moment->toDateTimeImmutable();
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Events\PollChanged;
 use App\Http\Requests\Polls\StorePollOptionRequest;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Support\WallClock;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 
@@ -19,7 +20,11 @@ class PollOptionController extends Controller
      */
     public function store(StorePollOptionRequest $request, Poll $poll): RedirectResponse
     {
-        $poll->options()->create($request->safe()->only(['date', 'starts_at', 'ends_at', 'label']));
+        $row = $request->safe()->only(['date', 'starts_at', 'ends_at', 'label']);
+        $poll->options()->create([
+            ...PollOption::scheduleFrom($row, WallClock::zoneOf($request->user())),
+            'label' => $row['label'] ?? null,
+        ]);
 
         PollChanged::dispatch($poll->id);
         DashboardChanged::forItem($poll);

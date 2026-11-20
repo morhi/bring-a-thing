@@ -23,6 +23,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
  * @property string|null $email
  * @property string|null $pending_email
  * @property string|null $language
+ * @property string|null $timezone
  * @property Carbon|null $email_verified_at
  * @property string|null $password
  * @property string|null $remember_token
@@ -31,7 +32,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read GroupMember|null $pivot
  */
-#[Fillable(['name', 'email', 'language', 'password'])]
+#[Fillable(['name', 'email', 'language', 'timezone', 'password'])]
 #[Hidden(['password', 'remember_token', 'calendar_token'])]
 class User extends Authenticatable implements HasLocalePreference, PasskeyUser
 {

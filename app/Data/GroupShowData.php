@@ -143,7 +143,7 @@ class GroupShowData extends Data
     {
         [$past, $upcoming] = $events->partition(fn (Event $event) => $event->isPast());
         $listed = $events->keyBy('id');
-        $startOf = fn (Event $event) => $event->date->format('Y-m-d').' '.($event->starts_at ?? '00:00');
+        $startOf = fn (Event $event) => $event->startsAt()->getTimestamp();
 
         return $upcoming->sortBy($startOf)
             ->concat($past->sortByDesc($startOf))

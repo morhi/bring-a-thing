@@ -52,7 +52,13 @@ import CommentThread from '@/components/app/comment-thread.vue';
 import type { ThreadComment } from '@/components/app/comment-thread.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
-import { formatDate } from '@/components/app/poll/dates';
+import {
+    dayOf,
+    formatDate,
+    localDay,
+    localTime,
+    timeOf,
+} from '@/components/app/poll/dates';
 import ShareDialog from '@/components/app/share-dialog.vue';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import SectionBox from '@/components/app/section-box.vue';
@@ -147,17 +153,25 @@ const childBadge: Record<
 
 function daysUntil(date: string): number {
     const [year, month, day] = date.split('-').map(Number);
-    const today = new Date();
+    const [todayYear, todayMonth, todayDay] = localDay(new Date().toISOString())
+        .split('-')
+        .map(Number);
 
     return Math.round(
         (Date.UTC(year, month - 1, day) -
-            Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) /
+            Date.UTC(todayYear, todayMonth - 1, todayDay)) /
             86_400_000,
     );
 }
 
+// A timed side shows on its day in the viewer's zone, an all-day side on its plain date
+const startDay = computed(() => dayOf(event.value));
+const endDay = computed(() =>
+    dayOf({ date: event.value.end_date, starts_at: event.value.ends_at }),
+);
+
 const relativeDay = computed(() => {
-    const days = daysUntil(event.value.date);
+    const days = daysUntil(startDay.value);
 
     if (days === 0) {
         return t('common.today');
@@ -176,21 +190,21 @@ const timeLabel = computed(() => {
     }
 
     if (!event.value.ends_at) {
-        return event.value.starts_at;
+        return localTime(event.value.starts_at);
     }
 
     return t('event.timeRange', {
-        start: event.value.starts_at,
-        end: event.value.ends_at,
+        start: localTime(event.value.starts_at),
+        end: localTime(event.value.ends_at),
     });
 });
 
 const endLabel = computed(() => {
-    if (!event.value.end_date || event.value.end_date === event.value.date) {
+    if (!endDay.value || endDay.value === startDay.value) {
         return '';
     }
 
-    return formatDate(event.value.end_date, locale.value, {
+    return formatDate(endDay.value, locale.value, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
@@ -208,13 +222,13 @@ function longDate(date: string): string {
 }
 
 function childWhen(child: App.Data.GroupEventData): string {
-    const day = formatDate(child.date, locale.value, {
+    const day = formatDate(dayOf(child), locale.value, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
     });
 
-    return child.starts_at ? `${day}, ${child.starts_at}` : day;
+    return child.starts_at ? `${day}, ${timeOf(child.starts_at)}` : day;
 }
 
 function personName(name: string | null): string {
@@ -457,7 +471,7 @@ const badgeLinkClass =
                 {{ t('nav.backToDashboard') }}
             </Link>
             <div class="flex flex-wrap items-start gap-x-5 gap-y-4">
-                <DateBlock :date="event.date" :fixed="isFixed" size="lg" />
+                <DateBlock :date="startDay" :fixed="isFixed" size="lg" />
                 <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <Badge
@@ -506,11 +520,9 @@ const badgeLinkClass =
                                 v-if="isFixed"
                                 class="bg-primary font-tag text-primary-fg inline-block rotate-(--tag-tilt) rounded-lg px-2.5 pt-0.5 pb-[3px] leading-[1.2] font-bold shadow-sm"
                                 data-feature="F-09"
-                                >{{ longDate(event.date) }}</span
+                                >{{ longDate(startDay) }}</span
                             >
-                            <template v-else>{{
-                                longDate(event.date)
-                            }}</template
+                            <template v-else>{{ longDate(startDay) }}</template
                             ><template v-if="endLabel">
                                 – {{ endLabel }}</template
                             >
@@ -999,7 +1011,7 @@ const badgeLinkClass =
                             data-feature="F-09"
                         >
                             <DateBlock
-                                :date="child.date"
+                                :date="dayOf(child)"
                                 :fixed="child.is_from_poll && !child.is_past"
                             />
                             <span class="flex min-w-0 flex-1 flex-col gap-1">

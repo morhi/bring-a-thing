@@ -1,4 +1,10 @@
-import { dateLocale, formatDate } from '@/components/app/poll/dates';
+import {
+    dateLocale,
+    dayOf,
+    formatDate,
+    localDay,
+    timeOf,
+} from '@/components/app/poll/dates';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 
@@ -60,10 +66,13 @@ export function formatAmount(
  */
 export function relativeDay(date: string): string {
     const [year, month, day] = date.split('-').map(Number);
-    const today = new Date();
+    // Today counts in the viewer's zone, the same zone the date itself was derived in
+    const [todayYear, todayMonth, todayDay] = localDay(new Date().toISOString())
+        .split('-')
+        .map(Number);
     const days = Math.round(
         (Date.UTC(year, month - 1, day) -
-            Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) /
+            Date.UTC(todayYear, todayMonth - 1, todayDay)) /
             86_400_000,
     );
 
@@ -95,16 +104,23 @@ export function itemFields(
  * Label one attendance day: weekday and date, then time and label of a slot (F-18).
  */
 export function attendanceDayLabel(
-    day: { date: string; starts_at: string | null; label: string | null },
+    day: {
+        date: string | null;
+        starts_at: string | null;
+        label: string | null;
+    },
     language: Locale,
 ): string {
-    const date = formatDate(day.date, language, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    });
-    const parts = [date, day.starts_at, day.label].filter(
+    const shownDay = dayOf(day);
+    const date = shownDay
+        ? formatDate(shownDay, language, {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+          })
+        : null;
+    const parts = [date, timeOf(day.starts_at), day.label].filter(
         (part): part is string => !!part,
     );
 

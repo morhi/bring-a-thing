@@ -46,8 +46,7 @@ class EventsIndexData extends Data
                 'group',
                 'participations' => fn ($query) => $query->where('status', ParticipationStatus::Accepted)->with('user:id,name')->orderBy('id'),
             ])
-            ->orderBy('date')
-            ->orderBy('starts_at')
+            ->chronological()
             ->get();
 
         return new self(

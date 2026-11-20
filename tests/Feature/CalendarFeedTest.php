@@ -147,14 +147,18 @@ it('F-34: events are visible through each access path of the scope', function (s
         ->and($body)->not->toContain('UID:event-'.$hidden->slug.'@');
 })->with(['group member', 'standalone organizer', 'grant']);
 
-it('F-34: a timed event uses floating start and end times', function () {
-    [$user] = calendarUser();
-    $event = dashboardEvent(null, $user, $user, ParticipationStatus::Accepted, ['date' => '2027-03-12', 'starts_at' => '18:00', 'ends_at' => '20:30']);
+it('F-34: timed entries carry the person\'s time zone and the feed declares it', function (string $zone, string $start, string $end) {
+    [$user] = calendarUser(['timezone' => $zone]);
+    $event = dashboardEvent(null, $user, $user, ParticipationStatus::Accepted, ['date' => null, 'starts_at' => '2027-03-12 18:00:00', 'end_date' => null, 'ends_at' => '2027-03-12 19:30:00']);
 
-    $block = feedBlock(feedOf($user), 'event-'.$event->slug.'@');
+    $body = feedOf($user);
 
-    expect($block)->toContain("DTSTART:20270312T180000\r\n")->toContain("DTEND:20270312T203000\r\n")->not->toContain('TZID');
-});
+    expect(feedBlock($body, 'event-'.$event->slug.'@'))->toContain("DTSTART;TZID={$zone}:{$start}\r\n")->toContain("DTEND;TZID={$zone}:{$end}\r\n")
+        ->and($body)->toContain("X-WR-TIMEZONE:{$zone}")->toContain('BEGIN:VTIMEZONE')->toContain("TZID:{$zone}");
+})->with([
+    'Europe/Zurich' => ['Europe/Zurich', '20270312T190000', '20270312T203000'],
+    'America/New_York' => ['America/New_York', '20270312T130000', '20270312T143000'],
+]);
 
 it('F-34: an event without a start time is all-day with an exclusive end date', function (?string $endDate, string $expectedEnd) {
     [$user] = calendarUser();
@@ -168,15 +172,15 @@ it('F-34: an event without a start time is all-day with an exclusive end date', 
     'several days' => ['2027-03-14', '20270315'],
 ]);
 
-it('F-34: an event with an end date and times spans the days', function (?string $endsAt, string $expectedEnd) {
+it('F-34: an event with an end date and times spans the days', function (?string $endDate, ?string $endsAt, string $expectedEnd) {
     [$user] = calendarUser();
-    $event = dashboardEvent(null, $user, $user, ParticipationStatus::Accepted, ['date' => '2027-03-12', 'starts_at' => '22:00', 'end_date' => '2027-03-13', 'ends_at' => $endsAt]);
+    $event = dashboardEvent(null, $user, $user, ParticipationStatus::Accepted, ['date' => null, 'starts_at' => '2027-03-12 21:00:00', 'end_date' => $endDate, 'ends_at' => $endsAt]);
 
     expect(feedBlock(feedOf($user), 'event-'.$event->slug.'@'))
-        ->toContain("DTSTART:20270312T220000\r\n")->toContain("DTEND:{$expectedEnd}\r\n");
+        ->toContain("DTSTART;TZID=Europe/Zurich:20270312T220000\r\n")->toContain("DTEND;TZID=Europe/Zurich:{$expectedEnd}\r\n");
 })->with([
-    'with end time' => ['02:00', '20270313T020000'],
-    'without end time' => [null, '20270314T000000'],
+    'with end time' => [null, '2027-03-13 01:00:00', '20270313T020000'],
+    'without end time' => ['2027-03-13', null, '20270314T000000'],
 ]);
 
 it('F-34: a yes and a maybe option of an open poll are reserved, a no option is not', function () {
@@ -274,8 +278,8 @@ it('F-34: answers of other people are not reserved for the token owner', functio
     expect(feedOf($members[0]))->not->toContain('poll-option-');
 });
 
-it('F-34: an option without a time is all-day, an option with a time uses floating times', function (?string $startsAt, ?string $endsAt, array $expected) {
-    [$member, , , $option] = reservedSetup(optionAttributes: ['date' => '2027-03-12', 'starts_at' => $startsAt, 'ends_at' => $endsAt]);
+it('F-34: an option without a time is all-day, an option with a time uses their zone', function (?string $date, ?string $startsAt, ?string $endsAt, array $expected) {
+    [$member, , , $option] = reservedSetup(optionAttributes: ['date' => $date, 'starts_at' => $startsAt, 'ends_at' => $endsAt]);
 
     $block = feedBlock(feedOf($member), 'poll-option-'.$option->slug.'@');
 
@@ -283,10 +287,9 @@ it('F-34: an option without a time is all-day, an option with a time uses floati
         expect($block)->toContain($line);
     }
 
-    expect($block)->not->toContain('TZID');
 })->with([
-    'all-day' => [null, null, ['DTSTART;VALUE=DATE:20270312', 'DTEND;VALUE=DATE:20270313']],
-    'timed' => ['18:00', '19:00', ["DTSTART:20270312T180000\r\n", "DTEND:20270312T190000\r\n"]],
+    'all-day' => ['2027-03-12', null, null, ['DTSTART;VALUE=DATE:20270312', 'DTEND;VALUE=DATE:20270313']],
+    'timed' => [null, '2027-03-12 17:00:00', '2027-03-12 18:00:00', ["DTSTART;TZID=Europe/Zurich:20270312T180000\r\n", "DTEND;TZID=Europe/Zurich:20270312T190000\r\n"]],
 ]);
 
 it('F-34: the reserved summary follows the user\'s language', function (?string $language, string $prefix) {

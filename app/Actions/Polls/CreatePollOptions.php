@@ -3,6 +3,7 @@
 namespace App\Actions\Polls;
 
 use App\Models\Poll;
+use App\Models\PollOption;
 use Carbon\CarbonPeriod;
 
 class CreatePollOptions
@@ -15,16 +16,17 @@ class CreatePollOptions
      * like "lunch"/"dinner"); otherwise a day-granularity attendance poll's
      * date range is expanded into one option per day.
      *
+     * Explicit rows carry local times in $zone, the organizer's zone, and
+     * are stored as UTC instants (section 9).
+     *
      * @param  array<int, array{date: string, starts_at?: string|null, ends_at?: string|null, label?: string|null}>  $options
      */
-    public function handle(Poll $poll, bool $usesExplicitOptions, array $options, ?string $startsOn, ?string $endsOn): void
+    public function handle(Poll $poll, bool $usesExplicitOptions, array $options, ?string $startsOn, ?string $endsOn, string $zone): void
     {
         if ($usesExplicitOptions) {
             foreach ($options as $option) {
                 $poll->options()->create([
-                    'date' => $option['date'],
-                    'starts_at' => $option['starts_at'] ?? null,
-                    'ends_at' => $option['ends_at'] ?? null,
+                    ...PollOption::scheduleFrom($option, $zone),
                     'label' => $option['label'] ?? null,
                 ]);
             }

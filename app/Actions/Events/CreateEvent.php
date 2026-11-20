@@ -6,6 +6,7 @@ use App\Enums\ParticipationStatus;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class CreateEvent
@@ -20,7 +21,7 @@ class CreateEvent
      * has no members to ask: it starts with the organizer alone, and a
      * standalone sub-event with the parent's participants.
      *
-     * @param  array{title: string, description?: string|null, location?: string|null, date: string, starts_at?: string|null, end_date?: string|null, ends_at?: string|null}  $attributes
+     * @param  array{title: string, description?: string|null, location?: string|null, date: string|null, starts_at?: Carbon|null, end_date?: string|null, ends_at?: Carbon|null}  $attributes  times as UTC instants (section 9)
      */
     public function handle(?Group $group, User $organizer, array $attributes, ?Event $parent = null): Event
     {

@@ -3,6 +3,7 @@
 namespace App\Notifications\Concerns;
 
 use App\Data\NotificationData;
+use App\Models\User;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
 /**
@@ -37,7 +38,7 @@ trait DeliversInApp
             'subject_type' => NotificationData::subjectTypeOf($this->subject()),
             'subject_id' => $this->subject()->getKey(),
             'actor_id' => $this->actor()->getKey(),
-            'params' => $this->params(),
+            'params' => $this->params($notifiable instanceof User ? $notifiable : null),
         ];
     }
 

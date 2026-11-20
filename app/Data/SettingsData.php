@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Enums\Locale;
 use App\Models\User;
+use DateTimeZone;
 use Illuminate\Validation\Rules\Password;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
@@ -13,6 +14,7 @@ class SettingsData extends Data
     /**
      * @param  array<int, Locale>  $languages
      * @param  array<int, PasskeyData>  $passkeys
+     * @param  array<int, string>  $timezones
      */
     public function __construct(
         public ?string $name,
@@ -24,6 +26,8 @@ class SettingsData extends Data
         public int $password_min_length,
         public array $passkeys,
         public ?string $calendar_feed_url,
+        public ?string $timezone,
+        public array $timezones,
     ) {}
 
     /**
@@ -44,6 +48,8 @@ class SettingsData extends Data
             password_min_length: (int) (Password::default()->appliedRules()['min'] ?? 8),
             passkeys: $user->passkeys()->oldest()->get()->map(PasskeyData::fromPasskey(...))->all(),
             calendar_feed_url: $user->calendarFeedUrl(),
+            timezone: $user->timezone,
+            timezones: DateTimeZone::listIdentifiers(),
         );
     }
 }

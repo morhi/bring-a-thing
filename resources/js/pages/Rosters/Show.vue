@@ -58,7 +58,7 @@ import DatePicker from '@/components/app/date-picker.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import FormField from '@/components/app/form-field.vue';
 import ItemRow from '@/components/app/item-row.vue';
-import { formatDate } from '@/components/app/poll/dates';
+import { dayOf, formatDate } from '@/components/app/poll/dates';
 import ProgressBar from '@/components/app/progress-bar.vue';
 import ShareDialog from '@/components/app/share-dialog.vue';
 import SectionBox from '@/components/app/section-box.vue';
@@ -194,7 +194,7 @@ function attendanceWarningFor(
     }
 
     const date = attendanceDayLabel(
-        { date: day.date, starts_at: null, label: null },
+        { date: dayOf(day), starts_at: null, label: null },
         locale.value,
     );
     const said = day.unavailable_user_ids.includes(personId);

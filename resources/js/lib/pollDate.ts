@@ -1,3 +1,4 @@
+import { dayOf, fromIso, timeOf } from '@/components/app/poll/dates';
 import type { PollOption } from '@/types';
 
 export function formatDateOnly(date: Date): string {
@@ -10,11 +11,10 @@ export function formatTimeOnly(date: Date): string {
 
 /** Human-readable label for a poll option: date, plus time range and label when the poll uses hour slots. */
 export function formatPollOption(option: PollOption): string {
-    const dateLabel = new Date(option.date).toLocaleDateString(undefined, {
+    const dateLabel = fromIso(dayOf(option)).toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
-        timeZone: 'UTC',
     });
 
     if (!option.starts_at) {
@@ -22,8 +22,8 @@ export function formatPollOption(option: PollOption): string {
     }
 
     const timeLabel = option.ends_at
-        ? `${option.starts_at}–${option.ends_at}`
-        : option.starts_at;
+        ? `${timeOf(option.starts_at)}–${timeOf(option.ends_at)}`
+        : timeOf(option.starts_at);
 
     return option.label
         ? `${dateLabel} · ${option.label} (${timeLabel})`

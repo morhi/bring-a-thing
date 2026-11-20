@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Enums\DashboardWaitingKind;
 use App\Models\Event;
 use App\Models\Poll;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class DashboardWaitingData extends Data
@@ -60,8 +61,8 @@ class DashboardWaitingData extends Data
             group_name: $event->group?->name,
             answered: null,
             total: null,
-            date: $event->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($event->starts_at),
+            date: $event->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($event->starts_at),
             accepted_count: $event->participations->count(),
             source_event: null,
         );

@@ -16,6 +16,7 @@ import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import DatePicker from '@/components/app/date-picker.vue';
 import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
+import { dayOf, timeOf } from '@/components/app/poll/dates';
 import TimePicker from '@/components/app/time-picker.vue';
 import {
     AlertDialog,
@@ -44,15 +45,34 @@ const { t, tc } = useI18n();
 // The same page serves "New event" and, with an event, its edit mode (F-10)
 const editing = computed(() => props.form.event !== null);
 
+// Timed sides arrive as UTC instants; the form edits and sends local wall-clock values in the viewer's zone
+const initial = (() => {
+    const event = props.form.event;
+
+    if (!event) {
+        return { date: null, starts_at: null, end_date: null, ends_at: null };
+    }
+
+    const date = dayOf(event) || null;
+
+    return {
+        date,
+        starts_at: timeOf(event.starts_at),
+        end_date:
+            dayOf({ date: event.end_date, starts_at: event.ends_at }) || date,
+        ends_at: timeOf(event.ends_at),
+    };
+})();
+
 const eventForm = useForm({
     parent_event_id: props.form.parent_event_id,
     title: props.form.event?.title ?? '',
     description: props.form.event?.description ?? '',
     location: props.form.event?.location ?? '',
-    date: props.form.event?.date ?? null,
-    starts_at: props.form.event?.starts_at ?? null,
-    end_date: props.form.event?.end_date ?? props.form.event?.date ?? null,
-    ends_at: props.form.event?.ends_at ?? null,
+    date: initial.date,
+    starts_at: initial.starts_at,
+    end_date: initial.end_date,
+    ends_at: initial.ends_at,
 });
 
 // The end date follows the start date until the user picks one by hand (F-10)
@@ -69,8 +89,8 @@ watch(
 const moved = computed(
     () =>
         editing.value &&
-        (eventForm.date !== props.form.event?.date ||
-            eventForm.starts_at !== props.form.event?.starts_at),
+        (eventForm.date !== initial.date ||
+            eventForm.starts_at !== initial.starts_at),
 );
 
 // Opened outside a group (F-10, F-29): the placement is standalone or any own group, and the event posts to events.store-any

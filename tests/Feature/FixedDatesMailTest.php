@@ -243,3 +243,22 @@ it('F-30: a poll title cannot inject markdown or extra lines into the mail', fun
     expect($html)->not->toContain('href="https://evil.example"')
         ->and($mail->envelope()->subject)->not->toContain("\n");
 });
+
+it('F-30: a recipient sees the times in their own time zone', function (string $zone, string $expected) {
+    Mail::fake();
+    ['group' => $group, 'owner' => $owner, 'poll' => $poll] = fixedMailPoll();
+    $option = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => null, 'starts_at' => '2027-03-12 18:00:00', 'ends_at' => null]);
+    $member = fixedMailResponder($group, $option, PollResponseStatus::Yes, ['timezone' => $zone]);
+
+    $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$option->slug]])->assertSessionHas('success');
+
+    Mail::assertQueued(FixedDatesMail::class, function (FixedDatesMail $mail) use ($member, $expected) {
+        expect($mail->hasTo($member->email))->toBeTrue()
+            ->and($mail->render())->toContain($expected);
+
+        return true;
+    });
+})->with([
+    'Europe/Zurich' => ['Europe/Zurich', '19:00'],
+    'America/New_York' => ['America/New_York', '13:00'],
+]);

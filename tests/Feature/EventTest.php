@@ -13,7 +13,7 @@ use App\Models\Roster;
 use App\Models\RosterItem;
 use App\Models\RosterItemClaim;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use App\Support\WallClock;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -79,7 +79,8 @@ it('F-10: a directly created event in a group with five members shows one accept
             ->where('page.declined_count', 0)
             ->where('page.own_status', 'accepted')
             ->where('page.event.title', 'Gig at the Rex')
-            ->where('page.event.starts_at', '20:00')
+            ->where('page.event.starts_at', WallClock::instant($event->starts_at->setTimezone('Europe/Zurich')->format('Y-m-d'), '20:00', 'Europe/Zurich')->format('Y-m-d\TH:i:s\Z'))
+            ->where('page.event.date', null)
             ->has('page.participants', 5));
 });
 
@@ -105,15 +106,14 @@ it('F-10: after moving the event from 12.03. to 19.03. and choosing reset or kee
         ->and(RosterItemClaim::query()->count())->toBe(1);
 })->with([[true], [false]]);
 
-it('F-10: a stored time with seconds equal to the sent time is no move, even when the form says reset', function (?bool $reset) {
+it('F-10: re-sending the stored start as local time is no move, even when the form says reset', function (?bool $reset) {
     [$group, $owner, , $members] = eventGroup(1);
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '18:00', 'ends_at' => '20:00']);
-    DB::table('events')->where('id', $event->id)->update(['starts_at' => '18:00:00', 'ends_at' => '20:00:00']);
+    $event = Event::factory()->at('2027-03-12', '18:00', '20:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
 
     $this->actingAs($owner)
         ->patch(route('events.update', $event), eventInput([
-            'date' => $event->date->format('Y-m-d'),
+            'date' => '2027-03-12',
             'starts_at' => '18:00',
             'ends_at' => '20:00',
             'location' => 'Elsewhere',
@@ -128,11 +128,11 @@ it('F-10: a stored time with seconds equal to the sent time is no move, even whe
 
 it('F-10: changing only the start time needs the choice and resets or keeps accordingly', function (bool $reset) {
     [$group, $owner, , $members] = eventGroup(1);
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '19:00']);
+    $event = Event::factory()->at('2027-03-12', '19:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
 
     $this->actingAs($owner)
-        ->patch(route('events.update', $event), eventInput(['date' => $event->date->format('Y-m-d'), 'starts_at' => '20:30', 'reset_acceptances' => $reset]))
+        ->patch(route('events.update', $event), eventInput(['date' => '2027-03-12', 'starts_at' => '20:30', 'reset_acceptances' => $reset]))
         ->assertSessionHasNoErrors();
 
     expect($participation->fresh()->status)->toBe($reset ? ParticipationStatus::Pending : ParticipationStatus::Accepted);
@@ -140,9 +140,10 @@ it('F-10: changing only the start time needs the choice and resets or keeps acco
 
 it('F-10: setting or clearing the start time counts as a move', function (?string $before, ?string $after) {
     [$group, $owner, , $members] = eventGroup(1);
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => $before]);
+    $factory = $before === null ? Event::factory()->state(['date' => '2027-03-12']) : Event::factory()->at('2027-03-12', $before);
+    $event = $factory->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
-    $input = eventInput(['date' => $event->date->format('Y-m-d'), 'starts_at' => $after]);
+    $input = eventInput(['date' => '2027-03-12', 'starts_at' => $after]);
 
     $this->actingAs($owner)->patch(route('events.update', $event), $input)->assertSessionHasErrors('reset_acceptances');
 
@@ -166,7 +167,7 @@ it('F-10: moving the event without a valid reset choice is rejected and saves no
 
 it('F-10: changing only the end keeps acceptances without a choice', function () {
     [$group, $owner, , $members] = eventGroup(1);
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12', 'starts_at' => '19:00']);
+    $event = Event::factory()->at('2027-03-12', '19:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $participation = EventParticipation::factory()->accepted()->create(['event_id' => $event->id, 'user_id' => $members[0]->id]);
 
     $this->actingAs($owner)
@@ -174,7 +175,7 @@ it('F-10: changing only the end keeps acceptances without a choice', function ()
         ->assertSessionHasNoErrors();
 
     expect($participation->fresh()->status)->toBe(ParticipationStatus::Accepted)
-        ->and($event->fresh()->end_date->format('Y-m-d'))->toBe('2027-03-13');
+        ->and($event->fresh()->ends_at->format('Y-m-d H:i'))->toBe('2027-03-13 11:00');
 });
 
 it('F-10: an event without a start time keeps its acceptances when only the title changes', function () {
@@ -198,8 +199,8 @@ it('F-10: end date and end time are stored as sent, and an update without end da
         ->assertSessionHasNoErrors();
     $event = Event::query()->sole();
 
-    expect($event->end_date->format('Y-m-d'))->toBe('2027-03-12')
-        ->and(substr($event->ends_at, 0, 5))->toBe('20:00');
+    expect($event->end_date)->toBeNull()
+        ->and($event->ends_at->format('Y-m-d H:i'))->toBe('2027-03-12 19:00');
 
     $this->actingAs($owner)
         ->patch(route('events.update', $event), eventInput(['date' => '2027-03-12', 'starts_at' => null, 'end_date' => null, 'ends_at' => null, 'reset_acceptances' => true]))
@@ -209,14 +210,33 @@ it('F-10: end date and end time are stored as sent, and an update without end da
         ->and($event->fresh()->ends_at)->toBeNull();
 });
 
-it('F-10: the edit form hands out times without seconds', function () {
+it('F-10: a Europe/Zurich organizer entering 19:00 stores the UTC instant', function (string $date, string $expected) {
     [$group, $owner] = eventGroup(0);
-    $event = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'starts_at' => '18:00']);
-    DB::table('events')->where('id', $event->id)->update(['starts_at' => '18:00:00']);
+    $owner->update(['timezone' => 'Europe/Zurich']);
+
+    $this->actingAs($owner)
+        ->post(route('events.store', $group), eventInput(['date' => $date, 'starts_at' => '19:00', 'end_date' => $date, 'ends_at' => null]))
+        ->assertSessionHasNoErrors();
+    $event = Event::query()->sole();
+
+    expect($event->date)->toBeNull()
+        ->and($event->starts_at->format('Y-m-d H:i:s'))->toBe($expected)
+        ->and($event->end_date->format('Y-m-d'))->toBe($date)
+        ->and($event->ends_at)->toBeNull();
+})->with([
+    'winter' => ['2027-01-15', '2027-01-15 18:00:00'],
+    'summer' => ['2027-07-15', '2027-07-15 17:00:00'],
+]);
+
+it('F-10: the edit form hands out times as UTC instants and untimed dates as plain dates', function () {
+    [$group, $owner] = eventGroup(0);
+    $event = Event::factory()->at('2027-03-12', '18:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
 
     $this->actingAs($owner)->get(route('events.edit', $event))->assertInertia(fn (Assert $page) => $page
-        ->where('form.event.starts_at', '18:00')
-        ->where('form.event.end_date', $event->date->format('Y-m-d')));
+        ->where('form.event.date', null)
+        ->where('form.event.starts_at', '2027-03-12T17:00:00Z')
+        ->where('form.event.end_date', '2027-03-12')
+        ->where('form.event.ends_at', null));
 });
 
 it('F-10: deleting an event with a list also removes the list', function () {
@@ -374,11 +394,11 @@ it('F-10: an empty end date defaults to the start date, an invalid one is reject
 ]);
 
 it('F-10: an event counts as past once its start has passed', function () {
-    $this->travelTo('2027-03-12 19:00');
+    $this->travelTo('2027-03-12 18:30');
     [$group, $owner] = eventGroup(0);
 
-    $earlierToday = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12', 'starts_at' => '18:00']);
-    $laterToday = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12', 'starts_at' => '20:00']);
+    $earlierToday = Event::factory()->at('2027-03-12', '18:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
+    $laterToday = Event::factory()->at('2027-03-12', '20:00')->create(['group_id' => $group->id, 'organizer_id' => $owner->id]);
     $todayWithoutTime = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-12']);
     $yesterday = Event::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'date' => '2027-03-11']);
 
@@ -428,7 +448,7 @@ it('F-09: creating an event from a poll option derives participation from the re
     }
 
     $poll = Poll::factory()->create(['group_id' => $group->id, 'organizer_id' => $owner->id, 'event_id' => $source->id, 'title' => 'Rehearsal']);
-    $option = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-14', 'starts_at' => '19:00', 'ends_at' => '22:00']);
+    $option = PollOption::factory()->slot('2027-03-14', '19:00', '22:00')->create(['poll_id' => $poll->id]);
     $option->responses()->create(['user_id' => $yes->id, 'status' => PollResponseStatus::Yes]);
     $option->responses()->create(['user_id' => $maybe->id, 'status' => PollResponseStatus::Maybe]);
     $option->responses()->create(['user_id' => $no->id, 'status' => PollResponseStatus::No]);
@@ -436,10 +456,10 @@ it('F-09: creating an event from a poll option derives participation from the re
     $event = app(CreateEventFromPollOption::class)->handle($option);
 
     expect($event->title)->toBe('Rehearsal')
-        ->and($event->date->format('Y-m-d'))->toBe('2027-03-14')
-        ->and(substr($event->starts_at, 0, 5))->toBe('19:00')
-        ->and(substr($event->ends_at, 0, 5))->toBe('22:00')
-        ->and($event->end_date->format('Y-m-d'))->toBe('2027-03-14')
+        ->and($event->date)->toBeNull()
+        ->and($event->starts_at->format('Y-m-d H:i'))->toBe('2027-03-14 18:00')
+        ->and($event->ends_at->format('Y-m-d H:i'))->toBe('2027-03-14 21:00')
+        ->and($event->end_date)->toBeNull()
         ->and($event->organizer_id)->toBe($owner->id)
         ->and($event->origin_poll_option_id)->toBe($option->id)
         ->and($event->parent_event_id)->toBe($source->id)

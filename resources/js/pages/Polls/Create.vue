@@ -19,6 +19,7 @@ import ChoiceGroup from '@/components/app/choice-group.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
+import { dayOf, timeOf } from '@/components/app/poll/dates';
 import OptionCalendar from '@/components/app/option-calendar.vue';
 import OptionRows from '@/components/app/poll/option-rows.vue';
 import type {
@@ -57,9 +58,10 @@ const sourceEvent = computed(() => props.form.source_event);
 function draftsOf(pollData: App.Data.PollData | null): OptionDraft[] {
     return (pollData?.options ?? []).map((option) => ({
         id: option.slug,
-        date: option.date,
-        start: option.starts_at,
-        end: option.ends_at,
+        // A slot edits on its local day and times, the same wall-clock values the server converts back
+        date: dayOf(option),
+        start: timeOf(option.starts_at),
+        end: timeOf(option.ends_at),
         label: option.label ?? '',
         locked: option.is_schedule_locked,
         fixed: option.is_fixed,

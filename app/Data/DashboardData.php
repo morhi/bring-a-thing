@@ -208,8 +208,7 @@ class DashboardData extends Data
                 'group',
                 'participations' => fn ($query) => $query->where('status', ParticipationStatus::Accepted)->with('user:id,name')->orderBy('id'),
             ])
-            ->orderBy('date')
-            ->orderBy('starts_at')
+            ->chronological()
             ->get();
     }
 
@@ -247,7 +246,7 @@ class DashboardData extends Data
 
                 return $date === null || $date->gte($today);
             })
-            ->sortBy(fn (RosterItemClaim $claim) => ($claim->rosterItem->date ?? $claim->rosterItem->roster->date ?? $claim->rosterItem->roster->event?->date)?->format('Y-m-d') ?? '9999-12-31')
+            ->sortBy(fn (RosterItemClaim $claim) => ($claim->rosterItem->date ?? $claim->rosterItem->roster->date ?? $claim->rosterItem->roster->event?->localDate())?->format('Y-m-d') ?? '9999-12-31')
             ->values();
     }
 

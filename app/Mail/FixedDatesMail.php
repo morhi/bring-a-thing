@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Event;
+use App\Support\WallClock;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -18,9 +19,11 @@ class FixedDatesMail extends Mailable implements ShouldQueue
     /**
      * Summarize the dates an organizer fixed from a poll (F-30).
      *
+     * Times are shown in the recipient's zone (section 9).
+     *
      * @param  Collection<int, Event>  $events  in calendar order
      */
-    public function __construct(protected string $pollTitle, public string $url, public Collection $events) {}
+    public function __construct(protected string $pollTitle, public string $url, public Collection $events, public string $zone = WallClock::DEFAULT_ZONE) {}
 
     /**
      * Get the message envelope.
@@ -63,6 +66,7 @@ class FixedDatesMail extends Mailable implements ShouldQueue
                 'pollTitle' => $this->markdownSafeTitle(),
                 'url' => $this->url,
                 'events' => $this->events,
+                'zone' => $this->zone,
             ],
         );
     }

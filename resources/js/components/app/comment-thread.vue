@@ -13,6 +13,7 @@ export type ThreadComment = {
 import { MessageSquare, X } from '@lucide/vue';
 import { computed, onMounted, ref, useId } from 'vue';
 import EmptyState from '@/components/app/empty-state.vue';
+import { viewerZone } from '@/components/app/poll/dates';
 import UserAvatar from '@/components/app/user-avatar.vue';
 import {
     AlertDialog,
@@ -83,13 +84,24 @@ function formatWhen(iso: string): string {
     const day = date.toLocaleDateString(
         isGerman ? 'de-CH' : 'en-GB',
         isGerman
-            ? { day: '2-digit', month: '2-digit', year: 'numeric' }
-            : { day: 'numeric', month: 'short', year: 'numeric' },
+            ? {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  timeZone: viewerZone.value,
+              }
+            : {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  timeZone: viewerZone.value,
+              },
     );
     const time = date.toLocaleTimeString(isGerman ? 'de-CH' : 'en-GB', {
         hour: '2-digit',
         minute: '2-digit',
         hourCycle: 'h23',
+        timeZone: viewerZone.value,
     });
 
     return `${day}, ${time}`;

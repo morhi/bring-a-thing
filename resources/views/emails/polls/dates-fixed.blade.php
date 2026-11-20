@@ -4,7 +4,7 @@
 {{ trans_choice('The date has been fixed.|The dates have been fixed.', $events->count()) }}
 
 @foreach ($events as $event)
-- {{ $event->date->translatedFormat('l, j. F Y') }}@if ($event->starts_at !== null) {{ $event->starts_at }}@endif
+- {{ $event->localDate($zone)->translatedFormat('l, j. F Y') }}@if ($event->starts_at !== null) {{ $event->starts_at->copy()->setTimezone($zone)->format('H:i') }}@endif
 
 @endforeach
 

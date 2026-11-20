@@ -7,7 +7,9 @@ use App\Data\SettingsData;
 use App\Http\Requests\AddAccountEmailRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UpdateTimezoneRequest;
 use App\Models\User;
+use DateTimeZone;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Events\NullDispatcher;
 use Illuminate\Http\RedirectResponse;
@@ -110,6 +112,33 @@ class SettingsController extends Controller
         $this->reissueRememberCookie($request->user());
 
         return back()->with('success', __($hadPassword ? 'ui.settings.password.changeDone' : 'ui.settings.password.setDone'));
+    }
+
+    /**
+     * Set the account time zone, from the settings form or from browser detection (F-02).
+     *
+     * Detection only fills an empty zone and never overwrites a chosen one; an invalid
+     * or missing browser zone falls back to Europe/Zurich. An explicit change is
+     * validated by the request and confirmed with a message.
+     */
+    public function updateTimezone(UpdateTimezoneRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($request->boolean('detected')) {
+            $detected = $request->input('timezone');
+            $usable = is_string($detected) && in_array($detected, DateTimeZone::listIdentifiers(), true);
+
+            if ($user->timezone === null) {
+                $user->update(['timezone' => $usable ? $detected : 'Europe/Zurich']);
+            }
+
+            return back();
+        }
+
+        $user->update(['timezone' => $request->string('timezone')->value()]);
+
+        return back()->with('success', __('ui.settings.saved'));
     }
 
     /**

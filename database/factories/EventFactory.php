@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Event;
 use App\Models\Group;
 use App\Models\User;
+use App\Support\WallClock;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -39,6 +40,19 @@ class EventFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'date' => now()->subWeek()->format('Y-m-d'),
+        ]);
+    }
+
+    /**
+     * Start the event at a Europe/Zurich wall-clock time on the given day, optionally ending the same day (section 9).
+     */
+    public function at(string $date, string $time, ?string $endTime = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'date' => null,
+            'starts_at' => WallClock::instant($date, $time, WallClock::DEFAULT_ZONE),
+            'end_date' => $endTime === null ? $date : null,
+            'ends_at' => $endTime === null ? null : WallClock::instant($date, $endTime, WallClock::DEFAULT_ZONE),
         ]);
     }
 }

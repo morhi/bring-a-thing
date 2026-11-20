@@ -103,7 +103,7 @@ class Poll extends Model
      */
     public function options(): HasMany
     {
-        return $this->hasMany(PollOption::class)->orderBy('date')->orderBy('starts_at')->orderBy('id');
+        return $this->hasMany(PollOption::class)->orderByRaw('coalesce(poll_options.starts_at, poll_options.date)')->orderBy('id');
     }
 
     /**
@@ -114,8 +114,7 @@ class Poll extends Model
     public function fixedEvents(): HasManyThrough
     {
         return $this->hasManyThrough(Event::class, PollOption::class, 'poll_id', 'origin_poll_option_id')
-            ->orderBy('events.date')
-            ->orderBy('events.starts_at');
+            ->chronological();
     }
 
     /**

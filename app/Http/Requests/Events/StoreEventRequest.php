@@ -4,11 +4,13 @@ namespace App\Http\Requests\Events;
 
 use App\Models\Event;
 use App\Models\Group;
+use App\Support\WallClock;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -173,9 +175,9 @@ class StoreEventRequest extends FormRequest
     }
 
     /**
-     * The validated event attributes, with empty optional fields as null.
+     * The validated event attributes, with empty optional fields as null and times as UTC instants.
      *
-     * @return array{title: string, description: string|null, location: string|null, date: string, starts_at: string|null, end_date: string|null, ends_at: string|null}
+     * @return array{title: string, description: string|null, location: string|null, date: string|null, starts_at: Carbon|null, end_date: string|null, ends_at: Carbon|null}
      */
     public function eventAttributes(): array
     {
@@ -188,6 +190,23 @@ class StoreEventRequest extends FormRequest
             'ends_at' => null,
         ];
 
-        return $attributes;
+        return [...$attributes, ...$this->schedule($attributes)];
+    }
+
+    /**
+     * Map the local start and end inputs to the stored columns in the acting person's zone (section 9).
+     *
+     * Each side keeps a plain date without a time, or becomes a UTC instant with one.
+     *
+     * @param  array{date: string, starts_at?: string|null, end_date?: string|null, ends_at?: string|null}  $input
+     * @return array{date: string|null, starts_at: Carbon|null, end_date: string|null, ends_at: Carbon|null}
+     */
+    protected function schedule(array $input): array
+    {
+        $zone = WallClock::zoneOf($this->user());
+        [$date, $startsAt] = WallClock::toStored($input['date'], $input['starts_at'] ?? null, $zone);
+        [$endDate, $endsAt] = WallClock::toStored($input['end_date'] ?? $input['date'], $input['ends_at'] ?? null, $zone);
+
+        return ['date' => $date, 'starts_at' => $startsAt, 'end_date' => $endDate, 'ends_at' => $endsAt];
     }
 }

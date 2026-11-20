@@ -6,6 +6,7 @@ use App\Enums\PollResponseStatus;
 use App\Models\PollOption;
 use App\Models\PollResponse;
 use App\Models\User;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class AttendanceDayData extends Data
@@ -18,7 +19,7 @@ class AttendanceDayData extends Data
         public int $option_id,
         public string $poll_slug,
         public string $poll_title,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $label,
         public array $available_user_ids,
@@ -48,8 +49,8 @@ class AttendanceDayData extends Data
             option_id: $option->id,
             poll_slug: $option->poll->slug,
             poll_title: $option->poll->title,
-            date: $option->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($option->starts_at),
+            date: $option->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($option->starts_at),
             label: $option->label,
             available_user_ids: $responses
                 ->filter(fn (PollResponse $response) => $response->status !== PollResponseStatus::No)

@@ -88,7 +88,7 @@ class EventShowData extends Data
             lists: $isParticipant ? $event->rosters->map(fn (Roster $roster) => GroupListData::fromRoster($roster))->all() : [],
             follow_up_polls: $followUpPolls->sortBy(fn (Poll $poll) => $poll->isClosed() ? 1 : 0)->map(fn (Poll $poll) => GroupPollData::fromPoll($poll))->values()->all(),
             follow_up_audience_count: $event->followUpAudience()->count(),
-            child_events: $event->childEvents->sortBy(fn (Event $child) => $child->date->format('Y-m-d').' '.($child->starts_at ?? '00:00'))->map(fn (Event $child) => GroupEventData::forUser($child, $user))->values()->all(),
+            child_events: $event->childEvents->sortBy(fn (Event $child) => $child->startsAt()->getTimestamp())->map(fn (Event $child) => GroupEventData::forUser($child, $user))->values()->all(),
             comments: $permissions->can_comment ? $event->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $event), $user))->all() : [],
             permissions: $permissions,
             invite_link: $permissions->can_manage_invite_link ? EntityInviteLinkData::fromEntity($event) : null,

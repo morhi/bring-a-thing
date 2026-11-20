@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Models\Event;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class DashboardEventData extends Data
@@ -15,7 +16,7 @@ class DashboardEventData extends Data
         public string $title,
         public ?string $group_slug,
         public ?string $group_name,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $location,
         public int $accepted_count,
@@ -36,8 +37,8 @@ class DashboardEventData extends Data
             title: $event->title,
             group_slug: $event->group?->slug,
             group_name: $event->group?->name,
-            date: $event->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($event->starts_at),
+            date: $event->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($event->starts_at),
             location: $event->location,
             accepted_count: $event->participations->count(),
             accepted_names: $event->participations->take(5)->map(fn ($participation) => (string) $participation->user?->name)->values()->all(),

@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Models\Event;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class EventData extends Data
@@ -13,7 +14,7 @@ class EventData extends Data
         public string $title,
         public ?string $description,
         public ?string $location,
-        public string $date,
+        public ?string $date,
         public ?string $starts_at,
         public ?string $end_date,
         public ?string $ends_at,
@@ -41,10 +42,10 @@ class EventData extends Data
             title: $event->title,
             description: $event->description,
             location: $event->location,
-            date: $event->date->format('Y-m-d'),
-            starts_at: EventSummaryData::time($event->starts_at),
+            date: $event->date?->format('Y-m-d'),
+            starts_at: WallClock::iso($event->starts_at),
             end_date: $event->end_date?->format('Y-m-d'),
-            ends_at: EventSummaryData::time($event->ends_at),
+            ends_at: WallClock::iso($event->ends_at),
             is_past: $event->isPast(),
             group_slug: $event->group?->slug,
             group_name: $event->group?->name,

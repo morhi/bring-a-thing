@@ -40,7 +40,12 @@ import EmptyState from '@/components/app/empty-state.vue';
 import ShareDialog from '@/components/app/share-dialog.vue';
 import PollCalendar from '@/components/app/poll-calendar.vue';
 import PollGrid from '@/components/app/poll-grid.vue';
-import { describeOption, formatDate } from '@/components/app/poll/dates';
+import {
+    dayOf,
+    describeOption,
+    formatDate,
+    timeOf,
+} from '@/components/app/poll/dates';
 import type {
     PollAnswer,
     PollAnswers,
@@ -136,13 +141,13 @@ const featureId = computed(() => {
     return isDateFinder.value ? 'F-06' : 'F-07';
 });
 
-// Option slugs are the grid's column keys
+// Option slugs are the grid's column keys; slots group by their start day in the viewer's zone
 const gridOptions = computed<PollGridOption[]>(() =>
     poll.value.options.map((option) => ({
         id: option.slug,
-        date: option.date,
-        start: option.starts_at,
-        end: option.ends_at,
+        date: dayOf(option),
+        start: timeOf(option.starts_at),
+        end: timeOf(option.ends_at),
         label: option.label,
         fixed: option.is_fixed,
     })),
@@ -375,11 +380,11 @@ function confirmFix(): void {
 }
 
 function optionWhen(option: {
-    date: string;
+    date: string | null;
     starts_at: string | null;
     ends_at: string | null;
 }): string {
-    const day = formatDate(option.date, locale.value, {
+    const day = formatDate(dayOf(option), locale.value, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -390,8 +395,8 @@ function optionWhen(option: {
     }
 
     return option.ends_at
-        ? `${day}, ${option.starts_at}–${option.ends_at}`
-        : `${day}, ${option.starts_at}`;
+        ? `${day}, ${timeOf(option.starts_at)}–${timeOf(option.ends_at)}`
+        : `${day}, ${timeOf(option.starts_at)}`;
 }
 
 // Live updates (F-21): every change reloads the page prop; a deleted poll sends people back
@@ -783,7 +788,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         :href="showEvent(event.slug).url"
                         class="flex items-center gap-4 px-4 py-3.5 sm:px-[22px]"
                     >
-                        <DateBlock :date="event.date" fixed />
+                        <DateBlock :date="dayOf(event)" fixed />
                         <span class="flex min-w-0 flex-1 flex-col gap-1">
                             <span
                                 class="font-display text-[17px] leading-tight font-[640] break-words"
@@ -840,9 +845,9 @@ const buttonClass = 'h-(--control-height) px-4';
                             <span class="font-semibold">{{
                                 describeOption(
                                     {
-                                        date: option.date,
-                                        start: option.starts_at,
-                                        end: option.ends_at,
+                                        date: dayOf(option),
+                                        start: timeOf(option.starts_at),
+                                        end: timeOf(option.ends_at),
                                         label: option.label,
                                     },
                                     locale,
@@ -901,7 +906,7 @@ const buttonClass = 'h-(--control-height) px-4';
                                 :key="entry.option.slug"
                                 class="flex items-start gap-3"
                             >
-                                <DateBlock :date="entry.option.date" fixed />
+                                <DateBlock :date="dayOf(entry.option)" fixed />
                                 <span class="flex min-w-0 flex-col gap-1">
                                     <span class="font-semibold">{{
                                         poll.title

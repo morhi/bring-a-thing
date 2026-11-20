@@ -25,6 +25,7 @@ use App\Models\Group;
 use App\Models\Poll;
 use App\Notifications\DateFixed;
 use App\Notifications\PollCreated;
+use App\Support\WallClock;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,6 +94,7 @@ class PollController extends Controller
             $request->input('options', []),
             $request->input('starts_on'),
             $request->input('ends_on'),
+            WallClock::zoneOf($request->user()),
         );
 
         DashboardChanged::forItem($poll);
@@ -136,6 +138,7 @@ class PollController extends Controller
             $request->string('title')->value(),
             $request->has('options') ? $request->validated('options') : null,
             $request->validated('remove', []),
+            WallClock::zoneOf($request->user()),
         );
 
         PollChanged::dispatch($poll->id);

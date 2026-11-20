@@ -35,7 +35,12 @@ import AvatarStack from '@/components/app/avatar-stack.vue';
 import type { AvatarStackPerson } from '@/components/app/avatar-stack.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import ListRow from '@/components/app/list-row.vue';
-import { formatDate, toIso } from '@/components/app/poll/dates';
+import {
+    dayOf,
+    formatDate,
+    localDay,
+    timeOf,
+} from '@/components/app/poll/dates';
 import PollRow from '@/components/app/poll-row.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import SectionBoxItem from '@/components/app/section-box-item.vue';
@@ -116,7 +121,7 @@ const greeting = computed(() => {
 });
 
 const today = computed(() =>
-    formatDate(toIso(new Date()), locale.value, {
+    formatDate(localDay(new Date().toISOString()), locale.value, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -141,7 +146,11 @@ const roleLabel: Record<App.Enums.GroupRole, string> = {
     member: 'group.member.member',
 };
 
-function shortDate(date: string): string {
+function shortDate(date: string | null): string {
+    if (!date) {
+        return '';
+    }
+
     return formatDate(date, locale.value, {
         day: 'numeric',
         month: 'short',
@@ -179,7 +188,11 @@ const withoutGroupCounts = computed(() => {
     ];
 });
 
-function weekdayDate(date: string): string {
+function weekdayDate(date: string | null): string {
+    if (!date) {
+        return '';
+    }
+
     return formatDate(date, locale.value, {
         weekday: 'short',
         day: 'numeric',
@@ -205,8 +218,9 @@ function waitingMeta(item: App.Data.DashboardWaitingData): string {
         return `${item.group_name ?? t('newList.standalone')} · ${answered}`;
     }
 
-    const day = item.date
-        ? formatDate(item.date, locale.value, {
+    const date = dayOf({ date: item.date, starts_at: item.starts_at });
+    const day = date
+        ? formatDate(date, locale.value, {
               weekday: 'short',
               day: 'numeric',
               month: 'short',
@@ -217,7 +231,7 @@ function waitingMeta(item: App.Data.DashboardWaitingData): string {
         accepted: item.accepted_count ?? 0,
     });
 
-    return `${item.group_name ?? t('newList.standalone')} · ${day}${item.starts_at ? `, ${item.starts_at}` : ''} · ${accepted}`;
+    return `${item.group_name ?? t('newList.standalone')} · ${day}${item.starts_at ? `, ${timeOf(item.starts_at)}` : ''} · ${accepted}`;
 }
 
 function waitingFeature(item: App.Data.DashboardWaitingData): string {
@@ -503,15 +517,15 @@ function acceptedPeople(
                         >
                             <span class="text-fg-muted text-sm tabular-nums">
                                 <span class="text-fg font-semibold">{{
-                                    weekdayDate(event.date)
+                                    weekdayDate(dayOf(event))
                                 }}</span>
                                 <template v-if="event.starts_at">
-                                    · {{ event.starts_at }}</template
+                                    · {{ timeOf(event.starts_at) }}</template
                                 >
                             </span>
                             <Badge
                                 class="bg-primary-soft text-primary-soft-fg justify-self-end @[760px]:order-last"
-                                >{{ relativeDay(event.date) }}</Badge
+                                >{{ relativeDay(dayOf(event)) }}</Badge
                             >
                             <span
                                 class="group-hover:text-primary col-span-2 min-w-0 font-semibold break-words @[760px]:col-span-1"

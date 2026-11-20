@@ -19,6 +19,7 @@ import {
     addEmail,
     updatePassword,
     updateProfile,
+    updateTimezone,
 } from '@/actions/App/Http/Controllers/SettingsController';
 import ChoiceGroup from '@/components/app/choice-group.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
@@ -37,6 +38,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    NativeSelect,
+    NativeSelectOption,
+} from '@/components/ui/native-select';
 import { useI18n } from '@/composables/use-i18n';
 import {
     isPasskeyCancelled,
@@ -58,6 +63,8 @@ const props = defineProps<{
 const { t, locale, setLocale } = useI18n();
 
 const profileForm = useForm({ name: props.settings.name ?? '' });
+const timezoneForm = useForm({ timezone: props.settings.timezone ?? '' });
+const timezoneSearch = ref('');
 const emailForm = useForm({ email: props.settings.pending_email ?? '' });
 const passwordForm = useForm({
     current_password: '',
@@ -91,6 +98,20 @@ const languageOptions = computed<ChoiceOption[]>(() =>
     })),
 );
 
+// The chosen zone stays listed while filtering, so the select never loses its value
+const filteredTimezones = computed(() => {
+    const needle = timezoneSearch.value
+        .trim()
+        .toLowerCase()
+        .replaceAll(' ', '_');
+
+    return props.settings.timezones.filter(
+        (zone) =>
+            zone === timezoneForm.timezone ||
+            zone.toLowerCase().includes(needle),
+    );
+});
+
 const inputClass =
     'bg-control border-control-border hover:border-fg-soft focus-visible:border-primary-ring placeholder:text-fg-soft h-(--control-height) max-w-(--field-max-width) rounded-(--control-radius) px-3.5 text-[15px]';
 const sectionClass =
@@ -100,6 +121,10 @@ const cardClass =
 
 function saveProfile(): void {
     profileForm.patch(updateProfile.url(), { preserveScroll: true });
+}
+
+function saveTimezone(): void {
+    timezoneForm.patch(updateTimezone.url(), { preserveScroll: true });
 }
 
 function sendEmailConfirmation(): void {
@@ -654,6 +679,81 @@ function logOut(): void {
                     />
                 </FormField>
             </div>
+        </section>
+
+        <section
+            :class="sectionClass"
+            aria-labelledby="settings-timezone-title"
+            data-feature="F-02"
+        >
+            <div class="flex min-w-0 flex-col gap-1.5">
+                <h2 id="settings-timezone-title" class="text-h2">
+                    {{ t('settings.timezone') }}
+                </h2>
+                <p class="text-fg-muted text-[15px]">
+                    {{ t('settings.timezone.text') }}
+                </p>
+            </div>
+
+            <form :class="cardClass" novalidate @submit.prevent="saveTimezone">
+                <FormField
+                    :label="t('settings.timezone.search')"
+                    control="settings-timezone-search"
+                    :hint="t('settings.timezone.searchHint')"
+                >
+                    <template #default="{ id, describedBy }">
+                        <Input
+                            :id="id"
+                            v-model="timezoneSearch"
+                            type="search"
+                            autocomplete="off"
+                            :aria-describedby="describedBy"
+                            :class="inputClass"
+                        />
+                    </template>
+                </FormField>
+                <FormField
+                    :label="t('settings.timezone.label')"
+                    control="settings-timezone"
+                    :hint="
+                        filteredTimezones.length === 0
+                            ? t('settings.timezone.none')
+                            : t('settings.timezone.hint')
+                    "
+                    :error="timezoneForm.errors.timezone"
+                >
+                    <template #default="{ id, describedBy, invalid }">
+                        <NativeSelect
+                            :id="id"
+                            v-model="timezoneForm.timezone"
+                            :aria-describedby="describedBy"
+                            :aria-invalid="invalid || undefined"
+                            class="[&_select]:bg-control dark:[&_select]:bg-input/30 [&_select]:border-control-border [&_select]:hover:border-fg-soft [&_select]:focus-visible:border-primary-ring w-full max-w-(--field-max-width) [&_select]:h-(--control-height) [&_select]:rounded-(--control-radius) [&_select]:px-3.5 [&_select]:text-[15px] md:[&_select]:text-sm"
+                        >
+                            <NativeSelectOption
+                                v-for="zone in filteredTimezones"
+                                :key="zone"
+                                :value="zone"
+                            >
+                                {{ zone }}
+                            </NativeSelectOption>
+                        </NativeSelect>
+                    </template>
+                </FormField>
+                <div>
+                    <Button
+                        type="submit"
+                        size="lg"
+                        class="rounded-full px-4"
+                        :disabled="
+                            timezoneForm.processing ||
+                            timezoneForm.timezone === ''
+                        "
+                    >
+                        {{ t('settings.save') }}
+                    </Button>
+                </div>
+            </form>
         </section>
 
         <section

@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/settings/email', [SettingsController::class, 'addEmail'])->name('settings.email');
     Route::get('/settings/email/confirm/{user}', [SettingsController::class, 'confirmEmail'])->middleware('signed')->name('settings.email.confirm');
     Route::patch('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::patch('/settings/timezone', [SettingsController::class, 'updateTimezone'])->name('settings.timezone');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/settings/friends', [FriendController::class, 'index'])->name('friends.index');

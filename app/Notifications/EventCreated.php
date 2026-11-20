@@ -6,6 +6,7 @@ use App\Enums\NotificationKind;
 use App\Models\Event;
 use App\Models\User;
 use App\Notifications\Concerns\DeliversInApp;
+use App\Support\WallClock;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
 
@@ -54,10 +55,12 @@ class EventCreated extends Notification implements InAppNotification
     }
 
     /**
+     * The date is the event's start day in the recipient's zone (section 9).
+     *
      * @return array{name: string, title: string, date: string}
      */
-    public function params(): array
+    public function params(?User $notifiable = null): array
     {
-        return ['name' => $this->actorName(), 'title' => $this->event->title, 'date' => $this->event->date->format('Y-m-d')];
+        return ['name' => $this->actorName(), 'title' => $this->event->title, 'date' => $this->event->localDate(WallClock::zoneOf($notifiable))->format('Y-m-d')];
     }
 }

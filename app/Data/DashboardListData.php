@@ -39,7 +39,7 @@ class DashboardListData extends Data
         return new self(
             slug: $roster->slug,
             title: $roster->title,
-            date: ($roster->date ?? $roster->event?->date)?->format('Y-m-d'),
+            date: ($roster->date ?? $roster->event?->localDate())?->format('Y-m-d'),
             claimed_count: $roster->items->filter(fn (RosterItem $item) => self::isClaimed($item))->count(),
             item_count: $roster->items->count(),
             is_shared: $roster->share_token !== null,

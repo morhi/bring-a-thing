@@ -9,9 +9,9 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 it('F-06: a poll with three time slots on the same date shows three separate columns', function () {
     [, $owner, , $poll] = pollGroup(pollAttributes: ['granularity' => 'hour']);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-12', 'starts_at' => '18:00', 'ends_at' => '19:00']);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-12', 'starts_at' => '10:00', 'ends_at' => '11:00']);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-12', 'starts_at' => '14:00', 'ends_at' => '15:00']);
+    PollOption::factory()->slot('2027-03-12', '18:00', '19:00')->create(['poll_id' => $poll->id]);
+    PollOption::factory()->slot('2027-03-12', '10:00', '11:00')->create(['poll_id' => $poll->id]);
+    PollOption::factory()->slot('2027-03-12', '14:00', '15:00')->create(['poll_id' => $poll->id]);
 
     $this->actingAs($owner)->get(route('polls.show', $poll))
         ->assertOk()
@@ -20,9 +20,9 @@ it('F-06: a poll with three time slots on the same date shows three separate col
             ->where('page.poll.uses_time_slots', true)
             ->where('page.poll.granularity', 'hour')
             ->has('page.poll.options', 3)
-            ->where('page.poll.options.0.starts_at', '10:00')
-            ->where('page.poll.options.1.starts_at', '14:00')
-            ->where('page.poll.options.2.starts_at', '18:00'));
+            ->where('page.poll.options.0.starts_at', '2027-03-12T09:00:00Z')
+            ->where('page.poll.options.1.starts_at', '2027-03-12T13:00:00Z')
+            ->where('page.poll.options.2.starts_at', '2027-03-12T17:00:00Z'));
 });
 
 it('F-06: changing an answer from no to yes shows one yes answer and no additional row', function () {
@@ -86,7 +86,7 @@ it('F-06: "Use this time for all" with 18:00 to 20:00 on five slots sets all fiv
 
     $poll = Poll::query()->where('title', 'Rehearsals')->firstOrFail();
     expect($poll->options)->toHaveCount(5)
-        ->and($poll->options->every(fn (PollOption $option) => substr($option->starts_at, 0, 5) === '18:00' && substr($option->ends_at, 0, 5) === '20:00'))->toBeTrue();
+        ->and($poll->options->every(fn (PollOption $option) => $option->starts_at->format('H:i') === '17:00' && $option->ends_at->format('H:i') === '19:00'))->toBeTrue();
 });
 
 it('F-06: an option with a label shows it in the grid header', function () {
@@ -99,8 +99,8 @@ it('F-06: an option with a label shows it in the grid header', function () {
 
 it('F-06: in an edited poll, "Use this time for all" leaves options with answers unchanged', function () {
     [, $owner, [$member], $poll] = pollGroup(1, ['granularity' => 'hour']);
-    $answered = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01', 'starts_at' => '10:00', 'ends_at' => '12:00']);
-    $open = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-02', 'starts_at' => '10:00', 'ends_at' => '12:00']);
+    $answered = PollOption::factory()->slot('2027-03-01', '10:00', '12:00')->create(['poll_id' => $poll->id]);
+    $open = PollOption::factory()->slot('2027-03-02', '10:00', '12:00')->create(['poll_id' => $poll->id]);
     answerOption($answered, [$member], PollResponseStatus::Yes);
 
     $this->actingAs($owner)->patch(route('polls.update', $poll), [
@@ -111,9 +111,9 @@ it('F-06: in an edited poll, "Use this time for all" leaves options with answers
         ],
     ])->assertSessionHasNoErrors();
 
-    expect(substr($answered->fresh()->starts_at, 0, 5))->toBe('10:00')
-        ->and(substr($open->fresh()->starts_at, 0, 5))->toBe('18:00')
-        ->and(substr($open->fresh()->ends_at, 0, 5))->toBe('20:00');
+    expect($answered->fresh()->starts_at->format('Y-m-d H:i'))->toBe('2027-03-01 09:00')
+        ->and($open->fresh()->starts_at->format('Y-m-d H:i'))->toBe('2027-03-02 17:00')
+        ->and($open->fresh()->ends_at->format('Y-m-d H:i'))->toBe('2027-03-02 19:00');
 });
 
 it('F-06: the mode cannot change after creation', function () {
@@ -255,16 +255,16 @@ it('F-08: the "New poll" page is offered to group members', function () {
 it('F-09: fixing three options creates three events with the options\' dates', function () {
     [, $owner, , $poll] = pollGroup();
     $options = collect(['2027-03-03', '2027-03-10', '2027-03-17', '2027-03-24'])
-        ->map(fn (string $date) => PollOption::factory()->create(['poll_id' => $poll->id, 'date' => $date, ...($date === '2027-03-03' ? ['starts_at' => '18:00', 'ends_at' => '20:00'] : [])]));
+        ->map(fn (string $date) => ($date === '2027-03-03' ? PollOption::factory()->slot($date, '18:00', '20:00') : PollOption::factory()->state(['date' => $date]))->create(['poll_id' => $poll->id]));
 
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => $options->take(3)->pluck('slug')->all()])
         ->assertRedirect(route('polls.show', $poll))
         ->assertSessionHas('success', 'Dates fixed');
 
-    $events = Event::query()->where('group_id', $poll->group_id)->orderBy('date')->get();
+    $events = Event::query()->where('group_id', $poll->group_id)->chronological()->get();
     expect($events)->toHaveCount(3)
-        ->and($events->map(fn (Event $event) => $event->date->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
-        ->and($events->map(fn (Event $event) => $event->end_date->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
+        ->and($events->map(fn (Event $event) => $event->localDate()->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
+        ->and($events->map(fn (Event $event) => ($event->end_date ?? $event->ends_at->setTimezone('Europe/Zurich'))->format('Y-m-d'))->all())->toBe(['2027-03-03', '2027-03-10', '2027-03-17'])
         ->and($events->pluck('title')->unique()->all())->toBe([$poll->title])
         ->and($poll->fresh()->isClosed())->toBeTrue();
 
@@ -322,8 +322,8 @@ it('F-09: a plain member cannot fix dates on someone else\'s poll', function () 
 
 it('F-09: a fixed option cannot be removed and keeps its date and time', function () {
     [, $owner, , $poll] = pollGroup(pollAttributes: ['granularity' => 'hour']);
-    $fixed = PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-01', 'starts_at' => '18:00', 'ends_at' => '20:00']);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-02', 'starts_at' => '18:00', 'ends_at' => '20:00']);
+    $fixed = PollOption::factory()->slot('2027-03-01', '18:00', '20:00')->create(['poll_id' => $poll->id]);
+    PollOption::factory()->slot('2027-03-02', '18:00', '20:00')->create(['poll_id' => $poll->id]);
     $this->actingAs($owner)->post(route('polls.fix', $poll), ['options' => [$fixed->slug]]);
     $this->actingAs($owner)->delete(route('polls.reopen', $poll));
 
@@ -336,7 +336,7 @@ it('F-09: a fixed option cannot be removed and keeps its date and time', functio
     ])->assertSessionHasErrors(['options.0.date' => 'A fixed option keeps its date and time.']);
 
     $this->assertModelExists($fixed);
-    expect(substr($fixed->fresh()->starts_at, 0, 5))->toBe('18:00');
+    expect($fixed->fresh()->starts_at->format('Y-m-d H:i'))->toBe('2027-03-01 17:00');
 });
 
 it('F-09: an already fixed option cannot be fixed again', function () {
@@ -426,17 +426,17 @@ it('F-06: an answer chosen with the arrow keys is saved right away and shown aft
 it('F-06: the calendar view gets the poll mode and the options in chronological order', function (string $granularity, bool $usesTimeSlots) {
     // Week or month grid follows the mode; the option order drives the chronological tab order
     [, $owner, , $poll] = pollGroup(pollAttributes: ['granularity' => $granularity]);
-    $times = $usesTimeSlots ? ['starts_at' => '18:00', 'ends_at' => '19:00'] : [];
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-20', ...$times]);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-05', ...$times]);
-    PollOption::factory()->create(['poll_id' => $poll->id, 'date' => '2027-03-12', ...$times]);
+    $option = fn (string $date) => ($usesTimeSlots ? PollOption::factory()->slot($date, '18:00', '19:00') : PollOption::factory()->state(['date' => $date]))->create(['poll_id' => $poll->id]);
+    $created = collect(['2027-03-20', '2027-03-05', '2027-03-12'])->map($option);
+    $field = $usesTimeSlots ? 'starts_at' : 'date';
+    $expected = fn (int $index) => $usesTimeSlots ? $created[$index]->starts_at->format('Y-m-d\TH:i:s\Z') : $created[$index]->date->format('Y-m-d');
 
     $this->actingAs($owner)->get(route('polls.show', $poll))
         ->assertInertia(fn (Assert $page) => $page
             ->where('page.poll.uses_time_slots', $usesTimeSlots)
-            ->where('page.poll.options.0.date', '2027-03-05')
-            ->where('page.poll.options.1.date', '2027-03-12')
-            ->where('page.poll.options.2.date', '2027-03-20'));
+            ->where("page.poll.options.0.{$field}", $expected(1))
+            ->where("page.poll.options.1.{$field}", $expected(2))
+            ->where("page.poll.options.2.{$field}", $expected(0)));
 })->with([
     'whole days: month grid' => ['day', false],
     'time slots: week grid' => ['hour', true],

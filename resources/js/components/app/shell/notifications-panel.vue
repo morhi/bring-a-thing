@@ -20,7 +20,14 @@ import {
 } from 'vue';
 import type { Component } from 'vue';
 import EmptyState from '@/components/app/empty-state.vue';
-import { formatDate, toIso } from '@/components/app/poll/dates';
+import {
+    addDays,
+    formatDate,
+    fromIso,
+    localDay,
+    localTime,
+    toIso,
+} from '@/components/app/poll/dates';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
@@ -102,24 +109,15 @@ function text(entry: App.Data.NotificationData): string {
 }
 
 function when(entry: App.Data.NotificationData): string {
-    const created = new Date(entry.created_at);
-    const day = toIso(created);
-    const time = created.toLocaleTimeString(
-        locale.value === 'de' ? 'de-CH' : 'en-GB',
-        { hour: '2-digit', minute: '2-digit' },
-    );
-    const today = new Date();
-    const yesterday = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() - 1,
-    );
+    const day = localDay(entry.created_at);
+    const time = localTime(entry.created_at);
+    const today = localDay(new Date().toISOString());
 
-    if (day === toIso(today)) {
+    if (day === today) {
         return `${t('common.today')}, ${time}`;
     }
 
-    if (day === toIso(yesterday)) {
+    if (day === toIso(addDays(fromIso(today), -1))) {
         return `${t('notif.yesterday')}, ${time}`;
     }
 

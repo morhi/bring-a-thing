@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PollResponseStatus;
 use App\Models\Concerns\HasSlug;
+use App\Support\WallClock;
 use Database\Factories\PollOptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,9 +18,9 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $slug
  * @property int $poll_id
- * @property Carbon $date
- * @property string|null $starts_at
- * @property string|null $ends_at
+ * @property Carbon|null $date
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
  * @property string|null $label
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -39,7 +40,27 @@ class PollOption extends Model
     {
         return [
             'date' => 'date',
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Map a form row with a local date and optional times to the stored columns (section 9).
+     *
+     * A by-day option keeps its plain date; a time slot becomes two UTC
+     * instants on the entered day in the given zone.
+     *
+     * @param  array{date: string, starts_at?: string|null, ends_at?: string|null}  $row
+     * @return array{date: string|null, starts_at: Carbon|null, ends_at: Carbon|null}
+     */
+    public static function scheduleFrom(array $row, string $zone): array
+    {
+        $day = Carbon::parse($row['date'])->format('Y-m-d');
+        [$date, $startsAt] = WallClock::toStored($day, $row['starts_at'] ?? null, $zone);
+        [, $endsAt] = WallClock::toStored($day, $row['ends_at'] ?? null, $zone);
+
+        return ['date' => $date, 'starts_at' => $startsAt, 'ends_at' => $endsAt];
     }
 
     /**

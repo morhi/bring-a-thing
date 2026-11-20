@@ -4,6 +4,8 @@ namespace App\Http\Requests\Events;
 
 use App\Actions\Events\UpdateEvent;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
 
 class UpdateEventRequest extends StoreEventRequest
 {
@@ -32,15 +34,26 @@ class UpdateEventRequest extends StoreEventRequest
      */
     public function rules(): array
     {
-        $moved = $this->filled('date') && app(UpdateEvent::class)->hasMoved($this->route('event'), [
-            'date' => $this->input('date'),
+        $moved = $this->hasValidStart() && app(UpdateEvent::class)->hasMoved($this->route('event'), Arr::only($this->schedule([
+            'date' => $this->string('date')->value(),
             'starts_at' => $this->input('starts_at') ?: null,
-        ]);
+        ]), ['date', 'starts_at']));
 
         return [
             ...parent::rules(),
             'reset_acceptances' => $moved ? ['required', 'boolean'] : ['nullable'],
         ];
+    }
+
+    /**
+     * Whether the start inputs can be read before validation; invalid ones fail validation anyway.
+     */
+    private function hasValidStart(): bool
+    {
+        return Validator::make($this->only(['date', 'starts_at']), [
+            'date' => ['required', 'date_format:Y-m-d'],
+            'starts_at' => ['nullable', 'date_format:H:i'],
+        ])->passes();
     }
 
     /**

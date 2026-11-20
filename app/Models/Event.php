@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\ParticipationStatus;
 use App\Models\Concerns\HasEntityInviteLink;
 use App\Models\Concerns\HasSlug;
+use App\Support\WallClock;
+use Carbon\CarbonInterface;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -27,10 +29,10 @@ use Illuminate\Support\Collection;
  * @property string $title
  * @property string|null $description
  * @property string|null $location
- * @property Carbon $date
- * @property string|null $starts_at
+ * @property Carbon|null $date
+ * @property Carbon|null $starts_at
  * @property Carbon|null $end_date
- * @property string|null $ends_at
+ * @property Carbon|null $ends_at
  * @property int|null $origin_poll_option_id
  * @property int|null $parent_event_id
  * @property string|null $invite_token
@@ -60,7 +62,9 @@ class Event extends Model
     {
         return [
             'date' => 'date',
+            'starts_at' => 'datetime',
             'end_date' => 'date',
+            'ends_at' => 'datetime',
         ];
     }
 
@@ -111,7 +115,7 @@ class Event extends Model
      */
     public function childEvents(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_event_id')->orderBy('date')->orderBy('starts_at');
+        return $this->hasMany(self::class, 'parent_event_id')->chronological();
     }
 
     /**
@@ -155,15 +159,27 @@ class Event extends Model
     }
 
     /**
-     * The moment the event starts, at midnight when it has no time.
+     * The moment the event starts: its UTC instant, or midnight of its date when it has no time.
      */
-    public function startsAt(): Carbon
+    public function startsAt(): CarbonInterface
     {
         if ($this->starts_at === null) {
             return $this->date->copy()->startOfDay();
         }
 
-        return Carbon::parse($this->date->format('Y-m-d').' '.$this->starts_at);
+        return $this->starts_at->copy();
+    }
+
+    /**
+     * The day the event starts on in the given zone; a date without a time is the same day everywhere (section 9).
+     */
+    public function localDate(string $zone = WallClock::DEFAULT_ZONE): CarbonInterface
+    {
+        if ($this->starts_at === null) {
+            return $this->date->copy()->startOfDay();
+        }
+
+        return $this->starts_at->copy()->setTimezone($zone)->startOfDay();
     }
 
     /**
@@ -178,7 +194,7 @@ class Event extends Model
             return $this->date->copy()->endOfDay()->isPast();
         }
 
-        return $this->startsAt()->isPast();
+        return $this->starts_at->isPast();
     }
 
     /**
@@ -191,13 +207,22 @@ class Event extends Model
     #[Scope]
     protected function upcoming(Builder $query): void
     {
-        $today = now()->toDateString();
-
         $query->where(fn (Builder $query) => $query
-            ->whereDate('date', '>', $today)
-            ->orWhere(fn (Builder $query) => $query
-                ->whereDate('date', $today)
-                ->where(fn (Builder $query) => $query->whereNull('starts_at')->orWhere('starts_at', '>', now()->format('H:i:s')))));
+            ->where(fn (Builder $query) => $query->whereNull('starts_at')->whereDate('date', '>=', now()->toDateString()))
+            ->orWhere('starts_at', '>', now()));
+    }
+
+    /**
+     * Order the query by start, an all-day event at the start of its date (F-10).
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function chronological(Builder $query, string $direction = 'asc'): void
+    {
+        $direction = $direction === 'desc' ? 'desc' : 'asc';
+
+        $query->orderByRaw('coalesce('.$query->qualifyColumn('starts_at').', '.$query->qualifyColumn('date').') '.$direction);
     }
 
     /**
