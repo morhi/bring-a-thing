@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { ChevronDown } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import type { HTMLAttributes } from 'vue';
+import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
 
 const props = defineProps<{
@@ -7,35 +16,73 @@ const props = defineProps<{
     // Heading id; the section is labelled by it
     id: string;
     count?: number | null;
+    // Adds an icon-only toggle left of the title that hides the content
+    collapsible?: boolean;
     class?: HTMLAttributes['class'];
 }>();
+
+const { t } = useI18n();
+
+// Open on every visit; the state lives only as long as the page
+const open = ref(true);
+const collapsed = computed(() => !!props.collapsible && !open.value);
 </script>
 
 <template>
-    <section
-        :aria-labelledby="id"
-        :class="
-            cn(
-                'box @container flex min-w-0 flex-col gap-[18px] rounded-3xl p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:pt-6 sm:pb-[26px]',
-                props.class,
-            )
-        "
-    >
-        <div
-            class="border-border flex flex-wrap items-baseline justify-between gap-4 border-b pb-3.5"
+    <Collapsible v-model:open="open" as-child :disabled="!collapsible">
+        <section
+            :aria-labelledby="id"
+            :class="
+                cn(
+                    'box @container flex min-w-0 flex-col gap-[18px] p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:pt-6 sm:pb-[26px]',
+                    // Collapsed: only the header row remains, without divider, gap or extra bottom padding
+                    collapsed && 'gap-0 sm:pb-6',
+                    props.class,
+                )
+            "
         >
-            <h2 :id="id" class="text-h2">
-                {{ title
-                }}<span
-                    v-if="count"
-                    class="text-fg-soft ml-1.5 text-[15px] font-medium tabular-nums"
-                    >{{ count }}</span
-                >
-            </h2>
-            <div v-if="$slots.action" class="flex flex-wrap gap-2.5">
-                <slot name="action" />
+            <div
+                :class="[
+                    'border-border flex flex-wrap justify-between gap-4',
+                    collapsed ? '' : 'border-b pb-3.5',
+                    collapsible ? 'items-center' : 'items-baseline',
+                ]"
+            >
+                <div class="flex min-w-0 items-center gap-2">
+                    <CollapsibleTrigger v-if="collapsible" as-child>
+                        <!-- The button base drops the outline, so the trigger restores the app's focus ring -->
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            :aria-label="t('common.toggleSection', { title })"
+                            class="focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
+                        >
+                            <ChevronDown
+                                :class="[
+                                    'transition-transform motion-reduce:transition-none',
+                                    open ? '' : '-rotate-90',
+                                ]"
+                                aria-hidden="true"
+                            />
+                        </Button>
+                    </CollapsibleTrigger>
+                    <h2 :id="id" class="text-h2">
+                        {{ title
+                        }}<span
+                            v-if="count"
+                            class="text-fg-soft ml-1.5 text-[15px] font-medium tabular-nums"
+                            >{{ count }}</span
+                        >
+                    </h2>
+                </div>
+                <div v-if="$slots.action" class="flex flex-wrap gap-2.5">
+                    <slot name="action" />
+                </div>
             </div>
-        </div>
-        <slot />
-    </section>
+            <CollapsibleContent v-if="collapsible">
+                <slot />
+            </CollapsibleContent>
+            <slot v-else />
+        </section>
+    </Collapsible>
 </template>
