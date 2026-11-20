@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.32
+- **Version:** 1.33
 - **Approved:** 20.11.2026
 
 ## 2. Goal
@@ -67,7 +67,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 
 #### F-02 Account and settings (Secondary)
 
-**User goal:** Manage one's own name, password and passkeys.
+**User goal:** Manage one's own name, password, passkeys and time zone.
 
 **Rules:**
 - The settings contain name, set or change password, saved passkeys, and logout. Common practice applies.
@@ -75,6 +75,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Hint: an account without a password and without a passkey sees a dismissible hint beneath the header on every app page except the settings. It recommends setting a password or saving a passkey. For an account without an email it recommends a passkey or adding an email. Dismissing hides the hint for good on all devices of that account.
 - Passkey gate: saving or removing a passkey needs a login younger than 15 minutes for every account, except one without password, passkey and email, which saves its first passkey at any time. A login through login link, password, passkey or the name-only join of an invite link starts the 15 minutes, and a session restored from the remember cookie does not.
 - Setting or changing the password keeps the current device logged in and does not start the 15 minutes.
+- Time zone: the settings contain the person's time zone as a searchable list of IANA zones, for example Europe/Zurich. An account without a stored time zone takes the browser's time zone on its next app visit, and Europe/Zurich when the browser reports none or an unknown one.
 
 **Acceptance criteria:**
 - After setting a password, login with email and password succeeds.
@@ -90,6 +91,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - An account without a password can start saving a passkey.
 - Removing a passkey deletes it and shows a confirmation message.
 - A passkey of another account cannot be removed.
+- An account without a time zone whose browser reports America/New_York stores America/New_York. Without a valid browser time zone it stores Europe/Zurich.
+- After a change to Europe/London, an event entered at 19:00 in Europe/Zurich shows 18:00.
 
 #### F-03 Groups (Core)
 
@@ -699,7 +702,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - The feed works without login. Anyone with the link reads its content, so the settings hint says to keep the link private.
 - Events the person can see with participation "accepted" appear as confirmed, and events with participation "pending" appear as tentative. Child events count like other events.
 - Each option of an open poll that the person answered "yes" or "maybe" appears as a tentative entry titled "Reserved: {poll title}" (German "Reserviert: {poll title}") as long as the option is not fixed. This applies to date finder and attendance polls. Closing the poll, fixing the option or withdrawing from the poll removes the entry.
-- Times are local wall-clock times. Options and events without a start time appear as all-day entries. Entry texts follow the person's language (F-24).
+- Timed entries carry the person's time zone (F-02), and the feed declares it as the calendar's time zone. Options and events without a start time appear as all-day entries. Entry texts follow the person's language (F-24).
 
 **Acceptance criteria:**
 - An unknown or revoked link returns 404, and after regenerating, the old link returns 404.
@@ -708,6 +711,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A "yes" option and a "maybe" option of an open poll appear as reserved, and a "no" option does not.
 - Closing the poll or fixing the option removes the reserved entry. The fixed event appears instead when the person accepted it or has it pending.
 - An option without a time appears as an all-day entry.
+- For a person in Europe/Zurich, an event at 19:00 Zurich time appears at 19:00 with time zone Europe/Zurich, and the feed declares Europe/Zurich.
 
 ## 6. Structure
 
@@ -748,16 +752,16 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 
 ## 7. Data
 
-- **Account:** email (text, required, unique), name (text, required from the first login), password (optional), language (choice: English, German, required), calendar feed link (text, optional, F-34).
+- **Account:** email (text, required, unique), name (text, required from the first login), password (optional), language (choice: English, German, required), time zone (IANA zone, F-02), calendar feed link (text, optional, F-34).
 - **Friend:** account (required), befriended account (required), display name (text).
 - **Group:** name (text, required), owner (account, required).
 - **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
 - **Membership request:** group, account (both required). At most one per account and group; removed when the owner accepts or declines (F-03).
 - **Poll:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
-- **Poll option:** poll (required), date (required), start and end (time, required for time slots), label (text), fixed (yes/no).
+- **Poll option:** poll (required), date (required for by-day options), start and end (UTC timestamps, required for time slots), label (text), fixed (yes/no).
 - **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
 - **Poll withdrawal:** poll, account (both required). At most one per account and poll (F-08).
-- **Event:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), description (text), location (text), start (date, required; time optional), end (date, required, defaults to the start date; time optional), origin (poll option, optional), parent event (optional, one level).
+- **Event:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), description (text), location (text), start (date, or UTC timestamp when it has a time, required), end (date or UTC timestamp, required, defaults to the start), origin (poll option, optional), parent event (optional, one level).
 - **Participation:** event, account, status (choice: accepted, pending, declined, required). At most one participation per account and event.
 - **List:** title (text, required), description (text), owner (account, required), group or event (each optional, at most one), date (date), members can add items (yes/no), share link (text, optional), attendance day (option of an attendance poll, optional).
 - **Item:** list (required), name (text, required), quantity (number, optional), unit (text), notes (text), date (date), attendance day (optional), custom field values.
@@ -799,6 +803,7 @@ Groups, lists, items, polls, events and custom fields appear in URLs with random
 ## 9. Non-functional requirements
 
 - **Language:** English and German (F-24). Dates follow the active language: 15.10.2026 in German, 15 Oct 2026 in English. Times in 24-hour format in both.
+- **Time zones:** the app stores times as UTC and shows them in the viewer's time zone. That is the account setting when logged in and the browser's time zone otherwise, for example on invite join pages. Entered times count in the time zone of the person entering them, and emails (F-30) use the recipient's time zone. Dates without a time (all-day events, by-day options, item dates) carry no time zone and show the same day everywhere. A time slot appears on the day of its start in the viewer's time zone.
 - **Devices:** mobile first from 375 px width for all functions, desktop up to 1440 px without functional differences. No horizontal scrolling except in the poll's response grid.
 - **Accessibility:** WCAG 2.2 level AA, including the response grid.
 - **Legal:** Swiss Federal Act on Data Protection (revFADP) and GDPR, privacy policy and legal notice as public pages (F-33).
