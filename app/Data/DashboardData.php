@@ -69,8 +69,7 @@ class DashboardData extends Data
         ];
         $upcoming = self::eventsWith($user, $groupIds, ParticipationStatus::Accepted)->map(fn (Event $event) => DashboardEventData::fromEvent($event))->all();
         $claims = self::upcomingClaims($user, $groupIds)->map(fn (RosterItemClaim $claim) => DashboardClaimData::fromClaim($claim))->all();
-        // Follow-up polls get no row of their own; they live on their event page.
-        $polls = $openPolls->whereNull('event_id')->map(fn (Poll $poll) => DashboardPollData::fromPoll($poll))->values()->all();
+        $polls = $openPolls->map(fn (Poll $poll) => DashboardPollData::fromPoll($poll))->values()->all();
         $lists = self::activeLists($user)->map(fn (Roster $roster) => DashboardListData::fromRoster($roster))->all();
         $groupCards = $groups->toBase()
             ->map(fn (Group $group) => DashboardGroupData::fromGroup($group, $listCounts->get($group->getKey(), 0)))

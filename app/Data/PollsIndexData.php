@@ -20,8 +20,8 @@ class PollsIndexData extends Data
     /**
      * Build the page "All polls" with the polls the person may open, narrowed by the filters (F-31).
      *
-     * Visibility follows the dashboard (F-22): withdrawn polls and follow-up
-     * polls are left out. "Unanswered" keeps polls the person answered not at
+     * Visibility follows the dashboard (F-22): withdrawn polls are left out,
+     * follow-up polls show only to those who see them (F-12). "Unanswered" keeps polls the person answered not at
      * all or only in part. Without "all", closed polls are left out; open
      * polls come first.
      */
@@ -29,7 +29,6 @@ class PollsIndexData extends Data
     {
         $polls = Poll::query()
             ->visibleTo($user)
-            ->whereNull('event_id')
             ->when($filters->mine, fn ($query) => $query->where('organizer_id', $user->getKey()))
             ->when(! $filters->all, fn ($query) => $query->whereNull('closed_at'))
             ->with([

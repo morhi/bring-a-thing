@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { HTMLAttributes } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,20 +11,33 @@ import {
 import { useI18n } from '@/composables/use-i18n';
 import { cn } from '@/lib/utils';
 
-const props = defineProps<{
-    title: string;
-    // Heading id; the section is labelled by it
-    id: string;
-    count?: number | null;
-    // Adds an icon-only toggle left of the title that hides the content
-    collapsible?: boolean;
-    class?: HTMLAttributes['class'];
-}>();
+const props = withDefaults(
+    defineProps<{
+        title: string;
+        // Heading id; the section is labelled by it
+        id: string;
+        count?: number | null;
+        // Adds an icon-only toggle left of the title that hides the content
+        collapsible?: boolean;
+        // Initial state of a collapsible section
+        defaultOpen?: boolean;
+        class?: HTMLAttributes['class'];
+    }>(),
+    { count: null, class: undefined, defaultOpen: true },
+);
 
 const { t } = useI18n();
 
-// Open on every visit; the state lives only as long as the page
-const open = ref(true);
+// Set on every visit; the state lives only as long as the page
+const open = ref(props.defaultOpen);
+
+// A live reload that fills or empties the section moves it to its new default
+watch(
+    () => props.defaultOpen,
+    (defaultOpen) => {
+        open.value = defaultOpen;
+    },
+);
 const collapsed = computed(() => !!props.collapsible && !open.value);
 </script>
 

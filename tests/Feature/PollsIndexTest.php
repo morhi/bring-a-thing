@@ -48,10 +48,17 @@ it('F-31: polls the person may not open never appear', function (Closure $setup)
     'withdrawn' => [function (User $member, Group $group, User $owner) {
         dashboardPoll($group, $owner, 2)->withdrawals()->create(['user_id' => $member->id]);
     }],
-    'follow-up poll of an event' => [function (User $member, Group $group, User $owner) {
-        dashboardPoll($group, $owner, 2, attributes: ['event_id' => dashboardEvent($group, $owner, $member, ParticipationStatus::Accepted)->id]);
+    'follow-up poll of an event without acceptance' => [function (User $member, Group $group, User $owner) {
+        dashboardPoll($group, $owner, 2, attributes: ['event_id' => dashboardEvent($group, $owner, $member, ParticipationStatus::Pending)->id]);
     }],
 ]);
+
+it('F-31: a follow-up poll appears for an accepted participant of its event', function () {
+    [$group, $owner, $member] = dashboardGroup();
+    $poll = dashboardPoll($group, $owner, 2, attributes: ['event_id' => dashboardEvent($group, $owner, $member, ParticipationStatus::Accepted)->id]);
+
+    expect(pollsIndexSlugs($member))->toBe([$poll->slug]);
+});
 
 it('F-31: open shows open polls, all adds closed ones', function (array $attributes, bool $open) {
     [$group, $owner, $member] = dashboardGroup();

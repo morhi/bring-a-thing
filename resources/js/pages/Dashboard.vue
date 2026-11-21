@@ -293,6 +293,7 @@ function acceptedPeople(
                 :title="t('dash.waiting')"
                 :count="waiting.length"
                 collapsible
+                :default-open="waiting.length > 0"
                 :class="
                     waiting.length
                         ? 'bg-primary-soft text-primary-soft-fg [&_h2]:text-primary-soft-fg'
@@ -367,10 +368,53 @@ function acceptedPeople(
             </SectionBox>
 
             <SectionBox
+                id="polls-title"
+                :title="t('dash.polls')"
+                :count="polls.length"
+                collapsible
+                :default-open="polls.length > 0"
+                data-feature="F-06"
+            >
+                <template #action>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link
+                            :href="pollsIndex().url"
+                            class="no-underline"
+                            data-feature="F-31"
+                            ><span class="sr-only @[30rem]:not-sr-only">{{
+                                t('dash.polls.all')
+                            }}</span>
+                            <ArrowRight aria-hidden="true"
+                        /></Link>
+                    </Button>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="createPollAny().url" class="no-underline"
+                            ><Plus aria-hidden="true" />
+                            {{ t('dash.polls.new') }}</Link
+                        >
+                    </Button>
+                </template>
+                <ul
+                    v-if="polls.length"
+                    class="divide-border flex min-w-0 flex-col divide-y"
+                >
+                    <li v-for="poll in polls" :key="poll.slug">
+                        <PollRow :poll="poll" />
+                    </li>
+                </ul>
+                <SectionEmptyState
+                    v-else
+                    :title="t('dash.polls.empty.title')"
+                    :text="t('dash.polls.empty')"
+                />
+            </SectionBox>
+
+            <SectionBox
                 id="claims-title"
                 :title="t('dash.claims')"
                 :count="claims.length"
                 collapsible
+                :default-open="claims.length > 0"
                 data-feature="F-15"
             >
                 <ul
@@ -437,51 +481,11 @@ function acceptedPeople(
             </SectionBox>
 
             <SectionBox
-                id="polls-title"
-                :title="t('dash.polls')"
-                :count="polls.length"
-                collapsible
-                data-feature="F-06"
-            >
-                <template #action>
-                    <Button as-child variant="ghost" size="sm">
-                        <Link
-                            :href="pollsIndex().url"
-                            class="no-underline"
-                            data-feature="F-31"
-                            ><span class="sr-only @[30rem]:not-sr-only">{{
-                                t('dash.polls.all')
-                            }}</span>
-                            <ArrowRight aria-hidden="true"
-                        /></Link>
-                    </Button>
-                    <Button as-child variant="outline" size="sm">
-                        <Link :href="createPollAny().url" class="no-underline"
-                            ><Plus aria-hidden="true" />
-                            {{ t('dash.polls.new') }}</Link
-                        >
-                    </Button>
-                </template>
-                <ul
-                    v-if="polls.length"
-                    class="divide-border flex min-w-0 flex-col divide-y"
-                >
-                    <li v-for="poll in polls" :key="poll.slug">
-                        <PollRow :poll="poll" />
-                    </li>
-                </ul>
-                <SectionEmptyState
-                    v-else
-                    :title="t('dash.polls.empty.title')"
-                    :text="t('dash.polls.empty')"
-                />
-            </SectionBox>
-
-            <SectionBox
                 id="upcoming-title"
                 :title="t('dash.upcoming')"
                 :count="upcoming.length"
                 collapsible
+                :default-open="upcoming.length > 0"
                 data-feature="F-10"
             >
                 <template #action>
@@ -574,6 +578,7 @@ function acceptedPeople(
                 :title="t('dash.lists')"
                 :count="lists.length"
                 collapsible
+                :default-open="lists.length > 0"
                 data-feature="F-13"
             >
                 <template #action>
@@ -615,6 +620,7 @@ function acceptedPeople(
                 :title="t('dash.groups')"
                 :count="groups.length"
                 collapsible
+                :default-open="groups.length > 0 || withoutGroup !== null"
                 data-feature="F-03"
             >
                 <template #action>

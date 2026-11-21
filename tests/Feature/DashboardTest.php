@@ -234,13 +234,20 @@ it('F-22: a poll of a group the person is not in is not under current polls', fu
     $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->has('polls', 0));
 });
 
-it('F-22: a follow-up poll gets no row under current polls, also for accepted participants', function () {
+it('F-22: a follow-up poll shows under current polls for accepted participants only', function () {
     [$group, $owner, $member] = dashboardGroup();
+    $pending = User::factory()->create();
+    $group->addMember($pending, GroupRole::Member, now());
     $event = dashboardEvent($group, $owner, $member, ParticipationStatus::Accepted);
+    EventParticipation::factory()->create(['event_id' => $event->id, 'user_id' => $pending->id, 'status' => ParticipationStatus::Pending]);
     $poll = dashboardPoll($group, $owner, 2, null, 0, ['event_id' => $event->id]);
 
     $this->actingAs($member)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->where('waiting.0.slug', $poll->slug)
+        ->has('polls', 1)
+        ->where('polls.0.slug', $poll->slug));
+
+    $this->actingAs($pending)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
         ->has('polls', 0));
 });
 
