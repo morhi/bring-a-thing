@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.34
+- **Version:** 1.35
 - **Approved:** 21.11.2026
 
 ## 2. Goal
@@ -169,7 +169,12 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Each respondent answers each option with yes, maybe or no and can change their answers while the poll is open.
 - Answering works by keyboard: each option is one tab stop, and the arrow keys move between yes, maybe and no and save the selected answer right away.
 - "Fill open" next to the view toggle sets yes, maybe or no on every option the person has not answered yet, in one step. Existing answers stay, so the person marks the exceptions first and fills the rest afterwards. The control is disabled once every option has an answer. It works in the table and the calendar view and is refused on a closed poll and for people outside the audience, like a single answer.
-- The view shows a grid with all responses. The options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label.
+- The view shows a grid with all responses. In the table view, the options with the most yes answers carry the label "Best option". On a tie in yes answers, only the options with the fewest no answers keep the label. Options still tied all carry the label. The calendar view shows each option's yes count and no "Best option" label.
+- The table uses compact columns with a month header row above the day columns. The person's own cell is one button: a click cycles no answer, yes, maybe, no; the arrow-key rule above stays. Other people's answers show as plain icons. The name column and the total row stay sticky. The best options carry a tinted column.
+- Below 640px width, or when the calendar cells are too narrow for the selector, the calendar shows per day the day number, the own answer as a dot and the yes count. Tapping a day opens a panel below the grid with the yes/maybe/no selector, the totals and the note button.
+- Each respondent adds one note of at most 200 characters to their own answer on an option, through a dialog. A note needs an answer. Other people see a note marker, and the text shows on hover or focus. Notes work in the table, the calendar and the day panel. Adding a note is refused on a closed poll and for people outside the audience, like an answer.
+- Organizer, owner and admins switch the table to "Edit answers". It shows every audience member as a row, including people without any answer, and lets them set yes, maybe or no per person and option. It is refused on a closed poll and for everyone else.
+- Below the grid, "No answer yet" lists the audience members without any answer.
 - The mode (by day or time slots) cannot change after creation.
 - A poll can also be created from outside a group ("New poll" at /polls/new): the placement picker offers "Standalone" and the user's own groups, and the poll is created in the chosen group or standalone. A group the person is not a member of is refused.
 - A "Table / Calendar" toggle switches the view. The calendar shows a week grid for a time-slot poll and a month grid for a by-day poll. Options can be answered in both views, and the tab order follows the options chronologically.
@@ -178,6 +183,12 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A poll with three time slots on the same date shows three separate columns.
 - When a person changes their answer from no to yes, the grid shows one yes answer and no additional row.
 - Two options with three yes and one no answer each both carry "Best option". Of two options with three yes answers, the one with fewer no answers alone carries it.
+- The calendar view shows the yes count on each option and no "Best option" label.
+- In the table, a click on the own cell cycles from no answer to yes, maybe and no; other people's cells show icons only and the best options carry a tinted column.
+- At 500px width, the calendar shows per day the day number, the own answer as a dot and the yes count; tapping a day opens the panel with the selector, the totals and the note button.
+- A respondent saves a note of 200 characters on a yes answer; another member sees the marker and the text on hover. A note of 201 characters and a note on an option without an answer are refused, and so is a note on a closed poll.
+- An admin switches to "Edit answers", sees a member without any answer as a row and sets maybe for them; a member without the admin role sees no "Edit answers" and the action is refused for them and on a closed poll.
+- A member without any answer appears under "No answer yet" below the grid and disappears from it after answering.
 - "Use this time for all" with 18:00 to 20:00 on five slots sets all five to these times.
 - An option with a label shows it in the grid header.
 - On the page opened outside a group, a member of two groups picks one and the poll is created in that group; only the member's own groups are offered.
@@ -207,6 +218,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Organizer, owner and admins rename the poll, add options, remove options together with their responses and delete the poll. The delete action sits only on the poll edit page, never in the poll header.
 - An option that has answers keeps its date and time. Removing it, together with its answers, is the only way to change them, and asks for a confirmation.
 - They close the poll and reopen it. A closed poll accepts no responses and allows no changes to options.
+- The poll editor has an optional answer deadline (date and time). The app stores it in UTC and shows it in the viewer's time zone in the poll header, on the dashboard poll rows (F-22) and on "All polls" (F-31). After the deadline the header shows "Deadline passed" and answers stay possible.
+- The option "Close automatically at the deadline" closes the poll when the deadline passes. On a date finder, fixing dates stays possible afterwards. Reopening a poll whose deadline has passed turns auto-close off.
 - A date finder poll closes by fixing dates (F-09). An attendance poll closes without a selection.
 - Reopening keeps events that were already created.
 - A person in the poll's audience who was invited by accident withdraws with "Withdraw" in the poll header, after a confirmation. Their responses are deleted, they leave the audience, and the poll no longer shows to them: not on the dashboard, not on the group page, and opening it shows "Not found". Organizer, owner and admins cannot withdraw, and nobody can from a closed poll or a poll with a fixed option. Joining the poll again through its invite link (F-27) lifts the withdrawal.
@@ -219,6 +232,9 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - On an option with answers, the date and time fields are disabled; on an option without answers they can be edited.
 - A member who withdraws from an open poll lands on the dashboard with a confirmation message; their responses are gone, the totals and best option no longer count them, and the poll is missing from their dashboard.
 - Organizer, owner, admins, a person outside the audience and everyone on a closed poll see no "Withdraw" action, and withdrawing is refused for them.
+- A poll with the deadline 20.12.2026 18:00 in Berlin shows 18:00 to a viewer in Berlin and 12:00 to a viewer in New York; after the deadline the header shows "Deadline passed" and answering still works.
+- A poll with auto-close closes when its deadline passes and then rejects responses; a date finder still allows fixing dates.
+- Reopening a poll with a passed deadline and auto-close leaves it open and turns auto-close off.
 
 #### F-09 Fixing dates (Core)
 
@@ -276,12 +292,17 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - Every group member and every link guest of the event (F-26, F-27) accepts or declines while the event is not past, also without a previous participation status.
 - Organizer, owner and admins remove participants and set the status for others. Members can set the status for others only when the group option allows it (F-03). The per-person status controls appear after the "Manage" action on the participation block, for everyone who may use them.
-- A person who declines and has claimed items in the event's lists sees these items in a confirmation. After confirming, the app releases the claims. A status set for someone else, and removing a participant, never releases their claims. Only the person's own decline does.
+- While a person has no participation status or "pending", the participation block shows "Accept" and "Decline" buttons. Once they have "accepted" or "declined", the block header shows the own status as a chip ("You're in" / "You declined") with a menu that offers the other status, and the buttons disappear.
+- Every switch of the own status through the menu asks for a confirmation. A decline lists the person's claimed items in that confirmation and releases them after confirming. The first answer from no status or "pending" needs no confirmation.
+- A status set for someone else, and removing a participant, never releases their claims. Only the person's own decline does.
 - Only participants see the event's lists (F-13). Only participants with "accepted" see follow-up polls and the action to create them (F-12). Members without participation or with a decline see only the event's key details.
 - A person with a participation status who was invited by accident withdraws with "Withdraw" in the event header, after a confirmation that lists their claimed items. Their participation is removed and their claims on the event's lists are released, so the event leaves their dashboard. Group members still reach the event page and see it like a member without participation. Organizer, owner and admins cannot withdraw, and nobody can from a past event.
 
 **Acceptance criteria:**
 - A decline with two claimed items shows both items in the confirmation, and both are free again afterwards.
+- An accepted person sees the chip "You're in" and no "Accept" or "Decline" buttons.
+- Switching from "accepted" to "declined" and back to "accepted" each needs a confirmation.
+- A person without a participation status sees both buttons.
 - When an admin sets a member to "declined", the member's claims stay.
 - A member who declined does not see the event's lists.
 - A past event allows no accepting or declining.
@@ -414,16 +435,18 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Clarify details without switching to another channel.
 
 **Rules:**
-- Lists, items and events each have a comment thread. The event's thread is collapsed by default.
+- Lists, items, events and polls each have a comment thread. The event's thread is collapsed by default.
 - Cmd+Enter or Ctrl+Enter sends a comment.
-- Author, group owner and admins delete comments. On lists and items the list owner does too. On events nobody else does, not even the organizer.
+- Author, group owner and admins delete comments. On lists and items the list owner does too. On events and polls nobody else does, not even the organizer.
 
 **Acceptance criteria:**
 - A comment on an item appears only on the item, not in the list's thread.
 - A comment on an event appears only on that event.
+- A comment on a poll appears only on that poll.
 - Cmd+Enter in the comment field sends the comment.
 - A member who is neither author, group owner nor admin sees no delete action on an event comment.
 - On a standalone event only the author deletes a comment, not the organizer.
+- A member who is neither author, group owner nor admin sees no delete action on a poll comment; on a standalone poll only the author deletes a comment, not the organizer.
 
 #### F-21 Live updates (Secondary)
 
@@ -454,6 +477,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Every section without content shows the same empty state, modelled on the empty state of "Waiting for you": a check icon, a short heading and a short text.
 - Wherever polls, events and lists appear together, they appear in the order polls, then events, then lists. This applies to the dashboard sections and the counts on group cards, the group page, the restricted group page, the "Without groups" page, the event page (follow-up polls, then child events, then lists) and search results (F-25).
 - The sections show the person's own standalone polls and events (F-29) like those of a group, without a group name.
+- Poll rows show the answer deadline (F-08) when one is set.
 - "Polls" also shows follow-up polls (F-12) to the people who see them. Child events get no rows of their own; they appear on their parent event page.
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
 - A poll the person withdrew from (F-08) is missing from every section and from the open poll count of its group card. An event they withdrew from (F-11) is missing from "Waiting for you" and the upcoming events.
@@ -648,6 +672,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - Filters: "Unanswered" (the person answered none or only some options), "My polls only" (the person organizes the poll), and a switch between open and all polls, which adds closed ones.
 - Filters combine. The page has a button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
 - Polls the person may not open never appear.
+- Rows show the answer deadline (F-08) when one is set.
 
 **Acceptance criteria:**
 - A closed poll appears only after switching to "all".
@@ -748,7 +773,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 2. **Rehearsals only with those who accepted:** open the event, "Follow-up poll", date finder with time slots on several evenings. Only accepted participants respond. The organizer fixes three slots; three rehearsals appear under the event.
 3. **Distribute tasks and things to bring:** open the event, "New list", enter items such as "PA system", "Extension reel" or "Drinks, 2 crates". Participants claim; the organizer assigns the remaining items.
 4. **Single date:** open the group, "New event" with date and time. Members accept or decline on the dashboard or in the event.
-5. **Decline after accepting:** open the event, "Decline", confirmation with one's own claims, confirm. The items are free again.
+5. **Decline after accepting:** open the event, open the status chip, "Decline…", confirmation with one's own claims, confirm. The items are free again.
 6. **Taking part from outside:** open the list, enable the share link and share it. A guest claims an item and logs in on the same page.
 
 ## 7. Data
@@ -758,9 +783,9 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Group:** name (text, required), owner (account, required).
 - **Membership:** group, account, role (choice: owner, admin, member, required), accepted at (date, empty until the first login).
 - **Membership request:** group, account (both required). At most one per account and group; removed when the owner accepts or declines (F-03).
-- **Poll:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls).
+- **Poll:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), type (choice: date finder, attendance, required), mode (choice: by day, time slots, required), closed at (date), event (optional, for follow-up polls), answer deadline (UTC timestamp, optional), auto-close (yes/no).
 - **Poll option:** poll (required), date (required for by-day options), start and end (UTC timestamps, required for time slots), label (text), fixed (yes/no).
-- **Response:** option, account, answer (choice: yes, maybe, no, required). At most one response per account and option.
+- **Response:** option, account, answer (choice: yes, maybe, no, required), note (text, optional, at most 200 characters). At most one response per account and option.
 - **Poll withdrawal:** poll, account (both required). At most one per account and poll (F-08).
 - **Event:** group (optional; standalone without one, F-29), organizer (account, required), title (text, required), description (text), location (text), start (date, or UTC timestamp when it has a time, required), end (date or UTC timestamp, required, defaults to the start), origin (poll option, optional), parent event (optional, one level).
 - **Participation:** event, account, status (choice: accepted, pending, declined, required). At most one participation per account and event.
@@ -768,7 +793,7 @@ Editing items happens in a dialog. Creating a group, a poll, an event or a list 
 - **Item:** list (required), name (text, required), quantity (number, optional), unit (text), notes (text), date (date), attendance day (optional), custom field values.
 - **Claim:** item, account, quantity (number, required for items with a quantity). At most one claim per account and item.
 - **Custom field:** list (required), name (text, required).
-- **Comment:** list, item or event (exactly one, required), author (account, required), text (required), timestamp.
+- **Comment:** list, item, event or poll (exactly one, required), author (account, required), text (required), timestamp.
 - **Notification:** account, type (choice per F-23), reference, read at (date).
 - **Access grant:** account (required), event or poll (exactly one, required), joined via (link). At most one grant per account and event or poll (F-26, F-27). A join through any invite link, or a login through a list share link (F-19), creates a grant for the topmost ancestor and one for the shared item itself. Events and polls carry an optional invite link.
 
