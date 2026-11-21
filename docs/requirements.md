@@ -4,8 +4,8 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.33
-- **Approved:** 20.11.2026
+- **Version:** 1.34
+- **Approved:** 21.11.2026
 
 ## 2. Goal
 
@@ -444,16 +444,17 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **Rules:**
 - The dashboard shows these sections in this order:
   1. "Waiting for you": open polls without a complete response and events with the status "pending".
-  2. "Übernahmen": one's own claims (things and tasks) on upcoming lists.
-  3. "Polls": open polls the person may see, each with the own status "answered", "partly answered" or "not answered", plus a "Show all" link to "All polls" (F-31) and a "Create" button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
+  2. "Polls": open polls the person may see, each with the own status "answered", "partly answered" or "not answered", plus a "Show all" link to "All polls" (F-31) and a "Create" button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
+  3. "Übernahmen": one's own claims (things and tasks) on upcoming lists.
   4. "Events": upcoming events, full width, compact rows, with one's own acceptance, plus a "Show all" link to "All events" (F-32) and a "Create" button "New event" that leads to the placement picker ("Standalone" or one of the own groups) for a new event.
   5. "Lists": active lists the person may open, plus a "Show all" link to "All lists" (F-28) and a "Create" button "New list". Past lists are missing; event lists show only while the event is not past.
   6. Groups: the groups the person is a member of, the guest groups, and the card "Without groups" (F-29). A guest group is a group whose items the person reached only through an event or poll invite link (F-26, F-27). It carries a guest mark and shows only counts of the polls, events and lists the person may open; it opens the restricted group page (F-26). A person who is a member of the group sees it as a normal group. "Without groups" appears only when the person owns at least one poll, event or list without a group.
 - Every section has the same structure: a title, an icon-only collapse toggle to the left of the title and, where applicable, a "Show all" link and a "Create" button.
+- A section without content starts collapsed and a section with content starts expanded. A section that gains or loses content through a live update (F-21) switches to that state.
 - Every section without content shows the same empty state, modelled on the empty state of "Waiting for you": a check icon, a short heading and a short text.
 - Wherever polls, events and lists appear together, they appear in the order polls, then events, then lists. This applies to the dashboard sections and the counts on group cards, the group page, the restricted group page, the "Without groups" page, the event page (follow-up polls, then child events, then lists) and search results (F-25).
 - The sections show the person's own standalone polls and events (F-29) like those of a group, without a group name.
-- Follow-up polls and child events get no rows of their own; they appear on their parent event page. A follow-up poll that needs an answer still shows under "Waiting for you".
+- "Polls" also shows follow-up polls (F-12) to the people who see them. Child events get no rows of their own; they appear on their parent event page.
 - Past events and lists are missing from the dashboard and stay reachable through group and event.
 - A poll the person withdrew from (F-08) is missing from every section and from the open poll count of its group card. An event they withdrew from (F-11) is missing from "Waiting for you" and the upcoming events.
 
@@ -464,11 +465,10 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A section without content, for example "Lists" without active lists, shows the same empty state as "Waiting for you".
 - Every dashboard section shows an icon-only collapse toggle to the left of its title.
 - The dashboard shows the sections "Polls", "Events" and "Lists" in this order, and a group card shows its counts in the order polls, events, lists.
-- A child event and a follow-up poll with a complete response have no dashboard row.
+- A child event has no dashboard row. An open follow-up poll shows under "Polls" for an accepted participant of its event and not for a person with "pending".
 - A list of a past event is missing from the lists section.
 - The sections "Polls", "Events" and "Lists" show their "Show all" link and their "Create" button also when they are empty, and the targets of these links open.
-- Collapsing a section hides its content; the content shows again after expanding.
-- After joining one event of a group through its link, the group shows under "Groups" with the guest mark and the counts 0 for polls, 1 for events and 0 for lists the person may not open.
+- Collapsing a section hides its content; the content shows again after expanding.- After joining one event of a group through its link, the group shows under "Groups" with the guest mark and the counts 0 for polls, 1 for events and 0 for lists the person may not open.
 - A group with three polls of which the person may open one shows the poll count 1 on the guest card.
 - After the person joins the group as a member (F-04), the guest mark disappears from its card and the group shows its full counts.
 - Without an own poll, event or list without a group, the card "Without groups" is missing.
@@ -644,7 +644,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Find any poll one may open, also closed ones, in one place and start a new poll from there.
 
 **Rules:**
-- The page "Polls" shows the polls the person may open by the rules of F-06 and F-22, including their own standalone polls (F-29): polls they withdrew from (F-08) and follow-up polls (F-12) are left out. The default is open polls.
+- The page "Polls" shows the polls the person may open by the rules of F-06 and F-22, including their own standalone polls (F-29) and the follow-up polls they see (F-12): polls they withdrew from (F-08) are left out. The default is open polls.
 - Filters: "Unanswered" (the person answered none or only some options), "My polls only" (the person organizes the poll), and a switch between open and all polls, which adds closed ones.
 - Filters combine. The page has a button "New poll" that leads to the placement picker ("Standalone" or one of the own groups) for a new poll.
 - Polls the person may not open never appear.
@@ -653,7 +653,8 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 - A closed poll appears only after switching to "all".
 - "Unanswered" shows a poll with no or partial answers and hides a fully answered one.
 - "My polls only" hides a poll that another person organizes.
-- A poll of a group the person is not a member of, a poll the person withdrew from and a follow-up poll never appear.
+- A poll of a group the person is not a member of, a poll the person withdrew from and a follow-up poll of an event the person has not accepted never appear.
+- A follow-up poll appears for an accepted participant of its event.
 - Active filters combine with AND.
 - An own standalone poll appears; a standalone poll of another person without a link does not.
 
