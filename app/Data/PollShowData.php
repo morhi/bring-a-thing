@@ -24,6 +24,7 @@ class PollShowData extends Data
         public PollData $poll,
         public array $respondents,
         public int $audience_count,
+        public bool $answers_without_acceptance,
         public array $own_answers,
         public array $best_option_slugs,
         public bool $show_no_counts,
@@ -42,7 +43,9 @@ class PollShowData extends Data
      * On a follow-up poll the audience is the source event's accepted
      * participants with the poll's organizer and the event's managers;
      * anyone who left it drops out of the grid and the totals (F-12).
-     * audience_count feeds the audience note.
+     * audience_count feeds the audience note; answers_without_acceptance is set
+     * for a viewer of a follow-up poll who has not accepted the source event,
+     * such as a guest of the poll's own link, so the note does not claim otherwise (F-12).
      * show_no_counts is set when no answers decided between options tied on
      * yes, so the grid explains the best option (F-06). Guests with a grant
      * (F-26, F-27) belong to the audience; invite_link is only set for
@@ -93,6 +96,7 @@ class PollShowData extends Data
             poll: $pollData,
             respondents: $respondents->all(),
             audience_count: $audience->count(),
+            answers_without_acceptance: $poll->event !== null && ! $poll->event->hasAccepted($user),
             own_answers: $answersByUser->get($user->id, []),
             best_option_slugs: $poll->bestOptions()->pluck('slug')->all(),
             show_no_counts: $poll->bestIsDecidedByNoAnswers(),

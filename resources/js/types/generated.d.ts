@@ -457,6 +457,7 @@ export type PollShowData = {
 poll: App.Data.PollData,
 respondents: App.Data.PollRespondentData[],
 audience_count: number,
+answers_without_acceptance: boolean,
 own_answers: Record<string, App.Enums.PollResponseStatus>,
 best_option_slugs: string[],
 show_no_counts: boolean,

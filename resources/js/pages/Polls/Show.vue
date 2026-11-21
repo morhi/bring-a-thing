@@ -768,9 +768,12 @@ const buttonClass = 'h-(--control-height) px-4';
                 <Users class="size-6 flex-none" aria-hidden="true" />
                 <span class="flex min-w-0 flex-1 flex-col gap-px">
                     <b class="font-semibold">{{
-                        t('newPoll.audienceEvent', {
-                            event: poll.source_event.title,
-                        })
+                        t(
+                            page.answers_without_acceptance
+                                ? 'poll.audienceEventDirect'
+                                : 'newPoll.audienceEvent',
+                            { event: poll.source_event.title },
+                        )
                     }}</b>
                     <span>{{
                         tc('newPoll.audienceEventCount', page.audience_count)
@@ -889,16 +892,30 @@ const buttonClass = 'h-(--control-height) px-4';
                     </button>
                 </div>
                 <Button
-                    v-if="permissions.can_edit_answers && !editingAnswers"
+                    v-if="permissions.can_edit_answers"
                     type="button"
-                    variant="outline"
+                    :variant="editingAnswers ? 'default' : 'outline'"
                     size="sm"
                     class="h-[38px] self-center px-3.5 text-[13px] font-semibold max-sm:order-3 max-sm:self-start"
+                    :aria-pressed="editingAnswers"
                     data-feature="F-06"
-                    @click="startEditingAnswers"
+                    @click="
+                        editingAnswers
+                            ? (editingAnswers = false)
+                            : startEditingAnswers()
+                    "
                 >
-                    <Pencil class="size-4" aria-hidden="true" />
-                    {{ t('poll.editAnswers') }}
+                    <Check
+                        v-if="editingAnswers"
+                        class="size-4"
+                        aria-hidden="true"
+                    />
+                    <Pencil v-else class="size-4" aria-hidden="true" />
+                    {{
+                        editingAnswers
+                            ? t('poll.editAnswers.done')
+                            : t('poll.editAnswers')
+                    }}
                 </Button>
             </template>
 
@@ -920,17 +937,6 @@ const buttonClass = 'h-(--control-height) px-4';
                 @answer="answer"
                 @edit-note="editNote"
             />
-            <div
-                v-if="view === 'table' && editableRespondentIds.length"
-                class="bg-primary-soft text-primary-soft-fg flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold"
-                role="status"
-                data-feature="F-06"
-            >
-                {{ t('poll.editAnswers.banner') }}
-                <Button type="button" size="sm" @click="editingAnswers = false">
-                    {{ t('poll.editAnswers.done') }}
-                </Button>
-            </div>
             <PollGrid
                 v-if="view === 'table'"
                 :id-prefix="`poll-${poll.slug}`"

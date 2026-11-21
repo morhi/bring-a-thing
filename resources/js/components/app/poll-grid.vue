@@ -92,6 +92,10 @@ const columns = computed(() =>
     }),
 );
 
+// Many options get narrow columns so the table stays readable; few options keep roomy ones
+const COMPACT_FROM_COLUMNS = 10;
+const isCompact = computed(() => columns.value.length > COMPACT_FROM_COLUMNS);
+
 // Consecutive columns of one month share a header cell, so the day columns stay narrow
 const monthGroups = computed(() =>
     columns.value.reduce<{ key: string; label: string; span: number }[]>(
@@ -238,7 +242,10 @@ function cellTint(column: { best: boolean; fixed: boolean }): string {
                             :title="headerTitle(column)"
                             :class="
                                 cn(
-                                    'border-border relative w-12 max-w-12 min-w-12 border-b bg-(--box-bg) px-0.5 pt-1 pb-1.5 text-center align-top',
+                                    'border-border relative border-b bg-(--box-bg) pt-1 pb-1.5 text-center align-top',
+                                    isCompact
+                                        ? 'w-12 max-w-12 min-w-12 px-0.5'
+                                        : 'w-[84px] max-w-[84px] min-w-[84px] px-2',
                                     monthStarts.has(column.key) && 'border-l',
                                     cellTint(column),
                                 )

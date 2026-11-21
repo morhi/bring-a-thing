@@ -76,9 +76,9 @@ const { t, locale } = useI18n();
 const BLOCK_MIN_HEIGHT = 48;
 
 // The small answer selector plus the padding of a month cell or a week block
-const MONTH_CELL_MIN_WIDTH = 92;
+const MONTH_CELL_MIN_WIDTH = 96;
 const BLOCK_MIN_WIDTH = 100;
-const MONTH_GAP = 4;
+const MONTH_GAP = 1;
 const HOUR_AXIS_WIDTH = 52;
 
 const localeTag = computed(() => dateLocale(locale.value));
@@ -90,7 +90,8 @@ const root = useTemplateRef<HTMLElement>('root');
 const { width } = useElementSize(root);
 
 // Opens where the poll starts; a poll without options falls back to the current month
-const anchor = fromIso(props.options[0]?.date ?? toIso(new Date()));
+const todayIso = toIso(new Date());
+const anchor = fromIso(props.options[0]?.date ?? todayIso);
 const monthCursor = ref(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
 const weekAnchor = ref(anchor);
 
@@ -187,6 +188,7 @@ const weeks = computed(() => {
                 value,
                 day: date.getDate(),
                 outside,
+                today: value === todayIso,
                 // Days of the neighbour months stay empty, so an option never shows twice while paging
                 entries: outside ? [] : entriesOn(value),
             };
@@ -228,6 +230,11 @@ function cellAnswer(cell: { entries: Entry[] }): PollAnswer | null {
 function cellYes(cell: { entries: Entry[] }): number {
     return cell.entries.reduce((sum, entry) => sum + entry.yes, 0);
 }
+
+// The number always sits in a circle of one size, so today and the selection change no layout
+const dayNumberClass =
+    'grid size-6 flex-none place-items-center rounded-full text-xs leading-none font-semibold tabular-nums';
+const todayClass = 'bg-primary text-primary-fg font-semibold';
 
 const legend: (PollAnswer | null)[] = ['yes', 'maybe', 'no', null];
 
@@ -343,6 +350,7 @@ const visibleDays = computed(() =>
             value,
             weekday: shortDay(date),
             day: date.getDate(),
+            today: value === todayIso,
             entries: placeDay(value),
         };
     }),
@@ -478,11 +486,11 @@ function name(entry: Entry): string {
             :aria-label="monthLabel"
             class="flex flex-col gap-1"
         >
-            <div class="grid grid-cols-7 gap-1" aria-hidden="true">
+            <div class="grid grid-cols-7" aria-hidden="true">
                 <span
                     v-for="label in weekdayLabels"
                     :key="label"
-                    class="text-fg-soft py-1 text-center text-xs font-semibold"
+                    class="text-fg-soft py-1.5 text-center text-xs font-semibold"
                     >{{ label }}</span
                 >
             </div>
@@ -501,19 +509,25 @@ function name(entry: Entry): string {
                             :aria-controls="panelId"
                             :class="
                                 cn(
-                                    'border-border bg-surface-raised text-fg hover:border-border-strong focus-visible:outline-focus-ring flex min-h-14 min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border p-0.5 text-xs focus-visible:outline-2 focus-visible:outline-offset-2',
+                                    'group bg-depth-2 text-fg hover:inset-ring-fg-soft focus-visible:outline-focus-ring inset-ring-calendar-line flex min-h-14 min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl p-0.5 text-xs inset-ring focus-visible:outline-2 focus-visible:outline-offset-2',
                                     cell.entries.some(
                                         (entry) => entry.option.fixed,
-                                    ) && 'shadow-[0_0_0_2px_var(--primary)]',
-                                    selectedDay === cell.value &&
-                                        'border-fg ring-fg ring-1',
+                                    ) &&
+                                        'bg-primary-soft inset-ring-primary hover:inset-ring-primary inset-ring-2',
                                 )
                             "
                             @click="selectDay(cell.value)"
                         >
                             <span
                                 aria-hidden="true"
-                                class="font-semibold tabular-nums"
+                                :class="
+                                    cn(
+                                        dayNumberClass,
+                                        cell.today && todayClass,
+                                        selectedDay === cell.value &&
+                                            'bg-fg text-fg-inverted',
+                                    )
+                                "
                                 >{{ cell.day }}</span
                             >
                             <span
@@ -530,14 +544,22 @@ function name(entry: Entry): string {
                         <span
                             v-else
                             aria-hidden="true"
-                            :class="
-                                cn(
-                                    'text-fg-soft grid min-h-14 place-items-center text-xs tabular-nums',
-                                    cell.outside && 'opacity-50',
-                                )
-                            "
-                            >{{ cell.day }}</span
+                            class="flex min-h-14 flex-col items-center justify-center gap-0.5 p-0.5 text-xs"
                         >
+                            <span
+                                :class="
+                                    cn(
+                                        dayNumberClass,
+                                        'text-fg-muted font-medium',
+                                        cell.outside && 'text-fg-soft/50',
+                                        cell.today && todayClass,
+                                    )
+                                "
+                                >{{ cell.day }}</span
+                            >
+                            <!-- Keeps the number on the same line as in the days with options -->
+                            <span class="invisible text-[11px]">0</span>
+                        </span>
                     </template>
                 </div>
                 <ul
@@ -554,30 +576,41 @@ function name(entry: Entry): string {
                     </li>
                 </ul>
             </template>
-            <template v-else>
+            <!-- One sheet with hairlines: the gaps show the border color behind the cells -->
+            <div
+                v-else
+                class="border-calendar-line bg-calendar-line flex flex-col gap-px overflow-hidden rounded-xl border"
+            >
                 <div
                     v-for="(week, row) in weeks"
                     :key="row"
-                    class="grid grid-cols-7 gap-1"
+                    class="grid grid-cols-7 gap-px"
                 >
                     <div
                         v-for="cell in week"
                         :key="cell.value"
                         :class="
                             cn(
-                                'border-border bg-surface-raised text-fg flex min-h-16 min-w-0 flex-col gap-1 rounded-lg border p-1 sm:min-h-20',
-                                cell.outside &&
-                                    'text-fg-soft bg-surface-muted/40 border-transparent',
+                                'text-fg flex min-h-16 min-w-0 flex-col gap-1 bg-(--box-bg) p-1.5 sm:min-h-24',
+                                cell.outside && 'bg-depth-2',
                                 cell.entries.some(
                                     (entry) => entry.option.fixed,
-                                ) && 'shadow-[0_0_0_2px_var(--primary)]',
+                                ) &&
+                                    'bg-primary-soft inset-ring-primary inset-ring-2',
                             )
                         "
                     >
                         <span
                             v-if="!cell.entries.length"
                             aria-hidden="true"
-                            class="px-0.5 text-xs font-semibold tabular-nums"
+                            :class="
+                                cn(
+                                    dayNumberClass,
+                                    'text-fg-muted font-medium',
+                                    cell.outside && 'text-fg-soft/50',
+                                    cell.today && todayClass,
+                                )
+                            "
                             >{{ cell.day }}</span
                         >
                         <CalendarOption
@@ -585,6 +618,7 @@ function name(entry: Entry): string {
                             :key="entry.key"
                             variant="day"
                             :day="index === 0 ? cell.day : null"
+                            :today="cell.today"
                             :option="entry.option"
                             :answer="entry.answer"
                             :yes="entry.yes"
@@ -600,18 +634,18 @@ function name(entry: Entry): string {
                         />
                     </div>
                 </div>
-            </template>
+            </div>
         </div>
 
         <div
             v-else
             role="group"
             :aria-label="weekLabel"
-            class="border-border bg-surface-raised flex flex-col overflow-hidden rounded-xl border"
+            class="border-calendar-line flex flex-col overflow-hidden rounded-xl border bg-(--box-bg)"
             :style="{ '--days': visibleDays.length }"
         >
             <div
-                class="border-border bg-surface-muted grid grid-cols-[52px_repeat(var(--days),minmax(0,1fr))] border-b"
+                class="border-calendar-line grid grid-cols-[52px_repeat(var(--days),minmax(0,1fr))] border-b"
                 aria-hidden="true"
             >
                 <span />
@@ -622,7 +656,12 @@ function name(entry: Entry): string {
                 >
                     <span>{{ day.weekday }}</span>
                     <span
-                        class="font-display text-fg grid size-7 place-items-center rounded-full text-[17px] leading-none font-bold"
+                        :class="
+                            cn(
+                                'font-display text-fg grid size-7 place-items-center rounded-full text-[17px] leading-none font-bold',
+                                day.today && 'bg-primary text-primary-fg',
+                            )
+                        "
                     >
                         {{ day.day }}
                     </span>
@@ -633,7 +672,7 @@ function name(entry: Entry): string {
                 :style="{ height: `${gridHeight}px` }"
             >
                 <div
-                    class="border-border flex flex-col border-r"
+                    class="border-calendar-line flex flex-col border-r"
                     aria-hidden="true"
                 >
                     <span
@@ -648,7 +687,7 @@ function name(entry: Entry): string {
                 <div
                     v-for="day in visibleDays"
                     :key="day.value"
-                    class="border-border relative border-r bg-[linear-gradient(to_bottom,var(--border)_0_1px,transparent_1px_100%)] bg-repeat-y last:border-r-0"
+                    class="border-calendar-line relative border-r bg-[linear-gradient(to_bottom,var(--border)_0_1px,transparent_1px_100%)] bg-repeat-y last:border-r-0"
                     :style="{ backgroundSize: `100% ${HOUR_HEIGHT}px` }"
                 >
                     <CalendarOption

@@ -114,13 +114,19 @@
     --border: var(--moss-200);
     --border-strong: var(--moss-300);
 
-    /* Depth: level 1 the page containers, 2 boxes inside them, 3 boxes inside those; backgrounds alternate per level */
+    /*
+      Depth: level 1 the page containers, 2 boxes inside them, 3 boxes inside those.
+      Level 2 is a quiet well between ground and container, level 3 returns to the container color.
+      Only floating surfaces (dialogs, menus) sit above level 1.
+    */
     --depth-1-bg: var(--surface-raised);
     --depth-1-border: var(--moss-200);
-    --depth-2-bg: oklch(0.946 0.009 150.7);
-    --depth-2-border: oklch(0.808 0.019 155.7);
-    --depth-3-bg: var(--white);
-    --depth-3-border: oklch(0.751 0.023 158.4);
+    --depth-2-bg: oklch(0.972 0.006 150.7);
+    --depth-2-border: oklch(0.868 0.014 155.7);
+    --depth-3-bg: var(--depth-1-bg);
+    --depth-3-border: oklch(0.808 0.019 155.7);
+    --float-bg: var(--white);
+    --panel-opacity: 70%;
 
     --primary: var(--green-700);
     --primary-hover: var(--green-800);
@@ -168,6 +174,8 @@
     --space-inner: 8px;
 
     /* Layer 3: component tokens */
+    /* Day dividers of the calendars: clearly stronger than the card hairlines around them */
+    --calendar-line: oklch(0.775 0.02 158.4);
     --control-height: 44px;
     --control-height-sm: 36px;
     --control-radius: var(--radius-lg);
@@ -192,24 +200,26 @@
     --ground-glow-a: oklch(0.773 0.153 163.2 / 0.09);
     --ground-glow-b: oklch(0.378 0.073 168.9 / 0.4);
     --surface: var(--moss-950);
-    --surface-muted: oklch(0.217 0.015 157.4);
-    --surface-raised: oklch(0.246 0.016 160.6);
+    --surface-muted: oklch(0.185 0.012 161.5);
+    --surface-raised: oklch(0.205 0.013 161.5);
     --surface-sunken: oklch(0.166 0.01 158.8);
     --progress-track: var(--moss-700);
     --fg: oklch(0.946 0.008 157.1);
     --fg-muted: var(--moss-400);
     --fg-soft: oklch(0.676 0.019 169.8);
     --fg-inverted: var(--moss-950);
-    --border: oklch(0.321 0.018 161.3);
+    --border: oklch(0.285 0.016 161.3);
     --border-strong: var(--moss-700);
 
-    /* Dark level 1 equals the form container color, level 2 is 5% lighter */
+    /* Dark level 1 lifts one small step off the ground, level 2 sinks back halfway, so nesting never stacks lighter boxes */
     --depth-1-bg: var(--surface-raised);
-    --depth-1-border: oklch(0.321 0.018 161.3);
-    --depth-2-bg: color-mix(in oklab, var(--depth-1-bg) 95%, white 5%);
-    --depth-2-border: oklch(0.409 0.022 160.2);
-    --depth-3-bg: oklch(0.204 0.014 163.1);
-    --depth-3-border: oklch(0.467 0.023 162.2);
+    --depth-1-border: oklch(0.275 0.016 161.3);
+    --depth-2-bg: var(--surface-muted);
+    --depth-2-border: oklch(0.31 0.018 160.2);
+    --depth-3-bg: var(--depth-1-bg);
+    --depth-3-border: oklch(0.36 0.02 162.2);
+    --float-bg: oklch(0.232 0.015 160.6);
+    --panel-opacity: 76%;
 
     --primary: var(--green-400);
     --primary-hover: var(--green-300);
@@ -247,7 +257,8 @@
     --texture-hatch-color: oklch(0.946 0.008 157.1 / 0.05);
     --texture-grain-opacity: 0.1;
 
-    --control-bg: oklch(0.2 0.013 159.9);
+    --calendar-line: oklch(0.44 0.021 162.2);
+    --control-bg: oklch(0.178 0.011 159.9);
     --control-border: oklch(0.584 0.019 162.4);
 }
 
@@ -259,7 +270,7 @@
     --foreground: var(--fg);
     --card: var(--depth-1-bg);
     --card-foreground: var(--fg);
-    --popover: var(--depth-1-bg);
+    --popover: var(--float-bg);
     --popover-foreground: var(--fg);
     --primary-foreground: var(--primary-fg);
     --secondary: var(--surface-sunken);
@@ -315,6 +326,7 @@
     --color-info: var(--info);
     --color-info-soft: var(--info-soft);
     --color-focus-ring: var(--focus-ring);
+    --color-calendar-line: var(--calendar-line);
     --color-control: var(--control-bg);
     --color-control-border: var(--control-border);
 
@@ -407,13 +419,23 @@
         --box-edge: 1px;
         --box-radius: var(--card-radius);
         --box-shadow: var(--elevation-card);
-        background-color: var(--box-bg);
+        /* Level 1 lets the ground gradient through; --box-bg itself stays opaque for sticky cells and nested fills */
+        --box-alpha: var(--panel-opacity);
+        background-color: color-mix(
+            in oklab,
+            var(--box-bg) var(--box-alpha),
+            transparent
+        );
+        /* Blur keeps text readable where the ground gradient shows through; nested levels are opaque and need none */
+        backdrop-filter: blur(var(--box-blur, 20px));
         border: var(--box-edge) solid var(--box-border);
         border-radius: var(--box-radius);
     }
 
     :where(.box, .box-float) :where(.box) {
         --box-bg: var(--depth-2-bg);
+        --box-alpha: 100%;
+        --box-blur: 0px;
         --box-border: var(--depth-2-border);
         --box-radius: 12px;
         --box-shadow: none;
@@ -421,13 +443,16 @@
 
     :where(.box, .box-float) :where(.box) :where(.box) {
         --box-bg: var(--depth-3-bg);
+        --box-alpha: 100%;
+        --box-blur: 0px;
         --box-border: var(--depth-3-border);
         --box-radius: 7px;
         --box-shadow: none;
     }
 
     .box-float {
-        --box-bg: var(--depth-1-bg);
+        --box-bg: var(--float-bg);
+        --box-alpha: 100%;
         --box-border: var(--border-strong);
         --box-shadow: var(--elevation-lg);
     }

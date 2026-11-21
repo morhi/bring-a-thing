@@ -133,6 +133,17 @@ it('F-12: a follow-up poll link guest answers at once, but opens another follow-
     $this->get(route('polls.show', $second))->assertOk();
 });
 
+it('F-12: the audience note flags a follow-up poll viewer who has not accepted the source event', function () {
+    $c = linkChain();
+    $guest = User::factory()->create();
+    joinAs($guest, $c['followUp']);
+
+    $this->get(route('polls.show', $c['followUp']))->assertInertia(fn (Assert $page) => $page->where('page.answers_without_acceptance', true));
+
+    $this->put(route('events.participation.update', $c['fixed']), ['status' => 'accepted']);
+    $this->get(route('polls.show', $c['followUp']))->assertInertia(fn (Assert $page) => $page->where('page.answers_without_acceptance', false));
+});
+
 it('F-26: a child event link guest opens the parent event and its poll, shows among its guests, and nothing else', function () {
     $c = linkChain();
     $guest = User::factory()->create(['name' => 'Chain Guest']);

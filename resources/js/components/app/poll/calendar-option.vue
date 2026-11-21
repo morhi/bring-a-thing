@@ -34,6 +34,8 @@ const props = withDefaults(
         variant?: 'day' | 'block';
         // Day number shown top-left in the month cell
         day?: number | null;
+        // Marks the day number as the current day
+        today?: boolean;
         // Closed polls still show the own answer in the selector, just locked
         closed?: boolean;
         // The own note on this option and the notes of other people (F-06)
@@ -49,6 +51,7 @@ const props = withDefaults(
         selected: false,
         variant: 'block',
         day: null,
+        today: false,
         closed: false,
         note: null,
         otherNotes: () => [],
@@ -117,11 +120,16 @@ const compactLabel = computed(() =>
         class="group/note flex min-w-0 flex-1 flex-col gap-1 text-[11px] leading-tight"
     >
         <span class="sr-only">{{ description }}</span>
-        <span class="flex min-w-0 items-start justify-between gap-1">
+        <span class="flex min-w-0 items-center justify-between gap-1">
             <span
                 v-if="day !== null"
                 aria-hidden="true"
-                class="px-0.5 text-xs font-semibold tabular-nums"
+                :class="
+                    cn(
+                        'grid size-6 flex-none place-items-center rounded-full text-xs leading-none font-semibold tabular-nums',
+                        today && 'bg-primary text-primary-fg',
+                    )
+                "
                 >{{ day }}</span
             >
             <span class="ml-auto inline-flex items-center gap-0.5">

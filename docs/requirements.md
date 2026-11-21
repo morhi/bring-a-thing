@@ -4,7 +4,7 @@
 
 - **Project:** Bring a Thing
 - **Type:** App
-- **Version:** 1.35
+- **Version:** 1.36
 - **Approved:** 21.11.2026
 
 ## 2. Goal
@@ -314,7 +314,7 @@ Bring a Thing connects these steps in one chain: find a date, fix it, determine 
 **User goal:** Schedule rehearsals or preparation dates only with the people who take part in the event.
 
 **Rules:**
-- Within the event, participants with "accepted" create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted", with one exception: a link guest who joined through the follow-up poll's own invite link (F-27) sees and answers that poll at once, even without accepting the source event.
+- Within the event, participants with "accepted" create a date finder or attendance poll. Respondents and visibility are limited to participants with "accepted", with one exception: a link guest who joined through the follow-up poll's own invite link (F-27) sees and answers that poll at once, even without accepting the source event. The audience note on the poll page tells that viewer so, and tells everyone else that only people who accepted can answer.
 - The circle follows current participation: whoever accepts later sees the poll and can respond. Whoever declines no longer sees it, and their responses no longer count.
 - Fixing dates follows F-09, and the new events attach to the source event.
 - Child events do not offer follow-up polls. Follow-up polls exist only on events without a parent event.

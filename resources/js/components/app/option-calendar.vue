@@ -847,8 +847,8 @@ function gridPointerUp(): void {
                         :title="cell.label || undefined"
                         :class="
                             cn(
-                                'border-border bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 w-full place-items-center rounded-lg border p-0 font-semibold tabular-nums',
-                                'enabled:hover:border-border-strong disabled:text-fg-soft disabled:bg-surface-muted/40 transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:opacity-60',
+                                'border-calendar-line bg-surface-muted text-fg relative grid aspect-[1.7] max-h-[52px] min-h-9 w-full place-items-center rounded-lg border p-0 font-semibold tabular-nums',
+                                'enabled:hover:border-fg-soft disabled:text-fg-soft disabled:bg-surface-muted/40 transition-colors duration-(--duration-fast) disabled:cursor-not-allowed disabled:opacity-60',
                                 cell.outside &&
                                     'text-fg-soft bg-surface-muted/40 border-transparent font-medium',
                                 cell.today &&
@@ -882,11 +882,11 @@ function gridPointerUp(): void {
             v-else
             role="group"
             :aria-label="weekLabel"
-            class="border-border bg-surface-raised flex flex-col overflow-hidden rounded-xl border select-none"
+            class="border-calendar-line flex flex-col overflow-hidden rounded-xl border bg-(--box-bg) select-none"
             :style="{ '--days': visibleDays.length }"
         >
             <div
-                class="border-border bg-surface-muted grid grid-cols-[52px_repeat(var(--days),minmax(0,1fr))] border-b"
+                class="border-calendar-line grid grid-cols-[52px_repeat(var(--days),minmax(0,1fr))] border-b"
             >
                 <span aria-hidden="true" />
                 <span
@@ -935,7 +935,7 @@ function gridPointerUp(): void {
                     @pointercancel="gridPointerUp"
                 >
                     <div
-                        class="border-border flex flex-col border-r"
+                        class="border-calendar-line flex flex-col border-r"
                         aria-hidden="true"
                     >
                         <span
@@ -954,7 +954,7 @@ function gridPointerUp(): void {
                         :data-past="day.past"
                         :class="
                             cn(
-                                'border-border relative border-r bg-[linear-gradient(to_bottom,var(--border)_0_1px,transparent_1px_100%)] bg-repeat-y last:border-r-0',
+                                'border-calendar-line relative border-r bg-[linear-gradient(to_bottom,var(--border)_0_1px,transparent_1px_100%)] bg-repeat-y last:border-r-0',
                                 day.past || disabled
                                     ? 'bg-surface-sunken/60 cursor-not-allowed'
                                     : 'cursor-crosshair',
