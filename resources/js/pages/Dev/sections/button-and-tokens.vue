@@ -113,7 +113,7 @@ const colours = [
                 <div
                     class="bg-primary-soft text-primary-soft-fg rounded-lg p-3 text-center text-sm"
                 >
-                    content-width (max 1120px, responsive gutters)
+                    content-width (max 1536px, responsive gutters)
                 </div>
             </div>
         </div>
