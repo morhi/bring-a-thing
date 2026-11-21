@@ -24,6 +24,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PollCommentController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\PollInviteLinkController;
 use App\Http\Controllers\PollOptionController;
@@ -165,6 +166,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/polls/{poll}/options/{option}', [PollOptionController::class, 'destroy'])->name('polls.options.destroy');
 
     Route::post('/polls/{poll}/options/{option}/responses', [PollResponseController::class, 'store'])->name('polls.responses.store');
+    Route::put('/polls/{poll}/options/{option}/responses/note', [PollResponseController::class, 'note'])->name('polls.responses.note');
+    Route::post('/polls/{poll}/options/{option}/responses/{member}', [PollResponseController::class, 'storeFor'])->name('polls.responses.store-for');
     Route::post('/polls/{poll}/responses/fill-open', [PollResponseController::class, 'fillOpen'])->name('polls.responses.fill-open');
 });
 
@@ -230,6 +233,12 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/comments', [EventCommentController::class, 'store'])->name('events.comments.store');
     Route::delete('/events/{event}/comments/{comment}', [EventCommentController::class, 'destroy'])->name('events.comments.destroy');
+});
+
+// Poll comment thread (F-20).
+Route::middleware('auth')->group(function () {
+    Route::post('/polls/{poll}/comments', [PollCommentController::class, 'store'])->name('polls.comments.store');
+    Route::delete('/polls/{poll}/comments/{comment}', [PollCommentController::class, 'destroy'])->name('polls.comments.destroy');
 });
 
 // Bell notifications (F-23): JSON for the header panel, scoped to the signed-in account.

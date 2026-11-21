@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\PollResponseStatus;
+use App\Models\Comment;
 use App\Models\Event;
 use App\Models\Poll;
 use App\Models\PollOption;
@@ -17,6 +18,7 @@ class PollShowData extends Data
      * @param  array<string, PollResponseStatus>  $own_answers
      * @param  array<int, string>  $best_option_slugs
      * @param  array<int, EventSummaryData>  $fixed_events
+     * @param  array<int, CommentData>  $comments
      */
     public function __construct(
         public PollData $poll,
@@ -28,6 +30,8 @@ class PollShowData extends Data
         public array $fixed_events,
         public PollPermissionsData $permissions,
         public ?EntityInviteLinkData $invite_link,
+        public array $comments,
+        public int $note_max_length,
     ) {}
 
     /**
@@ -42,11 +46,13 @@ class PollShowData extends Data
      * show_no_counts is set when no answers decided between options tied on
      * yes, so the grid explains the best option (F-06). Guests with a grant
      * (F-26, F-27) belong to the audience; invite_link is only set for
-     * editors (F-27).
+     * editors (F-27). comments is the poll's own thread, which everyone who
+     * sees the poll may read (F-20). note_max_length caps the notes on
+     * answers, which every respondent row carries for everyone (F-06).
      */
     public static function forUser(Poll $poll, User $user): self
     {
-        $poll->loadMissing('group.members', 'options.responses.user', 'options.event', 'event.participations');
+        $poll->loadMissing('group.members', 'options.responses.user', 'options.event', 'event.participations', 'comments.user');
         $pollData = PollData::fromPoll($poll);
         $optionCount = $poll->options->count();
 
@@ -55,9 +61,11 @@ class PollShowData extends Data
                 'user_id' => $response->user_id,
                 'option_slug' => $option->slug,
                 'status' => $response->status,
+                'note' => $response->note,
             ]))
-            ->groupBy('user_id')
-            ->map(fn ($answers) => $answers->pluck('status', 'option_slug')->all());
+            ->groupBy('user_id');
+        $notesByUser = $answersByUser->map(fn ($answers) => $answers->whereNotNull('note')->pluck('note', 'option_slug')->all());
+        $answersByUser = $answersByUser->map(fn ($answers) => $answers->pluck('status', 'option_slug')->all());
 
         $audience = $poll->audience();
         $permissions = PollPermissionsData::forUser($poll, $user);
@@ -75,7 +83,9 @@ class PollShowData extends Data
                 user_id: $person->id,
                 name: $person->name,
                 answers: $answersByUser->get($person->id, []),
+                notes: $notesByUser->get($person->id, []),
                 is_complete: count($answersByUser->get($person->id, [])) >= $optionCount,
+                in_audience: $audience->contains('id', $person->id),
             ))
             ->values();
 
@@ -89,6 +99,8 @@ class PollShowData extends Data
             fixed_events: $poll->fixedEvents()->with('group')->get()->map(fn (Event $event) => EventSummaryData::fromEvent($event))->all(),
             permissions: $permissions,
             invite_link: $permissions->can_manage_invite_link ? EntityInviteLinkData::fromEntity($poll) : null,
+            comments: $poll->comments->map(fn (Comment $comment) => CommentData::forUser($comment->setRelation('commentable', $poll), $user))->all(),
+            note_max_length: PollResponse::NOTE_MAX_LENGTH,
         );
     }
 }

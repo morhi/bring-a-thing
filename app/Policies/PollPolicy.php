@@ -43,6 +43,14 @@ class PollPolicy
     }
 
     /**
+     * Determine whether the user can read and write the poll's comment thread: everyone who may view it, closed or not (F-20).
+     */
+    public function comment(User $user, Poll $poll): Response
+    {
+        return $this->view($user, $poll);
+    }
+
+    /**
      * Determine whether the user can answer the poll; a closed poll is rejected by the request with its message (F-08).
      */
     public function respond(User $user, Poll $poll): Response
@@ -81,6 +89,18 @@ class PollPolicy
         }
 
         return $poll->group->isAtLeastAdmin($user);
+    }
+
+    /**
+     * Determine whether the user can set answers for other people in the audience: the poll's editors on an open poll (F-06).
+     */
+    public function editAnswers(User $user, Poll $poll): bool
+    {
+        if ($poll->isClosed()) {
+            return false;
+        }
+
+        return $this->update($user, $poll);
     }
 
     /**

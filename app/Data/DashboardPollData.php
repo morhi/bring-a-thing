@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Enums\DashboardPollStatus;
 use App\Models\Poll;
+use App\Support\WallClock;
 use Spatie\LaravelData\Data;
 
 class DashboardPollData extends Data
@@ -16,6 +17,7 @@ class DashboardPollData extends Data
         public int $answered,
         public int $total,
         public bool $is_closed,
+        public ?string $answer_deadline,
     ) {}
 
     /**
@@ -23,7 +25,7 @@ class DashboardPollData extends Data
      *
      * Expects the group and the person's own responses on the options to be
      * loaded. A poll without options counts as not answered; group_name is
-     * null for a standalone poll.
+     * null for a standalone poll. answer_deadline is a UTC instant, shown in the viewer's zone (F-08).
      */
     public static function fromPoll(Poll $poll): self
     {
@@ -38,6 +40,7 @@ class DashboardPollData extends Data
             answered: $answered,
             total: $total,
             is_closed: $poll->closed_at !== null,
+            answer_deadline: WallClock::iso($poll->answer_deadline),
         );
     }
 

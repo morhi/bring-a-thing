@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Polls;
 
 use App\Enums\PollGranularity;
+use App\Http\Requests\Polls\Concerns\ValidatesAnswerDeadline;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Support\WallClock;
@@ -13,6 +14,8 @@ use Illuminate\Validation\Validator;
 
 class UpdatePollRequest extends FormRequest
 {
+    use ValidatesAnswerDeadline;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -44,6 +47,8 @@ class UpdatePollRequest extends FormRequest
             'options.*.label' => ['nullable', 'string', 'max:100'],
             'remove' => ['sometimes', 'array'],
             'remove.*' => ['required', 'string', 'distinct'],
+
+            ...$this->answerDeadlineRules(),
         ];
     }
 
@@ -56,6 +61,8 @@ class UpdatePollRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $this->validateAutoClose($validator);
+
             if ((! $this->has('options') && ! $this->filled('remove')) || $validator->errors()->isNotEmpty()) {
                 return;
             }

@@ -122,3 +122,14 @@ it('F-31: the page returns the applied filters', function () {
         ->get(route('polls.index', ['unanswered' => 1, 'all' => 1]))
         ->assertInertia(fn (Assert $page) => $page->where('filters', ['unanswered' => true, 'mine' => false, 'all' => true]));
 });
+
+it('F-31: rows carry the answer deadline when one is set', function () {
+    [$group, $owner, $member] = dashboardGroup();
+    $poll = dashboardPoll($group, $owner, 2, attributes: ['answer_deadline' => '2026-12-20 17:00:00']);
+    dashboardPoll($group, $owner, 2);
+
+    $this->actingAs($member)->get(route('polls.index'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('polls.0.slug', $poll->slug)
+        ->where('polls.0.answer_deadline', '2026-12-20T17:00:00Z')
+        ->where('polls.1.answer_deadline', null));
+});

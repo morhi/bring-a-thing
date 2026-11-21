@@ -144,6 +144,20 @@ export function formatDate(
 }
 
 /**
+ * Format a UTC instant as its local day in the viewer's zone, optionally followed by the local time.
+ */
+export function formatInstant(
+    instant: string,
+    language: Locale,
+    options: Intl.DateTimeFormatOptions,
+    withTime = false,
+): string {
+    const day = formatDate(localDay(instant), language, options);
+
+    return withTime ? `${day}, ${localTime(instant)}` : day;
+}
+
+/**
  * Describe an option in words for labels and screen readers: weekday, date, time and label.
  */
 export function describeOption(

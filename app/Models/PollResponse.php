@@ -13,12 +13,18 @@ use Illuminate\Support\Carbon;
  * @property int $poll_option_id
  * @property int $user_id
  * @property PollResponseStatus $status
+ * @property string|null $note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable(['user_id', 'status'])]
 class PollResponse extends Model
 {
+    /**
+     * The longest note a respondent can add to an answer (F-06).
+     */
+    public const int NOTE_MAX_LENGTH = 200;
+
     /**
      * Get the attributes that should be cast.
      *

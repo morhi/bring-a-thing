@@ -21,9 +21,16 @@ const props = withDefaults(
         collapsible?: boolean;
         // Initial state of a collapsible section
         defaultOpen?: boolean;
+        // Mobile only: the action slot drops below the title as a full-width column
+        stackActions?: boolean;
         class?: HTMLAttributes['class'];
     }>(),
-    { count: null, class: undefined, defaultOpen: true },
+    {
+        count: null,
+        class: undefined,
+        defaultOpen: true,
+        stackActions: false,
+    },
 );
 
 const { t } = useI18n();
@@ -61,7 +68,13 @@ const collapsed = computed(() => !!props.collapsible && !open.value);
                     collapsible ? 'items-center' : 'items-baseline',
                 ]"
             >
-                <div class="flex min-w-0 items-center gap-2">
+                <div
+                    :class="[
+                        'flex min-w-0 items-center gap-2',
+                        // Grows from its content width, so meta wraps below instead of overlapping the title
+                        $slots.meta && 'flex-auto',
+                    ]"
+                >
                     <CollapsibleTrigger v-if="collapsible" as-child>
                         <!-- The button base drops the outline, so the trigger restores the app's focus ring -->
                         <Button
@@ -79,7 +92,7 @@ const collapsed = computed(() => !!props.collapsible && !open.value);
                             />
                         </Button>
                     </CollapsibleTrigger>
-                    <h2 :id="id" class="text-h2">
+                    <h2 :id="id" class="text-h2 min-w-0 break-words">
                         {{ title
                         }}<span
                             v-if="count"
@@ -88,7 +101,19 @@ const collapsed = computed(() => !!props.collapsible && !open.value);
                         >
                     </h2>
                 </div>
-                <div v-if="$slots.action" class="flex flex-wrap gap-2.5">
+                <div
+                    v-if="$slots.meta"
+                    class="flex min-w-0 items-center gap-2.5 sm:-mr-1.5"
+                >
+                    <slot name="meta" />
+                </div>
+                <div
+                    v-if="$slots.action"
+                    :class="[
+                        'flex flex-wrap gap-2.5',
+                        stackActions && 'max-sm:w-full max-sm:flex-col',
+                    ]"
+                >
                     <slot name="action" />
                 </div>
             </div>

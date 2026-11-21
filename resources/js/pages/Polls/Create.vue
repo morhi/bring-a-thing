@@ -16,12 +16,20 @@ import {
     update as updatePoll,
 } from '@/actions/App/Http/Controllers/PollController';
 import ChoiceGroup from '@/components/app/choice-group.vue';
+import DatePicker from '@/components/app/date-picker.vue';
 import type { ChoiceOption } from '@/components/app/choice-group.vue';
 import FormField from '@/components/app/form-field.vue';
 import FormPage from '@/components/app/form-page.vue';
-import { dayOf, timeOf } from '@/components/app/poll/dates';
+import {
+    dayOf,
+    localDay,
+    localTime,
+    timeOf,
+    viewerZone,
+} from '@/components/app/poll/dates';
 import OptionCalendar from '@/components/app/option-calendar.vue';
 import OptionRows from '@/components/app/poll/option-rows.vue';
+import TimePicker from '@/components/app/time-picker.vue';
 import type {
     OptionCalendarMode,
     OptionDraft,
@@ -38,6 +46,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -217,7 +226,25 @@ const optionsHint = computed(() => {
 // Opened outside a group (F-06, F-29): the placement is standalone or any own group, and the poll posts to polls.store-any
 const groupChoices = computed(() => props.form.groups);
 const placement = ref('standalone');
-const pollForm = useForm({ title: poll.value?.title ?? '' });
+// The deadline edits on its local day and time, the wall-clock values the server converts back to UTC (F-08)
+const storedDeadline = poll.value?.answer_deadline ?? null;
+const pollForm = useForm({
+    title: poll.value?.title ?? '',
+    deadline_date: storedDeadline ? localDay(storedDeadline) : null,
+    deadline_time: storedDeadline ? localTime(storedDeadline) : null,
+    auto_close: poll.value?.auto_close ?? false,
+});
+
+const hasDeadline = computed(() => !!pollForm.deadline_date);
+
+// Auto-close has nothing to act on without a deadline, so clearing the date unticks it
+watch(hasDeadline, (next) => {
+    if (next) {
+        return;
+    }
+
+    pollForm.auto_close = false;
+});
 
 const placementOptions = computed<ChoiceOption[]>(() => [
     {
@@ -251,6 +278,23 @@ const optionsServerError = computed(() => {
     );
 
     return key ? (pollForm.errors as Record<string, string>)[key] : null;
+});
+
+// Server errors like `options.3.label` land on the matching row
+const optionRowErrors = computed(() => {
+    const byRow: Record<number, string | undefined> = {};
+
+    for (const [key, message] of Object.entries(
+        pollForm.errors as Record<string, string>,
+    )) {
+        const match = /^options\.(\d+)\./.exec(key);
+
+        if (match && byRow[Number(match[1])] === undefined) {
+            byRow[Number(match[1])] = message;
+        }
+    }
+
+    return byRow;
 });
 
 function optionRows(withSlug: boolean): Record<string, string | null>[] {
@@ -504,6 +548,88 @@ const inputClass =
                 </FormField>
             </template>
 
+            <div class="flex flex-col gap-(--space-stack)" data-feature="F-08">
+                <div
+                    class="grid gap-(--space-stack) sm:max-w-(--field-max-width) sm:grid-cols-2"
+                >
+                    <FormField
+                        :label="t('newPoll.deadline.date')"
+                        control="poll-deadline-date"
+                        :hint="t('newPoll.deadline.hint')"
+                        :error="pollForm.errors.deadline_date"
+                    >
+                        <template #default="{ describedBy, invalid }">
+                            <DatePicker
+                                id="poll-deadline-date"
+                                v-model="pollForm.deadline_date"
+                                :min="editing ? null : form.today"
+                                :described-by="describedBy"
+                                :invalid="invalid"
+                                @update:model-value="
+                                    pollForm.clearErrors('deadline_date')
+                                "
+                            />
+                        </template>
+                    </FormField>
+                    <FormField
+                        :label="t('newPoll.deadline.time')"
+                        control="poll-deadline-time"
+                        group
+                        :hint="
+                            t('newPoll.deadline.timeHint', { zone: viewerZone })
+                        "
+                        :error="pollForm.errors.deadline_time"
+                    >
+                        <template #default="{ describedBy, invalid }">
+                            <TimePicker
+                                id="poll-deadline-time"
+                                v-model="pollForm.deadline_time"
+                                :described-by="describedBy"
+                                :invalid="invalid"
+                                @update:model-value="
+                                    pollForm.clearErrors('deadline_time')
+                                "
+                            />
+                        </template>
+                    </FormField>
+                </div>
+                <div class="flex items-start gap-3">
+                    <Checkbox
+                        id="poll-auto-close"
+                        v-model="pollForm.auto_close"
+                        class="mt-0.5"
+                        :disabled="!hasDeadline"
+                        aria-describedby="poll-auto-close-hint"
+                        :aria-invalid="
+                            !!pollForm.errors.auto_close || undefined
+                        "
+                    />
+                    <span class="flex flex-col gap-0.5">
+                        <label
+                            for="poll-auto-close"
+                            class="text-sm font-semibold"
+                            :class="!hasDeadline && 'text-fg-muted'"
+                            >{{ t('newPoll.deadline.autoClose') }}</label
+                        >
+                        <span
+                            id="poll-auto-close-hint"
+                            :class="
+                                pollForm.errors.auto_close
+                                    ? 'text-danger text-[13px] font-medium'
+                                    : 'text-fg-soft text-[13px]'
+                            "
+                            :role="
+                                pollForm.errors.auto_close ? 'alert' : undefined
+                            "
+                            >{{
+                                pollForm.errors.auto_close ??
+                                t('newPoll.deadline.autoCloseHint')
+                            }}</span
+                        >
+                    </span>
+                </div>
+            </div>
+
             <FormField
                 v-if="poll"
                 :label="t('poll.edit.status')"
@@ -563,6 +689,7 @@ const inputClass =
                     :mode="mode"
                     :show-meta="editing"
                     :disabled="closed"
+                    :errors="optionRowErrors"
                     id-prefix="poll-option"
                     @request-remove="requestRemove"
                 />
@@ -638,9 +765,8 @@ const inputClass =
                     t('poll.settings.delete')
                 }}</AlertDialogTitle>
                 <AlertDialogDescription>{{
-                    t('poll.settings.deleteConfirm', {
+                    tc('poll.settings.deleteConfirm', totalAnswers, {
                         title: poll.title,
-                        n: totalAnswers,
                     })
                 }}</AlertDialogDescription>
             </AlertDialogHeader>

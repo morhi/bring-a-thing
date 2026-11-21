@@ -5,6 +5,7 @@ import {
     ArrowLeft,
     CalendarDays,
     Check,
+    ChevronDown,
     ChevronRight,
     Clock,
     Grid3x3,
@@ -77,6 +78,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     NativeSelect,
     NativeSelectOption,
 } from '@/components/ui/native-select';
@@ -112,25 +119,23 @@ const statusLabel: Record<App.Enums.ParticipationStatus, string> = {
     declined: 'event.declined',
 };
 
-const ownBadge = computed(() => {
+// Only a given answer shows as a chip; without one the Accept and Decline buttons stay (F-11)
+const ownChip = computed(() => {
     if (props.page.own_status === 'accepted') {
         return {
-            label: t('group.events.youAccepted'),
+            label: t('event.ownStatus.accepted'),
             class: 'bg-success-soft text-success',
         };
     }
 
     if (props.page.own_status === 'declined') {
         return {
-            label: t('group.events.youDeclined'),
+            label: t('event.ownStatus.declined'),
             class: 'bg-danger-soft text-danger',
         };
     }
 
-    return {
-        label: t('group.events.youPending'),
-        class: 'bg-warning-soft text-warning',
-    };
+    return null;
 });
 
 const childBadge: Record<
@@ -303,8 +308,9 @@ function respond(
 }
 
 const declineOpen = ref(false);
+const acceptOpen = ref(false);
 
-// A decline with claims asks first, because it releases them (F-11, section 8)
+// The first answer only asks when a decline releases claims (F-11, section 8)
 function decline(): void {
     if (props.page.own_status === 'declined') {
         return;
@@ -319,9 +325,25 @@ function decline(): void {
     respond('declined');
 }
 
+// Every switch of a given answer asks first, so a stray tap in the menu changes nothing (F-11)
+function switchStatus(status: 'accepted' | 'declined'): void {
+    if (status === 'declined') {
+        declineOpen.value = true;
+
+        return;
+    }
+
+    acceptOpen.value = true;
+}
+
 function confirmDecline(): void {
     declineOpen.value = false;
     respond('declined', true);
+}
+
+function confirmAccept(): void {
+    acceptOpen.value = false;
+    respond('accepted');
 }
 
 function claimLabel(claim: App.Data.EventClaimData): string {
@@ -653,7 +675,57 @@ const badgeLinkClass =
         >
             <template #action>
                 <span class="flex flex-wrap items-center gap-2">
-                    <Badge :class="ownBadge.class">{{ ownBadge.label }}</Badge>
+                    <template v-if="ownChip">
+                        <DropdownMenu v-if="canRespond">
+                            <DropdownMenuTrigger as-child>
+                                <button
+                                    type="button"
+                                    :class="[
+                                        ownChip.class,
+                                        'focus-visible:outline-focus-ring inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60',
+                                    ]"
+                                    :aria-label="`${ownChip.label}, ${t('event.ownStatus.change')}`"
+                                    :disabled="responding"
+                                >
+                                    <Check
+                                        v-if="page.own_status === 'accepted'"
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    <X
+                                        v-else
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    {{ ownChip.label }}
+                                    <ChevronDown
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" class="min-w-44">
+                                <DropdownMenuItem
+                                    v-if="page.own_status === 'accepted'"
+                                    variant="destructive"
+                                    @select="switchStatus('declined')"
+                                    >{{
+                                        t('event.ownStatus.decline')
+                                    }}</DropdownMenuItem
+                                >
+                                <DropdownMenuItem
+                                    v-else
+                                    @select="switchStatus('accepted')"
+                                    >{{
+                                        t('event.ownStatus.accept')
+                                    }}</DropdownMenuItem
+                                >
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Badge v-else :class="ownChip.class">{{
+                            ownChip.label
+                        }}</Badge>
+                    </template>
                     <Button
                         v-if="canManage"
                         variant="ghost"
@@ -670,12 +742,14 @@ const badgeLinkClass =
             </template>
 
             <div
+                v-if="!ownChip || event.is_past"
                 class="box flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4"
             >
                 <span class="flex-[1_1_200px] font-semibold">{{
                     event.is_past ? t('event.pastNote') : t('event.yourAnswer')
                 }}</span>
                 <div
+                    v-if="!ownChip"
                     class="flex flex-wrap gap-2"
                     role="group"
                     :aria-label="t('event.yourAnswer')"
@@ -1208,7 +1282,7 @@ const badgeLinkClass =
 
         <AlertDialog v-model:open="declineOpen">
             <AlertDialogContent>
-                <AlertDialogHeader>
+                <AlertDialogHeader v-if="page.own_claims.length">
                     <AlertDialogTitle>{{
                         t('event.decline.title')
                     }}</AlertDialogTitle>
@@ -1216,7 +1290,19 @@ const badgeLinkClass =
                         t('event.decline.text')
                     }}</AlertDialogDescription>
                 </AlertDialogHeader>
-                <ul class="flex flex-col gap-2" data-feature="F-11">
+                <AlertDialogHeader v-else>
+                    <AlertDialogTitle>{{
+                        t('event.switchDecline.title')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.switchDecline.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <ul
+                    v-if="page.own_claims.length"
+                    class="flex flex-col gap-2"
+                    data-feature="F-11"
+                >
                     <li
                         v-for="(claim, index) in page.own_claims"
                         :key="`${claim.roster_slug}-${index}`"
@@ -1242,8 +1328,33 @@ const badgeLinkClass =
                     <AlertDialogAction
                         variant="destructive"
                         @click="confirmDecline"
-                        >{{ t('event.decline.confirm') }}</AlertDialogAction
+                        >{{
+                            page.own_claims.length
+                                ? t('event.decline.confirm')
+                                : t('event.decline')
+                        }}</AlertDialogAction
                     >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog v-model:open="acceptOpen">
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{{
+                        t('event.switchAccept.title')
+                    }}</AlertDialogTitle>
+                    <AlertDialogDescription>{{
+                        t('event.switchAccept.text')
+                    }}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{{
+                        t('dialog.cancel')
+                    }}</AlertDialogCancel>
+                    <AlertDialogAction @click="confirmAccept">{{
+                        t('event.accept')
+                    }}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

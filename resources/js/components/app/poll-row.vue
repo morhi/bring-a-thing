@@ -2,6 +2,7 @@
 import { Vote } from '@lucide/vue';
 import { show as showPoll } from '@/actions/App/Http/Controllers/PollController';
 import DataRow from '@/components/app/data-row.vue';
+import { formatInstant } from '@/components/app/poll/dates';
 import { Badge } from '@/components/ui/badge';
 import { useI18n } from '@/composables/use-i18n';
 
@@ -9,7 +10,7 @@ defineProps<{
     poll: App.Data.DashboardPollData;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // Anything short of a complete answer still needs the person, so it shares the warning tone
 const statusClass: Record<App.Enums.DashboardPollStatus, string> = {
@@ -29,6 +30,14 @@ const statusClass: Record<App.Enums.DashboardPollStatus, string> = {
         <template #title>{{ poll.title }}</template>
         <template #context>{{
             poll.group_name ?? t('newList.standalone')
+        }}</template>
+        <template v-if="poll.answer_deadline" #date>{{
+            t('dash.polls.until', {
+                date: formatInstant(poll.answer_deadline, locale, {
+                    day: 'numeric',
+                    month: 'short',
+                }),
+            })
         }}</template>
         <template #count>{{
             t('dash.polls.answered', {

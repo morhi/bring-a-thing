@@ -80,6 +80,22 @@ it('F-11: a decline without claims needs no confirmation', function () {
     expect($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Declined);
 });
 
+it('F-11: switching from "accepted" to "declined" and back to "accepted" changes the own status each time', function () {
+    [$event, , , , $member] = eventWithAcceptedMember();
+
+    $this->actingAs($member)
+        ->put(route('events.participation.update', $event), ['status' => 'declined', 'confirm_release' => true])
+        ->assertSessionHasNoErrors();
+
+    expect($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Declined);
+
+    $this->actingAs($member)
+        ->put(route('events.participation.update', $event), ['status' => 'accepted'])
+        ->assertSessionHasNoErrors();
+
+    expect($event->fresh()->statusOf($member))->toBe(ParticipationStatus::Accepted);
+});
+
 it('F-11: when an admin sets a member to "declined", the member\'s claims stay', function () {
     [$event, , , $admin, $member] = eventWithAcceptedMember();
     claimTwoEventItems($event, $member);

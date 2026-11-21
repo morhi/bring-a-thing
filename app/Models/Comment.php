@@ -26,13 +26,13 @@ class Comment extends Model
     use HasFactory;
 
     /**
-     * The roster, roster item or event this comment is on (exactly one, F-20).
+     * The roster, roster item, event or poll this comment is on (exactly one, F-20).
      *
-     * @return MorphTo<Roster|RosterItem|Event, $this>
+     * @return MorphTo<Roster|RosterItem|Event|Poll, $this>
      */
     public function commentable(): MorphTo
     {
-        /** @var MorphTo<Roster|RosterItem|Event, $this> $relation */
+        /** @var MorphTo<Roster|RosterItem|Event|Poll, $this> $relation */
         $relation = $this->morphTo();
 
         return $relation;
@@ -50,6 +50,10 @@ class Comment extends Model
 
         if ($commentable instanceof Event) {
             return 'event.'.$commentable->id;
+        }
+
+        if ($commentable instanceof Poll) {
+            return 'poll.'.$commentable->id;
         }
 
         if ($commentable instanceof RosterItem) {

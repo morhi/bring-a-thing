@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Poll;
 use App\Models\User;
 use App\Support\WallClock;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class CreateFollowUpPoll
@@ -23,7 +24,7 @@ class CreateFollowUpPoll
      * participants and managers, and attaches dates fixed from it to the
      * event as child events (F-09).
      *
-     * @param  array{title: string, type: PollType, granularity: PollGranularity}  $attributes
+     * @param  array{title: string, type: PollType, granularity: PollGranularity, answer_deadline?: CarbonInterface|null, auto_close?: bool}  $attributes
      * @param  array<int, array{date: string, starts_at?: string|null, ends_at?: string|null, label?: string|null}>  $options
      */
     public function handle(Event $event, User $organizer, array $attributes, bool $usesExplicitOptions, array $options, ?string $startsOn, ?string $endsOn): Poll
@@ -35,6 +36,7 @@ class CreateFollowUpPoll
             $poll->organizer_id = $organizer->getKey();
             $poll->group_id = $event->group_id;
             $poll->event_id = $event->getKey();
+            $poll->setAnswerDeadline($attributes['answer_deadline'] ?? null, $attributes['auto_close'] ?? false);
             $poll->save();
 
             $this->createOptions->handle($poll, $usesExplicitOptions, $options, $startsOn, $endsOn, WallClock::zoneOf($organizer));

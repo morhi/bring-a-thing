@@ -10,6 +10,7 @@ import EmptyState from '@/components/app/empty-state.vue';
 import PollRow from '@/components/app/poll-row.vue';
 import SectionBox from '@/components/app/section-box.vue';
 import { Badge } from '@/components/ui/badge';
+import { formatInstant } from '@/components/app/poll/dates';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/composables/use-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -23,7 +24,7 @@ const props = defineProps<{
     filters: App.Data.PollsFiltersData;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const filterControls: {
     key: keyof App.Data.PollsFiltersData;
@@ -162,11 +163,29 @@ function setFilter(key: keyof App.Data.PollsFiltersData, value: boolean): void {
                                         class="text-fg-soft mt-0.5 size-4 flex-none"
                                         aria-hidden="true"
                                     />
-                                    <Link
-                                        :href="showPoll(poll.slug).url"
-                                        class="text-fg hover:text-primary font-semibold break-words no-underline"
-                                        >{{ poll.title }}</Link
-                                    >
+                                    <span class="flex min-w-0 flex-col gap-0.5">
+                                        <Link
+                                            :href="showPoll(poll.slug).url"
+                                            class="text-fg hover:text-primary font-semibold break-words no-underline"
+                                            >{{ poll.title }}</Link
+                                        >
+                                        <span
+                                            v-if="poll.answer_deadline"
+                                            class="text-fg-muted text-[13px]"
+                                            >{{
+                                                t('dash.polls.until', {
+                                                    date: formatInstant(
+                                                        poll.answer_deadline,
+                                                        locale,
+                                                        {
+                                                            day: 'numeric',
+                                                            month: 'short',
+                                                        },
+                                                    ),
+                                                })
+                                            }}</span
+                                        >
+                                    </span>
                                 </span>
                             </td>
                             <td class="text-fg-muted py-3 pr-4">

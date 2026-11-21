@@ -96,6 +96,7 @@ group_name: string | null,
 answered: number,
 total: number,
 is_closed: boolean,
+answer_deadline: string | null,
 };
 export type DashboardWaitingData = {
 kind: App.Enums.DashboardWaitingKind,
@@ -395,6 +396,9 @@ granularity: App.Enums.PollGranularity,
 uses_time_slots: boolean,
 is_closed: boolean,
 closed_at: string | null,
+answer_deadline: string | null,
+auto_close: boolean,
+has_passed_deadline: boolean,
 group_slug: string | null,
 group_name: string | null,
 organizer_id: number,
@@ -439,12 +443,15 @@ can_reopen: boolean,
 can_manage_invite_link: boolean,
 can_view_group: boolean,
 can_withdraw: boolean,
+can_edit_answers: boolean,
 };
 export type PollRespondentData = {
 user_id: number,
 name: string | null,
 answers: Record<string, App.Enums.PollResponseStatus>,
+notes: Record<string, string>,
 is_complete: boolean,
+in_audience: boolean,
 };
 export type PollShowData = {
 poll: App.Data.PollData,
@@ -456,6 +463,8 @@ show_no_counts: boolean,
 fixed_events: App.Data.EventSummaryData[],
 permissions: App.Data.PollPermissionsData,
 invite_link: App.Data.EntityInviteLinkData | null,
+comments: App.Data.CommentData[],
+note_max_length: number,
 };
 export type PollsFiltersData = {
 unanswered: boolean,

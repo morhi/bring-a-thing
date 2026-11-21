@@ -52,3 +52,16 @@ export type SlotTime = {
     start: string;
     end: string;
 };
+
+/**
+ * Notes on answers keyed by participant id, then option id. A missing entry means no note (F-06).
+ */
+export type PollNotes = Record<string, Record<string, string>>;
+
+/**
+ * One note on an option as a marker shows it, with the name of the person who wrote it.
+ */
+export type PollOptionNote = {
+    name: string;
+    note: string;
+};

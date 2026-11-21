@@ -308,7 +308,7 @@ const rowClass =
                     <Button
                         v-if="page.permissions.can_manage_settings"
                         as-child
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         data-feature="F-03"
                     >
@@ -345,7 +345,7 @@ const rowClass =
                     <Button
                         v-if="page.permissions.can_leave"
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         data-feature="F-03"
                         @click="leaveOpen = true"
@@ -682,7 +682,8 @@ const rowClass =
                                                     v-if="
                                                         event.parent_event_title
                                                     "
-                                                    class="bg-primary-soft text-primary-soft-fg h-auto font-sans font-normal whitespace-normal"
+                                                    variant="outline"
+                                                    class="h-auto font-sans font-normal whitespace-normal"
                                                     >{{
                                                         t('event.parent', {
                                                             event: event.parent_event_title,

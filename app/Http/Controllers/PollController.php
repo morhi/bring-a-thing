@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Notifications\SendInAppNotification;
+use App\Actions\Polls\ClosePoll;
 use App\Actions\Polls\CreatePollOptions;
 use App\Actions\Polls\FixPollOptions;
 use App\Actions\Polls\SendFixedDatesMail;
@@ -86,6 +87,7 @@ class PollController extends Controller
         $poll->granularity = $request->enum('granularity', PollGranularity::class);
         $poll->organizer_id = $request->user()->getKey();
         $poll->group_id = $group?->getKey();
+        $poll->setAnswerDeadline($request->answerDeadline(), $request->boolean('auto_close'));
         $poll->save();
 
         $createOptions->handle(
@@ -141,6 +143,11 @@ class PollController extends Controller
             WallClock::zoneOf($request->user()),
         );
 
+        if ($request->hasAnswerDeadlineInput()) {
+            $poll->setAnswerDeadline($request->answerDeadline(), $request->boolean('auto_close'));
+            $poll->save();
+        }
+
         PollChanged::dispatch($poll->id);
         DashboardChanged::forItem($poll);
 
@@ -150,12 +157,9 @@ class PollController extends Controller
     /**
      * Close the poll without a selection: attendance polls, or date finder polls that already have a fixed option.
      */
-    public function close(ClosePollRequest $request, Poll $poll): RedirectResponse
+    public function close(ClosePollRequest $request, Poll $poll, ClosePoll $closePoll): RedirectResponse
     {
-        $poll->close();
-
-        PollChanged::dispatch($poll->id);
-        DashboardChanged::forItem($poll);
+        $closePoll->handle($poll);
 
         return back(fallback: route('polls.show', $poll))->with('success', __('ui.poll.closed.toast'));
     }

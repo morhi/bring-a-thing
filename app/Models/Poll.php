@@ -10,6 +10,7 @@ use App\Enums\PollType;
 use App\Models\Concerns\HasEntityInviteLink;
 use App\Models\Concerns\HasSlug;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Database\Factories\PollFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -34,6 +36,8 @@ use Illuminate\Support\Collection;
  * @property int|null $group_id
  * @property int|null $event_id
  * @property CarbonImmutable|null $closed_at
+ * @property CarbonImmutable|null $answer_deadline
+ * @property bool $auto_close
  * @property string|null $invite_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -63,6 +67,8 @@ class Poll extends Model
             'type' => PollType::class,
             'granularity' => PollGranularity::class,
             'closed_at' => 'datetime',
+            'answer_deadline' => 'datetime',
+            'auto_close' => 'boolean',
         ];
     }
 
@@ -84,6 +90,26 @@ class Poll extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    /**
+     * Remove the poll's comments with it: they are polymorphic and have no foreign key (F-20).
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Poll $poll): void {
+            $poll->comments()->delete();
+        });
+    }
+
+    /**
+     * The poll's own comment thread, oldest first (F-20).
+     *
+     * @return MorphMany<Comment, $this>
+     */
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable')->oldest();
     }
 
     /**
@@ -174,11 +200,69 @@ class Poll extends Model
 
     /**
      * Reopen the poll; events fixed from it stay (F-08).
+     *
+     * Past its deadline, auto-close turns off, or the scheduler would close the poll again right away.
      */
     public function reopen(): void
     {
         $this->closed_at = null;
+
+        if ($this->hasPassedDeadline()) {
+            $this->auto_close = false;
+        }
+
         $this->save();
+    }
+
+    /**
+     * Set the optional answer deadline; auto-close needs a deadline to act on (F-08).
+     */
+    public function setAnswerDeadline(?CarbonInterface $deadline, bool $autoClose): void
+    {
+        $this->answer_deadline = $deadline?->copy()->utc();
+        $this->auto_close = $deadline !== null && $autoClose;
+    }
+
+    /**
+     * Whether the poll has an answer deadline that lies in the past (F-08).
+     */
+    public function hasPassedDeadline(): bool
+    {
+        return $this->answer_deadline !== null && $this->answer_deadline->lessThanOrEqualTo(now());
+    }
+
+    /**
+     * Whether the poll was closed by its answer deadline rather than by hand or by fixing (F-08).
+     */
+    public function wasClosedAutomatically(): bool
+    {
+        return $this->isClosed() && $this->auto_close && $this->hasPassedDeadline();
+    }
+
+    /**
+     * Whether dates may still be fixed: on an open poll, and on one auto-closed before anything was fixed (F-08, F-09).
+     */
+    public function allowsFixing(): bool
+    {
+        if (! $this->isClosed()) {
+            return true;
+        }
+
+        return $this->wasClosedAutomatically() && ! $this->hasFixedOption();
+    }
+
+    /**
+     * Limit the query to open polls whose auto-close deadline has passed (F-08).
+     *
+     * @param  Builder<Poll>  $query
+     */
+    #[Scope]
+    protected function dueForAutoClose(Builder $query): void
+    {
+        $query->whereNull('closed_at')
+            ->where('auto_close', true)
+            ->whereNotNull('answer_deadline')
+            ->where('answer_deadline', '<=', now());
     }
 
     /**

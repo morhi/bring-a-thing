@@ -21,6 +21,10 @@ const props = withDefaults(
         size?: 'md' | 'sm';
         // Stacks the choices for narrow calendar days
         stacked?: boolean;
+        // Shows the choices without accepting input, e.g. the own answer on a closed poll
+        locked?: boolean;
+        // Calendar views tint the whole pill in the answer colour, so a picked day reads at a glance
+        tinted?: boolean;
     }>(),
     {
         answer: null,
@@ -30,6 +34,8 @@ const props = withDefaults(
         choices: () => ['yes', 'maybe', 'no'],
         size: 'md',
         stacked: false,
+        locked: false,
+        tinted: false,
     },
 );
 
@@ -67,13 +73,29 @@ function choose(value: unknown): void {
     const next = value as PollAnswer;
 
     // Busy keeps the radios focusable instead of disabling them, so arrow keys never drop focus
-    if (props.disabled || next === shown.value) {
+    if (props.locked || props.disabled || next === shown.value) {
         return;
     }
 
     pending.value = next;
     emit('update:answer', next);
 }
+
+// Idle choices take the answer colour on hover and a stronger tint while pressed
+const hoverTones: Record<PollAnswer, string> = {
+    yes: 'group-hover:border-primary! group-hover:text-primary! group-hover:bg-primary/12! group-active:bg-primary/24!',
+    maybe: 'group-hover:border-warning! group-hover:text-warning! group-hover:bg-warning/12! group-active:bg-warning/24!',
+    no: 'group-hover:border-danger! group-hover:text-danger! group-hover:bg-danger/12! group-active:bg-danger/24!',
+};
+
+// A light tint plus a border in the answer colour; the tokens adapt to both themes
+const pillTones: Record<PollAnswer, string> = {
+    yes: 'bg-primary/12 inset-ring inset-ring-primary',
+    maybe: 'bg-warning/14 inset-ring inset-ring-warning',
+    no: 'bg-danger/12 inset-ring inset-ring-danger',
+};
+
+const interactive = computed(() => !props.locked && !props.disabled);
 
 const steps: Record<string, number> = {
     ArrowRight: 1,
@@ -103,14 +125,16 @@ function arrowSelect(event: KeyboardEvent): void {
 <template>
     <!-- One tab stop per option; arrow keys move between and pick the answers (roving radio group) -->
     <RadioGroupRoot
-        v-if="editable"
+        v-if="editable || locked"
         :model-value="shown"
         :name="name"
+        :disabled="locked"
         :aria-label="t('poll.answerLabel', { option: optionLabel })"
         :aria-disabled="disabled || undefined"
         :class="
             cn(
-                'bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]',
+                'inline-flex gap-0.5 rounded-full p-[3px] transition-[background-color,box-shadow] duration-(--duration-fast)',
+                tinted && shown ? pillTones[shown] : 'bg-surface-sunken',
                 stacked && 'flex-col',
             )
         "
@@ -125,11 +149,14 @@ function arrowSelect(event: KeyboardEvent): void {
             :aria-label="t(`poll.answer.${value}`)"
             :class="
                 cn(
-                    'relative grid shrink-0 cursor-pointer place-items-center rounded-full p-0',
-                    'focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-1',
+                    'group relative grid shrink-0 place-items-center rounded-full p-0',
+                    'focus-visible:outline-focus-ring focus-visible:outline-2 focus-visible:outline-offset-2',
                     size === 'sm' ? 'size-6' : 'size-[30px]',
+                    interactive && 'cursor-pointer',
                     shown === value && 'bg-surface-raised shadow-sm',
-                    disabled && 'cursor-progress opacity-60',
+                    disabled && !locked && 'cursor-progress opacity-60',
+                    // The own answer stays fully visible on a closed poll; only the other choices fade
+                    locked && shown !== value && 'opacity-40',
                 )
             "
         >
@@ -138,12 +165,17 @@ function arrowSelect(event: KeyboardEvent): void {
                 aria-hidden="true"
                 :class="
                     cn(
-                        'transition-[transform,opacity] duration-(--duration-fast)',
+                        'transition-[transform,opacity,color,background-color,border-color,filter] duration-(--duration-fast)',
                         size === 'sm'
                             ? 'size-[18px]! [&_svg]:size-3'
                             : 'size-6!',
                         shown !== value &&
                             'border-border-strong! text-fg-soft! border-[1.5px]! border-solid! bg-transparent!',
+                        interactive && 'group-active:scale-94',
+                        interactive && shown !== value && hoverTones[value],
+                        interactive &&
+                            shown === value &&
+                            'group-hover:brightness-110',
                     )
                 "
             />

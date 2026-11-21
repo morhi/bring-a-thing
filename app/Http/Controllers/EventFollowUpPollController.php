@@ -45,6 +45,8 @@ class EventFollowUpPollController extends Controller
                 'title' => $request->string('title')->value(),
                 'type' => $request->enum('type', PollType::class),
                 'granularity' => $request->enum('granularity', PollGranularity::class),
+                'answer_deadline' => $request->answerDeadline(),
+                'auto_close' => $request->boolean('auto_close'),
             ],
             $request->usesExplicitOptions(),
             $request->input('options', []),

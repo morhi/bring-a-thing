@@ -4,6 +4,7 @@ namespace App\Http\Requests\Polls;
 
 use App\Enums\PollGranularity;
 use App\Enums\PollType;
+use App\Http\Requests\Polls\Concerns\ValidatesAnswerDeadline;
 use App\Models\Group;
 use App\Models\Poll;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Validator;
 
 class StorePollRequest extends FormRequest
 {
+    use ValidatesAnswerDeadline;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -75,6 +78,8 @@ class StorePollRequest extends FormRequest
 
             'starts_on' => [Rule::requiredIf(! $usesExplicitOptions), 'date'],
             'ends_on' => [Rule::requiredIf(! $usesExplicitOptions), 'date', 'after_or_equal:starts_on'],
+
+            ...$this->answerDeadlineRules(),
         ];
     }
 
@@ -91,6 +96,7 @@ class StorePollRequest extends FormRequest
             }
 
             $this->validateDistinctOptions($validator);
+            $this->validateAutoClose($validator);
         });
     }
 

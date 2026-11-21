@@ -37,7 +37,7 @@ class FixPollRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * A closed poll accepts no fixing; already fixed options would create a second event.
+     * A closed poll accepts no fixing, except one closed by its deadline (F-08); already fixed options would create a second event.
      */
     public function withValidator(Validator $validator): void
     {
@@ -46,7 +46,7 @@ class FixPollRequest extends FormRequest
                 return;
             }
 
-            if ($this->poll()->isClosed()) {
+            if (! $this->poll()->allowsFixing()) {
                 $validator->errors()->add('options', 'This poll is closed.');
 
                 return;

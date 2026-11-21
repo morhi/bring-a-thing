@@ -7,6 +7,7 @@ use App\Enums\PollType;
 use App\Models\Group;
 use App\Models\Poll;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -28,5 +29,16 @@ class PollFactory extends Factory
             'organizer_id' => User::factory(),
             'group_id' => Group::factory(),
         ];
+    }
+
+    /**
+     * Give the poll an answer deadline, optionally closing it automatically then (F-08).
+     */
+    public function withDeadline(CarbonInterface $deadline, bool $autoClose = false): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'answer_deadline' => $deadline->copy()->utc(),
+            'auto_close' => $autoClose,
+        ]);
     }
 }

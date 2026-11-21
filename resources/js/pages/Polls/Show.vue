@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { useEcho, usePresenceChannel } from '@laravel/echo-vue';
 import {
     ArrowLeft,
@@ -7,7 +7,10 @@ import {
     Check,
     ChevronDown,
     ChevronRight,
+    Clock,
     LogOut,
+    MessageSquare,
+    Pencil,
     Settings,
     Sparkles,
     Table2,
@@ -23,6 +26,10 @@ import {
     store as storeInviteLink,
 } from '@/actions/App/Http/Controllers/PollInviteLinkController';
 import {
+    destroy as destroyComment,
+    store as storeComment,
+} from '@/actions/App/Http/Controllers/PollCommentController';
+import {
     close as closePoll,
     edit as editPoll,
     fix as fixPoll,
@@ -32,18 +39,23 @@ import {
 import {
     fillOpen,
     store as storeResponse,
+    storeFor as storeResponseFor,
 } from '@/actions/App/Http/Controllers/PollResponseController';
 import { dashboard } from '@/routes';
+import CommentThread from '@/components/app/comment-thread.vue';
+import type { ThreadComment } from '@/components/app/comment-thread.vue';
 import AvatarStack from '@/components/app/avatar-stack.vue';
 import DateBlock from '@/components/app/date-block.vue';
 import EmptyState from '@/components/app/empty-state.vue';
 import ShareDialog from '@/components/app/share-dialog.vue';
 import PollCalendar from '@/components/app/poll-calendar.vue';
 import PollGrid from '@/components/app/poll-grid.vue';
+import NoteDialog from '@/components/app/poll/note-dialog.vue';
 import {
     dayOf,
     describeOption,
     formatDate,
+    formatInstant,
     timeOf,
 } from '@/components/app/poll/dates';
 import type {
@@ -52,6 +64,8 @@ import type {
     PollGridOption,
     PollGridParticipant,
     PollKey,
+    PollNotes,
+    PollOptionNote,
     PollOptionTotals,
 } from '@/components/app/poll/types';
 import SectionBox from '@/components/app/section-box.vue';
@@ -91,13 +105,33 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps<{ page: App.Data.PollShowData }>();
 
-const { t, locale } = useI18n();
+const { t, tc, locale } = useI18n();
 const currentUserId = computed(() => usePage().props.auth.user?.id ?? null);
 
 const poll = computed(() => props.page.poll);
 const permissions = computed(() => props.page.permissions);
 const isDateFinder = computed(() => poll.value.type === 'date_finder');
 const isOpen = computed(() => !poll.value.is_closed);
+
+// The deadline shows in the viewer's zone; "passed" comes from the server clock, the same one auto-close uses (F-08)
+const deadlineLabel = computed(() => {
+    if (!poll.value.answer_deadline) {
+        return null;
+    }
+
+    if (poll.value.has_passed_deadline) {
+        return t('poll.deadlinePassed');
+    }
+
+    return t('poll.deadline', {
+        date: formatInstant(
+            poll.value.answer_deadline,
+            locale.value,
+            { weekday: 'long', day: 'numeric', month: 'long' },
+            true,
+        ),
+    });
+});
 
 const backLink = computed(() => {
     if (poll.value.source_event) {
@@ -175,6 +209,48 @@ const answers = computed<PollAnswers>(() =>
     ),
 );
 
+const notes = computed<PollNotes>(() =>
+    Object.fromEntries(
+        props.page.respondents.map((respondent) => [
+            String(respondent.user_id),
+            respondent.notes,
+        ]),
+    ),
+);
+
+// The calendar only shows the own answers, so other people's notes gather per option there
+const otherNotes = computed<Record<string, PollOptionNote[]>>(() => {
+    const byOption: Record<string, PollOptionNote[]> = {};
+
+    props.page.respondents
+        .filter((respondent) => respondent.user_id !== currentUserId.value)
+        .forEach((respondent) => {
+            Object.entries(respondent.notes).forEach(([slug, note]) => {
+                (byOption[slug] ??= []).push({
+                    name: respondent.name ?? t('common.noName'),
+                    note,
+                });
+            });
+        });
+
+    return byOption;
+});
+
+// The note dialog edits the own note on one option (F-06)
+const noteDialogOpen = ref(false);
+const noteOptionId = ref<PollKey | null>(null);
+const noteOption = computed(
+    () =>
+        gridOptions.value.find(
+            (option) => String(option.id) === String(noteOptionId.value),
+        ) ?? null,
+);
+
+function editNote(optionId: PollKey): void {
+    noteOptionId.value = optionId;
+    noteDialogOpen.value = true;
+}
+
 const hasAnswered = (respondent: App.Data.PollRespondentData): boolean =>
     Object.keys(respondent.answers).length > 0;
 
@@ -183,12 +259,41 @@ const missing = computed(() =>
     props.page.respondents.filter((respondent) => !hasAnswered(respondent)),
 );
 
-// The own row always comes first so it can be answered; others only appear once they answered
+// "Edit answers" (F-06): editors set answers for every audience member, including those without any answer
+const editingAnswers = ref(false);
+
+const editableRespondentIds = computed(() =>
+    editingAnswers.value && permissions.value.can_edit_answers
+        ? props.page.respondents
+              .filter((respondent) => respondent.in_audience)
+              .map((respondent) => respondent.user_id)
+        : [],
+);
+
+function startEditingAnswers(): void {
+    editingAnswers.value = true;
+    view.value = 'table';
+}
+
+function chooseView(next: GridView): void {
+    view.value = next;
+
+    if (next !== 'table') {
+        editingAnswers.value = false;
+    }
+}
+
+// The own row always comes first so it can be answered; others only appear once they answered, or all of them while editing
 const rows = computed<PollGridParticipant[]>(() => {
     const own = props.page.respondents.find(
         (respondent) => respondent.user_id === currentUserId.value,
     );
-    const others = answered.value
+    const shown = editableRespondentIds.value.length
+        ? props.page.respondents.filter(
+              (respondent) => respondent.in_audience || hasAnswered(respondent),
+          )
+        : answered.value;
+    const others = shown
         .filter((respondent) => respondent.user_id !== currentUserId.value)
         .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
 
@@ -265,6 +370,33 @@ function fillOpenOptions(value: PollAnswer): void {
 
     router.post(
         fillOpen({ poll: poll.value.slug }).url,
+        { status: value },
+        {
+            only: ['page'],
+            preserveScroll: true,
+            preserveState: true,
+            onStart: () => {
+                saving.value = true;
+            },
+            onFinish: () => {
+                saving.value = false;
+            },
+            onError: showRequestError,
+        },
+    );
+}
+
+function answerFor(
+    participantId: PollKey,
+    optionId: PollKey,
+    value: PollAnswer,
+): void {
+    router.post(
+        storeResponseFor({
+            poll: poll.value.slug,
+            option: String(optionId),
+            member: Number(participantId),
+        }).url,
         { status: value },
         {
             only: ['page'],
@@ -399,10 +531,45 @@ function optionWhen(option: {
         : `${day}, ${timeOf(option.starts_at)}`;
 }
 
+// Comments (F-20): collapsed by default, like on events
+const commentsOpen = ref(false);
+const commentForm = useForm({ body: '' });
+const threadComments = computed<ThreadComment[]>(() =>
+    props.page.comments.map((comment) => ({
+        id: comment.id,
+        authorName: comment.user_name,
+        createdAt: comment.created_at,
+        body: comment.body,
+        canDelete: comment.can_delete,
+    })),
+);
+
+function postComment(body: string): void {
+    commentForm.body = body;
+    commentForm.post(storeComment(props.page.poll.slug).url, {
+        preserveScroll: true,
+        onSuccess: () => commentForm.reset(),
+    });
+}
+
+function deleteComment(id: ThreadComment['id']): void {
+    router.delete(destroyComment([props.page.poll.slug, Number(id)]).url, {
+        preserveScroll: true,
+        onError: (errors) =>
+            toast.error(Object.values(errors)[0], { duration: 6000 }),
+    });
+}
+
 // Live updates (F-21): every change reloads the page prop; a deleted poll sends people back
 useEcho<{ deleted?: boolean }>(
     `poll.${props.page.poll.id}`,
-    ['.poll.changed', '.poll.response.updated', '.poll.option.fixed'],
+    [
+        '.poll.changed',
+        '.poll.response.updated',
+        '.poll.option.fixed',
+        '.comment.added',
+        '.comment.deleted',
+    ],
     (payload) => {
         if (withdrawing.value) {
             return;
@@ -505,6 +672,15 @@ const buttonClass = 'h-(--control-height) px-4';
                                 })
                             }}
                         </span>
+                        <span
+                            v-if="deadlineLabel"
+                            class="inline-flex items-center gap-1.5"
+                            :class="poll.has_passed_deadline && 'text-warning'"
+                            data-feature="F-08"
+                        >
+                            <Clock class="size-4" aria-hidden="true" />
+                            {{ deadlineLabel }}
+                        </span>
                     </div>
                 </div>
                 <div
@@ -597,9 +773,7 @@ const buttonClass = 'h-(--control-height) px-4';
                         })
                     }}</b>
                     <span>{{
-                        t('newPoll.audienceEventCount', {
-                            n: page.audience_count,
-                        })
+                        tc('newPoll.audienceEventCount', page.audience_count)
                     }}</span>
                 </span>
                 <Button as-child variant="secondary" size="sm" class="ml-auto">
@@ -649,21 +823,24 @@ const buttonClass = 'h-(--control-height) px-4';
             :title="t('poll.grid')"
             :count="answered.length"
             :data-feature="isDateFinder ? 'F-06' : 'F-07'"
+            stack-actions
         >
-            <template #action>
-                <span class="text-fg-soft self-center text-sm">{{
+            <template #meta>
+                <span class="text-fg-soft text-sm">{{
                     t('group.polls.responses', {
                         n: answered.length,
                         total: page.audience_count,
                     })
                 }}</span>
+            </template>
+            <template #action>
                 <DropdownMenu v-if="permissions.can_respond && isRespondent">
                     <DropdownMenuTrigger as-child>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            class="h-[38px] self-center px-3.5 text-[13px] font-semibold"
+                            class="h-[38px] self-center px-3.5 text-[13px] font-semibold max-sm:order-2 max-sm:w-full"
                             :disabled="saving || !hasOpenOptions"
                         >
                             {{ t('poll.answer.fillOpen') }}
@@ -691,7 +868,7 @@ const buttonClass = 'h-(--control-height) px-4';
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <div
-                    class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px]"
+                    class="bg-surface-sunken inline-flex gap-0.5 rounded-full p-[3px] max-sm:order-1 max-sm:w-full"
                     role="group"
                     :aria-label="t('poll.view')"
                 >
@@ -700,8 +877,8 @@ const buttonClass = 'h-(--control-height) px-4';
                         :key="option.value"
                         type="button"
                         :aria-pressed="view === option.value"
-                        class="text-fg-muted hover:text-fg aria-pressed:bg-surface-raised aria-pressed:text-fg focus-visible:outline-focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold aria-pressed:shadow-sm"
-                        @click="view = option.value"
+                        class="text-fg-muted hover:text-fg aria-pressed:bg-surface-raised aria-pressed:text-fg focus-visible:outline-focus-ring inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-semibold aria-pressed:shadow-sm max-sm:flex-1 max-sm:justify-center"
+                        @click="chooseView(option.value)"
                     >
                         <component
                             :is="option.icon"
@@ -711,6 +888,18 @@ const buttonClass = 'h-(--control-height) px-4';
                         {{ t(`poll.view.${option.value}`) }}
                     </button>
                 </div>
+                <Button
+                    v-if="permissions.can_edit_answers && !editingAnswers"
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-[38px] self-center px-3.5 text-[13px] font-semibold max-sm:order-3 max-sm:self-start"
+                    data-feature="F-06"
+                    @click="startEditingAnswers"
+                >
+                    <Pencil class="size-4" aria-hidden="true" />
+                    {{ t('poll.editAnswers') }}
+                </Button>
             </template>
 
             <PollCalendar
@@ -726,10 +915,24 @@ const buttonClass = 'h-(--control-height) px-4';
                 :show-answers="isRespondent"
                 :closed="!permissions.can_respond"
                 :busy="saving"
+                :notes="ownRespondent?.notes ?? {}"
+                :other-notes="otherNotes"
                 @answer="answer"
+                @edit-note="editNote"
             />
+            <div
+                v-if="view === 'table' && editableRespondentIds.length"
+                class="bg-primary-soft text-primary-soft-fg flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold"
+                role="status"
+                data-feature="F-06"
+            >
+                {{ t('poll.editAnswers.banner') }}
+                <Button type="button" size="sm" @click="editingAnswers = false">
+                    {{ t('poll.editAnswers.done') }}
+                </Button>
+            </div>
             <PollGrid
-                v-else
+                v-if="view === 'table'"
                 :id-prefix="`poll-${poll.slug}`"
                 :options="gridOptions"
                 :participants="rows"
@@ -742,7 +945,22 @@ const buttonClass = 'h-(--control-height) px-4';
                 :current-participant-id="currentUserId"
                 :closed="!permissions.can_respond"
                 :busy="saving"
+                :editable-participant-ids="editableRespondentIds"
+                :notes="notes"
                 @answer="answer"
+                @answer-for="answerFor"
+                @edit-note="editNote"
+            />
+            <NoteDialog
+                v-model:open="noteDialogOpen"
+                :poll-slug="poll.slug"
+                :option="noteOption"
+                :note="
+                    noteOptionId === null
+                        ? null
+                        : (ownRespondent?.notes[String(noteOptionId)] ?? null)
+                "
+                :max-length="page.note_max_length"
             />
 
             <EmptyState
@@ -810,6 +1028,50 @@ const buttonClass = 'h-(--control-height) px-4';
                 </li>
             </ul>
         </SectionBox>
+
+        <!-- One heading only: the disclosure button is the section's title, so no SectionBox title row -->
+        <section
+            class="box flex flex-col gap-4 p-3.5 shadow-(--box-shadow) sm:px-[26px] sm:py-6"
+            aria-labelledby="poll-comments-title"
+            data-feature="F-20"
+        >
+            <h2 id="poll-comments-title" class="text-h2">
+                <button
+                    type="button"
+                    class="focus-visible:outline-focus-ring flex min-h-6 w-full items-center gap-2.5 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+                    :aria-expanded="commentsOpen"
+                    aria-controls="poll-comments-body"
+                    @click="commentsOpen = !commentsOpen"
+                >
+                    <MessageSquare
+                        class="text-fg-soft size-5 flex-none"
+                        aria-hidden="true"
+                    />
+                    <span class="min-w-0 flex-1">{{
+                        t('poll.comments.toggle', { n: page.comments.length })
+                    }}</span>
+                    <ChevronRight
+                        class="text-fg-soft size-4 flex-none transition-transform motion-reduce:transition-none"
+                        :class="commentsOpen && 'rotate-90'"
+                        aria-hidden="true"
+                    />
+                </button>
+            </h2>
+            <div
+                v-if="commentsOpen"
+                id="poll-comments-body"
+                class="border-border border-t pt-4"
+            >
+                <CommentThread
+                    v-model="commentForm.body"
+                    :comments="threadComments"
+                    :error="commentForm.errors.body ?? null"
+                    :processing="commentForm.processing"
+                    @submit="postComment"
+                    @delete="deleteComment"
+                />
+            </div>
+        </section>
 
         <Dialog v-model:open="fixOpen">
             <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
