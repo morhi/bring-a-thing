@@ -16,7 +16,9 @@ import { Button } from '@/components/ui/button';
             SectionBoxItem is the tinted level 2 box for rows inside it; as a
             link or button it lifts on hover. Also shows the text-h1 and text-h2
             heading scale. The optional collapsible prop adds an icon-only
-            toggle left of the title that hides the content, and
+            toggle left of the title that hides the content. The meta slot puts
+            short text such as a count next to the title, and the stackActions
+            prop moves the actions below the title on small screens.
             SectionEmptyState is the empty state every dashboard section shows.
         </p>
         <div

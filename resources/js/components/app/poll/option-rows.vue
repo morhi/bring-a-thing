@@ -144,7 +144,7 @@ function applyTimeToAll(source: OptionDraft): void {
                     v-if="mode === 'slots'"
                     class="col-span-2 flex flex-col items-start gap-1.5 max-lg:order-1 lg:col-span-1 lg:mt-3.5 lg:flex-row lg:items-center lg:gap-3 lg:self-start"
                 >
-                    <!-- Narrow screens stack start and end with visible captions; the range stays on one line from md up -->
+                    <!-- Below md start and end stack with visible captions; from md up the range stays on one line, and from lg up it shares the row with the label -->
                     <div
                         class="flex flex-col gap-1.5 md:flex-row md:flex-nowrap md:items-center md:gap-2"
                     >
